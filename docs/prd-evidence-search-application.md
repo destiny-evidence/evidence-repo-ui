@@ -20,7 +20,6 @@ The app consumes the existing destiny-repository API for references/search and f
 │  1. destiny-repository API (search, references)  │
 │  2. vocabulary_uri → vocabulary artifact          │
 │  3. context_uri → JSON-LD context (immutable)    │
-│  Auth: Keycloak (shared infra)                   │
 └──────────────────────────────────────────────────┘
 ```
 
@@ -132,12 +131,11 @@ The graph structure is defined by the SHACL shapes (`evrepo-core-shapes.ttl`) an
 
 **Repo:** evidence-repo-ui
 
-Implement the search page at `/`:
+Implement the search page at `/:community`. Only `/esea` will be supported initially — hard-coded as the single community for now.
 
 **Search:**
 - Search box with query input
-- Community-scoped via URL path (e.g. `/esea`) — filters to that community's enhanced records
-- Default filter scoping to community-enhanced records (see open questions — enhancement source or Lucene query against projected linked data fields from #590/PR #596)
+- Scoped to the community in the URL path — filters to that community's enhanced records (see open questions re scoping filter)
 - Concept filtering via Lucene query syntax against projected fields; dedicated filter parameters deferred
 
 **Results list:**
@@ -244,6 +242,6 @@ Ensure the destiny-repository API allows cross-origin requests from the evidence
 | `destiny-repository/libs/sdk/src/destiny_sdk/enhancements.py` | LinkedDataEnhancement SDK model |
 | `destiny-repository/app/domain/references/routes.py` | Existing API endpoints |
 
-## Open questions
+## Notes
 
-- **ESEA scoping filter**: Jacobs/ESEA references already have a `domain-inclusion/jacobs-education` boolean annotation applied via a temporary robot (vocabulary-mapping-robot PR #4, destiny-repository#588). This annotation is queryable via Lucene (`annotations:domain-inclusion/jacobs-education`) or via the existing `?annotation=` search parameter if available. This is the most straightforward scoping mechanism for the `/esea` community view.
+- **ESEA scoping filter**: Jacobs/ESEA references have a `domain-inclusion/jacobs-education` boolean annotation (applied via vocabulary-mapping-robot PR #4, destiny-repository#588). This is queryable via Lucene (`annotations:domain-inclusion/jacobs-education`) or via the `?annotation=` search parameter, and is the scoping mechanism for the `/esea` community view.
