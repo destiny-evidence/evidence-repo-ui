@@ -75,9 +75,11 @@ Scaffold the application:
 
 Create `src/services/apiClient.ts`:
 - `searchReferences(query, filters)` → calls `GET /v1/search/` with configurable base URL
-- `getReference(id)` → calls `GET /v1/references/{id}/`
+- `getReference(id)` → calls `GET /v1/references/?identifier={id}`
 - Helper to extract `LinkedDataEnhancement` and `BibliographicMetadataEnhancement` from the enhancements array (use most recent if multiple)
 - TypeScript types for API response shapes (Reference, Enhancement, SearchResult, pagination)
+
+Note: search results return the full `Reference` objects with all enhancements, so the detail page could use client-side state from search results when available, falling back to `getReference(id)` for deep links.
 
 ---
 
