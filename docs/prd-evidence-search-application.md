@@ -2,7 +2,7 @@
 
 ## Summary
 
-Build a new public-facing application for evidence synthesisers to search and inspect ESEA-enhanced records in the destiny repository. Static React app, deployed to blob storage with Azure Front Door. Auth via shared Keycloak infrastructure (same as taxonomy-builder) — needed for abstract visibility. Hard-coded for ESEA first.
+Build a new public-facing application for evidence synthesisers to search and inspect ESEA-enhanced records in the destiny repository. Static React app, deployed to blob storage with Azure Front Door. Auth via Keycloak — needed for abstract visibility. Blocked on destiny-repository switching to Keycloak in production; abstracts may be omitted until then. Hard-coded for ESEA first.
 
 The app consumes the existing destiny-repository API for references/search and fetches vocabulary artifacts directly from blob storage for client-side label resolution (available as compact JSON-LD, TTL, and other formats). No BFF initially — introduce one later if client-side parsing proves insufficient.
 
@@ -14,7 +14,7 @@ The app consumes the existing destiny-repository API for references/search and f
 ┌──────────────────────────────────────────────────┐
 │  Static React App (Vite + TypeScript)            │
 │  Deployed: blob storage + Azure Front Door       │
-│  Auth: Keycloak (shared infra)                   │
+│  Auth: Keycloak (blocked on API switchover)       │
 ├──────────────────────────────────────────────────┤
 │  Consumes:                                       │
 │  1. destiny-repository API (search, references)  │
@@ -63,7 +63,7 @@ Scaffold the application:
 - HTTP client for API calls
 - Basic layout shell (header, main content area)
 - Environment config for destiny-repository API base URL and Keycloak
-- Auth integration via Keycloak (shared infrastructure, same as taxonomy-builder)
+- Auth integration via Keycloak (blocked on destiny-repository production switchover; abstracts omitted until then)
 - Three route stubs: `/:community` (search, e.g. `/esea`), `/:community/references/:id` (record detail)
 - Investigate rdflib.js for vocabulary/data parsing — may be needed for robust handling of compact JSON-LD and TTL formats
 
@@ -215,6 +215,14 @@ Available data per arm (ObservedResult):
 - Deploy to Azure Blob Storage (static website hosting)
 - Azure Front Door configuration
 - Environment-specific API base URL configuration
+
+---
+
+### taxonomy-builder#TBD — Publish evrepo-core-shapes alongside vocabulary artifacts
+
+**Repo:** taxonomy-builder
+
+Include `evrepo-core-shapes.ttl` in the blob storage publication alongside the existing vocabulary artifacts (vocabulary.jsonld, vocabulary.ttl, context.jsonld). This makes the SHACL shapes accessible at a stable URL, avoiding duplication across consumers (destiny-repository, evidence-repo-ui, etc.). destiny-repository's bundled copy at `app/static/evrepo-core-shapes.ttl` can then be replaced with a fetch from the published URL.
 
 ---
 
