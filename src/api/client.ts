@@ -16,9 +16,10 @@ async function request<T>(
 ): Promise<T> {
   const { method = "GET", body } = options;
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = {};
+  if (body) {
+    headers["Content-Type"] = "application/json";
+  }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method,
