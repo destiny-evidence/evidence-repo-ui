@@ -1,0 +1,17 @@
+name: Promote to Production
+
+concurrency:
+  group: promote-production
+  cancel-in-progress: false
+
+on: workflow_dispatch
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: production

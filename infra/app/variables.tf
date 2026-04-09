@@ -1,0 +1,100 @@
+variable "app_name" {
+  type        = string
+  default     = "evidence-repo-ui"
+  description = "Application name"
+}
+
+variable "environment" {
+  description = "The environment this stack is being deployed to (development, staging, production)"
+  type        = string
+}
+
+variable "region" {
+  description = "The Azure region resources will be deployed into"
+  type        = string
+}
+
+# GitHub Actions
+variable "github_repo" {
+  type        = string
+  default     = "destiny-evidence/evidence-repo-ui"
+  description = "GitHub repository for Actions OIDC"
+}
+
+variable "github_app_id" {
+  description = "GitHub App ID for configuring repository environments"
+  type        = string
+}
+
+variable "github_app_installation_id" {
+  description = "GitHub App installation ID"
+  type        = string
+}
+
+variable "github_app_pem" {
+  description = "GitHub App private key PEM file contents"
+  type        = string
+  sensitive   = true
+}
+
+# Front Door (shared instance)
+variable "shared_frontdoor_profile_name" {
+  description = "Name of the shared Azure Front Door profile"
+  type        = string
+}
+
+variable "shared_resource_group_name" {
+  description = "The resource group containing shared infrastructure"
+  type        = string
+}
+
+# DNS (DNSimple)
+variable "custom_domain" {
+  description = "Base domain (e.g., evidence-repository.org)"
+  type        = string
+}
+
+variable "subdomain" {
+  description = "Subdomain prefix for the UI (e.g., evidence-beta)"
+  type        = string
+  default     = "evidence-beta"
+}
+
+variable "dnsimple_token" {
+  description = "API token for DNSimple"
+  type        = string
+  sensitive   = true
+}
+
+variable "dnsimple_account_id" {
+  description = "DNSimple account ID"
+  type        = string
+}
+
+# API (destiny-repository)
+variable "api_base_url" {
+  description = "Base URL for the destiny-repository API (baked into the frontend build)"
+  type        = string
+}
+
+# Resource tags
+variable "budget_code" {
+  description = "Budget code for tagging resource groups"
+  type        = string
+}
+
+variable "created_by" {
+  description = "Creator of this infrastructure (for tagging)"
+  type        = string
+}
+
+variable "owner" {
+  description = "Owner email for this infrastructure (for tagging)"
+  type        = string
+}
+
+variable "project" {
+  description = "Project name for tagging"
+  type        = string
+  default     = "DESTINY"
+}
