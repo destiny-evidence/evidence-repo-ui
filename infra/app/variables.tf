@@ -12,6 +12,7 @@ variable "environment" {
 variable "region" {
   description = "The Azure region resources will be deployed into"
   type        = string
+  default     = "swedencentral"
 }
 
 # GitHub Actions
@@ -72,9 +73,14 @@ variable "dnsimple_account_id" {
   type        = string
 }
 
-# API (destiny-repository)
-variable "api_base_url" {
-  description = "Base URL for the destiny-repository API (baked into the frontend build)"
+# destiny-repository API (looked up via data source)
+variable "destiny_repository_container_app_name" {
+  description = "Name of the destiny-repository API Container App"
+  type        = string
+}
+
+variable "destiny_repository_resource_group_name" {
+  description = "Resource group containing the destiny-repository API Container App"
   type        = string
 }
 
