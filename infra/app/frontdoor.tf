@@ -207,8 +207,7 @@ resource "azurerm_cdn_frontdoor_custom_domain" "this" {
   host_name                = local.custom_domain
 
   tls {
-    certificate_type    = "ManagedCertificate"
-    minimum_tls_version = "TLS12"
+    certificate_type = "ManagedCertificate"
   }
 }
 

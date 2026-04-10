@@ -93,6 +93,7 @@ variable "budget_code" {
 variable "created_by" {
   description = "Creator of this infrastructure (for tagging)"
   type        = string
+  default     = "Future Evidence Foundation"
 }
 
 variable "owner" {
