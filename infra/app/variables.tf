@@ -52,12 +52,13 @@ variable "shared_resource_group_name" {
 variable "custom_domain" {
   description = "Base domain (e.g., evidence-repository.org)"
   type        = string
+  default     = "evidence-repository.org"
 }
 
 variable "subdomain" {
-  description = "Subdomain prefix for the UI (e.g., evidence-beta)"
+  description = "Subdomain prefix for the UI (e.g., data)"
   type        = string
-  default     = "evidence-beta"
+  default     = "data"
 }
 
 variable "dnsimple_token" {
