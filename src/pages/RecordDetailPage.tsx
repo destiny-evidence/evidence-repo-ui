@@ -1,5 +1,3 @@
-import { findCommunity } from "@/communities";
-import { NotFoundPage } from "./NotFoundPage";
 import "./RecordDetailPage.css";
 
 interface RecordDetailPageProps {
@@ -8,14 +6,11 @@ interface RecordDetailPageProps {
   id?: string;
 }
 
-export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps) {
-  const community = slug ? findCommunity(slug) : undefined;
-  if (!community) return <NotFoundPage />;
-
+export function RecordDetailPage({ community, id }: RecordDetailPageProps) {
   return (
     <div class="record-detail-page">
       <h1>Reference {id}</h1>
-      <p>Record detail for reference {id} in {community.name}.</p>
+      <p>Record detail for reference {id} in the {community} community.</p>
     </div>
   );
 }
