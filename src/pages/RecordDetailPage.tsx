@@ -1,4 +1,4 @@
-import { findCommunity } from "@/communities";
+import { findCommunity } from "@/services/communities";
 import { NotFoundPage } from "./NotFoundPage";
 import "./RecordDetailPage.css";
 

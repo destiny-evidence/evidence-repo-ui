@@ -1,7 +1,4 @@
-export interface Community {
-  slug: string;
-  name: string;
-}
+import type { Community } from "@/types/models";
 
 const COMMUNITIES: Community[] = [
   { slug: "esea", name: "ESEA" },
