@@ -24,7 +24,7 @@ src/
 └── config.ts      # Environment configuration
 ```
 
-Stack: Vite + Preact + TypeScript (matches taxonomy-builder).
+Stack: Vite + Preact + TypeScript
 
 ## Configuration
 
