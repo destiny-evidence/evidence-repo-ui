@@ -1,7 +1,7 @@
 # Storage account for static website hosting
 resource "azurerm_storage_account" "frontend" {
   # Storage account name must be 3-24 chars, lowercase letters and numbers only
-  name                     = "${local.name_short}fe"
+  name                     = "fe${local.name_short}"
   resource_group_name      = azurerm_resource_group.this.name
   location                 = azurerm_resource_group.this.location
   account_tier             = "Standard"
