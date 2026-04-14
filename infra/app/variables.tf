@@ -73,17 +73,6 @@ variable "dnsimple_account_id" {
   type        = string
 }
 
-# destiny-repository API (looked up via data source)
-variable "destiny_repository_container_app_name" {
-  description = "Name of the destiny-repository API Container App"
-  type        = string
-}
-
-variable "destiny_repository_resource_group_name" {
-  description = "Resource group containing the destiny-repository API Container App"
-  type        = string
-}
-
 # Resource tags
 variable "budget_code" {
   description = "Budget code for tagging resource groups"
