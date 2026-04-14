@@ -1,7 +1,7 @@
 locals {
   name          = "${var.app_name}-${var.environment}"
-  name_short    = "${replace(var.app_name, "-", "")}${substr(var.environment, 0, 4)}"
-  environment_short = substr(var.environment, 0, 4)
+  environment_short = var.environment == "development" ? "dev" : var.environment
+  name_short    = "${replace(var.app_name, "-", "")}${local.environment_short}"
   is_production     = var.environment == "production"
   custom_domain     = local.is_production ? "${var.subdomain}.${var.custom_domain}" : "${var.subdomain}.${local.environment_short}.${var.custom_domain}"
 
