@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "preact": "^10.25.4",
-    "preact-router": "^4.1.2"
+    "preact-router": "^4.1.2",
+    "rdflib": "^2.3.6"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.9.4",
