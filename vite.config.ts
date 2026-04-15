@@ -21,12 +21,14 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ""),
         },
-        "/vocab-proxy": {
-          target: "https://vocab-reader.staging.evidence-repository.org",
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/vocab-proxy/, ""),
-          followRedirects: true,
-        },
+        ...(env.VITE_VOCAB_PROXY_TARGET && {
+          "/vocab-proxy": {
+            target: env.VITE_VOCAB_PROXY_TARGET,
+            changeOrigin: true,
+            rewrite: (path: string) => path.replace(/^\/vocab-proxy/, ""),
+            followRedirects: true,
+          },
+        }),
       },
     },
   };
