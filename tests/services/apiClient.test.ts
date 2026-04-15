@@ -36,13 +36,25 @@ describe("searchReferences", () => {
   test("calls the correct endpoint with query", async () => {
     mockedGet.mockResolvedValue(result);
     await searchReferences("climate change");
-    expect(mockedGet).toHaveBeenCalledWith("/v1/search/?q=climate+change");
+    expect(mockedGet).toHaveBeenCalledWith(
+      "/v1/references/search/?q=climate+change",
+    );
   });
 
   test("appends page filter", async () => {
     mockedGet.mockResolvedValue(result);
     await searchReferences("test", { page: 3 });
-    expect(mockedGet).toHaveBeenCalledWith("/v1/search/?q=test&page=3");
+    expect(mockedGet).toHaveBeenCalledWith(
+      "/v1/references/search/?q=test&page=3",
+    );
+  });
+
+  test("appends page=0 when explicitly set", async () => {
+    mockedGet.mockResolvedValue(result);
+    await searchReferences("test", { page: 0 });
+    expect(mockedGet).toHaveBeenCalledWith(
+      "/v1/references/search/?q=test&page=0",
+    );
   });
 
   test("appends multiple annotation params", async () => {
@@ -86,6 +98,7 @@ describe("getReference", () => {
 
 function makeEnhancement(
   content: Enhancement["content"],
+  createdAt: string | null = null,
 ): Enhancement {
   return {
     id: null,
@@ -94,6 +107,7 @@ function makeEnhancement(
     visibility: "public",
     robot_version: null,
     derived_from: null,
+    created_at: createdAt,
     content,
   };
 }
@@ -114,7 +128,11 @@ describe("extractBibliographic", () => {
 
   test("returns null when no bibliographic enhancement exists", () => {
     const ref = makeRef([
-      makeEnhancement({ enhancement_type: "abstract", process: "x", abstract: "y" }),
+      makeEnhancement({
+        enhancement_type: "abstract",
+        process: "x",
+        abstract: "y",
+      }),
     ]);
     expect(extractBibliographic(ref)).toBeNull();
   });
@@ -133,11 +151,11 @@ describe("extractBibliographic", () => {
       pagination: null,
       publication_venue: null,
     };
-    const ref = makeRef([makeEnhancement(bib)]);
+    const ref = makeRef([makeEnhancement(bib, "2026-01-01T00:00:00Z")]);
     expect(extractBibliographic(ref)).toBe(bib);
   });
 
-  test("returns the last bibliographic enhancement when multiple exist", () => {
+  test("returns the most recent bibliographic enhancement by created_at", () => {
     const bib1: BibliographicMetadataEnhancement = {
       enhancement_type: "bibliographic",
       authorship: null,
@@ -147,7 +165,7 @@ describe("extractBibliographic", () => {
       publication_date: null,
       publication_year: 2020,
       publisher: null,
-      title: "First",
+      title: "Older",
       pagination: null,
       publication_venue: null,
     };
@@ -160,11 +178,14 @@ describe("extractBibliographic", () => {
       publication_date: null,
       publication_year: 2024,
       publisher: null,
-      title: "Second",
+      title: "Newer",
       pagination: null,
       publication_venue: null,
     };
-    const ref = makeRef([makeEnhancement(bib1), makeEnhancement(bib2)]);
+    const ref = makeRef([
+      makeEnhancement(bib2, "2026-01-01T00:00:00Z"),
+      makeEnhancement(bib1, "2025-01-01T00:00:00Z"),
+    ]);
     expect(extractBibliographic(ref)).toBe(bib2);
   });
 });
@@ -176,7 +197,11 @@ describe("extractLinkedData", () => {
 
   test("returns null when no linked_data enhancement exists", () => {
     const ref = makeRef([
-      makeEnhancement({ enhancement_type: "abstract", process: "x", abstract: "y" }),
+      makeEnhancement({
+        enhancement_type: "abstract",
+        process: "x",
+        abstract: "y",
+      }),
     ]);
     expect(extractLinkedData(ref)).toBeNull();
   });
@@ -187,22 +212,25 @@ describe("extractLinkedData", () => {
       vocabulary_uri: "http://example.com",
       data: { key: "value" },
     };
-    const ref = makeRef([makeEnhancement(ld)]);
+    const ref = makeRef([makeEnhancement(ld, "2026-01-01T00:00:00Z")]);
     expect(extractLinkedData(ref)).toBe(ld);
   });
 
-  test("returns the last linked_data enhancement when multiple exist", () => {
+  test("returns the most recent linked_data enhancement by created_at", () => {
     const ld1: LinkedDataEnhancement = {
       enhancement_type: "linked_data",
-      vocabulary_uri: "http://first.com",
+      vocabulary_uri: "http://older.com",
       data: { n: 1 },
     };
     const ld2: LinkedDataEnhancement = {
       enhancement_type: "linked_data",
-      vocabulary_uri: "http://second.com",
+      vocabulary_uri: "http://newer.com",
       data: { n: 2 },
     };
-    const ref = makeRef([makeEnhancement(ld1), makeEnhancement(ld2)]);
+    const ref = makeRef([
+      makeEnhancement(ld2, "2026-02-01T00:00:00Z"),
+      makeEnhancement(ld1, "2025-01-01T00:00:00Z"),
+    ]);
     expect(extractLinkedData(ref)).toBe(ld2);
   });
 });
