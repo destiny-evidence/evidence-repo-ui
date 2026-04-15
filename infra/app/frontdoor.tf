@@ -169,7 +169,7 @@ resource "azurerm_cdn_frontdoor_custom_domain_association" "this" {
 
 resource "dnsimple_zone_record" "cname" {
   zone_name = var.custom_domain
-  name      = var.subdomain
+  name      = local.dns_record_name
   type      = "CNAME"
   value     = azurerm_cdn_frontdoor_endpoint.this.host_name
   ttl       = 3600
@@ -177,7 +177,7 @@ resource "dnsimple_zone_record" "cname" {
 
 resource "dnsimple_zone_record" "validation" {
   zone_name = var.custom_domain
-  name      = "_dnsauth.${var.subdomain}"
+  name      = "_dnsauth.${local.dns_record_name}"
   type      = "TXT"
   value     = azurerm_cdn_frontdoor_custom_domain.this.validation_token
   ttl       = 3600
