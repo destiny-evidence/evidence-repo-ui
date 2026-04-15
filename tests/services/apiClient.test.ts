@@ -81,18 +81,34 @@ describe("searchReferences", () => {
 });
 
 describe("getReference", () => {
-  test("calls the correct endpoint", async () => {
+  test("calls the identifier lookup endpoint", async () => {
     const ref = { id: "abc-123" } as Reference;
-    mockedGet.mockResolvedValue(ref);
+    mockedGet.mockResolvedValue([ref]);
     await getReference("abc-123");
-    expect(mockedGet).toHaveBeenCalledWith("/v1/references/abc-123/");
+    expect(mockedGet).toHaveBeenCalledWith(
+      "/v1/references/?identifier=abc-123",
+    );
   });
 
-  test("returns the result", async () => {
+  test("returns the first result", async () => {
     const ref = { id: "abc-123" } as Reference;
-    mockedGet.mockResolvedValue(ref);
+    mockedGet.mockResolvedValue([ref]);
     const res = await getReference("abc-123");
     expect(res).toBe(ref);
+  });
+
+  test("returns null when no results", async () => {
+    mockedGet.mockResolvedValue([]);
+    const res = await getReference("nonexistent");
+    expect(res).toBeNull();
+  });
+
+  test("encodes identifier in URL", async () => {
+    mockedGet.mockResolvedValue([]);
+    await getReference("doi:10.1000/abc123");
+    expect(mockedGet).toHaveBeenCalledWith(
+      "/v1/references/?identifier=doi%3A10.1000%2Fabc123",
+    );
   });
 });
 

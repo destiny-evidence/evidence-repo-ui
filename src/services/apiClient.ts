@@ -36,8 +36,11 @@ export async function searchReferences(
   return api.get<SearchResult>(`/v1/references/search/?${params.toString()}`);
 }
 
-export async function getReference(id: string): Promise<Reference> {
-  return api.get<Reference>(`/v1/references/${id}/`);
+export async function getReference(id: string): Promise<Reference | null> {
+  const results = await api.get<Reference[]>(
+    `/v1/references/?identifier=${encodeURIComponent(id)}`,
+  );
+  return results[0] ?? null;
 }
 
 function extractEnhancement<T extends EnhancementContent>(
