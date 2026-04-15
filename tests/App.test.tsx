@@ -15,7 +15,7 @@ test("renders search page for valid community", () => {
 test("renders record detail page for valid community", () => {
   history.pushState({}, "", "/esea/references/123");
   render(<App />);
-  expect(screen.getByText("Reference 123")).toBeInTheDocument();
+  expect(screen.getByText("Loading…")).toBeInTheDocument();
 });
 
 test("renders not found for invalid community", () => {

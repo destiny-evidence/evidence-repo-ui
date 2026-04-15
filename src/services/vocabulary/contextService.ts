@@ -23,10 +23,12 @@ function extractPrefixes(doc: Record<string, unknown>): Map<string, string> {
 /**
  * Fetch a JSON-LD context document and extract prefix mappings.
  */
+import { proxyVocabUrl } from "@/config";
+
 export async function fetchContext(
   contextUrl: string,
 ): Promise<ContextPrefixes> {
-  const response = await fetch(contextUrl);
+  const response = await fetch(proxyVocabUrl(contextUrl));
   if (!response.ok) {
     throw new Error(
       `Failed to fetch context: ${response.status} ${contextUrl}`,
