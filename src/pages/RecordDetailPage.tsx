@@ -47,8 +47,6 @@ export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps)
 
   if (!community) return <NotFoundPage />;
 
-  if (!community) return <NotFoundPage />;
-
   const loading = refLoading || vocabLoading || ctxLoading;
 
   if (loading) {
