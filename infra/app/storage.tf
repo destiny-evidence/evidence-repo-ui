@@ -10,7 +10,7 @@ resource "azurerm_storage_account" "frontend" {
 
   allow_nested_items_to_be_public = true
 
-  tags = local.minimum_resource_tags
+
 }
 
 resource "azurerm_storage_account_static_website" "frontend" {

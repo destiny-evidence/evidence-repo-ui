@@ -11,8 +11,6 @@ data "azurerm_subscription" "current" {
 resource "azurerm_cdn_frontdoor_endpoint" "this" {
   name                     = "fde-${local.name}"
   cdn_frontdoor_profile_id = data.azurerm_cdn_frontdoor_profile.shared.id
-
-  tags = local.minimum_resource_tags
 }
 
 # Origin group

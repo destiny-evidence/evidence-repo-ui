@@ -73,25 +73,3 @@ variable "dnsimple_account_id" {
   type        = string
 }
 
-# Resource tags
-variable "budget_code" {
-  description = "Budget code for tagging resource groups"
-  type        = string
-}
-
-variable "created_by" {
-  description = "Creator of this infrastructure (for tagging)"
-  type        = string
-  default     = "Future Evidence Foundation"
-}
-
-variable "owner" {
-  description = "Owner email for this infrastructure (for tagging)"
-  type        = string
-}
-
-variable "project" {
-  description = "Project name for tagging"
-  type        = string
-  default     = "DESTINY"
-}
