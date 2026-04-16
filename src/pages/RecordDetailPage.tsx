@@ -29,8 +29,8 @@ export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps)
   const { labels, loading: vocabLoading } = useVocabulary(
     linkedData?.vocabulary_uri,
   );
-  const contextUrl =
-    linkedData?.data?.["@context"] as string | undefined;
+  const rawContext = linkedData?.data?.["@context"];
+  const contextUrl = typeof rawContext === "string" ? rawContext : undefined;
   const { context, loading: ctxLoading } = useContextPrefixes(contextUrl);
 
   const investigation = useMemo(() => {
