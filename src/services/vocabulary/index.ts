@@ -1,2 +1,2 @@
 export { getCachedVocabulary } from "./vocabularyService";
-export { extractConceptUris } from "./enhancementParser";
+export { getCachedContext, expandCompactUri } from "./contextService";
