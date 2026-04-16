@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, waitFor } from "@testing-library/preact";
-import { useVocabularyResolver } from "@/hooks/useVocabularyResolver";
+import { useVocabulary } from "@/hooks/useVocabularyResolver";
 
 const SAMPLE_VOCABULARY_JSONLD = JSON.stringify({
   "@context": {
     skos: "http://www.w3.org/2004/02/skos/core#",
     esea: "https://vocab.esea.education/",
-    rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
   },
   "@graph": [
     {
@@ -18,25 +17,25 @@ const SAMPLE_VOCABULARY_JSONLD = JSON.stringify({
 });
 
 function TestComponent({ vocabularyUrl }: { vocabularyUrl: string | undefined }) {
-  const { resolver, loading, error } = useVocabularyResolver(vocabularyUrl);
+  const { labels, loading, error } = useVocabulary(vocabularyUrl);
   return (
     <div>
       <span data-testid="loading">{String(loading)}</span>
       <span data-testid="error">{error?.message ?? "none"}</span>
       <span data-testid="label">
-        {resolver?.getLabel("https://vocab.esea.education/DocumentTypeScheme/C00008") ??
+        {labels?.get("https://vocab.esea.education/DocumentTypeScheme/C00008") ??
           "unresolved"}
       </span>
     </div>
   );
 }
 
-describe("useVocabularyResolver", () => {
+describe("useVocabulary", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("resolves a vocabulary and provides labels", async () => {
+  it("fetches vocabulary and provides label map", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(SAMPLE_VOCABULARY_JSONLD, { status: 200 }),
     );
