@@ -33,7 +33,10 @@ export function getVocabularyResolver(
 ): Promise<VocabularyResolver> {
   let cached = resolverCache.get(vocabularyUrl);
   if (!cached) {
-    cached = createVocabularyResolver(vocabularyUrl);
+    cached = createVocabularyResolver(vocabularyUrl).catch((err) => {
+      resolverCache.delete(vocabularyUrl);
+      throw err;
+    });
     resolverCache.set(vocabularyUrl, cached);
   }
   return cached;

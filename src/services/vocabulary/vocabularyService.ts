@@ -79,7 +79,10 @@ export function getCachedVocabulary(
 ): Promise<ConceptLabels> {
   let cached = vocabularyCache.get(vocabularyUrl);
   if (!cached) {
-    cached = fetchVocabulary(vocabularyUrl);
+    cached = fetchVocabulary(vocabularyUrl).catch((err) => {
+      vocabularyCache.delete(vocabularyUrl);
+      throw err;
+    });
     vocabularyCache.set(vocabularyUrl, cached);
   }
   return cached;
