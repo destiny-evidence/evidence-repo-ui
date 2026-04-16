@@ -3,6 +3,11 @@ import { graph, parse, Namespace, NamedNode } from "rdflib";
 const SKOS = Namespace("http://www.w3.org/2004/02/skos/core#");
 const RDF = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 
+/** Normalize a vocabulary URL to its .jsonld form. */
+function toJsonLdUrl(vocabularyUrl: string): string {
+  return vocabularyUrl.replace(/\/+$/, "").replace(/\.\w+$/, "") + ".jsonld";
+}
+
 /**
  * Build a concept URI → prefLabel map from the vocabulary graph.
  * Mirrors the server-side `_build_concept_labels()`.
@@ -30,7 +35,7 @@ export function buildConceptLabels(
 export async function fetchVocabulary(
   vocabularyUrl: string,
 ): Promise<Map<string, string>> {
-  const url = `${vocabularyUrl}.jsonld`;
+  const url = toJsonLdUrl(vocabularyUrl);
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch vocabulary: ${response.status} ${url}`);
@@ -54,13 +59,14 @@ const vocabularyCache = new Map<string, Promise<Map<string, string>>>();
 export function getCachedVocabulary(
   vocabularyUrl: string,
 ): Promise<Map<string, string>> {
-  let cached = vocabularyCache.get(vocabularyUrl);
+  const key = toJsonLdUrl(vocabularyUrl);
+  let cached = vocabularyCache.get(key);
   if (!cached) {
     cached = fetchVocabulary(vocabularyUrl).catch((err) => {
-      vocabularyCache.delete(vocabularyUrl);
+      vocabularyCache.delete(key);
       throw err;
     });
-    vocabularyCache.set(vocabularyUrl, cached);
+    vocabularyCache.set(key, cached);
   }
   return cached;
 }
