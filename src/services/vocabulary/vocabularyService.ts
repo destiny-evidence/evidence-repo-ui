@@ -13,7 +13,9 @@ const SKOS_CONCEPT = "skos:Concept";
 
 /** Normalize a vocabulary URL to its .jsonld form. */
 function toJsonLdUrl(vocabularyUrl: string): string {
-  return vocabularyUrl.replace(/\/+$/, "").replace(/\.\w+$/, "") + ".jsonld";
+  const url = new URL(vocabularyUrl);
+  url.pathname = url.pathname.replace(/\/+$/, "").replace(/\.\w+$/, "") + ".jsonld";
+  return url.toString();
 }
 
 /**
