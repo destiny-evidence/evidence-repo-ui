@@ -87,6 +87,7 @@ export function InvestigationCard({
             href={`https://doi.org/${doi}`}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={`DOI: ${doi} (opens in new tab)`}
           >
             {doi}
             <span class="investigation-card__external-icon">
