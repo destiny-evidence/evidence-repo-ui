@@ -61,6 +61,11 @@ export async function fetchVocabulary(
 
 const vocabularyCache = new Map<string, Promise<Map<string, string>>>();
 
+/** @internal Clear the vocabulary cache. Exported for testing only. */
+export function _resetVocabularyCache(): void {
+  vocabularyCache.clear();
+}
+
 /** Cached vocabulary fetch — deduplicates concurrent requests. */
 export function getCachedVocabulary(
   vocabularyUrl: string,
