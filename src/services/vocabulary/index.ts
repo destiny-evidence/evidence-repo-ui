@@ -17,21 +17,11 @@ export async function createVocabularyResolver(
   };
 }
 
-const resolverCache = new Map<string, Promise<VocabularyResolver>>();
-
-/** Cached resolver — deduplicates concurrent requests for the same vocabulary. */
+/** Cached resolver — deduplication is handled by getCachedVocabulary. */
 export function getVocabularyResolver(
   vocabularyUrl: string,
 ): Promise<VocabularyResolver> {
-  let cached = resolverCache.get(vocabularyUrl);
-  if (!cached) {
-    cached = createVocabularyResolver(vocabularyUrl).catch((err) => {
-      resolverCache.delete(vocabularyUrl);
-      throw err;
-    });
-    resolverCache.set(vocabularyUrl, cached);
-  }
-  return cached;
+  return createVocabularyResolver(vocabularyUrl);
 }
 
 /**
