@@ -1,7 +1,15 @@
-import { graph, parse, Namespace, NamedNode } from "rdflib";
+interface JsonLdGraphEntry {
+  "@id"?: string;
+  "@type"?: string | string[];
+  "skos:prefLabel"?: string;
+  [key: string]: unknown;
+}
 
-const SKOS = Namespace("http://www.w3.org/2004/02/skos/core#");
-const RDF = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+interface VocabularyJsonLd {
+  "@graph"?: JsonLdGraphEntry[];
+}
+
+const SKOS_CONCEPT = "skos:Concept";
 
 /** Normalize a vocabulary URL to its .jsonld form. */
 function toJsonLdUrl(vocabularyUrl: string): string {
@@ -9,20 +17,23 @@ function toJsonLdUrl(vocabularyUrl: string): string {
 }
 
 /**
- * Build a concept URI → prefLabel map from the vocabulary graph.
- * Mirrors the server-side `_build_concept_labels()`.
+ * Build a concept URI → prefLabel map from the vocabulary @graph.
+ *
+ * Filters for entries that are skos:Concept (by checking @type) and have a
+ * skos:prefLabel. The @id values in the published vocabulary are already full
+ * URIs, so no expansion is needed.
  */
 export function buildConceptLabels(
-  store: ReturnType<typeof graph>,
+  doc: VocabularyJsonLd,
 ): Map<string, string> {
   const labels = new Map<string, string>();
-  for (const st of store.match(null, SKOS("prefLabel"), null)) {
-    const concept = st.subject;
-    if (
-      concept instanceof NamedNode &&
-      store.holds(concept, RDF("type"), SKOS("Concept"))
-    ) {
-      labels.set(concept.value, st.object.value);
+  for (const entry of doc["@graph"] ?? []) {
+    if (!entry["skos:prefLabel"] || !entry["@id"]) continue;
+    const types = Array.isArray(entry["@type"])
+      ? entry["@type"]
+      : [entry["@type"]];
+    if (types.includes(SKOS_CONCEPT)) {
+      labels.set(entry["@id"], entry["skos:prefLabel"]);
     }
   }
   return labels;
@@ -30,7 +41,9 @@ export function buildConceptLabels(
 
 /**
  * Fetch a vocabulary.jsonld file and build the concept label map.
- * rdflib parses JSON-LD asynchronously — we wrap the callback in a Promise.
+ *
+ * @param vocabularyUrl Base vocabulary URL without extension or trailing slash
+ *   (e.g. "https://vocab.example.org/v1"). ".jsonld" is appended automatically.
  */
 export async function fetchVocabulary(
   vocabularyUrl: string,
@@ -40,17 +53,8 @@ export async function fetchVocabulary(
   if (!response.ok) {
     throw new Error(`Failed to fetch vocabulary: ${response.status} ${url}`);
   }
-  const text = await response.text();
-
-  const store = graph();
-  await new Promise<void>((resolve, reject) => {
-    parse(text, store, url, "application/ld+json", (error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
-
-  return buildConceptLabels(store);
+  const doc: VocabularyJsonLd = await response.json();
+  return buildConceptLabels(doc);
 }
 
 const vocabularyCache = new Map<string, Promise<Map<string, string>>>();
