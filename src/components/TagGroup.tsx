@@ -14,8 +14,8 @@ export function TagGroup({ label, tags }: TagGroupProps) {
   return (
     <div class="tag-group">
       <span class="tag-group__label">{label}</span>
-      {validTags.map((tag) => (
-        <span key={tag} class="tag-group__tag">
+      {validTags.map((tag, i) => (
+        <span key={i} class="tag-group__tag">
           {tag}
         </span>
       ))}

@@ -1,7 +1,10 @@
 import { useMemo } from "preact/hooks";
 import { findCommunity } from "@/services/communities";
-import type { ExternalIdentifier } from "@/types/models";
-import { extractBibliographic, extractLinkedData } from "@/services/apiClient";
+import {
+  extractBibliographic,
+  extractLinkedData,
+  extractDoi,
+} from "@/services/referenceUtils";
 import { parseInvestigation } from "@/services/investigationParser";
 import { useReference } from "@/hooks/useReference";
 import { useVocabulary } from "@/hooks/useVocabulary";
@@ -14,16 +17,6 @@ interface RecordDetailPageProps {
   path?: string;
   community?: string;
   id?: string;
-}
-
-function extractDoi(
-  identifiers: ExternalIdentifier[] | null,
-): string | null {
-  if (!identifiers) return null;
-  const doi = identifiers.find(
-    (i) => i.identifier_type === "doi",
-  );
-  return typeof doi?.identifier === "string" ? doi.identifier : null;
 }
 
 export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps) {

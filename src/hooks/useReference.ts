@@ -8,17 +8,27 @@ export function useReference(id: string | undefined): {
   error: Error | null;
 } {
   const [reference, setReference] = useState<Reference | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!!id);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
     setLoading(true);
     setError(null);
     getReference(id)
-      .then(setReference)
-      .catch(setError)
-      .finally(() => setLoading(false));
+      .then((ref) => {
+        if (!cancelled) setReference(ref);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   return { reference, loading, error };
