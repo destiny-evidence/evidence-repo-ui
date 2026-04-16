@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   buildConceptLabels,
   fetchVocabulary,
+  getCachedVocabulary,
 } from "@/services/vocabulary/vocabularyService";
 
 const SAMPLE_VOCABULARY = {
@@ -78,6 +79,16 @@ describe("fetchVocabulary", () => {
     );
   });
 
+  it("normalizes non-jsonld URLs to .jsonld", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(SAMPLE_VOCABULARY), { status: 200 }),
+    );
+
+    await fetchVocabulary("https://vocab.example.org/v1.ttl");
+
+    expect(fetch).toHaveBeenCalledWith("https://vocab.example.org/v1.jsonld");
+  });
+
   it("throws on fetch failure", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("Not found", { status: 404 }),
@@ -86,5 +97,25 @@ describe("fetchVocabulary", () => {
     await expect(fetchVocabulary("https://vocab.example.org/v1")).rejects.toThrow(
       "Failed to fetch vocabulary: 404",
     );
+  });
+});
+
+describe("getCachedVocabulary", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("deduplicates concurrent requests for the same URL", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(SAMPLE_VOCABULARY), { status: 200 }),
+    );
+
+    const [a, b] = await Promise.all([
+      getCachedVocabulary("https://vocab.example.org/v2"),
+      getCachedVocabulary("https://vocab.example.org/v2"),
+    ]);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(a).toBe(b);
   });
 });
