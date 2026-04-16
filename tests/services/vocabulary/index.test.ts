@@ -72,17 +72,15 @@ describe("resolveEnhancementLabels", () => {
       "@type": "Investigation",
       documentType: {
         "@type": "DocumentTypeCodingAnnotation",
-        codedValue: { "@id": "esea:C00008" },
+        codedValue: { "@id": "esea:DocumentTypeScheme/C00008" },
         status: "evrepo:coded",
       },
     };
 
     const labels = await resolveEnhancementLabels(enhancementData, resolver);
 
-    // The enhancement expands esea:C00008 → https://vocab.esea.education/C00008
-    // which doesn't exactly match .../DocumentTypeScheme/C00008 in the vocabulary.
-    // The identifier fallback (temporary workaround for taxonomy-builder#194)
-    // resolves it via the "C00008" suffix.
-    expect(labels.get("https://vocab.esea.education/C00008")).toBe("Journal Article");
+    expect(labels.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
+      "Journal Article",
+    );
   });
 });

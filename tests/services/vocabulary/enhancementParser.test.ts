@@ -31,7 +31,7 @@ describe("extractConceptUris", () => {
       "@type": "Investigation",
       documentType: {
         "@type": "DocumentTypeCodingAnnotation",
-        codedValue: { "@id": "esea:C00008" },
+        codedValue: { "@id": "esea:DocumentTypeScheme/C00008" },
         status: "evrepo:coded",
       },
       hasFinding: [
@@ -40,7 +40,7 @@ describe("extractConceptUris", () => {
           educationTheme: [
             {
               "@type": "EducationThemeCodingAnnotation",
-              codedValue: { "@id": "esea:C00040" },
+              codedValue: { "@id": "esea:EducationThemeScheme/C00040" },
               status: "evrepo:coded",
             },
           ],
@@ -49,7 +49,7 @@ describe("extractConceptUris", () => {
             educationLevel: [
               {
                 "@type": "EducationLevelCodingAnnotation",
-                codedValue: { "@id": "esea:C00002" },
+                codedValue: { "@id": "esea:EducationLevelScheme/C00002" },
                 status: "evrepo:coded",
               },
             ],
@@ -60,9 +60,9 @@ describe("extractConceptUris", () => {
 
     const uris = await extractConceptUris(data);
 
-    expect(uris).toContain("https://vocab.esea.education/C00008");
-    expect(uris).toContain("https://vocab.esea.education/C00040");
-    expect(uris).toContain("https://vocab.esea.education/C00002");
+    expect(uris).toContain("https://vocab.esea.education/DocumentTypeScheme/C00008");
+    expect(uris).toContain("https://vocab.esea.education/EducationThemeScheme/C00040");
+    expect(uris).toContain("https://vocab.esea.education/EducationLevelScheme/C00002");
     expect(uris.size).toBe(3);
   });
 

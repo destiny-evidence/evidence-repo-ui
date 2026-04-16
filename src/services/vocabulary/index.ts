@@ -9,18 +9,10 @@ export { extractConceptUris } from "./enhancementParser";
 export async function createVocabularyResolver(
   vocabularyUrl: string,
 ): Promise<VocabularyResolver> {
-  const { byUri, byIdentifier } = await getCachedVocabulary(vocabularyUrl);
+  const labels = await getCachedVocabulary(vocabularyUrl);
   return {
     getLabel(fullUri: string): string | undefined {
-      const exact = byUri.get(fullUri);
-      if (exact !== undefined) return exact;
-
-      // TEMPORARY WORKAROUND (taxonomy-builder#194): fall back to identifier
-      // lookup when the URI doesn't include the scheme path segment.
-      const identifier = fullUri.split("/").pop();
-      if (identifier) return byIdentifier.get(identifier);
-
-      return undefined;
+      return labels.get(fullUri);
     },
   };
 }

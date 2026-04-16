@@ -54,26 +54,22 @@ describe("buildConceptLabels", () => {
     // Use a short delay to be safe.
     return new Promise<void>((resolve) => {
       setTimeout(() => {
-        const { byUri, byIdentifier } = buildConceptLabels(store);
+        const labels = buildConceptLabels(store);
 
-        expect(byUri.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
+        expect(labels.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
           "Journal Article",
         );
-        expect(byUri.get("https://vocab.esea.education/EducationLevelScheme/C00002")).toBe(
+        expect(labels.get("https://vocab.esea.education/EducationLevelScheme/C00002")).toBe(
           "Primary Education",
         );
 
         // ConceptScheme and owl:Class should not be included
-        expect(byUri.has("https://vocab.esea.education/DocumentTypeScheme")).toBe(false);
-        expect(byUri.has("https://vocab.esea.education/EducationLevelCodingAnnotation")).toBe(
+        expect(labels.has("https://vocab.esea.education/DocumentTypeScheme")).toBe(false);
+        expect(labels.has("https://vocab.esea.education/EducationLevelCodingAnnotation")).toBe(
           false,
         );
 
-        expect(byUri.size).toBe(2);
-
-        // TEMPORARY WORKAROUND (taxonomy-builder#194): identifier fallback
-        expect(byIdentifier.get("C00008")).toBe("Journal Article");
-        expect(byIdentifier.get("C00002")).toBe("Primary Education");
+        expect(labels.size).toBe(2);
         resolve();
       }, 100);
     });
@@ -93,13 +89,13 @@ describe("fetchVocabulary", () => {
       }),
     );
 
-    const { byUri } = await fetchVocabulary("https://vocab.example.org/v1");
+    const labels = await fetchVocabulary("https://vocab.example.org/v1");
 
     expect(fetch).toHaveBeenCalledWith("https://vocab.example.org/v1.jsonld");
-    expect(byUri.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
+    expect(labels.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
       "Journal Article",
     );
-    expect(byUri.get("https://vocab.esea.education/EducationLevelScheme/C00002")).toBe(
+    expect(labels.get("https://vocab.esea.education/EducationLevelScheme/C00002")).toBe(
       "Primary Education",
     );
   });
