@@ -1,6 +1,8 @@
 import { useState, useEffect } from "preact/hooks";
 import { getCachedVocabulary } from "@/services/vocabulary";
 
+// Vocabulary URLs are immutable (versioned), so this hook does not handle
+// cleanup on unmount or stale-data clearing on URL change.
 export function useVocabulary(vocabularyUrl: string | undefined): {
   labels: Map<string, string> | null;
   loading: boolean;
