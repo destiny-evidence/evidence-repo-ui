@@ -1,7 +1,9 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import {
   fetchContext,
+  getCachedContext,
   expandCompactUri,
+  _resetContextCache,
 } from "@/services/vocabulary/contextService";
 
 const MOCK_CONTEXT_DOC = {
@@ -27,12 +29,8 @@ beforeEach(() => {
 
 describe("fetchContext", () => {
   test("fetches and extracts prefix mappings", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(MOCK_CONTEXT_DOC),
-      }),
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(MOCK_CONTEXT_DOC), { status: 200 }),
     );
 
     const result = await fetchContext("https://vocab.esea.education/context/v1.jsonld");
@@ -52,14 +50,34 @@ describe("fetchContext", () => {
   });
 
   test("throws on HTTP error", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: false, status: 404 }),
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("Not found", { status: 404 }),
     );
 
     await expect(fetchContext("https://missing.example/ctx")).rejects.toThrow(
       "Failed to fetch context: 404",
     );
+  });
+});
+
+describe("getCachedContext", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    _resetContextCache();
+  });
+
+  test("deduplicates concurrent requests for the same URL", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(MOCK_CONTEXT_DOC), { status: 200 }),
+    );
+
+    const [a, b] = await Promise.all([
+      getCachedContext("https://vocab.esea.education/context/v1.jsonld"),
+      getCachedContext("https://vocab.esea.education/context/v1.jsonld"),
+    ]);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(a).toBe(b);
   });
 });
 

@@ -3,6 +3,7 @@ import {
   buildConceptLabels,
   fetchVocabulary,
   getCachedVocabulary,
+  _resetVocabularyCache,
 } from "@/services/vocabulary/vocabularyService";
 
 const SAMPLE_VOCABULARY = {
@@ -103,6 +104,7 @@ describe("fetchVocabulary", () => {
 describe("getCachedVocabulary", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    _resetVocabularyCache();
   });
 
   it("deduplicates concurrent requests for the same URL", async () => {

@@ -38,6 +38,11 @@ export async function fetchContext(
 
 const contextCache = new Map<string, Promise<ContextPrefixes>>();
 
+/** @internal Clear the context cache. Exported for testing only. */
+export function _resetContextCache(): void {
+  contextCache.clear();
+}
+
 /** Cached context fetch — deduplicates concurrent requests. */
 export function getCachedContext(
   contextUrl: string,
