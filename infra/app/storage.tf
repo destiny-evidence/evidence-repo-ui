@@ -9,8 +9,6 @@ resource "azurerm_storage_account" "frontend" {
   account_kind             = "StorageV2"
 
   allow_nested_items_to_be_public = true
-
-
 }
 
 resource "azurerm_storage_account_static_website" "frontend" {
