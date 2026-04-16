@@ -1,6 +1,5 @@
 .record-detail-page {
   padding: var(--spacing-xl);
-  background-color: var(--color-bg);
   flex: 1;
 }
 
