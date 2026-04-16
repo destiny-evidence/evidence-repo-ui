@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, waitFor } from "@testing-library/preact";
-import { useVocabulary } from "@/hooks/useVocabularyResolver";
+import { useVocabulary } from "@/hooks/useVocabulary";
 
 const SAMPLE_VOCABULARY_JSONLD = JSON.stringify({
   "@context": {
