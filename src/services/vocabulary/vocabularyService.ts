@@ -44,8 +44,8 @@ export function buildConceptLabels(
 /**
  * Fetch a vocabulary.jsonld file and build the concept label map.
  *
- * @param vocabularyUrl Base vocabulary URL without extension or trailing slash
- *   (e.g. "https://vocab.example.org/v1"). ".jsonld" is appended automatically.
+ * @param vocabularyUrl Vocabulary URL — any existing extension or trailing slash
+ *   is normalized to ".jsonld" automatically.
  */
 export async function fetchVocabulary(
   vocabularyUrl: string,
