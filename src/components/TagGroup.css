@@ -1,7 +1,7 @@
 .tag-group {
   display: flex;
   align-items: baseline;
-  gap: 7px;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 

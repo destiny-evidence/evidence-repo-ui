@@ -39,7 +39,11 @@ function formatAuthors(
   authors: Authorship[],
   year: number | null,
 ): string {
-  const names = authors.map((a) => a.display_name).join(", ");
+  const MAX_AUTHORS = 5;
+  const truncated = authors.length > MAX_AUTHORS
+    ? [...authors.slice(0, MAX_AUTHORS).map((a) => a.display_name), "et al."]
+    : authors.map((a) => a.display_name);
+  const names = truncated.join(", ");
   return year ? `${names} (${year})` : names;
 }
 
