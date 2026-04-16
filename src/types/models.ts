@@ -112,6 +112,7 @@ export interface Enhancement {
   visibility: Visibility;
   robot_version: string | null;
   derived_from: string[] | null;
+  created_at: string | null;
   content: EnhancementContent;
 }
 

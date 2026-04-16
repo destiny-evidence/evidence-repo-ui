@@ -1,5 +1,3 @@
-import { proxyVocabUrl } from "@/config";
-
 export interface ContextPrefixes {
   prefixes: Map<string, string>;
 }
@@ -25,6 +23,8 @@ function extractPrefixes(doc: Record<string, unknown>): Map<string, string> {
 /**
  * Fetch a JSON-LD context document and extract prefix mappings.
  */
+import { proxyVocabUrl } from "@/config";
+
 export async function fetchContext(
   contextUrl: string,
 ): Promise<ContextPrefixes> {

@@ -19,6 +19,7 @@ function makeEnhancement(content: Enhancement["content"]): Enhancement {
     visibility: "public",
     robot_version: null,
     derived_from: null,
+    created_at: null,
     content,
   };
 }

@@ -30,6 +30,7 @@ function makeReference(overrides: Partial<Reference> = {}): Reference {
         visibility: "public",
         robot_version: null,
         derived_from: null,
+        created_at: null,
         content: {
           enhancement_type: "bibliographic",
           authorship: [
@@ -56,6 +57,7 @@ function makeReference(overrides: Partial<Reference> = {}): Reference {
         visibility: "public",
         robot_version: "0.1.0",
         derived_from: null,
+        created_at: null,
         content: {
           enhancement_type: "linked_data",
           vocabulary_uri: "https://vocab.example/v1",
@@ -172,6 +174,7 @@ describe("RecordDetailPage", () => {
           visibility: "public",
           robot_version: null,
           derived_from: null,
+        created_at: null,
           content: {
             enhancement_type: "bibliographic",
             authorship: [
