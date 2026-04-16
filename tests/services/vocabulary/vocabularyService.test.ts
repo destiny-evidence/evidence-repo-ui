@@ -1,17 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { graph, parse } from "rdflib";
 import {
   buildConceptLabels,
   fetchVocabulary,
 } from "@/services/vocabulary/vocabularyService";
 
-const SAMPLE_VOCABULARY_JSONLD = JSON.stringify({
+const SAMPLE_VOCABULARY = {
   "@context": {
     skos: "http://www.w3.org/2004/02/skos/core#",
     esea: "https://vocab.esea.education/",
-    owl: "http://www.w3.org/2002/07/owl#",
-    rdfs: "http://www.w3.org/2000/01/rdf-schema#",
-    rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
   },
   "@graph": [
     {
@@ -37,25 +33,11 @@ const SAMPLE_VOCABULARY_JSONLD = JSON.stringify({
       "rdfs:label": "Education Level Coding Annotation",
     },
   ],
-});
+};
 
 describe("buildConceptLabels", () => {
-  it("extracts labels for skos:Concept entries only", async () => {
-    const store = graph();
-    await new Promise<void>((resolve, reject) => {
-      parse(
-        SAMPLE_VOCABULARY_JSONLD,
-        store,
-        "https://example.org/vocab",
-        "application/ld+json",
-        (error) => {
-          if (error) reject(error);
-          else resolve();
-        },
-      );
-    });
-
-    const labels = buildConceptLabels(store);
+  it("extracts labels for skos:Concept entries only", () => {
+    const labels = buildConceptLabels(SAMPLE_VOCABULARY);
 
     expect(labels.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
       "Journal Article",
@@ -65,10 +47,8 @@ describe("buildConceptLabels", () => {
     );
 
     // ConceptScheme and owl:Class should not be included
-    expect(labels.has("https://vocab.esea.education/DocumentTypeScheme")).toBe(false);
-    expect(labels.has("https://vocab.esea.education/EducationLevelCodingAnnotation")).toBe(
-      false,
-    );
+    expect(labels.has("esea:DocumentTypeScheme")).toBe(false);
+    expect(labels.has("esea:EducationLevelCodingAnnotation")).toBe(false);
 
     expect(labels.size).toBe(2);
   });
@@ -81,7 +61,7 @@ describe("fetchVocabulary", () => {
 
   it("fetches and parses vocabulary into a label map", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(SAMPLE_VOCABULARY_JSONLD, {
+      new Response(JSON.stringify(SAMPLE_VOCABULARY), {
         status: 200,
         headers: { "Content-Type": "application/ld+json" },
       }),

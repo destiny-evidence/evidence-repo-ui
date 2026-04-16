@@ -1,32 +1,40 @@
-import { graph, parse, Namespace, NamedNode } from "rdflib";
+type Dict = Record<string, unknown>;
 
-const EVREPO = Namespace("https://vocab.evidence-repository.org/");
+function isDict(v: unknown): v is Dict {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
 
 /**
- * Parse a linked data enhancement's JSON-LD data and extract all concept URIs
- * referenced via evrepo:codedValue triples.
+ * Recursively walk a JSON-LD enhancement and collect all concept URIs
+ * referenced via codedValue entries that have an @id (URI references).
  *
- * rdflib expands compact URIs using the @context during parsing, so the
- * returned URIs are fully expanded.
+ * Numeric (@value with xsd:integer) and string (@value with xsd:string)
+ * coded values are excluded — only URI concept references are returned.
  */
-export async function extractConceptUris(
-  data: object,
-): Promise<Set<string>> {
-  const text = JSON.stringify(data);
-  const store = graph();
-
-  await new Promise<void>((resolve, reject) => {
-    parse(text, store, "urn:enhancement:", "application/ld+json", (error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
-
+export function extractConceptUris(data: object): Set<string> {
   const concepts = new Set<string>();
-  for (const st of store.match(null, EVREPO("codedValue"), null)) {
-    if (st.object instanceof NamedNode) {
-      concepts.add(st.object.value);
+  walk(data as Dict, concepts);
+  return concepts;
+}
+
+function walk(node: Dict, concepts: Set<string>): void {
+  const codedValue = node["codedValue"];
+  if (isDict(codedValue)) {
+    const id = codedValue["@id"];
+    if (typeof id === "string") {
+      concepts.add(id);
     }
   }
-  return concepts;
+
+  for (const value of Object.values(node)) {
+    if (isDict(value)) {
+      walk(value, concepts);
+    } else if (Array.isArray(value)) {
+      for (const item of value) {
+        if (isDict(item)) {
+          walk(item, concepts);
+        }
+      }
+    }
+  }
 }

@@ -26,13 +26,13 @@ export function getVocabularyResolver(
 
 /**
  * Parse enhancement data and resolve all coded concept URIs to labels.
- * Returns a map of full concept URI → human-readable label.
+ * Returns a map of concept URI → human-readable label.
  */
-export async function resolveEnhancementLabels(
+export function resolveEnhancementLabels(
   data: object,
   resolver: VocabularyResolver,
-): Promise<Map<string, string>> {
-  const conceptUris = await extractConceptUris(data);
+): Map<string, string> {
+  const conceptUris = extractConceptUris(data);
   const resolved = new Map<string, string>();
   for (const uri of conceptUris) {
     const label = resolver.getLabel(uri);
