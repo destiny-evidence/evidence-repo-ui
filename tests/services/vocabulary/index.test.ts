@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  createVocabularyResolver,
-  resolveEnhancementLabels,
-} from "@/services/vocabulary";
+import { getCachedVocabulary, extractConceptUris } from "@/services/vocabulary";
 
 const SAMPLE_VOCABULARY_JSONLD = JSON.stringify({
   "@context": {
@@ -23,42 +20,31 @@ const SAMPLE_VOCABULARY_JSONLD = JSON.stringify({
   ],
 });
 
-describe("createVocabularyResolver", () => {
+describe("getCachedVocabulary", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("creates a resolver that looks up labels by full URI", async () => {
+  it("returns a label map keyed by full URI", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(SAMPLE_VOCABULARY_JSONLD, { status: 200 }),
     );
 
-    const resolver = await createVocabularyResolver("https://vocab.example.org/v1");
+    const labels = await getCachedVocabulary("https://vocab.example.org/v1");
 
     expect(
-      resolver.getLabel("https://vocab.esea.education/DocumentTypeScheme/C00008"),
+      labels.get("https://vocab.esea.education/DocumentTypeScheme/C00008"),
     ).toBe("Journal Article");
     expect(
-      resolver.getLabel("https://vocab.esea.education/EducationLevelScheme/C00002"),
+      labels.get("https://vocab.esea.education/EducationLevelScheme/C00002"),
     ).toBe("Primary Education");
-    expect(resolver.getLabel("https://unknown/uri")).toBeUndefined();
+    expect(labels.get("https://unknown/uri")).toBeUndefined();
   });
 });
 
-describe("resolveEnhancementLabels", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it("resolves concept URIs to labels when URIs are already expanded", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(SAMPLE_VOCABULARY_JSONLD, { status: 200 }),
-    );
-
-    const resolver = await createVocabularyResolver("https://vocab.example.org/v1");
-
-    // Enhancement data with full URIs (as they would be after context expansion)
-    const enhancementData = {
+describe("extractConceptUris", () => {
+  it("extracts URI concept references from enhancement data", () => {
+    const data = {
       "@type": "Investigation",
       documentType: {
         "@type": "DocumentTypeCodingAnnotation",
@@ -68,10 +54,9 @@ describe("resolveEnhancementLabels", () => {
       },
     };
 
-    const labels = resolveEnhancementLabels(enhancementData, resolver);
-
-    expect(labels.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
-      "Journal Article",
+    const uris = extractConceptUris(data);
+    expect(uris).toContain(
+      "https://vocab.esea.education/DocumentTypeScheme/C00008",
     );
   });
 });

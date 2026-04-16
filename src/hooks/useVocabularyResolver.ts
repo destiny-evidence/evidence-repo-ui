@@ -1,15 +1,12 @@
 import { useState, useEffect } from "preact/hooks";
-import {
-  getVocabularyResolver,
-  type VocabularyResolver,
-} from "@/services/vocabulary";
+import { getCachedVocabulary } from "@/services/vocabulary";
 
-export function useVocabularyResolver(vocabularyUrl: string | undefined): {
-  resolver: VocabularyResolver | null;
+export function useVocabulary(vocabularyUrl: string | undefined): {
+  labels: Map<string, string> | null;
   loading: boolean;
   error: Error | null;
 } {
-  const [resolver, setResolver] = useState<VocabularyResolver | null>(null);
+  const [labels, setLabels] = useState<Map<string, string> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -19,11 +16,11 @@ export function useVocabularyResolver(vocabularyUrl: string | undefined): {
     setLoading(true);
     setError(null);
 
-    getVocabularyResolver(vocabularyUrl)
-      .then(setResolver)
+    getCachedVocabulary(vocabularyUrl)
+      .then(setLabels)
       .catch(setError)
       .finally(() => setLoading(false));
   }, [vocabularyUrl]);
 
-  return { resolver, loading, error };
+  return { labels, loading, error };
 }
