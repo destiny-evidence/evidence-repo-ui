@@ -40,39 +40,37 @@ const SAMPLE_VOCABULARY_JSONLD = JSON.stringify({
 });
 
 describe("buildConceptLabels", () => {
-  it("extracts labels for skos:Concept entries only", () => {
+  it("extracts labels for skos:Concept entries only", async () => {
     const store = graph();
-    parse(
-      SAMPLE_VOCABULARY_JSONLD,
-      store,
-      "https://example.org/vocab",
-      "application/ld+json",
+    await new Promise<void>((resolve, reject) => {
+      parse(
+        SAMPLE_VOCABULARY_JSONLD,
+        store,
+        "https://example.org/vocab",
+        "application/ld+json",
+        (error) => {
+          if (error) reject(error);
+          else resolve();
+        },
+      );
+    });
+
+    const labels = buildConceptLabels(store);
+
+    expect(labels.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
+      "Journal Article",
+    );
+    expect(labels.get("https://vocab.esea.education/EducationLevelScheme/C00002")).toBe(
+      "Primary Education",
     );
 
-    // rdflib JSON-LD parsing is async via callback, but for small docs
-    // the store is populated synchronously before the callback fires.
-    // Use a short delay to be safe.
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        const labels = buildConceptLabels(store);
+    // ConceptScheme and owl:Class should not be included
+    expect(labels.has("https://vocab.esea.education/DocumentTypeScheme")).toBe(false);
+    expect(labels.has("https://vocab.esea.education/EducationLevelCodingAnnotation")).toBe(
+      false,
+    );
 
-        expect(labels.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
-          "Journal Article",
-        );
-        expect(labels.get("https://vocab.esea.education/EducationLevelScheme/C00002")).toBe(
-          "Primary Education",
-        );
-
-        // ConceptScheme and owl:Class should not be included
-        expect(labels.has("https://vocab.esea.education/DocumentTypeScheme")).toBe(false);
-        expect(labels.has("https://vocab.esea.education/EducationLevelCodingAnnotation")).toBe(
-          false,
-        );
-
-        expect(labels.size).toBe(2);
-        resolve();
-      }, 100);
-    });
+    expect(labels.size).toBe(2);
   });
 });
 
