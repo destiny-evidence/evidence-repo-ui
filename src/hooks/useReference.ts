@@ -12,10 +12,17 @@ export function useReference(id: string | undefined): {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setReference(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
-    setLoading(true);
+    setReference(null);
     setError(null);
+    setLoading(true);
     getReference(id)
       .then((ref) => {
         if (!cancelled) setReference(ref);
