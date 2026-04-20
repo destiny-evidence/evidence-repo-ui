@@ -83,3 +83,10 @@
   border-top: 1px solid var(--color-border);
   margin: var(--spacing-md) 0;
 }
+
+.investigation-card__vocab-error {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  margin: 0 0 var(--spacing-sm);
+}

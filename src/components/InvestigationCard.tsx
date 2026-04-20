@@ -13,6 +13,8 @@ interface InvestigationCardProps {
   publicationYear: number | null;
   documentType?: CodedAnnotation<ResolvedConcept>;
   isRetracted: boolean;
+  hasInvestigation: boolean;
+  vocabUnavailable: boolean;
 }
 
 function formatVenue(
@@ -56,8 +58,11 @@ export function InvestigationCard({
   publicationYear,
   documentType,
   isRetracted,
+  hasInvestigation,
+  vocabUnavailable,
 }: InvestigationCardProps) {
   const venueText = formatVenue(venue, pagination);
+  const hasInvestigationContent = documentType || vocabUnavailable;
 
   return (
     <>
@@ -73,7 +78,9 @@ export function InvestigationCard({
       <article
         class={`investigation-card${isRetracted ? " investigation-card--retracted" : ""}`}
       >
-        <span class="investigation-card__kicker">Investigation</span>
+        {hasInvestigation && (
+          <span class="investigation-card__kicker">Investigation</span>
+        )}
         {title && <h1 class="investigation-card__title">{title}</h1>}
         {authors && authors.length > 0 && (
           <p class="investigation-card__authors">{formatAuthors(authors, publicationYear)}</p>
@@ -95,12 +102,21 @@ export function InvestigationCard({
             </span>
           </a>
         )}
-        <hr class="investigation-card__divider" />
-        {documentType && (
-          <TagGroup
-            label="Doc Type"
-            tags={[documentType.value.label ?? documentType.value.uri]}
-          />
+        {hasInvestigationContent && (
+          <>
+            <hr class="investigation-card__divider" />
+            {vocabUnavailable && (
+              <p class="investigation-card__vocab-error">
+                Vocabulary unavailable — some labels could not be resolved.
+              </p>
+            )}
+            {documentType && (
+              <TagGroup
+                label="Doc Type"
+                tags={[documentType.value.label ?? documentType.value.uri]}
+              />
+            )}
+          </>
         )}
       </article>
     </>

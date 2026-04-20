@@ -17,7 +17,7 @@ function shouldSkip(node: Dict, prefixes: Map<string, string>): boolean {
   const status = node["status"];
   if (typeof status !== "string") return false;
   const expanded = expandCompactUri(status, prefixes);
-  const local = expanded.split("/").pop() ?? expanded;
+  const local = expanded.split(/[/#]/).pop() ?? expanded;
   return SKIP_STATUSES.includes(local);
 }
 
@@ -33,6 +33,18 @@ function resolveConceptAnnotation(
   if (typeof id !== "string") return null;
   const uri = expandCompactUri(id, prefixes);
   return { value: { uri, label: labels.get(uri) } };
+}
+
+/**
+ * Extract the isRetracted flag directly from raw linked data, without
+ * needing vocabulary or context resolution. This ensures retraction state
+ * is always available even when vocab/context fetches fail.
+ */
+export function extractIsRetracted(data: Record<string, unknown>): boolean {
+  const investigation = isDict(data["hasInvestigation"])
+    ? (data["hasInvestigation"] as Dict)
+    : data;
+  return investigation["isRetracted"] === true;
 }
 
 /**

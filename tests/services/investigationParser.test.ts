@@ -1,5 +1,8 @@
 import { describe, test, expect } from "vitest";
-import { parseInvestigation } from "@/services/investigationParser";
+import {
+  parseInvestigation,
+  extractIsRetracted,
+} from "@/services/investigationParser";
 
 const PREFIXES = new Map([
   ["esea", "https://vocab.esea.education/"],
@@ -80,6 +83,16 @@ describe("parseInvestigation", () => {
   test("defaults isRetracted to false", () => {
     const data = makeData({});
     expect(parseInvestigation(data, PREFIXES, LABELS).isRetracted).toBe(false);
+  });
+
+  test("extractIsRetracted returns true when set", () => {
+    const data = makeData({ isRetracted: true });
+    expect(extractIsRetracted(data)).toBe(true);
+  });
+
+  test("extractIsRetracted returns false when not set", () => {
+    const data = makeData({});
+    expect(extractIsRetracted(data)).toBe(false);
   });
 
   test("handles root as Investigation directly (no hasInvestigation wrapper)", () => {

@@ -133,7 +133,7 @@ describe("RecordDetailPage", () => {
     });
     render(<RecordDetailPage community="esea" id="abc" />);
     expect(
-      screen.getByText("Failed to load reference: Network failure"),
+      screen.getByText("We couldn't load this reference."),
     ).toBeDefined();
   });
 

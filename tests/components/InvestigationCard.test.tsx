@@ -24,6 +24,8 @@ const DEFAULT_PROPS = {
     },
   },
   isRetracted: false,
+  hasInvestigation: true,
+  vocabUnavailable: false,
 };
 
 describe("InvestigationCard", () => {
@@ -80,6 +82,33 @@ describe("InvestigationCard", () => {
     );
   });
 
+  test("hides kicker and divider when no investigation data", () => {
+    const { container } = render(
+      <InvestigationCard
+        {...DEFAULT_PROPS}
+        hasInvestigation={false}
+        documentType={undefined}
+      />,
+    );
+
+    expect(screen.queryByText("Investigation")).toBeNull();
+    expect(container.querySelector(".investigation-card__divider")).toBeNull();
+  });
+
+  test("shows vocab unavailable message on resolution failure", () => {
+    render(
+      <InvestigationCard
+        {...DEFAULT_PROPS}
+        documentType={undefined}
+        vocabUnavailable={true}
+      />,
+    );
+
+    expect(
+      screen.getByText(/Vocabulary unavailable/),
+    ).toBeDefined();
+  });
+
   test("renders gracefully with missing optional fields", () => {
     const { container } = render(
       <InvestigationCard
@@ -91,10 +120,12 @@ describe("InvestigationCard", () => {
         publicationYear={null}
         documentType={undefined}
         isRetracted={false}
+        hasInvestigation={false}
+        vocabUnavailable={false}
       />,
     );
 
-    expect(screen.getByText("Investigation")).toBeDefined();
+    expect(screen.queryByText("Investigation")).toBeNull();
     expect(container.querySelector(".investigation-card__title")).toBeNull();
     expect(container.querySelector(".investigation-card__authors")).toBeNull();
     expect(container.querySelector(".investigation-card__venue")).toBeNull();

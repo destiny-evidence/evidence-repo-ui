@@ -5,7 +5,10 @@ import {
   extractLinkedData,
   extractDoi,
 } from "@/services/referenceUtils";
-import { parseInvestigation } from "@/services/investigationParser";
+import {
+  parseInvestigation,
+  extractIsRetracted,
+} from "@/services/investigationParser";
 import { useReference } from "@/hooks/useReference";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
@@ -26,17 +29,28 @@ export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps)
   const bibliographic = reference ? extractBibliographic(reference) : null;
   const linkedData = reference ? extractLinkedData(reference) : null;
 
-  const { labels, loading: vocabLoading } = useVocabulary(
+  const { labels, loading: vocabLoading, error: vocabError } = useVocabulary(
     linkedData?.vocabulary_uri,
   );
   const rawContext = linkedData?.data?.["@context"];
   const contextUrl = typeof rawContext === "string" ? rawContext : undefined;
-  const { context, loading: ctxLoading } = useContextPrefixes(contextUrl);
+  const { context, loading: ctxLoading, error: ctxError } =
+    useContextPrefixes(contextUrl);
 
   const investigation = useMemo(() => {
     if (!linkedData?.data || !context || !labels) return null;
     return parseInvestigation(linkedData.data, context.prefixes, labels);
   }, [linkedData, context, labels]);
+
+  // isRetracted is extracted directly from the data dict so it's available
+  // even when vocabulary/context resolution fails
+  const isRetracted = linkedData?.data
+    ? extractIsRetracted(linkedData.data)
+    : false;
+
+  const hasLinkedData = linkedData !== null;
+  const vocabUnavailable =
+    hasLinkedData && !vocabLoading && !ctxLoading && (vocabError || ctxError);
 
   if (!community) return <NotFoundPage />;
 
@@ -54,7 +68,7 @@ export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps)
     return (
       <div class="record-detail-page">
         <div class="record-detail-page__container">
-          <p>Failed to load reference: {refError.message}</p>
+          <p>We couldn't load this reference.</p>
         </div>
       </div>
     );
@@ -75,7 +89,9 @@ export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps)
           doi={doi}
           publicationYear={bibliographic?.publication_year ?? null}
           documentType={investigation?.documentType}
-          isRetracted={investigation?.isRetracted ?? false}
+          isRetracted={isRetracted}
+          hasInvestigation={hasLinkedData}
+          vocabUnavailable={!!vocabUnavailable}
         />
       </div>
     </div>
