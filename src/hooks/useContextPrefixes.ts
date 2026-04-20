@@ -2,8 +2,6 @@ import { useState, useEffect } from "preact/hooks";
 import type { ContextPrefixes } from "@/services/vocabulary/contextService";
 import { getCachedContext } from "@/services/vocabulary/contextService";
 
-// Context URLs are immutable (versioned), so this hook does not handle
-// cleanup on unmount or stale-data clearing on URL change.
 export function useContextPrefixes(contextUrl: string | undefined): {
   context: ContextPrefixes | null;
   loading: boolean;
@@ -14,13 +12,21 @@ export function useContextPrefixes(contextUrl: string | undefined): {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!contextUrl) return;
+    if (!contextUrl) {
+      setContext(null);
+      return;
+    }
+    let cancelled = false;
+
     setLoading(true);
     setError(null);
+
     getCachedContext(contextUrl)
-      .then(setContext)
-      .catch(setError)
-      .finally(() => setLoading(false));
+      .then((r) => { if (!cancelled) setContext(r); })
+      .catch((e) => { if (!cancelled) setError(e); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
   }, [contextUrl]);
 
   return { context, loading, error };
