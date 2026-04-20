@@ -11,7 +11,10 @@ import type {
   LinkedDataEnhancement,
 } from "@/types/models";
 
-function makeEnhancement(content: Enhancement["content"]): Enhancement {
+function makeEnhancement(
+  content: Enhancement["content"],
+  createdAt: string | null = null,
+): Enhancement {
   return {
     id: null,
     reference_id: "ref-1",
@@ -19,7 +22,7 @@ function makeEnhancement(content: Enhancement["content"]): Enhancement {
     visibility: "public",
     robot_version: null,
     derived_from: null,
-    created_at: null,
+    created_at: createdAt,
     content,
   };
 }
@@ -67,8 +70,8 @@ describe("extractBibliographic", () => {
     expect(extractBibliographic(ref)).toBe(bib);
   });
 
-  test("returns the last bibliographic enhancement when multiple exist", () => {
-    const bib1: BibliographicMetadataEnhancement = {
+  test("returns the most recent bibliographic enhancement by created_at", () => {
+    const older: BibliographicMetadataEnhancement = {
       enhancement_type: "bibliographic",
       authorship: null,
       cited_by_count: null,
@@ -77,11 +80,11 @@ describe("extractBibliographic", () => {
       publication_date: null,
       publication_year: 2020,
       publisher: null,
-      title: "First",
+      title: "Older",
       pagination: null,
       publication_venue: null,
     };
-    const bib2: BibliographicMetadataEnhancement = {
+    const newer: BibliographicMetadataEnhancement = {
       enhancement_type: "bibliographic",
       authorship: null,
       cited_by_count: null,
@@ -90,12 +93,15 @@ describe("extractBibliographic", () => {
       publication_date: null,
       publication_year: 2024,
       publisher: null,
-      title: "Second",
+      title: "Newer",
       pagination: null,
       publication_venue: null,
     };
-    const ref = makeRef([makeEnhancement(bib1), makeEnhancement(bib2)]);
-    expect(extractBibliographic(ref)).toBe(bib2);
+    const ref = makeRef([
+      makeEnhancement(newer, "2026-01-01T00:00:00Z"),
+      makeEnhancement(older, "2025-01-01T00:00:00Z"),
+    ]);
+    expect(extractBibliographic(ref)).toBe(newer);
   });
 });
 
@@ -125,19 +131,22 @@ describe("extractLinkedData", () => {
     expect(extractLinkedData(ref)).toBe(ld);
   });
 
-  test("returns the last linked_data enhancement when multiple exist", () => {
-    const ld1: LinkedDataEnhancement = {
+  test("returns the most recent linked_data enhancement by created_at", () => {
+    const older: LinkedDataEnhancement = {
       enhancement_type: "linked_data",
-      vocabulary_uri: "http://first.com",
+      vocabulary_uri: "http://older.com",
       data: { n: 1 },
     };
-    const ld2: LinkedDataEnhancement = {
+    const newer: LinkedDataEnhancement = {
       enhancement_type: "linked_data",
-      vocabulary_uri: "http://second.com",
+      vocabulary_uri: "http://newer.com",
       data: { n: 2 },
     };
-    const ref = makeRef([makeEnhancement(ld1), makeEnhancement(ld2)]);
-    expect(extractLinkedData(ref)).toBe(ld2);
+    const ref = makeRef([
+      makeEnhancement(newer, "2026-02-01T00:00:00Z"),
+      makeEnhancement(older, "2025-01-01T00:00:00Z"),
+    ]);
+    expect(extractLinkedData(ref)).toBe(newer);
   });
 });
 
