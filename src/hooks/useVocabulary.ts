@@ -13,10 +13,13 @@ export function useVocabulary(vocabularyUrl: string | undefined): {
   useEffect(() => {
     if (!vocabularyUrl) {
       setLabels(null);
+      setError(null);
+      setLoading(false);
       return;
     }
     let cancelled = false;
 
+    setLabels(null);
     setLoading(true);
     setError(null);
 

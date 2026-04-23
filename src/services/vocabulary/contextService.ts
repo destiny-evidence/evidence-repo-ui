@@ -1,3 +1,5 @@
+import { proxyVocabUrl } from "@/config";
+
 export interface ContextPrefixes {
   prefixes: Map<string, string>;
 }
@@ -26,7 +28,7 @@ function extractPrefixes(doc: Record<string, unknown>): Map<string, string> {
 export async function fetchContext(
   contextUrl: string,
 ): Promise<ContextPrefixes> {
-  const response = await fetch(contextUrl);
+  const response = await fetch(proxyVocabUrl(contextUrl));
   if (!response.ok) {
     throw new Error(
       `Failed to fetch context: ${response.status} ${contextUrl}`,

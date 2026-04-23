@@ -14,10 +14,13 @@ export function useContextPrefixes(contextUrl: string | undefined): {
   useEffect(() => {
     if (!contextUrl) {
       setContext(null);
+      setError(null);
+      setLoading(false);
       return;
     }
     let cancelled = false;
 
+    setContext(null);
     setLoading(true);
     setError(null);
 

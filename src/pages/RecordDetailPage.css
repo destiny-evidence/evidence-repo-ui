@@ -1,3 +1,9 @@
 .record-detail-page {
   padding: var(--spacing-xl);
+  flex: 1;
+}
+
+.record-detail-page__container {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
 }

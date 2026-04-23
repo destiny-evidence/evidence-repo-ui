@@ -1,3 +1,5 @@
+import { proxyVocabUrl } from "@/config";
+
 interface JsonLdGraphEntry {
   "@id"?: string;
   "@type"?: string | string[];
@@ -50,7 +52,7 @@ export function buildConceptLabels(
 export async function fetchVocabulary(
   vocabularyUrl: string,
 ): Promise<Map<string, string>> {
-  const url = toJsonLdUrl(vocabularyUrl);
+  const url = proxyVocabUrl(toJsonLdUrl(vocabularyUrl));
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch vocabulary: ${response.status} ${url}`);

@@ -22,12 +22,9 @@ export interface SearchResult {
 }
 
 export interface ExternalIdentifier {
-  identifier: {
-    identifier: string;
-    identifier_type: string | null;
-    other_identifier_name: string | null;
-  };
-  reference_id?: string;
+  identifier: string | number;
+  identifier_type: string | null;
+  other_identifier_name?: string | null;
 }
 
 export type EnhancementType =
