@@ -31,8 +31,6 @@ resource "azurerm_cdn_frontdoor_origin" "frontend" {
 
   enabled                        = true
   host_name                      = azurerm_storage_account.frontend.primary_web_host
-  http_port                      = 80
-  https_port                     = 443
   origin_host_header             = azurerm_storage_account.frontend.primary_web_host
   certificate_name_check_enabled = true
 }
@@ -54,7 +52,7 @@ resource "azurerm_cdn_frontdoor_route" "frontend" {
   cdn_frontdoor_rule_set_ids      = [azurerm_cdn_frontdoor_rule_set.cache.id]
 
   cache {
-    query_string_caching_behavior = "IgnoreQueryString"
+    query_string_caching_behavior = "UseQueryString"
     compression_enabled           = true
     content_types_to_compress     = ["text/html", "application/javascript", "text/css", "application/json"]
   }
@@ -85,7 +83,7 @@ resource "azurerm_cdn_frontdoor_rule" "cache_assets" {
       cache_behavior                = "OverrideAlways"
       cache_duration                = "30.00:00:00"
       compression_enabled           = true
-      query_string_caching_behavior = "IgnoreQueryString"
+      query_string_caching_behavior = "UseQueryString"
     }
     response_header_action {
       header_action = "Overwrite"
