@@ -52,6 +52,25 @@ describe("useVocabulary", () => {
     expect(getByTestId("error").textContent).toBe("none");
   });
 
+  it("resets loading when URL becomes undefined mid-fetch", async () => {
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}));
+
+    const { getByTestId, rerender } = render(
+      <TestComponent vocabularyUrl="https://vocab.example.org/v1" />,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId("loading").textContent).toBe("true");
+    });
+
+    rerender(<TestComponent vocabularyUrl={undefined} />);
+
+    await waitFor(() => {
+      expect(getByTestId("loading").textContent).toBe("false");
+      expect(getByTestId("label").textContent).toBe("unresolved");
+    });
+  });
+
   it("skips fetch when URL is undefined", () => {
     vi.spyOn(globalThis, "fetch");
 

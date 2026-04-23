@@ -46,6 +46,25 @@ describe("useContextPrefixes", () => {
     expect(getByTestId("error").textContent).toBe("none");
   });
 
+  it("resets loading when URL becomes undefined mid-fetch", async () => {
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}));
+
+    const { getByTestId, rerender } = render(
+      <TestComponent contextUrl="https://vocab.esea.education/context/v1.jsonld" />,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId("loading").textContent).toBe("true");
+    });
+
+    rerender(<TestComponent contextUrl={undefined} />);
+
+    await waitFor(() => {
+      expect(getByTestId("loading").textContent).toBe("false");
+      expect(getByTestId("prefix").textContent).toBe("unresolved");
+    });
+  });
+
   it("skips fetch when URL is undefined", () => {
     vi.spyOn(globalThis, "fetch");
 
