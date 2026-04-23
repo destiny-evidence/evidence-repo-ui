@@ -1,0 +1,28 @@
+# Storage account for static website hosting
+resource "azurerm_storage_account" "frontend" {
+  # Storage account name must be 3-24 chars, lowercase letters and numbers only
+  name                     = "fe${local.name_short}"
+  resource_group_name      = azurerm_resource_group.this.name
+  location                 = azurerm_resource_group.this.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  account_kind             = "StorageV2"
+
+  allow_nested_items_to_be_public = true
+}
+
+resource "azurerm_storage_account_static_website" "frontend" {
+  storage_account_id = azurerm_storage_account.frontend.id
+  error_404_document = "index.html"
+  index_document     = "index.html"
+}
+
+output "frontend_static_website_url" {
+  description = "Primary endpoint for the static website"
+  value       = azurerm_storage_account.frontend.primary_web_endpoint
+}
+
+output "frontend_static_website_host" {
+  description = "Host for the static website (without protocol)"
+  value       = azurerm_storage_account.frontend.primary_web_host
+}
