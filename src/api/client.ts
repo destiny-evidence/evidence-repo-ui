@@ -1,4 +1,5 @@
 import { API_BASE } from "@/config";
+import { keycloak } from "@/auth/keycloak";
 
 export class ApiError extends Error {
   constructor(
@@ -16,9 +17,14 @@ async function request<T>(
 ): Promise<T> {
   const { method = "GET", body } = options;
 
+  await keycloak.updateToken(30);
+
   const headers: Record<string, string> = {};
   if (body) {
     headers["Content-Type"] = "application/json";
+  }
+  if (keycloak.token) {
+    headers["Authorization"] = `Bearer ${keycloak.token}`;
   }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {

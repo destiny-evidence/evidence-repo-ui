@@ -73,3 +73,13 @@ variable "dnsimple_account_id" {
   type        = string
 }
 
+variable "api_base" {
+  description = "destiny-repository API base URL, keyed by environment"
+  type        = map(string)
+  default = {
+    development = "https://api.dev.evidence-repository.org"
+    staging     = "https://api.staging.evidence-repository.org"
+    production  = "https://api.evidence-repository.org"
+  }
+}
+

@@ -48,6 +48,9 @@ jobs:
       - name: Build
         env:
           VITE_API_BASE: ${{ vars.VITE_API_BASE }}
+          VITE_KEYCLOAK_URL: ${{ vars.VITE_KEYCLOAK_URL }}
+          VITE_KEYCLOAK_REALM: ${{ vars.VITE_KEYCLOAK_REALM }}
+          VITE_KEYCLOAK_CLIENT_ID: ${{ vars.VITE_KEYCLOAK_CLIENT_ID }}
         run: npm run build
 
       - name: Upload build artifacts

@@ -1,5 +1,5 @@
 locals {
-  name          = "${var.app_name}-${var.environment}"
+  name              = "${var.app_name}-${var.environment}"
   environment_short = substr(var.environment, 0, 4)
   name_short        = "evrepoui${local.environment_short}"
   is_production     = var.environment == "production"
