@@ -9,7 +9,7 @@ test("renders the app header", () => {
 test("renders search page for valid community", () => {
   history.pushState({}, "", "/esea");
   render(<App />);
-  expect(screen.getByText("Search ESEA")).toBeInTheDocument();
+  expect(screen.getByText("Search Education")).toBeInTheDocument();
 });
 
 test("renders record detail page for valid community", () => {
