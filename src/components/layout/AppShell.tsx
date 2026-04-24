@@ -12,6 +12,9 @@ export function AppShell({ children }: AppShellProps) {
         <a href="/" class="app-header__logo">
           Evidence Repository
         </a>
+        <div class="app-header__auth" aria-label="Sign in placeholder">
+          Sign in
+        </div>
       </header>
       <main class="app-main">{children}</main>
     </div>

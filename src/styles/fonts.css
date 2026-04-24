@@ -1,0 +1,42 @@
+@font-face {
+  font-family: "Signifier";
+  src: url("./fonts/signifier-vf-roman.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Signifier";
+  src: url("./fonts/signifier-vf-italic.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Untitled Sans";
+  src: url("./fonts/untitled-sans-vf-roman.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Untitled Sans";
+  src: url("./fonts/untitled-sans-vf-italic.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Söhne Mono";
+  src: url("./fonts/soehne-mono-buch.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Söhne Mono";
+  src: url("./fonts/soehne-mono-kraftig.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}

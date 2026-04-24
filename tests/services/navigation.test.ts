@@ -1,10 +1,10 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
 import { navigate, URL_CHANGE_EVENT } from "@/services/navigation";
 
 describe("navigate", () => {
-  let pushSpy: ReturnType<typeof vi.spyOn>;
-  let replaceSpy: ReturnType<typeof vi.spyOn>;
-  let dispatchSpy: ReturnType<typeof vi.spyOn>;
+  let pushSpy: MockInstance;
+  let replaceSpy: MockInstance;
+  let dispatchSpy: MockInstance;
 
   beforeEach(() => {
     pushSpy = vi.spyOn(history, "pushState");
