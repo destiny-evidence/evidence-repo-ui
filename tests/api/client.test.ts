@@ -1,13 +1,16 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
+import { describe, test, expect, vi, beforeEach, afterAll } from "vitest";
 import { api } from "@/api/client";
 import { keycloak } from "@/auth/keycloak";
 
 const fetchMock = vi.fn();
-vi.stubGlobal("fetch", fetchMock);
 
 beforeEach(() => {
+  vi.stubGlobal("fetch", fetchMock);
   fetchMock.mockReset();
-  vi.mocked(keycloak.updateToken).mockClear();
+});
+
+afterAll(() => {
+  vi.unstubAllGlobals();
 });
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -48,5 +51,14 @@ describe("api client", () => {
       name: "ApiError",
       status: 403,
     });
+  });
+
+  test("redirects to login when token refresh fails", async () => {
+    vi.mocked(keycloak.updateToken).mockRejectedValueOnce(
+      new Error("refresh failed"),
+    );
+    await expect(api.get("/v1/ping")).rejects.toThrow(/Session expired/);
+    expect(keycloak.login).toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

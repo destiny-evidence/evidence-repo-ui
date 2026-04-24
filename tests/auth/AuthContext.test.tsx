@@ -51,9 +51,6 @@ describe("AuthContext", () => {
       </AuthProvider>,
     );
     expect(screen.getByTestId("username")).toHaveTextContent("Refreshed User");
-    // Reset for other tests
-    (keycloak.tokenParsed as { name: string }).name = "Test User";
-    vi.mocked(keycloak.logout).mockClear();
   });
 
   test("useAuth throws when rendered outside provider", () => {

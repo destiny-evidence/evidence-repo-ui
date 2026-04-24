@@ -3,17 +3,40 @@ import { App } from "./App";
 import { initKeycloak } from "./auth/keycloak";
 import "./styles/reset.css";
 import "./styles/variables.css";
+import "./styles/bootstrap.css";
 
 const root = document.getElementById("app")!;
+
+function Loading() {
+  return (
+    <div class="bootstrap">
+      <p>Signing you in…</p>
+    </div>
+  );
+}
+
+function AuthError() {
+  return (
+    <div class="bootstrap">
+      <div class="bootstrap__panel">
+        <p>Unable to sign in.</p>
+        <button
+          type="button"
+          class="bootstrap__retry"
+          onClick={() => location.reload()}
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  );
+}
+
+render(<Loading />, root);
 
 initKeycloak()
   .then(() => render(<App />, root))
   .catch((err) => {
     console.error("Authentication initialization failed", err);
-    render(
-      <div style={{ padding: "2rem" }}>
-        <p>Unable to sign in. Please try again.</p>
-      </div>,
-      root,
-    );
+    render(<AuthError />, root);
   });

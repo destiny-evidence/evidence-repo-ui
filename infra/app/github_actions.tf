@@ -91,21 +91,21 @@ resource "github_actions_environment_variable" "vite_keycloak_url" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment
   variable_name = "VITE_KEYCLOAK_URL"
-  value         = "https://auth.evidence-repository.org"
+  value         = var.shared_keycloak_url
 }
 
 resource "github_actions_environment_variable" "vite_keycloak_realm" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment
   variable_name = "VITE_KEYCLOAK_REALM"
-  value         = "destiny"
+  value         = var.keycloak_realm
 }
 
 resource "github_actions_environment_variable" "vite_keycloak_client_id" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment
   variable_name = "VITE_KEYCLOAK_CLIENT_ID"
-  value         = "evidence-repo-ui-client-${var.environment}"
+  value         = var.keycloak_client_id
 }
 
 resource "github_actions_environment_variable" "frontdoor_resource_group" {

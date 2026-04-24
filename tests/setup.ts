@@ -1,12 +1,17 @@
-import { afterEach, vi } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
 import { cleanup } from "@testing-library/preact";
 import "@testing-library/jest-dom/vitest";
+
+const defaultTokenParsed = () => ({
+  name: "Test User",
+  preferred_username: "testuser",
+});
 
 vi.mock("@/auth/keycloak", () => {
   const keycloak = {
     authenticated: true,
     token: "test-token",
-    tokenParsed: { name: "Test User", preferred_username: "testuser" },
+    tokenParsed: defaultTokenParsed(),
     updateToken: vi.fn().mockResolvedValue(false),
     login: vi.fn(),
     logout: vi.fn(),
@@ -19,6 +24,20 @@ vi.mock("@/auth/keycloak", () => {
     keycloak,
     initKeycloak: vi.fn().mockResolvedValue(undefined),
   };
+});
+
+beforeEach(async () => {
+  const { keycloak } = await import("@/auth/keycloak");
+  keycloak.authenticated = true;
+  keycloak.token = "test-token";
+  keycloak.tokenParsed = defaultTokenParsed();
+  keycloak.onAuthSuccess = undefined;
+  keycloak.onAuthRefreshSuccess = undefined;
+  keycloak.onAuthLogout = undefined;
+  keycloak.onTokenExpired = undefined;
+  vi.mocked(keycloak.updateToken).mockReset().mockResolvedValue(false);
+  vi.mocked(keycloak.login).mockReset();
+  vi.mocked(keycloak.logout).mockReset();
 });
 
 afterEach(() => {

@@ -17,7 +17,12 @@ async function request<T>(
 ): Promise<T> {
   const { method = "GET", body } = options;
 
-  await keycloak.updateToken(30);
+  try {
+    await keycloak.updateToken(30);
+  } catch {
+    await keycloak.login();
+    throw new Error("Session expired; redirecting to sign in.");
+  }
 
   const headers: Record<string, string> = {};
   if (body) {
