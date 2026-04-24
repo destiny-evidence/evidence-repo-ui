@@ -84,7 +84,7 @@ resource "github_actions_environment_variable" "vite_api_base" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment
   variable_name = "VITE_API_BASE"
-  value         = var.api_base[var.environment]
+  value         = var.api_base
 }
 
 resource "github_actions_environment_variable" "vite_keycloak_url" {
