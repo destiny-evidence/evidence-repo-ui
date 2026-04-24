@@ -1,0 +1,78 @@
+.search-bar {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: var(--spacing-sm);
+  align-items: end;
+  padding: var(--spacing-md);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.search-bar__input {
+  height: 44px;
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-body);
+  font-family: var(--font-body);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--color-bg-surface);
+}
+
+.search-bar__input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.search-bar__year-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.search-bar__year-caption {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono-caps);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-tertiary);
+}
+
+.search-bar__year {
+  width: 84px;
+  height: 44px;
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+}
+
+.search-bar__submit {
+  height: 44px;
+  padding: 0 var(--spacing-lg);
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.search-bar__submit:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.search-bar__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.search-bar__validation {
+  grid-column: 1 / -1;
+  color: var(--color-danger);
+  font-size: var(--font-size-small);
+}
