@@ -3,13 +3,13 @@ import { App } from "./App";
 import { initKeycloak } from "./auth/keycloak";
 import "./styles/reset.css";
 import "./styles/variables.css";
-import "./styles/bootstrap.css";
+import "./styles/auth-gate.css";
 
 const root = document.getElementById("app")!;
 
 function Loading() {
   return (
-    <div class="bootstrap">
+    <div class="auth-gate">
       <p>Signing you in…</p>
     </div>
   );
@@ -17,12 +17,12 @@ function Loading() {
 
 function AuthError() {
   return (
-    <div class="bootstrap">
-      <div class="bootstrap__panel">
+    <div class="auth-gate">
+      <div class="auth-gate__panel">
         <p>Unable to sign in.</p>
         <button
           type="button"
-          class="bootstrap__retry"
+          class="auth-gate__retry"
           onClick={() => location.reload()}
         >
           Try again
