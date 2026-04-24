@@ -116,11 +116,42 @@ resource "azurerm_cdn_frontdoor_rule" "html_no_cache" {
   }
 }
 
+# SPA fallback: rewrite extensionless paths to /index.html so the origin
+# returns 200 instead of 404 (blob storage error_404_document preserves the
+# 404 status code, which breaks client-side routing).
+resource "azurerm_cdn_frontdoor_rule" "spa_rewrite" {
+  name                      = "SpaRewrite"
+  cdn_frontdoor_rule_set_id = azurerm_cdn_frontdoor_rule_set.cache.id
+  order                     = 3
+  behavior_on_match         = "Continue"
+
+  conditions {
+    url_file_extension_condition {
+      operator         = "LessThan"
+      match_values     = ["1"]
+      negate_condition = false
+    }
+  }
+
+  actions {
+    url_rewrite_action {
+      source_pattern          = "/"
+      destination             = "/index.html"
+      preserve_unmatched_path = false
+    }
+    response_header_action {
+      header_action = "Overwrite"
+      header_name   = "Cache-Control"
+      value         = "no-cache"
+    }
+  }
+}
+
 # Catch-all: everything not matched above revalidates on every request
 resource "azurerm_cdn_frontdoor_rule" "default_no_cache" {
   name                      = "DefaultNoCache"
   cdn_frontdoor_rule_set_id = azurerm_cdn_frontdoor_rule_set.cache.id
-  order                     = 3
+  order                     = 4
 
   actions {
     response_header_action {
