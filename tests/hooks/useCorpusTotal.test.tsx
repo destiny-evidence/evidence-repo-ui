@@ -81,6 +81,19 @@ describe("useCorpusTotal", () => {
     });
   });
 
+  test("key disambiguates annotation arrays even when an element contains a comma", async () => {
+    mockSearch.mockResolvedValue(result);
+    const c1: Community = { ...community, defaultAnnotations: ["a,b"] };
+    const c2: Community = { ...community, defaultAnnotations: ["a", "b"] };
+    const { rerender } = renderHook(
+      ({ c }) => useCorpusTotal(c),
+      { initialProps: { c: c1 } },
+    );
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    rerender({ c: c2 });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
+  });
+
   test("surfaces error", async () => {
     mockSearch.mockRejectedValue(new Error("boom"));
     const { result: hook } = renderHook(() => useCorpusTotal(community));

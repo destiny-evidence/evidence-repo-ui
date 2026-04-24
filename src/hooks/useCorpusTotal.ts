@@ -24,9 +24,10 @@ export function useCorpusTotal(community: Community): {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-    // Key on slug AND the annotation signature so changes to either
-    // force a refetch. Joining into a string avoids array-identity churn.
-  }, [community.slug, community.defaultAnnotations.join(",")]);
+    // Key on slug AND the annotation signature so changes to either force a
+    // refetch. JSON.stringify is unambiguous for arbitrary strings — join(",")
+    // would collapse ["a,b"] and ["a","b"] to the same key.
+  }, [community.slug, JSON.stringify(community.defaultAnnotations)]);
 
   return { total, loading, error };
 }
