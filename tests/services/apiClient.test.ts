@@ -59,6 +59,60 @@ describe("searchReferences", () => {
     const res = await searchReferences("test");
     expect(res).toBe(result);
   });
+
+  test("trims whitespace from query", async () => {
+    mockedGet.mockResolvedValue(result);
+    await searchReferences("  phonics  ");
+    expect(mockedGet).toHaveBeenCalledWith(
+      "/v1/references/search/?q=phonics",
+    );
+  });
+
+  test.each([
+    { label: "empty string", q: "" },
+    { label: "whitespace only", q: "   " },
+    { label: "undefined", q: undefined as string | undefined },
+  ])("$label query → browse-mode q=*", async ({ q }) => {
+    mockedGet.mockResolvedValue(result);
+    await searchReferences(q);
+    expect(mockedGet).toHaveBeenCalledWith(
+      "/v1/references/search/?q=*",
+    );
+  });
+
+  test("half-open range: startYear only → start_year set, end_year absent", async () => {
+    mockedGet.mockResolvedValue(result);
+    await searchReferences("test", { startYear: 2010 });
+    const params = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]);
+    expect(params.get("start_year")).toBe("2010");
+    expect(params.has("end_year")).toBe(false);
+  });
+
+  test("half-open range: endYear only → end_year set, start_year absent", async () => {
+    mockedGet.mockResolvedValue(result);
+    await searchReferences("test", { endYear: 2024 });
+    const params = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]);
+    expect(params.get("end_year")).toBe("2024");
+    expect(params.has("start_year")).toBe(false);
+  });
+
+  test("closed range: both years set → both serialized", async () => {
+    mockedGet.mockResolvedValue(result);
+    await searchReferences("test", { startYear: 2010, endYear: 2024 });
+    const params = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]);
+    expect(params.get("start_year")).toBe("2010");
+    expect(params.get("end_year")).toBe("2024");
+  });
+
+  test("appends multiple sort params", async () => {
+    mockedGet.mockResolvedValue(result);
+    await searchReferences("test", { sort: ["relevance", "-year"] });
+    const url = mockedGet.mock.calls[0][0];
+    expect(new URLSearchParams(url.split("?")[1]).getAll("sort")).toEqual([
+      "relevance",
+      "-year",
+    ]);
+  });
 });
 
 describe("getReference", () => {
