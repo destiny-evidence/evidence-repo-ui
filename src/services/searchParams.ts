@@ -7,9 +7,12 @@ export interface SearchParams {
 
 // Strict: plain decimal digits only. Rejects "1e3", "0x10", "2.5", "-5", etc.
 // Anything JS's Number() accepts-but-surprises gets dropped instead of canonicalized.
+// Also rejects values that overflow Number.MAX_SAFE_INTEGER (e.g. 100 nines)
+// so callers never receive Infinity.
 function parseDecimalInt(raw: string | null): number | undefined {
   if (raw === null || !/^\d+$/.test(raw)) return undefined;
-  return Number(raw);
+  const n = Number(raw);
+  return Number.isSafeInteger(n) ? n : undefined;
 }
 
 export function parseSearchParams(search: string): SearchParams {

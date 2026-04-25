@@ -67,6 +67,20 @@ describe("parseSearchParams", () => {
     expect(p.endYear).toBeUndefined();
   });
 
+  test("page that overflows safe integer range → 1 (no Infinity leak)", () => {
+    const huge = "9".repeat(100);
+    const p = parseSearchParams(`?page=${huge}`);
+    expect(p.page).toBe(1);
+    expect(Number.isFinite(p.page)).toBe(true);
+  });
+
+  test("years that overflow safe integer range → undefined (no Infinity leak)", () => {
+    const huge = "9".repeat(100);
+    const p = parseSearchParams(`?start_year=${huge}&end_year=${huge}`);
+    expect(p.startYear).toBeUndefined();
+    expect(p.endYear).toBeUndefined();
+  });
+
   test("q is trimmed", () => {
     expect(parseSearchParams("?q=%20%20hello%20%20").q).toBe("hello");
   });
