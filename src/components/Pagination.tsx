@@ -54,7 +54,10 @@ export function Pagination({
   onPageChange,
   disabled = false,
 }: PaginationProps) {
-  if (totalPages <= 1) return null;
+  // Guard against pathological inputs (NaN, Infinity, fractional, negative).
+  // Without this, the ellipsis branch's for-loop can hang on Infinity, and
+  // NaN/fractional values render degenerate "Page NaN" buttons.
+  if (!Number.isSafeInteger(totalPages) || totalPages <= 1) return null;
 
   const items = computeItems(currentPage, totalPages);
 

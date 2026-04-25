@@ -90,4 +90,16 @@ describe("Pagination", () => {
     );
     expect(container.firstChild).toBeNull();
   });
+
+  test.each([
+    { label: "Infinity",   value: Infinity },
+    { label: "NaN",        value: NaN },
+    { label: "fractional", value: 5.5 },
+    { label: "negative",   value: -3 },
+  ])("renders nothing when totalPages is $label (no infinite loop, no degenerate DOM)", ({ value }) => {
+    const { container } = render(
+      <Pagination currentPage={1} totalPages={value} onPageChange={() => {}} />,
+    );
+    expect(container.firstChild).toBeNull();
+  });
 });
