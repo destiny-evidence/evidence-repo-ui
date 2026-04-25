@@ -9,6 +9,12 @@ export interface SearchFilters {
   sort?: string[];
 }
 
+// Mirrors parseSearchParams: page must be >= 1, years > 0, all safe integers.
+// Defends the API boundary against NaN/Infinity/floats from programmatic callers.
+function isPositiveSafeInt(n: number | undefined): n is number {
+  return n !== undefined && Number.isSafeInteger(n) && n >= 1;
+}
+
 export async function searchReferences(
   query: string | undefined,
   filters: SearchFilters = {},
@@ -21,9 +27,9 @@ export async function searchReferences(
 
   const params = new URLSearchParams();
   params.set("q", effectiveQuery);
-  if (filters.page !== undefined) params.set("page", String(filters.page));
-  if (filters.startYear !== undefined) params.set("start_year", String(filters.startYear));
-  if (filters.endYear !== undefined) params.set("end_year", String(filters.endYear));
+  if (isPositiveSafeInt(filters.page)) params.set("page", String(filters.page));
+  if (isPositiveSafeInt(filters.startYear)) params.set("start_year", String(filters.startYear));
+  if (isPositiveSafeInt(filters.endYear)) params.set("end_year", String(filters.endYear));
   for (const a of filters.annotation ?? []) params.append("annotation", a);
   for (const s of filters.sort ?? []) params.append("sort", s);
   return api.get<SearchResult>(`/v1/references/search/?${params.toString()}`);

@@ -38,12 +38,34 @@ describe("searchReferences", () => {
     );
   });
 
-  test("appends page=0 when explicitly set", async () => {
+  test.each([
+    { label: "zero",        value: 0 },
+    { label: "negative",    value: -3 },
+    { label: "fractional",  value: 1.5 },
+    { label: "NaN",         value: NaN },
+    { label: "Infinity",    value: Infinity },
+    { label: "overflow",    value: Number.MAX_SAFE_INTEGER + 2 },
+  ])("omits page when value is $label", async ({ value }) => {
     mockedGet.mockResolvedValue(result);
-    await searchReferences("test", { page: 0 });
+    await searchReferences("test", { page: value });
     expect(mockedGet).toHaveBeenCalledWith(
-      "/v1/references/search/?q=test&page=0",
+      "/v1/references/search/?q=test",
     );
+  });
+
+  test.each([
+    { label: "zero",        value: 0 },
+    { label: "negative",    value: -1 },
+    { label: "fractional",  value: 2010.5 },
+    { label: "NaN",         value: NaN },
+    { label: "Infinity",    value: Infinity },
+    { label: "overflow",    value: Number.MAX_SAFE_INTEGER + 2 },
+  ])("omits start_year and end_year when value is $label", async ({ value }) => {
+    mockedGet.mockResolvedValue(result);
+    await searchReferences("test", { startYear: value, endYear: value });
+    const params = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]);
+    expect(params.has("start_year")).toBe(false);
+    expect(params.has("end_year")).toBe(false);
   });
 
   test("appends multiple annotation params", async () => {
