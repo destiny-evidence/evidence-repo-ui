@@ -7,6 +7,9 @@ function paramsKey(params: SearchParams, annotations: string[]): string {
   // JSON.stringify is unambiguous for arbitrary string arrays — two distinct
   // inputs can never collapse to the same key even if annotations contain commas,
   // quotes, or other delimiters. Ad hoc joins are brittle here.
+  // Intentionally order-sensitive: ["a","b"] and ["b","a"] are different keys.
+  // Worst case is an unnecessary refetch when caller varies order; the alternative
+  // (sort-then-stringify) would silently mask callers passing inconsistent orders.
   return [
     `q=${params.q}`,
     `page=${params.page}`,
