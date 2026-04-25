@@ -9,7 +9,11 @@ test("renders the app header", () => {
 test("renders search page for valid community", () => {
   history.pushState({}, "", "/esea");
   render(<App />);
-  expect(screen.getByText("Search Education")).toBeInTheDocument();
+  // Hero is the new SearchPage's stable content; corpus/result fetches may
+  // hit the network without mocks, but the hero renders synchronously.
+  expect(
+    screen.getByRole("heading", { name: /search the evidence/i }),
+  ).toBeInTheDocument();
 });
 
 test("renders record detail page for valid community", () => {
