@@ -82,7 +82,7 @@ describe("ResultRow", () => {
 
   test("row anchor carries the stretched-link class so CSS can extend its hit area", () => {
     const { container } = render(<ResultRow communitySlug="esea" reference={makeRef()} />);
-    const link = container.querySelector(".result-row__link");
+    const link = container.querySelector(".row-link");
     expect(link).not.toBeNull();
     expect(link?.tagName).toBe("A");
   });
@@ -100,9 +100,14 @@ describe("ResultRow", () => {
     expect(screen.queryByRole("link", { name: /^doi/i })).toBeNull();
   });
 
-  test("renders placeholder — in right column", () => {
+  test("renders findings/estimates placeholder badges in right column", () => {
     const { container } = render(<ResultRow communitySlug="esea" reference={makeRef()} />);
-    expect(container.querySelector(".result-row__stats")).toHaveTextContent("—");
+    const nums = container.querySelectorAll(".stat-num");
+    expect(nums).toHaveLength(2);
+    expect(nums[0]).toHaveTextContent("—");
+    expect(nums[1]).toHaveTextContent("—");
+    expect(container.querySelector(".row-right")).toHaveTextContent(/findings/);
+    expect(container.querySelector(".row-right")).toHaveTextContent(/estimates/);
   });
 
   test("renders without throwing when bibliographic missing; row-anchor falls back to id", () => {

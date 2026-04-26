@@ -1,5 +1,5 @@
 import type { Reference } from "@/types/models";
-import { extractBibliographic, extractDoi } from "@/services/referenceUtils";
+import { extractBibliographic, extractDoi, formatPagination } from "@/services/referenceUtils";
 import "./ResultRow.css";
 
 interface ResultRowProps {
@@ -33,44 +33,56 @@ export function ResultRow({ communitySlug, reference }: ResultRowProps) {
   const title = bib?.title ?? reference.id;
   const authors = bib?.authorship ? formatAuthors(bib.authorship) : "";
   const venue = bib?.publication_venue?.display_name ?? "";
+  const pagination = formatPagination(bib?.pagination ?? null);
   const year = bib?.publication_year !== null && bib?.publication_year !== undefined
     ? String(bib.publication_year)
     : "";
 
-  // Primary content (title, meta, abstract) wraps in one anchor via the
-  // stretched-link CSS pattern, so clicking anywhere in that content area
-  // routes to the detail page. DOI and stats are sibling elements with
-  // raised z-index, staying independently interactive. Nested interactive
-  // HTML is avoided (the DOI <a> never lives inside the row <a>).
+  // Stretched-link pattern: the .row-link <a> wraps left-column content, and
+  // its ::before extends a transparent overlay across the whole .result-row
+  // (the positioned ancestor). Sibling DOI link uses z-index: 2 to stay
+  // clickable above the overlay; .row-right and stat-badges deliberately
+  // stay un-positioned so their clicks fall through to the row link.
   return (
     <article class="result-row">
       <a
-        class="result-row__link"
+        class="row-link"
         href={`/${communitySlug}/references/${reference.id}`}
         aria-label={title}
       >
-        <span class="result-row__title">{title}</span>
-        <span class="result-row__meta">
-          {authors && <span class="result-row__authors">{authors}</span>}
-          {(authors && (venue || year)) && <span class="result-row__sep"> · </span>}
-          {venue && <span class="result-row__venue">{venue}</span>}
-          {venue && year && <span class="result-row__sep"> · </span>}
-          {year && <span class="result-row__year">{year}</span>}
-        </span>
-        {abstract && <span class="result-row__abstract">{abstract}</span>}
+        <div class="row-title">
+          {title}
+          {year && <span class="year"> ({year})</span>}
+        </div>
+        {authors && <div class="row-authors">{authors}</div>}
+        {(venue || pagination) && (
+          <div class="row-venue">
+            {venue}
+            {venue && pagination ? ", " : ""}
+            {pagination}
+          </div>
+        )}
+        {abstract && <div class="row-abstract">{abstract}</div>}
       </a>
-      {doi && (
-        <a
-          class="result-row__doi"
-          href={`https://doi.org/${doi}`}
-          aria-label={`DOI: ${doi}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          DOI
-        </a>
-      )}
-      <div class="result-row__stats">—</div>
+      <div class="row-right">
+        {doi && (
+          <a
+            class="doi-link"
+            href={`https://doi.org/${doi}`}
+            aria-label={`DOI: ${doi}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            DOI ↗
+          </a>
+        )}
+        <span class="stat-badge">
+          <span class="stat-num">—</span> findings
+        </span>
+        <span class="stat-badge">
+          <span class="stat-num">—</span> estimates
+        </span>
+      </div>
     </article>
   );
 }
