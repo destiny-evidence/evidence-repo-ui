@@ -10,9 +10,9 @@ vi.mock("@/services/apiClient", () => ({
 import { searchReferences } from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
 
-function makeResult(count: number, ids: string[] = []): SearchResult {
+function makeResult(count: number, ids: string[] = [], isLowerBound = false): SearchResult {
   return {
-    total: { count, is_lower_bound: false },
+    total: { count, is_lower_bound: isLowerBound },
     page: { count: ids.length, number: 1 },
     references: ids.map((id) => ({
       id,
@@ -152,6 +152,26 @@ describe("SearchPage", () => {
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(screen.getByText(/Education/)).toBeInTheDocument();
     expect(screen.queryByText(/investigations across/i)).not.toBeInTheDocument();
+  });
+
+  test("corpus subtitle suffixes '+' when total.is_lower_bound is true", async () => {
+    mockBoth({ results: makeResult(10000, ["r1"], true) });
+    render(<SearchPage community="esea" />);
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    expect(screen.getByText(/10,000\+ investigations across Education/i)).toBeInTheDocument();
+  });
+
+  test("results meta-bar suffixes '+' when total.is_lower_bound is true", async () => {
+    history.replaceState(null, "", "/esea?q=education");
+    mockBoth({
+      corpus: makeResult(5721, ["c1"]),
+      results: makeResult(10000, ["r1"], true),
+    });
+    render(<SearchPage community="esea" />);
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    expect(screen.getByText(/10,000\+ results for 'education'/i)).toBeInTheDocument();
   });
 
   test("search failure: renders retry, retry refetches without URL change", async () => {

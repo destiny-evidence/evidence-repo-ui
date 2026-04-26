@@ -23,6 +23,13 @@ interface SearchPageProps {
 // size, switch to reading it off SearchResult.page rather than tuning here.
 const BACKEND_PAGE_SIZE = 20;
 
+// ES caps deep pagination at 10k; when the true count exceeds that, the
+// backend returns is_lower_bound=true and count=10000. Render "10,000+" so
+// the UI doesn't understate the corpus size.
+function formatTotal(total: { count: number; is_lower_bound: boolean }): string {
+  return `${total.count.toLocaleString()}${total.is_lower_bound ? "+" : ""}`;
+}
+
 export function SearchPage({ community: slug }: SearchPageProps) {
   const community = slug ? findCommunity(slug) : undefined;
   if (!community) return <NotFoundPage />;
@@ -71,7 +78,7 @@ function SearchPageInner({ community }: { community: Community }) {
         <h1 class="search-hero__title">Search the evidence</h1>
         <p class="search-hero__subtitle">
           {corpus.total
-            ? `${corpus.total.count.toLocaleString()} investigations across ${community.name}`
+            ? `${formatTotal(corpus.total)} investigations across ${community.name}`
             : corpus.loading
               ? <span class="search-hero__subtitle--placeholder">Loading…</span>
               : community.name}
@@ -106,7 +113,7 @@ function SearchPageInner({ community }: { community: Community }) {
                 : results.loading
                   ? "Updating results…"
                   : results.results
-                    ? `${results.results.total.count.toLocaleString()} results for '${params.q}'`
+                    ? `${formatTotal(results.results.total)} results for '${params.q}'`
                     : null}
           </div>
         )}
