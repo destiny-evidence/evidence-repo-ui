@@ -1,34 +1,42 @@
 .pagination {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: 4px;
   justify-content: center;
-  padding: var(--spacing-lg) 0;
+  padding: 16px 0;
 }
 
 .pagination__page,
 .pagination__ctrl {
-  min-width: 32px;
-  height: 32px;
-  padding: 0 var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border);
   border-radius: 3px;
   color: var(--color-text-secondary);
-  font-size: var(--font-size-small);
+  font-family: var(--font-mono);
+  font-size: 13px;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
 }
 
 .pagination__page:hover:not(:disabled),
 .pagination__ctrl:hover:not(:disabled) {
-  background: var(--color-bg-hover);
-  color: var(--color-text-primary);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .pagination__page.active {
   background: var(--color-accent);
   border-color: var(--color-accent);
+  color: #fff;
+}
+
+.pagination__page.active:hover:not(:disabled) {
+  /* Active stays accent on hover; don't fade it back to outlined. */
   color: #fff;
 }
 
@@ -39,7 +47,14 @@
 }
 
 .pagination__ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  width: auto;
+  padding: 0 8px;
   color: var(--color-text-tertiary);
-  padding: 0 var(--spacing-xs);
+  font-family: var(--font-mono);
+  font-size: 13px;
   user-select: none;
 }

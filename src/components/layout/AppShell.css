@@ -11,21 +11,51 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--spacing-lg);
+  padding: 14px 28px;
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
-.app-header__logo {
-  font-family: var(--font-display);
-  font-size: var(--font-size-body);
-  font-weight: 600;
-  color: var(--color-text-primary);
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
+  color: inherit;
 }
 
-.app-header__logo:hover {
+.app-header__logo-mark {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent);
+  border-radius: 4px;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.app-header__brand-text {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.app-header__brand-sep,
+.app-header__brand-community {
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+}
+
+.app-header__brand:hover .app-header__brand-name {
   color: var(--color-accent);
 }
 
