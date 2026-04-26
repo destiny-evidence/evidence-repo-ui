@@ -30,6 +30,24 @@ function formatTotal(total: { count: number; is_lower_bound: boolean }): string 
   return `${total.count.toLocaleString()}${total.is_lower_bound ? "+" : ""}`;
 }
 
+function formatYearClause(start: number | undefined, end: number | undefined): string {
+  if (start !== undefined && end !== undefined) return ` from ${start} to ${end}`;
+  if (start !== undefined) return ` from ${start}`;
+  if (end !== undefined) return ` to ${end}`;
+  return "";
+}
+
+function formatResultsSummary(
+  q: string,
+  startYear: number | undefined,
+  endYear: number | undefined,
+  total: { count: number; is_lower_bound: boolean },
+): string {
+  const head = `${formatTotal(total)} results`;
+  const qClause = q !== "" ? ` for '${q}'` : "";
+  return `${head}${qClause}${formatYearClause(startYear, endYear)}`;
+}
+
 export function SearchPage({ community: slug }: SearchPageProps) {
   const community = slug ? findCommunity(slug) : undefined;
   if (!community) return <NotFoundPage />;
@@ -54,10 +72,15 @@ function SearchPageInner({ community }: { community: Community }) {
   const corpus = useCorpusTotal(community);
   const results = useSearch(params, community.defaultAnnotations);
 
-  // Meta-bar appears only for a real query, per spec. Year-only filtering is
-  // visible via the search-bar inputs themselves; the meta-bar's "for 'q'"
-  // framing doesn't fit empty-q. Errors override (always surface failures).
-  const showMetaBar = params.q !== "" || results.error !== null;
+  // Meta-bar appears whenever the user has narrowed from browse mode (a query
+  // or a year filter), or whenever an error needs surfacing. Empty q + no
+  // year filters = browse mode, where the hero subtitle already carries the
+  // corpus count.
+  const showMetaBar =
+    params.q !== "" ||
+    params.startYear !== undefined ||
+    params.endYear !== undefined ||
+    results.error !== null;
 
   function handleSubmit(q: string, startYear: number | undefined, endYear: number | undefined) {
     const nextParams = { q, page: 1, startYear, endYear };
@@ -78,7 +101,7 @@ function SearchPageInner({ community }: { community: Community }) {
         <h1 class="search-hero__title">Search the evidence</h1>
         <p class="search-hero__subtitle">
           {corpus.total
-            ? `${formatTotal(corpus.total)} investigations across ${community.name}`
+            ? `${formatTotal(corpus.total)} investigations across ${community.name.toLowerCase()} research`
             : corpus.loading
               ? <span class="search-hero__subtitle--placeholder">Loading…</span>
               : community.name}
@@ -113,7 +136,7 @@ function SearchPageInner({ community }: { community: Community }) {
                 : results.loading
                   ? "Updating results…"
                   : results.results
-                    ? `${formatTotal(results.results.total)} results for '${params.q}'`
+                    ? formatResultsSummary(params.q, params.startYear, params.endYear, results.results.total)
                     : null}
           </div>
         )}

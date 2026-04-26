@@ -66,19 +66,18 @@ describe("SearchPage", () => {
     render(<SearchPage community="esea" />);
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-    expect(screen.getByText(/5,721 investigations/i)).toBeInTheDocument();
-    expect(screen.getByText(/Education/)).toBeInTheDocument();
+    expect(screen.getByText(/5,721 investigations across education research/i)).toBeInTheDocument();
     expect(screen.queryByText(/results for/i)).not.toBeInTheDocument();
   });
 
-  test("year-only filter (no query) keeps meta-bar hidden", async () => {
+  test("year-only filter shows meta-bar count without 'for' framing", async () => {
     history.replaceState(null, "", "/esea?start_year=2015");
     mockBoth({ results: makeResult(120, ["r1"]) });
     render(<SearchPage community="esea" />);
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    expect(screen.getByText(/120 results from 2015/i)).toBeInTheDocument();
     expect(screen.queryByText(/results for/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/filtered/i)).not.toBeInTheDocument();
   });
 
   test("URL params on mount drive the fetch", async () => {
