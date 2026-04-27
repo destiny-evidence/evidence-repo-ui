@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { groupFindings } from "@/services/findingGroups";
+import { findSharedContext } from "@/services/findingGroups";
 import type { FindingData } from "@/types/investigation";
 
 function makeFinding(overrides: Partial<FindingData> = {}): FindingData {
@@ -15,73 +15,55 @@ function makeFinding(overrides: Partial<FindingData> = {}): FindingData {
   };
 }
 
-describe("groupFindings", () => {
+describe("findSharedContext", () => {
   test("returns shared context when all findings share same IDs", () => {
-    const findings = [
+    const shared = findSharedContext([
       makeFinding(),
       makeFinding({ intervention: null }),
       makeFinding({ intervention: null, control: null, context: null }),
-    ];
-
-    const group = groupFindings(findings);
-    expect(group.shared).not.toBeNull();
-    expect(group.shared?.intervention.name).toBe("Intervention");
-    expect(group.shared?.control.description).toBe("Control");
-    expect(group.findings).toHaveLength(3);
+    ]);
+    expect(shared).not.toBeNull();
+    expect(shared?.intervention.name).toBe("Intervention");
+    expect(shared?.control.description).toBe("Control");
   });
 
-  test("returns null shared when interventions differ", () => {
-    const findings = [
+  test("returns null when interventions differ", () => {
+    const shared = findSharedContext([
       makeFinding(),
       makeFinding({
         intervention: { id: "_:other", name: "Other" },
         interventionRef: "_:other",
       }),
-    ];
-
-    const group = groupFindings(findings);
-    expect(group.shared).toBeNull();
+    ]);
+    expect(shared).toBeNull();
   });
 
-  test("returns null shared for single finding", () => {
-    const group = groupFindings([makeFinding()]);
-    expect(group.shared).toBeNull();
+  test("returns null for single finding", () => {
+    expect(findSharedContext([makeFinding()])).toBeNull();
   });
 
-  test("returns null shared for empty findings", () => {
-    const group = groupFindings([]);
-    expect(group.shared).toBeNull();
+  test("returns null for empty findings", () => {
+    expect(findSharedContext([])).toBeNull();
   });
 
-  test("returns null shared when IDs are missing", () => {
-    const findings = [
-      makeFinding({ intervention: { id: "", name: "X" }, interventionRef: undefined }),
-      makeFinding({ intervention: { id: "", name: "X" }, interventionRef: undefined }),
-    ];
-
-    const group = groupFindings(findings);
-    expect(group.shared).toBeNull();
+  test("returns null when IDs are missing", () => {
+    expect(
+      findSharedContext([
+        makeFinding({ intervention: { id: "", name: "X" }, interventionRef: undefined }),
+        makeFinding({ intervention: { id: "", name: "X" }, interventionRef: undefined }),
+      ]),
+    ).toBeNull();
   });
 
-  test("returns null shared when refs match across findings but no full object resolves", () => {
+  test("returns null when refs match across findings but no full object resolves", () => {
     // Both findings reference _:int / _:ctrl / _:ctx but no finding ever
     // contains the full object — happens when the upstream data has dangling
     // blank-node refs. We can't surface a SharedContext we don't have.
-    const findings = [
-      makeFinding({
-        intervention: null,
-        control: null,
-        context: null,
-      }),
-      makeFinding({
-        intervention: null,
-        control: null,
-        context: null,
-      }),
-    ];
-
-    const group = groupFindings(findings);
-    expect(group.shared).toBeNull();
-    expect(group.findings).toHaveLength(2);
+    expect(
+      findSharedContext([
+        makeFinding({ intervention: null, control: null, context: null }),
+        makeFinding({ intervention: null, control: null, context: null }),
+      ]),
+    ).toBeNull();
   });
 });

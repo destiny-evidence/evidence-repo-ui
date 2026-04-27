@@ -11,24 +11,23 @@ export interface SharedContext {
   context: ContextData;
 }
 
-export interface FindingGroup {
-  shared: SharedContext | null;
-  findings: FindingData[];
-}
-
-export function groupFindings(findings: FindingData[]): FindingGroup {
-  if (findings.length < 2) {
-    return { shared: null, findings };
-  }
+/**
+ * Determine whether all findings reference the same intervention/control/context
+ * (via either inline `@id` or a blank-node string ref). Returns the shared
+ * context to hoist into a "Shared across all findings" block, or null when
+ * findings differ or when the referenced full objects aren't available.
+ */
+export function findSharedContext(
+  findings: FindingData[],
+): SharedContext | null {
+  if (findings.length < 2) return null;
 
   const first = findings[0];
   const firstIntId = first.intervention?.id ?? first.interventionRef;
   const firstCtrlId = first.control?.id ?? first.controlRef;
   const firstCtxId = first.context?.id ?? first.contextRef;
 
-  if (!firstIntId || !firstCtrlId || !firstCtxId) {
-    return { shared: null, findings };
-  }
+  if (!firstIntId || !firstCtrlId || !firstCtxId) return null;
 
   const allShare = findings.every(
     (f) =>
@@ -36,12 +35,9 @@ export function groupFindings(findings: FindingData[]): FindingGroup {
       (f.control?.id ?? f.controlRef) === firstCtrlId &&
       (f.context?.id ?? f.contextRef) === firstCtxId,
   );
+  if (!allShare) return null;
 
-  if (!allShare) {
-    return { shared: null, findings };
-  }
-
-  // Find the first finding that has the full objects (not just refs)
+  // Find the first finding that has the full objects (not just refs).
   const withIntervention = findings.find((f) => f.intervention !== null);
   const withControl = findings.find((f) => f.control !== null);
   const withContext = findings.find((f) => f.context !== null);
@@ -51,15 +47,12 @@ export function groupFindings(findings: FindingData[]): FindingGroup {
     !withControl?.control ||
     !withContext?.context
   ) {
-    return { shared: null, findings };
+    return null;
   }
 
   return {
-    shared: {
-      intervention: withIntervention.intervention,
-      control: withControl.control,
-      context: withContext.context,
-    },
-    findings,
+    intervention: withIntervention.intervention,
+    control: withControl.control,
+    context: withContext.context,
   };
 }
