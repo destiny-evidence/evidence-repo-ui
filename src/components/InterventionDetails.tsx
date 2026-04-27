@@ -31,9 +31,9 @@ function collectEvidence(intervention: InterventionData): SourceEvidenceEntry[] 
   return [
     ...themeEvidence(intervention),
     ...evidenceFrom("Implementer", intervention.implementerType),
-    ...evidenceFrom("Fidelity", intervention.implementationFidelity),
-    ...evidenceFrom("Name", intervention.implementationName),
-    ...evidenceFrom("Description", intervention.implementationDescriptions),
+    ...evidenceFrom("Implementation fidelity", intervention.implementationFidelity),
+    ...evidenceFrom("Implementation name", intervention.implementationName),
+    ...evidenceFrom("Implementation description", intervention.implementationDescriptions),
     ...evidenceFrom("Funder", intervention.funderIntervention),
     ...evidenceFrom("Duration", intervention.duration),
   ];
@@ -92,7 +92,7 @@ export function InterventionDetails({
       {intervention.implementationFidelity && (
         <div class="labeled-field">
           <TagGroup
-            label="Fidelity"
+            label="Implementation fidelity"
             tags={[
               toHierarchicalTag(
                 intervention.implementationFidelity.value,
@@ -106,13 +106,13 @@ export function InterventionDetails({
       )}
 
       {intervention.implementationName && (
-        <LabeledField label="Name">
+        <LabeledField label="Implementation name">
           {intervention.implementationName.value}
         </LabeledField>
       )}
 
       {intervention.implementationDescriptions?.map((d, i) => (
-        <LabeledField key={`impl-desc-${i}`} label="Description">
+        <LabeledField key={`impl-desc-${i}`} label="Implementation description">
           {d.value}
         </LabeledField>
       ))}
