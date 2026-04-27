@@ -76,7 +76,7 @@ export function InvestigationCard({
         </div>
       )}
       <article
-        class={`investigation-card${isRetracted ? " investigation-card--retracted" : ""}`}
+        class={`investigation-card lg-card${isRetracted ? " investigation-card--retracted" : ""}`}
       >
         {hasInvestigation && (
           <span class="investigation-card__kicker">Investigation</span>
@@ -104,7 +104,7 @@ export function InvestigationCard({
         )}
         {hasInvestigationContent && (
           <>
-            <hr class="investigation-card__divider" />
+            <hr class="investigation-card__divider lg-divider" />
             {vocabUnavailable && (
               <p class="investigation-card__vocab-error">
                 Vocabulary unavailable — some labels could not be resolved.

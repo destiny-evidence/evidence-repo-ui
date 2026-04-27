@@ -1,0 +1,10 @@
+.findings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.findings-section--retracted {
+  opacity: 0.5;
+}

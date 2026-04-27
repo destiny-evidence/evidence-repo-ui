@@ -30,4 +30,23 @@ describe("TagGroup", () => {
     );
     expect(container.innerHTML).toBe("");
   });
+
+  test("renders hierarchical tag with parent prefix", () => {
+    render(
+      <TagGroup
+        label="THEME"
+        tags={[{ parent: "School Organization", label: "Tracking of Students" }]}
+      />,
+    );
+    expect(screen.getByText("School Organization")).toBeDefined();
+    expect(screen.getByText("Tracking of Students")).toBeDefined();
+  });
+
+  test("renders hierarchical tag without parent as plain child", () => {
+    const { container } = render(
+      <TagGroup label="THEME" tags={[{ label: "Just a label" }]} />,
+    );
+    expect(screen.getByText("Just a label")).toBeDefined();
+    expect(container.querySelector(".tag-group__tag-parent")).toBeNull();
+  });
 });

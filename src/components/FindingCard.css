@@ -1,0 +1,17 @@
+.finding-card__shared-ref {
+  background: var(--color-bg-secondary);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-md);
+}
+
+.finding-card__section {
+  margin-top: var(--spacing-md);
+}
+
+.finding-card__divider {
+  margin: var(--spacing-lg) 0 var(--spacing-md);
+}

@@ -1,0 +1,7 @@
+.sample-details__field--wide {
+  grid-column: 1 / -1;
+}
+
+.sample-details__field-value {
+  font-weight: 500;
+}

@@ -79,3 +79,65 @@ body {
   color: var(--color-text-primary);
   background-color: var(--color-bg);
 }
+
+/* Shared label styles used across finding cards, shared context, and helpers.
+   All property labels (THEME, LEVEL, SIZE, etc.) share one treatment; section
+   headings (CONTEXT, SAMPLE) are the same but a shade darker. */
+.lg-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
+}
+
+.lg-section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  margin: var(--spacing-md) 0 var(--spacing-sm);
+}
+
+.lg-kicker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md);
+}
+
+/* Card surface used by InvestigationCard, SharedContextBlock, FindingCard. */
+.lg-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-card);
+}
+
+/* Horizontal divider; consumers set their own margin via the BEM class. */
+.lg-divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Two-column field grid for compact label/value pairs (Context, Sample). */
+.lg-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 24px;
+}
+
+/* Inline label + value pairing inside a field grid. */
+.lg-field {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}

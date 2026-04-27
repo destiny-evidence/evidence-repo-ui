@@ -1,0 +1,9 @@
+.labeled-field {
+  margin: var(--spacing-sm) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.labeled-field__label {
+  margin-right: var(--spacing-xs);
+}

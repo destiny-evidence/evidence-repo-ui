@@ -94,6 +94,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockUseVocabulary.mockReturnValue({
     labels: null,
+    broader: null,
     loading: false,
     error: null,
   });
@@ -146,6 +147,7 @@ describe("RecordDetailPage", () => {
     });
     mockUseVocabulary.mockReturnValue({
       labels: mockLabels,
+      broader: new Map(),
       loading: false,
       error: null,
     });

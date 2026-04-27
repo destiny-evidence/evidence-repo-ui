@@ -13,6 +13,7 @@ import { useReference } from "@/hooks/useReference";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
 import { InvestigationCard } from "@/components/InvestigationCard";
+import { FindingsSection } from "@/components/FindingsSection";
 import { NotFoundPage } from "./NotFoundPage";
 import "./RecordDetailPage.css";
 
@@ -29,9 +30,8 @@ export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps)
   const bibliographic = reference ? extractBibliographic(reference) : null;
   const linkedData = reference ? extractLinkedData(reference) : null;
 
-  const { labels, loading: vocabLoading, error: vocabError } = useVocabulary(
-    linkedData?.vocabulary_uri,
-  );
+  const { labels, broader, loading: vocabLoading, error: vocabError } =
+    useVocabulary(linkedData?.vocabulary_uri);
   const rawContext = linkedData?.data?.["@context"];
   const contextUrl = typeof rawContext === "string" ? rawContext : undefined;
   const { context, loading: ctxLoading, error: ctxError } =
@@ -93,6 +93,14 @@ export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps)
           hasInvestigation={hasLinkedData}
           vocabUnavailable={!!vocabUnavailable}
         />
+        {investigation && investigation.findings.length > 0 && (
+          <FindingsSection
+            findings={investigation.findings}
+            labels={labels ?? new Map()}
+            broader={broader ?? new Map()}
+            retracted={isRetracted}
+          />
+        )}
       </div>
     </div>
   );

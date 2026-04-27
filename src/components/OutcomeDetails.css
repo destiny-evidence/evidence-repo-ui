@@ -1,0 +1,5 @@
+.outcome-details__measure-desc {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  margin: var(--spacing-xs) 0 0;
+}

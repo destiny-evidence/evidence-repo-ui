@@ -5,19 +5,25 @@
   flex-wrap: wrap;
 }
 
-.tag-group__label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--color-text-tertiary);
-}
-
 .tag-group__tag {
   background: transparent;
   border: 1px solid var(--color-border-tag);
   border-radius: 3px;
   font-size: 13px;
   padding: 2px 8px;
+  overflow-wrap: anywhere;
+}
+
+.tag-group__tag-parent {
+  font-weight: 400;
+  opacity: 0.65;
+  font-size: 0.9em;
+}
+
+.tag-group__tag-sep {
+  opacity: 0.5;
+}
+
+.tag-group__tag-child {
+  font-weight: 500;
 }
