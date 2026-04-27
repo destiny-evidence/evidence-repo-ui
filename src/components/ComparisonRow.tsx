@@ -21,7 +21,7 @@ export function ComparisonRow({ intervention, control }: ComparisonRowProps) {
     <div class="comparison-row">
       {intervention && (
         <div class="comparison-row__condition">
-          <h3 class="comparison-row__condition-label">Intervention</h3>
+          <h3 class="comparison-row__condition-label lg-section-label">Intervention</h3>
           <span class="comparison-row__condition-value">
             {intervention.name?.trim() || "—"}
           </span>
@@ -30,7 +30,7 @@ export function ComparisonRow({ intervention, control }: ComparisonRowProps) {
       {intervention && control && <span class="comparison-row__vs">vs</span>}
       {control && (
         <div class="comparison-row__condition">
-          <h3 class="comparison-row__condition-label">Control</h3>
+          <h3 class="comparison-row__condition-label lg-section-label">Control</h3>
           <span class="comparison-row__condition-value">
             {control.description?.trim() || "—"}
           </span>

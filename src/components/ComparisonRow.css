@@ -11,12 +11,6 @@
 }
 
 .comparison-row__condition-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
   margin: 0 0 var(--spacing-xs);
 }
 

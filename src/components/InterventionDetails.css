@@ -9,13 +9,3 @@
   font-size: 14px;
   color: var(--color-text-secondary);
 }
-
-.intervention-details__row {
-  margin: var(--spacing-sm) 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.intervention-details__field-label {
-  margin-right: var(--spacing-xs);
-}

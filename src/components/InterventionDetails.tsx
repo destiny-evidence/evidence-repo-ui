@@ -74,7 +74,7 @@ export function InterventionDetails({
       )}
 
       {intervention.implementerType && (
-        <div class="intervention-details__row">
+        <div class="labeled-field">
           <TagGroup
             label="Implementer"
             tags={[
@@ -90,7 +90,7 @@ export function InterventionDetails({
       )}
 
       {intervention.implementationFidelity && (
-        <div class="intervention-details__row">
+        <div class="labeled-field">
           <TagGroup
             label="Fidelity"
             tags={[
