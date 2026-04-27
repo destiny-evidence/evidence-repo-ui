@@ -141,3 +141,8 @@ body {
   gap: var(--spacing-sm);
   font-size: var(--font-size-sm);
 }
+
+/* State modifier for retracted content (investigation card, findings). */
+.lg-retracted {
+  opacity: 0.5;
+}

@@ -25,9 +25,7 @@ export function FindingsSection({
   if (findings.length === 0) return null;
 
   return (
-    <div
-      class={`findings-section${retracted ? " findings-section--retracted" : ""}`}
-    >
+    <div class={`findings-section${retracted ? " lg-retracted" : ""}`}>
       {group.shared && (
         <SharedContextBlock
           shared={group.shared}

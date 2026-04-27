@@ -76,7 +76,7 @@ export function InvestigationCard({
         </div>
       )}
       <article
-        class={`investigation-card lg-card${isRetracted ? " investigation-card--retracted" : ""}`}
+        class={`investigation-card lg-card${isRetracted ? " lg-retracted" : ""}`}
       >
         {hasInvestigation && (
           <span class="investigation-card__kicker">Investigation</span>

@@ -77,9 +77,7 @@ describe("InvestigationCard", () => {
       <InvestigationCard {...DEFAULT_PROPS} isRetracted={true} />,
     );
     const card = container.querySelector(".investigation-card");
-    expect(card?.classList.contains("investigation-card--retracted")).toBe(
-      true,
-    );
+    expect(card?.classList.contains("lg-retracted")).toBe(true);
   });
 
   test("hides kicker and divider when no investigation data", () => {

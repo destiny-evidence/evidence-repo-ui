@@ -16,10 +16,6 @@
   flex-shrink: 0;
 }
 
-.investigation-card--retracted {
-  opacity: 0.5;
-}
-
 .investigation-card__kicker {
   display: block;
   font-family: var(--font-mono);
