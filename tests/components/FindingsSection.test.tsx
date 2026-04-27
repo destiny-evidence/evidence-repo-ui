@@ -16,29 +16,34 @@ function makeFinding(overrides: Partial<FindingData> = {}): FindingData {
   };
 }
 
+function renderSection(findings: FindingData[]) {
+  return render(
+    <FindingsSection
+      findings={findings}
+      labels={new Map()}
+      broader={new Map()}
+    />,
+  );
+}
+
 describe("FindingsSection", () => {
   test("renders nothing for empty findings", () => {
-    const { container } = render(<FindingsSection findings={[]} labels={new Map()} broader={new Map()} />);
+    const { container } = renderSection([]);
     expect(container.innerHTML).toBe("");
   });
 
   test("renders finding cards without shared block for single finding", () => {
-    render(<FindingsSection findings={[makeFinding()]} labels={new Map()} broader={new Map()} />);
+    renderSection([makeFinding()]);
     expect(screen.getByText("Finding 1")).toBeDefined();
-    expect(
-      screen.queryByText("Shared across all findings"),
-    ).toBeNull();
+    expect(screen.queryByText("Shared across all findings")).toBeNull();
   });
 
   test("renders shared block and finding cards for shared findings", () => {
-    const findings = [
+    renderSection([
       makeFinding(),
       makeFinding({ intervention: null, control: null, context: null }),
-    ];
-    render(<FindingsSection findings={findings} labels={new Map()} broader={new Map()} />);
-    expect(
-      screen.getByText("Shared across all findings"),
-    ).toBeDefined();
+    ]);
+    expect(screen.getByText("Shared across all findings")).toBeDefined();
     expect(screen.getByText("Finding 1")).toBeDefined();
     expect(screen.getByText("Finding 2")).toBeDefined();
     // Finding 1 shows inline context, Finding 2 shows back-reference
@@ -49,17 +54,14 @@ describe("FindingsSection", () => {
   });
 
   test("renders without shared block when interventions differ", () => {
-    const findings = [
+    renderSection([
       makeFinding(),
       makeFinding({
         intervention: { id: "_:other", name: "Other" },
         interventionRef: "_:other",
       }),
-    ];
-    render(<FindingsSection findings={findings} labels={new Map()} broader={new Map()} />);
-    expect(
-      screen.queryByText("Shared across all findings"),
-    ).toBeNull();
+    ]);
+    expect(screen.queryByText("Shared across all findings")).toBeNull();
     expect(screen.getByText("Finding 1")).toBeDefined();
     expect(screen.getByText("Finding 2")).toBeDefined();
   });
