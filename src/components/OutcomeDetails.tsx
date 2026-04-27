@@ -10,6 +10,7 @@ interface OutcomeDetailsProps {
   outcome: OutcomeData;
   labels: Map<string, string>;
   broader: Map<string, string>;
+  definitions?: Map<string, string>;
 }
 
 function collectEvidence(outcome: OutcomeData) {
@@ -23,8 +24,13 @@ function collectEvidence(outcome: OutcomeData) {
     }));
 }
 
-export function OutcomeDetails({ outcome, labels, broader }: OutcomeDetailsProps) {
-  const tags = conceptsToTags(outcome.outcomes, labels, broader);
+export function OutcomeDetails({
+  outcome,
+  labels,
+  broader,
+  definitions,
+}: OutcomeDetailsProps) {
+  const tags = conceptsToTags(outcome.outcomes, labels, broader, definitions);
   const evidence = collectEvidence(outcome);
 
   return (

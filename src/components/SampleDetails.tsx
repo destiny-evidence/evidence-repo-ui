@@ -13,6 +13,7 @@ interface SampleDetailsProps {
   finding: SampleFields;
   labels: Map<string, string>;
   broader: Map<string, string>;
+  definitions?: Map<string, string>;
 }
 
 function collectEvidence(finding: SampleFields) {
@@ -25,8 +26,18 @@ function collectEvidence(finding: SampleFields) {
   ];
 }
 
-export function SampleDetails({ finding, labels, broader }: SampleDetailsProps) {
-  const featureTags = conceptsToTags(finding.sampleFeatures, labels, broader);
+export function SampleDetails({
+  finding,
+  labels,
+  broader,
+  definitions,
+}: SampleDetailsProps) {
+  const featureTags = conceptsToTags(
+    finding.sampleFeatures,
+    labels,
+    broader,
+    definitions,
+  );
   const evidenceEntries = collectEvidence(finding);
 
   const hasAny =

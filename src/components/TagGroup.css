@@ -27,3 +27,37 @@
 .tag-group__tag-child {
   font-weight: 500;
 }
+
+/* Tooltip: shown on hover/focus for tags carrying a skos:definition. */
+.tag-group__tag[data-def] {
+  position: relative;
+  cursor: help;
+}
+
+.tag-group__tag[data-def]:hover::after,
+.tag-group__tag[data-def]:focus-visible::after {
+  content: attr(data-def);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #161b22;
+  color: #fff;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  width: max-content;
+  max-width: 280px;
+  white-space: normal;
+  text-align: left;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
+}
+
+.tag-group__tag[data-def]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

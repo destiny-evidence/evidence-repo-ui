@@ -90,6 +90,29 @@ describe("buildVocabularyData", () => {
     });
     expect(broader.get("u:child")).toBe("u:parent");
   });
+
+  it("extracts skos:definition for concepts that have it", () => {
+    const { definitions } = buildVocabularyData({
+      "@graph": [
+        {
+          "@id": "u:journal",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Journal Article",
+          "skos:definition":
+            "Peer-reviewed publication presenting original research or reviews.",
+        },
+        {
+          "@id": "u:book",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Book",
+        },
+      ],
+    });
+    expect(definitions.get("u:journal")).toBe(
+      "Peer-reviewed publication presenting original research or reviews.",
+    );
+    expect(definitions.has("u:book")).toBe(false);
+  });
 });
 
 describe("fetchVocabulary", () => {

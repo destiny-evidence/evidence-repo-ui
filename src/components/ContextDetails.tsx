@@ -8,6 +8,7 @@ interface ContextDetailsProps {
   context: ContextData;
   labels: Map<string, string>;
   broader: Map<string, string>;
+  definitions?: Map<string, string>;
 }
 
 function collectEvidence(context: ContextData) {
@@ -19,9 +20,24 @@ function collectEvidence(context: ContextData) {
   ];
 }
 
-export function ContextDetails({ context, labels, broader }: ContextDetailsProps) {
-  const levelTags = conceptsToTags(context.educationLevels, labels, broader);
-  const settingTags = conceptsToTags(context.settings, labels, broader);
+export function ContextDetails({
+  context,
+  labels,
+  broader,
+  definitions,
+}: ContextDetailsProps) {
+  const levelTags = conceptsToTags(
+    context.educationLevels,
+    labels,
+    broader,
+    definitions,
+  );
+  const settingTags = conceptsToTags(
+    context.settings,
+    labels,
+    broader,
+    definitions,
+  );
   const participantTags = context.participants?.map((p) => p.value) ?? [];
   const evidenceEntries = collectEvidence(context);
 

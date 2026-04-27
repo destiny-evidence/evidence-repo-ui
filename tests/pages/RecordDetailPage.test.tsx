@@ -95,6 +95,7 @@ beforeEach(() => {
   mockUseVocabulary.mockReturnValue({
     labels: null,
     broader: null,
+    definitions: null,
     loading: false,
     error: null,
   });
@@ -148,6 +149,7 @@ describe("RecordDetailPage", () => {
     mockUseVocabulary.mockReturnValue({
       labels: mockLabels,
       broader: new Map(),
+      definitions: new Map(),
       loading: false,
       error: null,
     });

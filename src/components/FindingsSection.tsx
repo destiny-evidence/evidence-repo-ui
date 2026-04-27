@@ -9,6 +9,7 @@ interface FindingsSectionProps {
   findings: FindingData[];
   labels: Map<string, string>;
   broader: Map<string, string>;
+  definitions?: Map<string, string>;
   retracted?: boolean;
 }
 
@@ -16,6 +17,7 @@ export function FindingsSection({
   findings,
   labels,
   broader,
+  definitions,
   retracted,
 }: FindingsSectionProps) {
   const group = useMemo(() => groupFindings(findings), [findings]);
@@ -32,6 +34,7 @@ export function FindingsSection({
           sampleSource={group.findings[0]}
           labels={labels}
           broader={broader}
+          definitions={definitions}
         />
       )}
       {group.findings.map((finding, i) => (
@@ -42,6 +45,7 @@ export function FindingsSection({
           isShared={group.shared !== null && i > 0}
           labels={labels}
           broader={broader}
+          definitions={definitions}
         />
       ))}
     </div>

@@ -13,6 +13,7 @@ interface InterventionDetailsProps {
   intervention: InterventionData;
   labels: Map<string, string>;
   broader: Map<string, string>;
+  definitions?: Map<string, string>;
 }
 
 function themeEvidence(intervention: InterventionData): SourceEvidenceEntry[] {
@@ -42,8 +43,14 @@ export function InterventionDetails({
   intervention,
   labels,
   broader,
+  definitions,
 }: InterventionDetailsProps) {
-  const themeTags = conceptsToTags(intervention.educationThemes, labels, broader);
+  const themeTags = conceptsToTags(
+    intervention.educationThemes,
+    labels,
+    broader,
+    definitions,
+  );
   const evidenceEntries = collectEvidence(intervention);
 
   return (
@@ -75,6 +82,7 @@ export function InterventionDetails({
                 intervention.implementerType.value,
                 labels,
                 broader,
+                definitions,
               ),
             ]}
           />
@@ -90,6 +98,7 @@ export function InterventionDetails({
                 intervention.implementationFidelity.value,
                 labels,
                 broader,
+                definitions,
               ),
             ]}
           />

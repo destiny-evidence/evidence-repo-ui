@@ -4,6 +4,7 @@ interface JsonLdGraphEntry {
   "@id"?: string;
   "@type"?: string | string[];
   "skos:prefLabel"?: string;
+  "skos:definition"?: string;
   "skos:broader"?: string | { "@id": string } | Array<string | { "@id": string }>;
   [key: string]: unknown;
 }
@@ -15,6 +16,7 @@ interface VocabularyJsonLd {
 export interface VocabularyData {
   labels: Map<string, string>;
   broader: Map<string, string>;
+  definitions: Map<string, string>;
 }
 
 const SKOS_CONCEPT = "skos:Concept";
@@ -46,6 +48,7 @@ function extractBroaderUri(
 export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
   const labels = new Map<string, string>();
   const broader = new Map<string, string>();
+  const definitions = new Map<string, string>();
   for (const entry of doc["@graph"] ?? []) {
     if (!entry["@id"]) continue;
     const types = Array.isArray(entry["@type"])
@@ -55,12 +58,15 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
     if (entry["skos:prefLabel"]) {
       labels.set(entry["@id"], entry["skos:prefLabel"]);
     }
+    if (entry["skos:definition"]) {
+      definitions.set(entry["@id"], entry["skos:definition"]);
+    }
     const broaderUri = extractBroaderUri(entry["skos:broader"]);
     if (broaderUri) {
       broader.set(entry["@id"], broaderUri);
     }
   }
-  return { labels, broader };
+  return { labels, broader, definitions };
 }
 
 /**

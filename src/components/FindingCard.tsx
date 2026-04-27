@@ -16,6 +16,7 @@ interface FindingCardProps {
   isShared: boolean;
   labels: Map<string, string>;
   broader: Map<string, string>;
+  definitions?: Map<string, string>;
 }
 
 export function FindingCard({
@@ -24,6 +25,7 @@ export function FindingCard({
   isShared,
   labels,
   broader,
+  definitions,
 }: FindingCardProps) {
   const { intervention, control, context, outcome } = finding;
 
@@ -43,6 +45,7 @@ export function FindingCard({
               intervention={intervention}
               labels={labels}
               broader={broader}
+              definitions={definitions}
             />
           )}
           {context && (
@@ -55,6 +58,7 @@ export function FindingCard({
                 context={context}
                 labels={labels}
                 broader={broader}
+                definitions={definitions}
               />
             </>
           )}
@@ -69,6 +73,7 @@ export function FindingCard({
             outcome={outcome}
             labels={labels}
             broader={broader}
+            definitions={definitions}
           />
         </div>
       )}
@@ -76,7 +81,12 @@ export function FindingCard({
       {!isShared && (
         <div class="finding-card__section">
           <h3 class="finding-card__section-label lg-section-label">Sample</h3>
-          <SampleDetails finding={finding} labels={labels} broader={broader} />
+          <SampleDetails
+            finding={finding}
+            labels={labels}
+            broader={broader}
+            definitions={definitions}
+          />
         </div>
       )}
     </article>

@@ -5,6 +5,7 @@ import type { VocabularyData } from "@/services/vocabulary/vocabularyService";
 export function useVocabulary(vocabularyUrl: string | undefined): {
   labels: Map<string, string> | null;
   broader: Map<string, string> | null;
+  definitions: Map<string, string> | null;
   loading: boolean;
   error: Error | null;
 } {
@@ -36,6 +37,7 @@ export function useVocabulary(vocabularyUrl: string | undefined): {
   return {
     labels: data?.labels ?? null,
     broader: data?.broader ?? null,
+    definitions: data?.definitions ?? null,
     loading,
     error,
   };

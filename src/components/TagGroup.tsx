@@ -3,6 +3,8 @@ import "./TagGroup.css";
 export interface HierarchicalTag {
   parent?: string;
   label: string;
+  /** Optional skos:definition shown as a tooltip on hover/focus. */
+  definition?: string;
 }
 
 type Tag = string | HierarchicalTag;
@@ -28,7 +30,12 @@ export function TagGroup({ label, tags }: TagGroupProps) {
       {validTags.map((tag, i) => {
         if (isHierarchical(tag)) {
           return (
-            <span key={`${tag.label}-${i}`} class="tag-group__tag">
+            <span
+              key={`${tag.label}-${i}`}
+              class="tag-group__tag"
+              data-def={tag.definition || undefined}
+              tabIndex={tag.definition ? 0 : undefined}
+            >
               {tag.parent && (
                 <>
                   <span class="tag-group__tag-parent">{tag.parent}</span>

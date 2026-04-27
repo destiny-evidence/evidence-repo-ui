@@ -30,7 +30,7 @@ export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps)
   const bibliographic = reference ? extractBibliographic(reference) : null;
   const linkedData = reference ? extractLinkedData(reference) : null;
 
-  const { labels, broader, loading: vocabLoading, error: vocabError } =
+  const { labels, broader, definitions, loading: vocabLoading, error: vocabError } =
     useVocabulary(linkedData?.vocabulary_uri);
   const rawContext = linkedData?.data?.["@context"];
   const contextUrl = typeof rawContext === "string" ? rawContext : undefined;
@@ -98,6 +98,7 @@ export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps)
             findings={investigation.findings}
             labels={labels ?? new Map()}
             broader={broader ?? new Map()}
+            definitions={definitions ?? new Map()}
             retracted={isRetracted}
           />
         )}

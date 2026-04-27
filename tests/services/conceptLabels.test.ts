@@ -35,6 +35,42 @@ describe("toHierarchicalTag", () => {
     );
     expect(result).toEqual({ label: "Orphan" });
   });
+
+  test("includes definition when present in the definitions map", () => {
+    const definitions = new Map([
+      ["u:child", "Practice of grouping students by ability."],
+    ]);
+    const result = toHierarchicalTag(
+      { uri: "u:child", label: "Tracking of Students" },
+      labels,
+      broader,
+      definitions,
+    );
+    expect(result).toEqual({
+      parent: "School Organization",
+      label: "Tracking of Students",
+      definition: "Practice of grouping students by ability.",
+    });
+  });
+
+  test("omits definition when map is undefined or has no entry", () => {
+    const result = toHierarchicalTag(
+      { uri: "u:child", label: "Tracking of Students" },
+      labels,
+      broader,
+    );
+    expect(result.definition).toBeUndefined();
+
+    const empty = new Map<string, string>();
+    expect(
+      toHierarchicalTag(
+        { uri: "u:child", label: "Tracking of Students" },
+        labels,
+        broader,
+        empty,
+      ).definition,
+    ).toBeUndefined();
+  });
 });
 
 describe("conceptsToTags", () => {

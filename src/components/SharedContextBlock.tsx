@@ -18,6 +18,7 @@ interface SharedContextBlockProps {
   >;
   labels: Map<string, string>;
   broader: Map<string, string>;
+  definitions?: Map<string, string>;
 }
 
 export function SharedContextBlock({
@@ -25,6 +26,7 @@ export function SharedContextBlock({
   sampleSource,
   labels,
   broader,
+  definitions,
 }: SharedContextBlockProps) {
   const { intervention, control, context } = shared;
 
@@ -38,12 +40,18 @@ export function SharedContextBlock({
         intervention={intervention}
         labels={labels}
         broader={broader}
+        definitions={definitions}
       />
 
       <hr class="shared-context__divider lg-divider" />
 
       <h3 class="shared-context__section-label lg-section-label">Context</h3>
-      <ContextDetails context={context} labels={labels} broader={broader} />
+      <ContextDetails
+        context={context}
+        labels={labels}
+        broader={broader}
+        definitions={definitions}
+      />
 
       {sampleSource && (
         <>
@@ -52,6 +60,7 @@ export function SharedContextBlock({
             finding={sampleSource}
             labels={labels}
             broader={broader}
+            definitions={definitions}
           />
         </>
       )}
