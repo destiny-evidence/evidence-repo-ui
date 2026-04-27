@@ -76,7 +76,7 @@ describe("SearchPage", () => {
     render(<SearchPage community="esea" />);
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-    expect(screen.getByText(/120 results from 2015/i)).toBeInTheDocument();
+    expect(screen.getByText(/results from/i)).toHaveTextContent(/120 results from 2015/i);
     expect(screen.queryByText(/results for/i)).not.toBeInTheDocument();
   });
 
@@ -112,7 +112,9 @@ describe("SearchPage", () => {
     fireEvent.input(screen.getByRole("searchbox"), { target: { value: "phonics" } });
     fireEvent.click(screen.getByRole("button", { name: /search/i }));
 
-    await waitFor(() => expect(screen.getByText(/3 results for/i)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText(/results for/i)).toHaveTextContent(/3 results for/i)
+    );
     expect(window.location.search).toBe("?q=phonics");
     // Corpus subtitle is unchanged throughout the transition.
     expect(screen.getByText(/5,721 investigations/i)).toBeInTheDocument();
@@ -170,7 +172,7 @@ describe("SearchPage", () => {
     render(<SearchPage community="esea" />);
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-    expect(screen.getByText(/10,000\+ results for 'education'/i)).toBeInTheDocument();
+    expect(screen.getByText(/results for/i)).toHaveTextContent(/10,000\+ results for “education”/i);
   });
 
   test("search failure: renders retry, retry refetches without URL change", async () => {

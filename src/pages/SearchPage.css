@@ -51,6 +51,12 @@
   background: var(--color-bg-inset);
 }
 
+.search-results__meta-count {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--color-text-primary);
+}
+
 .search-results__retry {
   padding: var(--spacing-xs) var(--spacing-sm);
   background: transparent;

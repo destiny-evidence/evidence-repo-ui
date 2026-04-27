@@ -42,10 +42,16 @@ function formatResultsSummary(
   startYear: number | undefined,
   endYear: number | undefined,
   total: { count: number; is_lower_bound: boolean },
-): string {
-  const head = `${formatTotal(total)} results`;
-  const qClause = q !== "" ? ` for '${q}'` : "";
-  return `${head}${qClause}${formatYearClause(startYear, endYear)}`;
+) {
+  const qClause = q !== "" ? ` for “${q}”` : "";
+  // Wrapping span keeps the count + tail as a single anonymous flex item
+  // inside the meta bar so the gap rule doesn't separate them.
+  return (
+    <span class="search-results__meta-summary">
+      <span class="search-results__meta-count">{formatTotal(total)}</span>
+      {` results${qClause}${formatYearClause(startYear, endYear)}`}
+    </span>
+  );
 }
 
 export function SearchPage({ community: slug }: SearchPageProps) {
