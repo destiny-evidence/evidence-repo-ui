@@ -16,26 +16,15 @@ export interface FindingGroup {
   findings: FindingData[];
 }
 
-function getInterventionId(f: FindingData): string | undefined {
-  return f.intervention?.id ?? f.interventionRef;
-}
-
-function getControlId(f: FindingData): string | undefined {
-  return f.control?.id ?? f.controlRef;
-}
-
-function getContextId(f: FindingData): string | undefined {
-  return f.context?.id ?? f.contextRef;
-}
-
 export function groupFindings(findings: FindingData[]): FindingGroup {
   if (findings.length < 2) {
     return { shared: null, findings };
   }
 
-  const firstIntId = getInterventionId(findings[0]);
-  const firstCtrlId = getControlId(findings[0]);
-  const firstCtxId = getContextId(findings[0]);
+  const first = findings[0];
+  const firstIntId = first.intervention?.id ?? first.interventionRef;
+  const firstCtrlId = first.control?.id ?? first.controlRef;
+  const firstCtxId = first.context?.id ?? first.contextRef;
 
   if (!firstIntId || !firstCtrlId || !firstCtxId) {
     return { shared: null, findings };
@@ -43,9 +32,9 @@ export function groupFindings(findings: FindingData[]): FindingGroup {
 
   const allShare = findings.every(
     (f) =>
-      getInterventionId(f) === firstIntId &&
-      getControlId(f) === firstCtrlId &&
-      getContextId(f) === firstCtxId,
+      (f.intervention?.id ?? f.interventionRef) === firstIntId &&
+      (f.control?.id ?? f.controlRef) === firstCtrlId &&
+      (f.context?.id ?? f.contextRef) === firstCtxId,
   );
 
   if (!allShare) {
