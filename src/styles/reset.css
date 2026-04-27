@@ -11,6 +11,9 @@
 body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  /* Suppress synthetic bold/italic — only the licensed Klim cuts should
+     ever render. See src/styles/fonts.css. */
+  font-synthesis: none;
 }
 
 img,

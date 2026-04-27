@@ -1,31 +1,41 @@
+/* Klim Type Foundry — Web licence to evidence-repository.org (5,000 MAU).
+   Only the cuts below are licensed. Pair with `font-synthesis: none` (see
+   reset.css) so the browser uses the nearest declared cut from the same
+   family rather than synthesising weights or italics we don't ship. */
+
 @font-face {
   font-family: "Signifier";
-  src: url("./fonts/signifier-vf-roman.woff2") format("woff2-variations");
-  font-weight: 100 900;
+  src: url("./fonts/signifier-regular.woff2") format("woff2");
+  font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Signifier";
-  src: url("./fonts/signifier-vf-italic.woff2") format("woff2-variations");
-  font-weight: 100 900;
+  src: url("./fonts/signifier-regular-italic.woff2") format("woff2");
+  font-weight: normal;
   font-style: italic;
   font-display: swap;
 }
+
+/* Untitled Sans: only Medium is licensed. Declared as the family's `normal`
+   weight so default body text (font-weight: 400) matches it directly. */
 @font-face {
   font-family: "Untitled Sans";
-  src: url("./fonts/untitled-sans-vf-roman.woff2") format("woff2-variations");
-  font-weight: 100 900;
+  src: url("./fonts/untitled-sans-medium.woff2") format("woff2");
+  font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Untitled Sans";
-  src: url("./fonts/untitled-sans-vf-italic.woff2") format("woff2-variations");
-  font-weight: 100 900;
+  src: url("./fonts/untitled-sans-medium-italic.woff2") format("woff2");
+  font-weight: normal;
   font-style: italic;
   font-display: swap;
 }
+
+/* Söhne Mono: three real cuts at 400/500/600. */
 @font-face {
   font-family: "Söhne Mono";
   src: url("./fonts/soehne-mono-buch.woff2") format("woff2");
@@ -37,6 +47,13 @@
   font-family: "Söhne Mono";
   src: url("./fonts/soehne-mono-kraftig.woff2") format("woff2");
   font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Söhne Mono";
+  src: url("./fonts/soehne-mono-halbfett.woff2") format("woff2");
+  font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
