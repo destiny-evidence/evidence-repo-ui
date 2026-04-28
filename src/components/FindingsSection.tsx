@@ -36,7 +36,7 @@ export function FindingsSection({
       )}
       {findings.map((finding, i) => (
         <FindingCard
-          key={i}
+          key={`${finding.outcome?.name ?? "finding"}-${i}`}
           finding={finding}
           index={i + 1}
           isShared={shared !== null}

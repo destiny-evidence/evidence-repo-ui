@@ -45,7 +45,7 @@ export function SourceEvidenceToggle({ entries }: SourceEvidenceToggleProps) {
         {entries.map((entry, i) => {
           const { page, body } = splitPageRef(entry.text);
           return (
-            <div class="source-evidence__entry" key={i}>
+            <div class="source-evidence__entry" key={`${entry.label}-${i}`}>
               <div class="source-evidence__section-label lg-label">
                 {entry.label}
               </div>
