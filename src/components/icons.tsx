@@ -17,6 +17,26 @@ export function WarningIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+/** Magnifier — used as the search-bar leading icon. */
+export function MagnifierIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.75"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      width={size}
+      height={size}
+      aria-hidden="true"
+    >
+      <circle cx="9" cy="9" r="6" />
+      <path d="m13.5 13.5 4 4" />
+    </svg>
+  );
+}
+
 /** Arrow pointing to upper-right — indicates an external link. */
 export function ExternalLinkIcon({ size = 12 }: { size?: number }) {
   return (

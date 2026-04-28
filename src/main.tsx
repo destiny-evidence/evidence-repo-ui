@@ -3,6 +3,7 @@ import { App } from "./App";
 import { AuthError, Loading } from "./auth/AuthGate";
 import { initKeycloak } from "./auth/keycloak";
 import "./styles/reset.css";
+import "./styles/fonts.css";
 import "./styles/variables.css";
 import "./styles/auth-gate.css";
 

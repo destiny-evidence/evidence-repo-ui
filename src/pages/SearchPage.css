@@ -1,3 +1,103 @@
 .search-page {
+  max-width: none;
+  padding: 0 var(--spacing-lg) var(--spacing-xl);
+}
+
+.search-hero {
+  padding: 48px 32px 36px;
+  text-align: center;
+}
+
+.search-hero__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-hero);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  margin: 0 0 4px;
+}
+
+.search-hero__subtitle {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--color-text-tertiary);
+  margin: 0 0 24px;
+}
+
+.search-hero__subtitle--placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.search-results {
+  max-width: 960px;
+  margin: 0 auto;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.search-results__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-inset);
+}
+
+.search-results__meta-count {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--color-text-primary);
+}
+
+.search-results__retry {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 3px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.search-results__list.is-updating {
+  opacity: 0.5;
+  transition: opacity 0.1s;
+}
+
+.search-results__empty {
   padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-small);
+}
+
+.search-results__skeleton {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-results__skeleton-row {
+  height: 96px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-inset) 0%,
+    var(--color-bg-hover) 50%,
+    var(--color-bg-inset) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }

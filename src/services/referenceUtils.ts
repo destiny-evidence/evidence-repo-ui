@@ -5,6 +5,7 @@ import type {
   BibliographicMetadataEnhancement,
   LinkedDataEnhancement,
   ExternalIdentifier,
+  Pagination,
 } from "@/types/models";
 
 function extractEnhancement<T extends EnhancementContent>(
@@ -46,4 +47,29 @@ export function extractDoi(
     (i) => i.identifier_type === "doi",
   );
   return typeof doi?.identifier === "string" ? doi.identifier : null;
+}
+
+// Editorial citation format: `volume(issue), first_page–last_page`.
+// Uses en dash (U+2013) for page ranges per typographic convention.
+// Returns "" when nothing meaningful to render.
+export function formatPagination(pagination: Pagination | null): string {
+  if (!pagination) return "";
+  const { volume, issue, first_page, last_page } = pagination;
+
+  let volumeIssue = "";
+  if (volume && issue) volumeIssue = `${volume}(${issue})`;
+  else if (volume) volumeIssue = volume;
+  else if (issue) volumeIssue = `(${issue})`;
+
+  let pages = "";
+  if (first_page && last_page && last_page !== first_page) {
+    pages = `${first_page}–${last_page}`;
+  } else if (first_page) {
+    pages = first_page;
+  } else if (last_page) {
+    pages = last_page;
+  }
+
+  if (volumeIssue && pages) return `${volumeIssue}, ${pages}`;
+  return volumeIssue || pages;
 }

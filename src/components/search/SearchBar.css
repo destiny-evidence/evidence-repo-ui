@@ -1,0 +1,106 @@
+/* Outer wrapper centres the bar inside the hero (max 620px). */
+.search-bar-wrapper {
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+/* The bar is a single bordered flex object; icon, input and button are
+   siblings. The input is borderless — the bar carries the border. */
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-surface);
+  border: 2px solid var(--color-border-strong);
+  border-radius: 4px;
+  padding: 4px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-bar:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px rgba(36, 57, 107, 0.08);
+}
+
+.search-bar .search-icon {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 6px 10px 14px;
+  color: var(--color-text-tertiary);
+}
+
+.search-bar input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-text-primary);
+  padding: 10px 8px;
+}
+
+.search-bar input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.search-bar .search-btn {
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 9px 18px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.search-bar .search-btn:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.search-bar .search-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Year filters: sibling block below the bar, centred via flex. */
+.search-filters {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+}
+
+.search-filters__year {
+  width: 62px;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 5px 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  text-align: center;
+}
+
+.search-filters__year:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.search-filters__sep {
+  color: var(--color-text-tertiary);
+}
+
+.search-bar__validation {
+  margin-top: 8px;
+  text-align: center;
+  color: var(--color-danger);
+  font-size: 13px;
+}
