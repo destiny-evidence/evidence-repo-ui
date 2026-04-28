@@ -32,6 +32,7 @@ function extractBroaderUri(
   value: JsonLdGraphEntry["skos:broader"],
 ): string | undefined {
   if (!value) return undefined;
+  // SKOS allows polyhierarchy; we surface only the first broader for breadcrumb display.
   const first = Array.isArray(value) ? value[0] : value;
   if (typeof first === "string") return first;
   if (first && typeof first === "object" && "@id" in first) return first["@id"];
