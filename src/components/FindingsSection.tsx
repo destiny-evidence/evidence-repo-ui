@@ -29,7 +29,6 @@ export function FindingsSection({
       {shared && (
         <SharedContextBlock
           shared={shared}
-          sampleSource={findings[0]}
           labels={labels}
           broader={broader}
           definitions={definitions}
@@ -40,7 +39,7 @@ export function FindingsSection({
           key={i}
           finding={finding}
           index={i + 1}
-          isShared={shared !== null && i > 0}
+          isShared={shared !== null}
           labels={labels}
           broader={broader}
           definitions={definitions}

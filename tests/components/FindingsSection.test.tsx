@@ -38,19 +38,18 @@ describe("FindingsSection", () => {
     expect(screen.queryByText("Shared across all findings")).toBeNull();
   });
 
-  test("renders shared block and finding cards for shared findings", () => {
-    renderSection([
+  test("hoists shared context and shows back-reference on every card", () => {
+    const { container } = renderSection([
       makeFinding(),
       makeFinding({ intervention: null, control: null, context: null }),
     ]);
     expect(screen.getByText("Shared across all findings")).toBeDefined();
     expect(screen.getByText("Finding 1")).toBeDefined();
     expect(screen.getByText("Finding 2")).toBeDefined();
-    // Finding 1 shows inline context, Finding 2 shows back-reference
-    expect(screen.getAllByText("Intervention").length).toBeGreaterThan(0);
-    expect(
-      screen.getByText(/Same intervention, control, and context as above/),
-    ).toBeDefined();
+    // Both finding cards must show the back-reference. Neither should render
+    // intervention/control/context inline — that lives in the shared block.
+    expect(container.querySelectorAll(".finding-card__shared-ref").length).toBe(2);
+    expect(container.querySelector(".finding-card .comparison-row")).toBeNull();
   });
 
   test("renders without shared block when interventions differ", () => {

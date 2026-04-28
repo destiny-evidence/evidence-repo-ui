@@ -1,21 +1,13 @@
 import { ComparisonRow } from "./ComparisonRow";
 import { InterventionDetails } from "./InterventionDetails";
 import { ContextDetails } from "./ContextDetails";
-import { SampleDetails } from "./SampleDetails";
 import type { SharedContext } from "@/services/findingGroups";
-import type { FindingData } from "@/types/investigation";
 import "./ComparisonRow.css";
 import "./InterventionDetails.css";
-import "./SampleDetails.css";
 import "./SharedContextBlock.css";
 
 interface SharedContextBlockProps {
   shared: SharedContext;
-  /** Finding to source sample-level data from (typically findings[0]). */
-  sampleSource?: Pick<
-    FindingData,
-    "sampleSize" | "attrition" | "cost" | "groupDifferences" | "sampleFeatures"
-  >;
   labels: Map<string, string>;
   broader: Map<string, string>;
   definitions?: Map<string, string>;
@@ -23,7 +15,6 @@ interface SharedContextBlockProps {
 
 export function SharedContextBlock({
   shared,
-  sampleSource,
   labels,
   broader,
   definitions,
@@ -52,18 +43,6 @@ export function SharedContextBlock({
         broader={broader}
         definitions={definitions}
       />
-
-      {sampleSource && (
-        <>
-          <h3 class="shared-context__section-label lg-section-label">Sample</h3>
-          <SampleDetails
-            finding={sampleSource}
-            labels={labels}
-            broader={broader}
-            definitions={definitions}
-          />
-        </>
-      )}
     </article>
   );
 }
