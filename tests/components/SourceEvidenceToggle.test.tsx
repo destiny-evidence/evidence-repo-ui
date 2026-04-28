@@ -53,40 +53,42 @@ describe("SourceEvidenceToggle", () => {
   });
 
   test("starts collapsed and toggles open on click", () => {
-    render(
+    const { container } = render(
       <SourceEvidenceToggle
         entries={[{ label: "Size", text: "Page 8: 47 students." }]}
       />,
     );
     const button = screen.getByRole("button", { name: /Source evidence/ });
+    const panel = container.querySelector<HTMLElement>(".source-evidence__panel");
     expect(button.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByText(/47 students/)).toBeNull();
+    expect(panel?.hidden).toBe(true);
 
     fireEvent.click(button);
 
     expect(button.getAttribute("aria-expanded")).toBe("true");
+    expect(panel?.hidden).toBe(false);
     expect(screen.getByText(/47 students/)).toBeDefined();
     expect(screen.getByText("p. 8:")).toBeDefined();
     expect(screen.getByText("Size")).toBeDefined();
   });
 
   test("collapses again on second click", () => {
-    render(
+    const { container } = render(
       <SourceEvidenceToggle entries={[{ label: "Size", text: "47 students" }]} />,
     );
     const button = screen.getByRole("button", { name: /Source evidence/ });
+    const panel = container.querySelector<HTMLElement>(".source-evidence__panel");
     fireEvent.click(button);
     fireEvent.click(button);
     expect(button.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByText(/47 students/)).toBeNull();
+    expect(panel?.hidden).toBe(true);
   });
 
-  test("links button aria-controls to the panel id", () => {
+  test("aria-controls points at a panel that exists in the DOM when collapsed", () => {
     render(
       <SourceEvidenceToggle entries={[{ label: "Size", text: "47 students" }]} />,
     );
     const button = screen.getByRole("button", { name: /Source evidence/ });
-    fireEvent.click(button);
     const controlsId = button.getAttribute("aria-controls");
     expect(controlsId).toBeTruthy();
     expect(document.getElementById(controlsId!)).not.toBeNull();
