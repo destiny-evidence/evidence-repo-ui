@@ -1,6 +1,7 @@
 export interface Community {
   slug: string;
   name: string;
+  defaultAnnotations: string[];
 }
 
 export type Visibility = "public" | "restricted" | "hidden";

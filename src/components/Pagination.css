@@ -1,0 +1,60 @@
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.pagination__page,
+.pagination__ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.pagination__page:hover:not(:disabled),
+.pagination__ctrl:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.pagination__page.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.pagination__page.active:hover:not(:disabled) {
+  /* Active stays accent on hover; don't fade it back to outlined. */
+  color: #fff;
+}
+
+.pagination__page:disabled,
+.pagination__ctrl:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagination__ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  width: auto;
+  padding: 0 8px;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  user-select: none;
+}
