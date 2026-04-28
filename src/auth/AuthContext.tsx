@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: ComponentChildren }) {
   const [, setVersion] = useState(0);
 
   useEffect(() => {
+    // Force consumers to re-read keycloak.tokenParsed when auth state changes.
     const bump = () => setVersion((v) => v + 1);
     keycloak.onAuthSuccess = bump;
     keycloak.onAuthRefreshSuccess = bump;
