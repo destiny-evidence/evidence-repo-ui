@@ -43,21 +43,21 @@ export function ContextDetails({
 
   return (
     <>
-      <div class="context-details__grid lg-field-grid">
+      <div class="lg-field-grid">
         {levelTags.length > 0 && <TagGroup label="Level" tags={levelTags} />}
         {settingTags.length > 0 && <TagGroup label="Setting" tags={settingTags} />}
         {participantTags.length > 0 && (
           <TagGroup label="Participants" tags={participantTags} />
         )}
         {context.countries && context.countries.length > 0 && (
-          <div class="context-details__field lg-field">
-            <span class="context-details__field-label lg-label">Country</span>
+          <div class="lg-field">
+            <span class="lg-label">Country</span>
             <span>{context.countries.map((c) => c.value).join(", ")}</span>
           </div>
         )}
         {context.countryLevel1 && (
-          <div class="context-details__field lg-field">
-            <span class="context-details__field-label lg-label">Region</span>
+          <div class="lg-field">
+            <span class="lg-label">Region</span>
             <span>{context.countryLevel1.value}</span>
           </div>
         )}
