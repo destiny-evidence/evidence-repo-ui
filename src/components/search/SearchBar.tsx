@@ -1,5 +1,6 @@
 import { useState, useEffect } from "preact/hooks";
 import { MagnifierIcon } from "@/components/icons";
+import { parseYear } from "@/utils/year";
 import "./SearchBar.css";
 
 interface SearchBarProps {
@@ -8,15 +9,6 @@ interface SearchBarProps {
   endYear: number | undefined;
   onSubmit: (q: string, startYear: number | undefined, endYear: number | undefined) => void;
   disabled?: boolean;
-}
-
-function parseYear(raw: string): number | undefined {
-  // Strict decimal only — matches parseSearchParams' rule so URL state and
-  // form input agree on what a valid year is. Rejects "2e3", "0x10", "2.5", etc.
-  const trimmed = raw.trim();
-  if (!/^\d+$/.test(trimmed)) return undefined;
-  const n = Number(trimmed);
-  return n > 0 ? n : undefined;
 }
 
 export function SearchBar({ q, startYear, endYear, onSubmit, disabled = false }: SearchBarProps) {

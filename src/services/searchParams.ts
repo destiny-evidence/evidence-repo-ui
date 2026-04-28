@@ -1,3 +1,5 @@
+import { parseYear } from "@/utils/year";
+
 export interface SearchParams {
   q: string;
   page: number;
@@ -5,10 +7,8 @@ export interface SearchParams {
   endYear: number | undefined;
 }
 
-// Strict: plain decimal digits only. Rejects "1e3", "0x10", "2.5", "-5", etc.
-// Anything JS's Number() accepts-but-surprises gets dropped instead of canonicalized.
-// Also rejects values that overflow Number.MAX_SAFE_INTEGER (e.g. 100 nines)
-// so callers never receive Infinity.
+// Strict: plain decimal digits only, safe integer range. Used here for `page`;
+// year parsing goes through the shared `parseYear` (which adds the positive guard).
 function parseDecimalInt(raw: string | null): number | undefined {
   if (raw === null || !/^\d+$/.test(raw)) return undefined;
   const n = Number(raw);
@@ -25,11 +25,8 @@ export function parseSearchParams(search: string): SearchParams {
   const pageRaw = parseDecimalInt(params.get("page"));
   const page = pageRaw !== undefined && pageRaw >= 1 ? pageRaw : 1;
 
-  // Years must be positive integers — 0 is invalid (matches SearchBar's year > 0 rule).
-  let startYear = parseDecimalInt(params.get("start_year"));
-  let endYear = parseDecimalInt(params.get("end_year"));
-  if (startYear === 0) startYear = undefined;
-  if (endYear === 0) endYear = undefined;
+  let startYear = parseYear(params.get("start_year"));
+  let endYear = parseYear(params.get("end_year"));
   if (startYear !== undefined && endYear !== undefined && startYear > endYear) {
     startYear = undefined;
     endYear = undefined;

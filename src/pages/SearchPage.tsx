@@ -17,12 +17,6 @@ interface SearchPageProps {
   community?: string;
 }
 
-// Mirrors the destiny-repository /v1/references/search/ fixed page size.
-// Not a UI knob — changing this here desyncs totalPages math from the
-// server's actual paging. If the backend ever exposes a configurable page
-// size, switch to reading it off SearchResult.page rather than tuning here.
-const BACKEND_PAGE_SIZE = 20;
-
 // ES caps deep pagination at 10k; when the true count exceeds that, the
 // backend returns is_lower_bound=true and count=10000. Render "10,000+" so
 // the UI doesn't understate the corpus size.
@@ -97,8 +91,14 @@ function SearchPageInner({ community }: { community: Community }) {
     navigate(buildSearchUrl(community.slug, { ...params, page }));
   }
 
+  // Page size comes from the API response (page.count) so the UI stays in
+  // sync if the backend ever changes its fixed page size. Math.max guards
+  // against page.count = 0 to avoid divide-by-zero / Infinity totalPages.
   const totalPages = results.results
-    ? Math.max(1, Math.ceil(results.results.total.count / BACKEND_PAGE_SIZE))
+    ? Math.max(
+        1,
+        Math.ceil(results.results.total.count / Math.max(1, results.results.page.count)),
+      )
     : 1;
 
   return (
