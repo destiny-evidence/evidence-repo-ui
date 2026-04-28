@@ -15,7 +15,7 @@
 }
 
 .comparison-row__condition-value {
-  font-size: 16px;
+  font-size: var(--font-size-base);
   overflow-wrap: anywhere;
 }
 
