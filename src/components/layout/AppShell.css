@@ -70,6 +70,32 @@
   border-radius: 3px;
 }
 
+.app-header__user {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.app-header__username {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.app-header__signout {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  cursor: pointer;
+}
+
+.app-header__signout:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 .app-main {
   display: flex;
   flex-direction: column;

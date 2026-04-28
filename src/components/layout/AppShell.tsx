@@ -1,5 +1,6 @@
 import { useState, useEffect } from "preact/hooks";
 import type { ComponentChildren } from "preact";
+import { useAuth } from "@/auth/AuthContext";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 import { findCommunity } from "@/services/communities";
 import type { Community } from "@/types/models";
@@ -32,6 +33,7 @@ function useCurrentCommunity(): Community | undefined {
 const BRAND_HREF = "/esea";
 
 export function AppShell({ children }: AppShellProps) {
+  const { username, logout } = useAuth();
   const community = useCurrentCommunity();
   return (
     <div class="app-shell">
@@ -48,8 +50,11 @@ export function AppShell({ children }: AppShellProps) {
             )}
           </span>
         </a>
-        <div class="app-header__auth" aria-label="Sign in placeholder">
-          Sign in
+        <div class="app-header__user">
+          {username && <span class="app-header__username">{username}</span>}
+          <button type="button" class="app-header__signout" onClick={logout}>
+            Sign out
+          </button>
         </div>
       </header>
       <main class="app-main">{children}</main>
