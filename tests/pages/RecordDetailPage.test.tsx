@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { RecordDetailPage } from "@/pages/RecordDetailPage";
-import type { Reference } from "@/types/models";
+import { makeReference } from "../fixtures";
 
 vi.mock("@/hooks/useReference");
 vi.mock("@/hooks/useVocabulary");
@@ -14,72 +14,6 @@ import { useContextPrefixes } from "@/hooks/useContextPrefixes";
 const mockUseReference = vi.mocked(useReference);
 const mockUseVocabulary = vi.mocked(useVocabulary);
 const mockUseContextPrefixes = vi.mocked(useContextPrefixes);
-
-function makeReference(overrides: Partial<Reference> = {}): Reference {
-  return {
-    id: "abc-123",
-    visibility: "public",
-    identifiers: [
-      { identifier: "10.1234/test", identifier_type: "doi" },
-    ],
-    enhancements: [
-      {
-        id: "e1",
-        reference_id: "abc-123",
-        source: "openalex",
-        visibility: "public",
-        robot_version: null,
-        derived_from: null,
-        created_at: null,
-        content: {
-          enhancement_type: "bibliographic",
-          authorship: [
-            { display_name: "Smith, J.", orcid: null, position: "first" },
-          ],
-          cited_by_count: null,
-          created_date: null,
-          updated_date: null,
-          publication_date: null,
-          publication_year: 2024,
-          publisher: null,
-          title: "Test Investigation",
-          pagination: null,
-          publication_venue: {
-            display_name: "Test Journal",
-            venue_type: "journal",
-          },
-        },
-      },
-      {
-        id: "e2",
-        reference_id: "abc-123",
-        source: "robot",
-        visibility: "public",
-        robot_version: "0.1.0",
-        derived_from: null,
-        created_at: null,
-        content: {
-          enhancement_type: "linked_data",
-          vocabulary_uri: "https://vocab.example/v1",
-          data: {
-            "@context": "https://vocab.example/context.jsonld",
-            "@type": "LinkedDataEnhancement",
-            hasInvestigation: {
-              "@type": "Investigation",
-              documentType: {
-                "@type": "DocumentTypeCodingAnnotation",
-                codedValue: { "@id": "esea:C00008" },
-                status: "evrepo:coded",
-              },
-              hasFinding: [],
-            },
-          },
-        },
-      },
-    ],
-    ...overrides,
-  };
-}
 
 const PREFIXES = new Map([
   ["esea", "https://vocab.esea.education/"],
@@ -140,9 +74,24 @@ describe("RecordDetailPage", () => {
   });
 
   test("renders investigation card with full data", () => {
-    const ref = makeReference();
     mockUseReference.mockReturnValue({
-      reference: ref,
+      reference: makeReference({
+        doi: "10.1234/test",
+        bibliographic: {
+          title: "Test Investigation",
+          authors: ["Smith, J."],
+          year: 2024,
+          venue: "Test Journal",
+        },
+        investigation: {
+          documentType: {
+            "@type": "DocumentTypeCodingAnnotation",
+            codedValue: { "@id": "esea:C00008" },
+            status: "evrepo:coded",
+          },
+          hasFinding: [],
+        },
+      }),
       loading: false,
       error: null,
     });
@@ -168,37 +117,60 @@ describe("RecordDetailPage", () => {
     expect(screen.getByText("Journal Article")).toBeDefined();
   });
 
-  test("renders card without linked data", () => {
-    const ref = makeReference({
-      enhancements: [
-        {
-          id: "e1",
-          reference_id: "abc-123",
-          source: "openalex",
-          visibility: "public",
-          robot_version: null,
-          derived_from: null,
-        created_at: null,
-          content: {
-            enhancement_type: "bibliographic",
-            authorship: [
-              { display_name: "Jones, K.", orcid: null, position: "first" },
-            ],
-            cited_by_count: null,
-            created_date: null,
-            updated_date: null,
-            publication_date: null,
-            publication_year: 2023,
-            publisher: null,
-            title: "Bibliographic Only",
-            pagination: null,
-            publication_venue: null,
-          },
-        },
-      ],
-    });
+  test("renders findings with raw URIs and a banner when vocab fetch fails", () => {
     mockUseReference.mockReturnValue({
-      reference: ref,
+      reference: makeReference({
+        bibliographic: { title: "Vocab failure record" },
+        investigation: {
+          hasFinding: [
+            {
+              "@type": "Finding",
+              evaluates: { "@id": "_:int", "@type": "Intervention", name: "X" },
+              comparedTo: { "@id": "_:ctrl", "@type": "ControlCondition" },
+              hasContext: { "@id": "_:ctx", "@type": "Context" },
+              hasOutcome: { "@type": "Outcome", name: "An outcome" },
+            },
+          ],
+        },
+      }),
+      loading: false,
+      error: null,
+    });
+    mockUseVocabulary.mockReturnValue({
+      labels: null,
+      broader: null,
+      definitions: null,
+      loading: false,
+      error: new Error("Network failure"),
+    });
+    mockUseContextPrefixes.mockReturnValue({
+      context: null,
+      loading: false,
+      error: new Error("Network failure"),
+    });
+
+    const { container } = render(
+      <RecordDetailPage community="esea" id="abc-123" />,
+    );
+
+    // Banner above the findings section explains the degraded state.
+    const banner = container.querySelector(".record-detail-page__vocab-banner");
+    expect(banner).not.toBeNull();
+    expect(banner?.textContent).toMatch(/Vocabulary unavailable/);
+    // Findings still render — the section header proves FindingsSection mounted.
+    expect(screen.getByText("Finding 1")).toBeDefined();
+    expect(screen.getByText("An outcome")).toBeDefined();
+  });
+
+  test("renders card without linked data", () => {
+    mockUseReference.mockReturnValue({
+      reference: makeReference({
+        bibliographic: {
+          title: "Bibliographic Only",
+          authors: ["Jones, K."],
+          year: 2023,
+        },
+      }),
       loading: false,
       error: null,
     });

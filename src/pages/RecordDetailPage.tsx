@@ -23,23 +23,39 @@ interface RecordDetailPageProps {
   id?: string;
 }
 
-export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps) {
+export function RecordDetailPage({
+  community: slug,
+  id,
+}: RecordDetailPageProps) {
   const community = slug ? findCommunity(slug) : undefined;
 
   const { reference, loading: refLoading, error: refError } = useReference(id);
   const bibliographic = reference ? extractBibliographic(reference) : null;
   const linkedData = reference ? extractLinkedData(reference) : null;
 
-  const { labels, broader, definitions, loading: vocabLoading, error: vocabError } =
-    useVocabulary(linkedData?.vocabulary_uri);
+  const {
+    labels,
+    broader,
+    definitions,
+    loading: vocabLoading,
+    error: vocabError,
+  } = useVocabulary(linkedData?.vocabulary_uri);
   const rawContext = linkedData?.data?.["@context"];
   const contextUrl = typeof rawContext === "string" ? rawContext : undefined;
-  const { context, loading: ctxLoading, error: ctxError } =
-    useContextPrefixes(contextUrl);
+  const {
+    context,
+    loading: ctxLoading,
+    error: ctxError,
+  } = useContextPrefixes(contextUrl);
 
+  // Parse with empty-map fallbacks when vocab/context resolution fails so the
+  // findings still render (with raw URIs as labels). The vocabUnavailable
+  // flag surfaces the degraded state to the user.
   const investigation = useMemo(() => {
-    if (!linkedData?.data || !context || !labels) return null;
-    return parseInvestigation(linkedData.data, context.prefixes, labels);
+    if (!linkedData?.data) return null;
+    const prefixes = context?.prefixes ?? new Map<string, string>();
+    const ls = labels ?? new Map<string, string>();
+    return parseInvestigation(linkedData.data, prefixes, ls);
   }, [linkedData, context, labels]);
 
   // isRetracted is extracted directly from the data dict so it's available
@@ -94,13 +110,22 @@ export function RecordDetailPage({ community: slug, id }: RecordDetailPageProps)
           vocabUnavailable={!!vocabUnavailable}
         />
         {investigation && investigation.findings.length > 0 && (
-          <FindingsSection
-            findings={investigation.findings}
-            labels={labels ?? new Map()}
-            broader={broader ?? new Map()}
-            definitions={definitions ?? new Map()}
-            retracted={isRetracted}
-          />
+          <>
+            {vocabUnavailable && (
+              <p class="record-detail-page__vocab-banner" role="status">
+                Vocabulary unavailable — concept labels couldn't be loaded.
+                Findings below show raw concept identifiers in place of readable
+                names.
+              </p>
+            )}
+            <FindingsSection
+              findings={investigation.findings}
+              labels={labels ?? new Map()}
+              broader={broader ?? new Map()}
+              definitions={definitions ?? new Map()}
+              retracted={isRetracted}
+            />
+          </>
         )}
       </div>
     </div>

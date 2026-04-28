@@ -2,19 +2,7 @@ import { describe, test, expect } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { FindingsSection } from "@/components/FindingsSection";
 import type { FindingData } from "@/types/investigation";
-
-function makeFinding(overrides: Partial<FindingData> = {}): FindingData {
-  return {
-    intervention: { id: "_:int", name: "Intervention" },
-    interventionRef: "_:int",
-    control: { id: "_:ctrl", description: "Control" },
-    controlRef: "_:ctrl",
-    context: { id: "_:ctx" },
-    contextRef: "_:ctx",
-    outcome: { name: "Outcome", outcomes: [] },
-    ...overrides,
-  };
-}
+import { makeFinding } from "../fixtures";
 
 function renderSection(findings: FindingData[]) {
   return render(

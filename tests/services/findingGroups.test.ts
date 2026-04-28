@@ -1,19 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { findSharedContext } from "@/services/findingGroups";
-import type { FindingData } from "@/types/investigation";
-
-function makeFinding(overrides: Partial<FindingData> = {}): FindingData {
-  return {
-    intervention: { id: "_:int", name: "Intervention" },
-    interventionRef: "_:int",
-    control: { id: "_:ctrl", description: "Control" },
-    controlRef: "_:ctrl",
-    context: { id: "_:ctx" },
-    contextRef: "_:ctx",
-    outcome: null,
-    ...overrides,
-  };
-}
+import { makeFinding } from "../fixtures";
 
 describe("findSharedContext", () => {
   test("returns shared context when all findings share same IDs", () => {
@@ -56,9 +43,6 @@ describe("findSharedContext", () => {
   });
 
   test("returns null when refs match across findings but no full object resolves", () => {
-    // Both findings reference _:int / _:ctrl / _:ctx but no finding ever
-    // contains the full object — happens when the upstream data has dangling
-    // blank-node refs. We can't surface a SharedContext we don't have.
     expect(
       findSharedContext([
         makeFinding({ intervention: null, control: null, context: null }),

@@ -2,42 +2,12 @@ import { describe, test, expect } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { FindingCard } from "@/components/FindingCard";
 import type { FindingData } from "@/types/investigation";
-
-function makeFinding(overrides: Partial<FindingData> = {}): FindingData {
-  return {
-    intervention: {
-      id: "_:int",
-      name: "Test Intervention",
-      educationThemes: [
-        { value: { uri: "u:theme", label: "Cooperative Learning" } },
-      ],
-      descriptions: ["Students work in small groups"],
-      duration: { value: 5, supportingText: "5 weeks" },
-    },
-    interventionRef: "_:int",
-    control: { id: "_:ctrl", description: "Business as usual" },
-    controlRef: "_:ctrl",
-    context: {
-      id: "_:ctx",
-      educationLevels: [
-        { value: { uri: "u:1", label: "Primary" } },
-      ],
-      settings: [{ value: { uri: "u:3", label: "Formal" } }],
-    },
-    contextRef: "_:ctx",
-    outcome: {
-      name: "Math test",
-      outcomes: [{ value: { uri: "u:2", label: "Basic Skills" } }],
-    },
-    sampleSize: { value: 50 },
-    ...overrides,
-  };
-}
+import { makeRichFinding } from "../fixtures";
 
 function renderCard(opts: { finding?: Partial<FindingData>; isShared?: boolean } = {}) {
   return render(
     <FindingCard
-      finding={makeFinding(opts.finding)}
+      finding={makeRichFinding(opts.finding)}
       index={1}
       isShared={opts.isShared ?? false}
       labels={new Map()}
