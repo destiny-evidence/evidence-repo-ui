@@ -20,7 +20,7 @@
   display: block;
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--color-text-tertiary);
@@ -42,7 +42,9 @@
 }
 
 .investigation-card__venue {
+  font-family: var(--font-display, var(--font-serif));
   font-size: 13px;
+  font-weight: 300;
   font-style: italic;
   color: var(--color-text-tertiary);
   margin: 0 0 var(--spacing-sm);

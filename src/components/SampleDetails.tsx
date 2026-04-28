@@ -54,7 +54,7 @@ export function SampleDetails({
         {finding.sampleSize && (
           <div class="sample-details__field lg-field">
             <span class="sample-details__field-label lg-label">Size</span>
-            <span class="sample-details__field-value">
+            <span>
               {finding.sampleSize.value}
             </span>
           </div>
@@ -65,7 +65,7 @@ export function SampleDetails({
         {finding.attrition && (
           <div class="sample-details__field lg-field">
             <span class="sample-details__field-label lg-label">Attrition</span>
-            <span class="sample-details__field-value">
+            <span>
               {finding.attrition.value}
             </span>
           </div>

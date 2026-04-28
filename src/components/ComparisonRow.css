@@ -15,7 +15,10 @@
 }
 
 .comparison-row__condition-value {
+  font-family: var(--font-display, var(--font-serif));
   font-size: var(--font-size-base);
+  font-weight: 500;
+  font-style: italic;
   overflow-wrap: anywhere;
 }
 
