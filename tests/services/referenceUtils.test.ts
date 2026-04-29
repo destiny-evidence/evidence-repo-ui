@@ -3,6 +3,7 @@ import {
   extractBibliographic,
   extractLinkedData,
   extractDoi,
+  formatPagination,
 } from "@/services/referenceUtils";
 import type {
   Reference,
@@ -173,5 +174,65 @@ describe("extractDoi", () => {
     expect(
       extractDoi([{ identifier: 12345, identifier_type: "doi" }]),
     ).toBeNull();
+  });
+});
+
+describe("formatPagination", () => {
+  test("returns empty string when pagination is null", () => {
+    expect(formatPagination(null)).toBe("");
+  });
+
+  test("returns empty string when all fields are null", () => {
+    expect(formatPagination({
+      volume: null, issue: null, first_page: null, last_page: null,
+    })).toBe("");
+  });
+
+  test("formats volume + issue + page range as '45(2), 112–130' with en dash", () => {
+    expect(formatPagination({
+      volume: "45", issue: "2", first_page: "112", last_page: "130",
+    })).toBe("45(2), 112–130");
+  });
+
+  test("formats volume + issue alone (no pages) as '45(2)'", () => {
+    expect(formatPagination({
+      volume: "45", issue: "2", first_page: null, last_page: null,
+    })).toBe("45(2)");
+  });
+
+  test("formats volume alone as '45'", () => {
+    expect(formatPagination({
+      volume: "45", issue: null, first_page: null, last_page: null,
+    })).toBe("45");
+  });
+
+  test("formats volume + page range without issue as '45, 112–130'", () => {
+    expect(formatPagination({
+      volume: "45", issue: null, first_page: "112", last_page: "130",
+    })).toBe("45, 112–130");
+  });
+
+  test("formats issue alone as '(2)'", () => {
+    expect(formatPagination({
+      volume: null, issue: "2", first_page: null, last_page: null,
+    })).toBe("(2)");
+  });
+
+  test("formats single-page article (first_page only) as '112'", () => {
+    expect(formatPagination({
+      volume: null, issue: null, first_page: "112", last_page: null,
+    })).toBe("112");
+  });
+
+  test("collapses identical first/last to single page (no en dash)", () => {
+    expect(formatPagination({
+      volume: null, issue: null, first_page: "112", last_page: "112",
+    })).toBe("112");
+  });
+
+  test("falls back to last_page when first_page missing", () => {
+    expect(formatPagination({
+      volume: null, issue: null, first_page: null, last_page: "130",
+    })).toBe("130");
   });
 });

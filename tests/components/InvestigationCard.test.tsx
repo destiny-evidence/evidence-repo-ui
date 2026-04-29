@@ -47,13 +47,18 @@ describe("InvestigationCard", () => {
   test("DOI links to doi.org", () => {
     render(<InvestigationCard {...DEFAULT_PROPS} />);
 
-    const link = screen.getByText("10.1234/test.2024");
+    // The link's textContent is now "doi:10.1234/test.2024" + decorative
+    // icon, so query by accessible name (aria-label) instead of exact text.
+    const link = screen.getByRole("link", {
+      name: /DOI: 10\.1234\/test\.2024/i,
+    });
     expect(link.tagName).toBe("A");
     expect(link.getAttribute("href")).toBe(
       "https://doi.org/10.1234/test.2024",
     );
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(link).toHaveTextContent(/doi:/);
   });
 
   test("renders document type tag", () => {

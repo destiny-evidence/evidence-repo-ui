@@ -42,7 +42,7 @@
 }
 
 .investigation-card__venue {
-  font-family: var(--font-display, var(--font-serif));
+  font-family: var(--font-display);
   font-size: 13px;
   font-weight: 300;
   font-style: italic;
@@ -58,6 +58,10 @@
   font-size: 13px;
   color: var(--color-text-navy);
   text-decoration: none;
+}
+
+.investigation-card__doi-prefix {
+  color: var(--color-text-tertiary);
 }
 
 .investigation-card__doi:hover {

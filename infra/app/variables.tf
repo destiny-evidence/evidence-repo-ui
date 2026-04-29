@@ -73,3 +73,24 @@ variable "dnsimple_account_id" {
   type        = string
 }
 
+variable "api_base" {
+  description = "destiny-repository API base URL for this environment"
+  type        = string
+}
+
+variable "shared_keycloak_url" {
+  description = "Keycloak base URL (sourced from shared variable set)"
+  type        = string
+}
+
+variable "keycloak_realm" {
+  description = "Keycloak realm name"
+  type        = string
+  default     = "destiny"
+}
+
+variable "keycloak_client_id" {
+  description = "Keycloak public client ID for this environment"
+  type        = string
+}
+

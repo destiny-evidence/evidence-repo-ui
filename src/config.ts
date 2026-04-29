@@ -1,5 +1,9 @@
 export const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 
+export const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL;
+export const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM;
+export const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID;
+
 const VOCAB_PROXY_TARGET = import.meta.env.VITE_VOCAB_PROXY_TARGET;
 
 /**

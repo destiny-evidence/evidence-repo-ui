@@ -142,3 +142,6 @@ vite.config.ts.timestamp-*
 .terraform/
 *.tfstate
 *.tfstate.backup
+
+# Vite dep optimizer cache
+.vite/

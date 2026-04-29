@@ -96,7 +96,8 @@ export function InvestigationCard({
             rel="noopener noreferrer"
             aria-label={`DOI: ${doi} (opens in new tab)`}
           >
-            {doi}
+            <span class="investigation-card__doi-prefix" aria-hidden="true">doi:</span>
+            <span class="investigation-card__doi-value">{doi}</span>
             <span class="investigation-card__external-icon">
               <ExternalLinkIcon />
             </span>
