@@ -16,23 +16,11 @@
   flex-shrink: 0;
 }
 
-.investigation-card {
-  background: var(--color-bg-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-xl);
-  box-shadow: var(--shadow-card);
-}
-
-.investigation-card--retracted {
-  opacity: 0.5;
-}
-
 .investigation-card__kicker {
   display: block;
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--color-text-tertiary);
@@ -56,6 +44,7 @@
 .investigation-card__venue {
   font-family: var(--font-display);
   font-size: 13px;
+  font-weight: 300;
   font-style: italic;
   color: var(--color-text-tertiary);
   margin: 0 0 var(--spacing-sm);
@@ -84,8 +73,6 @@
 }
 
 .investigation-card__divider {
-  border: none;
-  border-top: 1px solid var(--color-border);
   margin: var(--spacing-md) 0;
 }
 

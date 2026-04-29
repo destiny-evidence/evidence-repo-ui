@@ -5,19 +5,59 @@
   flex-wrap: wrap;
 }
 
-.tag-group__label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--color-text-tertiary);
-}
-
 .tag-group__tag {
   background: transparent;
   border: 1px solid var(--color-border-tag);
   border-radius: 3px;
   font-size: 13px;
   padding: 2px 8px;
+  overflow-wrap: anywhere;
+}
+
+.tag-group__tag-parent {
+  font-weight: 400;
+  opacity: 0.65;
+  font-size: 0.9em;
+}
+
+.tag-group__tag-sep {
+  opacity: 0.5;
+}
+
+.tag-group__tag-child {
+  font-weight: 500;
+}
+
+/* Tooltip: shown on hover/focus for tags carrying a skos:definition. */
+.tag-group__tag[data-def] {
+  position: relative;
+  cursor: help;
+}
+
+.tag-group__tag[data-def]:hover::after,
+.tag-group__tag[data-def]:focus-visible::after {
+  content: attr(data-def);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #161b22;
+  color: #fff;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  width: max-content;
+  max-width: 280px;
+  white-space: normal;
+  text-align: left;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
+}
+
+.tag-group__tag[data-def]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }

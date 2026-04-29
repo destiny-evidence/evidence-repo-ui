@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
-  buildConceptLabels,
+  buildVocabularyData,
   fetchVocabulary,
   getCachedVocabulary,
   _resetVocabularyCache,
@@ -25,6 +25,17 @@ const SAMPLE_VOCABULARY = {
       "skos:inScheme": { "@id": "esea:EducationLevelScheme" },
     },
     {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00022",
+      "@type": ["skos:Concept", "esea:EducationThemeConcept"],
+      "skos:prefLabel": "School Organization",
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00074",
+      "@type": ["skos:Concept", "esea:EducationThemeConcept"],
+      "skos:prefLabel": "Literacy and Reading Interventions",
+      "skos:broader": "https://vocab.esea.education/EducationThemeScheme/C00022",
+    },
+    {
       "@id": "esea:DocumentTypeScheme",
       "@type": "skos:ConceptScheme",
       "rdfs:label": "Document Type Scheme",
@@ -37,9 +48,9 @@ const SAMPLE_VOCABULARY = {
   ],
 };
 
-describe("buildConceptLabels", () => {
+describe("buildVocabularyData", () => {
   it("extracts labels for skos:Concept entries only", () => {
-    const labels = buildConceptLabels(SAMPLE_VOCABULARY);
+    const { labels } = buildVocabularyData(SAMPLE_VOCABULARY);
 
     expect(labels.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
       "Journal Article",
@@ -51,8 +62,56 @@ describe("buildConceptLabels", () => {
     // ConceptScheme and owl:Class should not be included
     expect(labels.has("esea:DocumentTypeScheme")).toBe(false);
     expect(labels.has("esea:EducationLevelCodingAnnotation")).toBe(false);
+  });
 
-    expect(labels.size).toBe(2);
+  it("extracts broader relationships between concepts", () => {
+    const { broader } = buildVocabularyData(SAMPLE_VOCABULARY);
+
+    expect(
+      broader.get("https://vocab.esea.education/EducationThemeScheme/C00074"),
+    ).toBe("https://vocab.esea.education/EducationThemeScheme/C00022");
+
+    // Concepts without broader are not in the map
+    expect(
+      broader.has("https://vocab.esea.education/DocumentTypeScheme/C00008"),
+    ).toBe(false);
+  });
+
+  it("handles broader values as objects with @id", () => {
+    const { broader } = buildVocabularyData({
+      "@graph": [
+        {
+          "@id": "u:child",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Child",
+          "skos:broader": { "@id": "u:parent" },
+        },
+      ],
+    });
+    expect(broader.get("u:child")).toBe("u:parent");
+  });
+
+  it("extracts skos:definition for concepts that have it", () => {
+    const { definitions } = buildVocabularyData({
+      "@graph": [
+        {
+          "@id": "u:journal",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Journal Article",
+          "skos:definition":
+            "Peer-reviewed publication presenting original research or reviews.",
+        },
+        {
+          "@id": "u:book",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Book",
+        },
+      ],
+    });
+    expect(definitions.get("u:journal")).toBe(
+      "Peer-reviewed publication presenting original research or reviews.",
+    );
+    expect(definitions.has("u:book")).toBe(false);
   });
 });
 
@@ -61,7 +120,7 @@ describe("fetchVocabulary", () => {
     vi.restoreAllMocks();
   });
 
-  it("fetches and parses vocabulary into a label map", async () => {
+  it("fetches and parses vocabulary into labels and broader maps", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify(SAMPLE_VOCABULARY), {
         status: 200,
@@ -69,15 +128,15 @@ describe("fetchVocabulary", () => {
       }),
     );
 
-    const labels = await fetchVocabulary("https://vocab.example.org/v1");
+    const { labels, broader } = await fetchVocabulary("https://vocab.example.org/v1");
 
     expect(fetch).toHaveBeenCalledWith("https://vocab.example.org/v1.jsonld");
     expect(labels.get("https://vocab.esea.education/DocumentTypeScheme/C00008")).toBe(
       "Journal Article",
     );
-    expect(labels.get("https://vocab.esea.education/EducationLevelScheme/C00002")).toBe(
-      "Primary Education",
-    );
+    expect(
+      broader.get("https://vocab.esea.education/EducationThemeScheme/C00074"),
+    ).toBe("https://vocab.esea.education/EducationThemeScheme/C00022");
   });
 
   it("normalizes non-jsonld URLs to .jsonld", async () => {

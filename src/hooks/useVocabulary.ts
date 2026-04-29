@@ -1,35 +1,44 @@
 import { useState, useEffect } from "preact/hooks";
 import { getCachedVocabulary } from "@/services/vocabulary";
+import type { VocabularyData } from "@/services/vocabulary/vocabularyService";
 
 export function useVocabulary(vocabularyUrl: string | undefined): {
   labels: Map<string, string> | null;
+  broader: Map<string, string> | null;
+  definitions: Map<string, string> | null;
   loading: boolean;
   error: Error | null;
 } {
-  const [labels, setLabels] = useState<Map<string, string> | null>(null);
+  const [data, setData] = useState<VocabularyData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!vocabularyUrl) {
-      setLabels(null);
+      setData(null);
       setError(null);
       setLoading(false);
       return;
     }
     let cancelled = false;
 
-    setLabels(null);
+    setData(null);
     setLoading(true);
     setError(null);
 
     getCachedVocabulary(vocabularyUrl)
-      .then((r) => { if (!cancelled) setLabels(r); })
+      .then((r) => { if (!cancelled) setData(r); })
       .catch((e) => { if (!cancelled) setError(e); })
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
   }, [vocabularyUrl]);
 
-  return { labels, loading, error };
+  return {
+    labels: data?.labels ?? null,
+    broader: data?.broader ?? null,
+    definitions: data?.definitions ?? null,
+    loading,
+    error,
+  };
 }

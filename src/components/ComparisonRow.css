@@ -1,0 +1,30 @@
+.comparison-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--spacing-md);
+  align-items: start;
+  margin-bottom: var(--spacing-md);
+}
+
+.comparison-row__condition {
+  min-width: 0;
+}
+
+.comparison-row__condition-label {
+  margin: 0 0 var(--spacing-xs);
+}
+
+.comparison-row__condition-value {
+  font-family: var(--font-display);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.comparison-row__vs {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  align-self: center;
+  padding-top: var(--spacing-lg);
+}
