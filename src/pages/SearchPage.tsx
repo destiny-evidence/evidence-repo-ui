@@ -1,5 +1,5 @@
 import { useEffect } from "preact/hooks";
-import { findCommunity } from "@/services/communities";
+import { useCommunity } from "@/community/CommunityContext";
 import type { Community } from "@/types/models";
 import { parseSearchParams, toQueryString, buildSearchUrl } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
@@ -14,7 +14,6 @@ import "./SearchPage.css";
 
 interface SearchPageProps {
   path?: string;
-  community?: string;
 }
 
 // ES caps deep pagination at 10k; when the true count exceeds that, the
@@ -48,8 +47,8 @@ function formatResultsSummary(
   );
 }
 
-export function SearchPage({ community: slug }: SearchPageProps) {
-  const community = slug ? findCommunity(slug) : undefined;
+export function SearchPage(_props: SearchPageProps) {
+  const community = useCommunity();
   if (!community) return <NotFoundPage />;
   return <SearchPageInner community={community} />;
 }

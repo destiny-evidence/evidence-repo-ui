@@ -1,7 +1,16 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { RecordDetailPage } from "@/pages/RecordDetailPage";
+import { CommunityProvider } from "@/community/CommunityContext";
 import { makeReference } from "../fixtures";
+
+function renderRecordDetail(id: string) {
+  return render(
+    <CommunityProvider>
+      <RecordDetailPage id={id} />
+    </CommunityProvider>,
+  );
+}
 
 vi.mock("@/hooks/useReference");
 vi.mock("@/hooks/useVocabulary");
@@ -26,6 +35,7 @@ const mockLabels = new Map([
 
 beforeEach(() => {
   vi.clearAllMocks();
+  history.replaceState(null, "", "/esea");
   mockUseVocabulary.mockReturnValue({
     labels: null,
     broader: null,
@@ -47,7 +57,8 @@ describe("RecordDetailPage", () => {
       loading: false,
       error: null,
     });
-    render(<RecordDetailPage community="banana" id="abc" />);
+    history.replaceState(null, "", "/banana");
+    renderRecordDetail("abc");
     expect(screen.getByText("Page not found")).toBeDefined();
   });
 
@@ -57,7 +68,7 @@ describe("RecordDetailPage", () => {
       loading: true,
       error: null,
     });
-    render(<RecordDetailPage community="esea" id="abc" />);
+    renderRecordDetail("abc");
     expect(screen.getByText("Loading…")).toBeDefined();
   });
 
@@ -67,7 +78,7 @@ describe("RecordDetailPage", () => {
       loading: false,
       error: new Error("Network failure"),
     });
-    render(<RecordDetailPage community="esea" id="abc" />);
+    renderRecordDetail("abc");
     expect(
       screen.getByText("We couldn't load this reference."),
     ).toBeDefined();
@@ -108,7 +119,7 @@ describe("RecordDetailPage", () => {
       error: null,
     });
 
-    render(<RecordDetailPage community="esea" id="abc-123" />);
+    renderRecordDetail("abc-123");
 
     expect(screen.getByText("Test Investigation")).toBeDefined();
     expect(screen.getByText("Smith, J. (2024)")).toBeDefined();
@@ -149,9 +160,7 @@ describe("RecordDetailPage", () => {
       error: new Error("Network failure"),
     });
 
-    const { container } = render(
-      <RecordDetailPage community="esea" id="abc-123" />,
-    );
+    const { container } = renderRecordDetail("abc-123");
 
     // Banner above the findings section explains the degraded state.
     const banner = container.querySelector(".record-detail-page__vocab-banner");
@@ -175,7 +184,7 @@ describe("RecordDetailPage", () => {
       error: null,
     });
 
-    render(<RecordDetailPage community="esea" id="abc-123" />);
+    renderRecordDetail("abc-123");
 
     expect(screen.getByText("Bibliographic Only")).toBeDefined();
     expect(screen.getByText("Jones, K. (2023)")).toBeDefined();
