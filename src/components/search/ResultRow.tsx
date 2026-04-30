@@ -1,5 +1,6 @@
 import type { Reference } from "@/types/models";
 import { extractBibliographic, extractDoi, formatPagination } from "@/services/referenceUtils";
+import { extractReferenceCodingInstitution } from "@/services/codingInstitution";
 import "./ResultRow.css";
 
 interface ResultRowProps {
@@ -37,6 +38,7 @@ export function ResultRow({ communitySlug, reference }: ResultRowProps) {
   const year = bib?.publication_year !== null && bib?.publication_year !== undefined
     ? String(bib.publication_year)
     : "";
+  const codingInstitution = extractReferenceCodingInstitution(reference);
 
   // Stretched-link pattern: the .row-link <a> wraps left-column content, and
   // its ::before extends a transparent overlay across the whole .result-row
@@ -82,6 +84,11 @@ export function ResultRow({ communitySlug, reference }: ResultRowProps) {
         <span class="stat-badge">
           <span class="stat-num">—</span> estimates
         </span>
+        {codingInstitution && (
+          <span class="row-coder" data-testid="coder-text">
+            {codingInstitution}
+          </span>
+        )}
       </div>
     </article>
   );

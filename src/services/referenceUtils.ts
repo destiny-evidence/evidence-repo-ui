@@ -8,10 +8,10 @@ import type {
   Pagination,
 } from "@/types/models";
 
-function extractEnhancement<T extends EnhancementContent>(
+export function extractLatestEnhancement<T extends EnhancementContent>(
   reference: Reference,
   enhancementType: T["enhancement_type"],
-): T | null {
+): (Enhancement & { content: T }) | null {
   if (!reference.enhancements) return null;
   const matches = reference.enhancements.filter(
     (e): e is Enhancement & { content: T } =>
@@ -21,22 +21,34 @@ function extractEnhancement<T extends EnhancementContent>(
   const sorted = matches.sort((a, b) =>
     (a.created_at ?? "").localeCompare(b.created_at ?? ""),
   );
-  return sorted[sorted.length - 1].content;
+  return sorted[sorted.length - 1];
 }
 
 export function extractBibliographic(
   reference: Reference,
 ): BibliographicMetadataEnhancement | null {
-  return extractEnhancement<BibliographicMetadataEnhancement>(
+  return (
+    extractLatestEnhancement<BibliographicMetadataEnhancement>(
+      reference,
+      "bibliographic",
+    )?.content ?? null
+  );
+}
+
+// Most callers want the content only — see extractLinkedData.
+export function extractLinkedDataEnhancement(
+  reference: Reference,
+): (Enhancement & { content: LinkedDataEnhancement }) | null {
+  return extractLatestEnhancement<LinkedDataEnhancement>(
     reference,
-    "bibliographic",
+    "linked_data",
   );
 }
 
 export function extractLinkedData(
   reference: Reference,
 ): LinkedDataEnhancement | null {
-  return extractEnhancement<LinkedDataEnhancement>(reference, "linked_data");
+  return extractLinkedDataEnhancement(reference)?.content ?? null;
 }
 
 export function extractDoi(

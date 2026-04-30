@@ -12,6 +12,7 @@ interface InvestigationCardProps {
   doi: string | null;
   publicationYear: number | null;
   documentType?: CodedAnnotation<ResolvedConcept>;
+  codingInstitution?: string | null;
   isRetracted: boolean;
   hasInvestigation: boolean;
   vocabUnavailable: boolean;
@@ -57,12 +58,14 @@ export function InvestigationCard({
   doi,
   publicationYear,
   documentType,
+  codingInstitution,
   isRetracted,
   hasInvestigation,
   vocabUnavailable,
 }: InvestigationCardProps) {
   const venueText = formatVenue(venue, pagination);
-  const hasInvestigationContent = documentType || vocabUnavailable;
+  const hasInvestigationContent =
+    documentType || vocabUnavailable || codingInstitution;
 
   return (
     <>
@@ -116,6 +119,14 @@ export function InvestigationCard({
                 label="Doc Type"
                 tags={[documentType.value.label ?? documentType.value.uri]}
               />
+            )}
+            {codingInstitution && (
+              <p
+                class="investigation-card__coder"
+                data-testid="investigation-coder-text"
+              >
+                Coded by {codingInstitution}
+              </p>
             )}
           </>
         )}
