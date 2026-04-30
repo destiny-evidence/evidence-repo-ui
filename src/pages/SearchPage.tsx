@@ -82,7 +82,10 @@ function SearchPageInner({ community }: { community: Community }) {
     results.error !== null;
 
   function handleSubmit(q: string, startYear: number | undefined, endYear: number | undefined) {
-    const nextParams = { q, page: 1, startYear, endYear };
+    // Preserve sort across query submit. Sort is a presentation preference
+    // orthogonal to the query terms; clearing it on every submit would silently
+    // strand a user who picked "newest" and then refined their query.
+    const nextParams = { ...params, q, page: 1, startYear, endYear };
     navigate(buildSearchUrl(community.slug, nextParams));
   }
 

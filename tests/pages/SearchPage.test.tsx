@@ -12,9 +12,10 @@ function renderSearchPage() {
   );
 }
 
-vi.mock("@/services/apiClient", () => ({
-  searchReferences: vi.fn(),
-}));
+vi.mock("@/services/apiClient", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/apiClient")>();
+  return { ...actual, searchReferences: vi.fn() };
+});
 
 import { searchReferences } from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
@@ -127,6 +128,21 @@ describe("SearchPage", () => {
     expect(window.location.search).toBe("?q=phonics");
     // Corpus subtitle is unchanged throughout the transition.
     expect(screen.getByText(/5,721 investigations/i)).toBeInTheDocument();
+  });
+
+  test("submitting a query preserves an existing sort selection", async () => {
+    history.replaceState(null, "", "/esea?sort=newest");
+    mockBoth({ results: makeResult(3, ["r1"]) });
+
+    renderSearchPage();
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+    fireEvent.input(screen.getByRole("searchbox"), { target: { value: "phonics" } });
+    fireEvent.click(screen.getByRole("button", { name: /search/i }));
+
+    await waitFor(() => expect(window.location.search).toContain("q=phonics"));
+    expect(window.location.search).toContain("sort=newest");
+    expect(window.location.search).not.toContain("page=");
   });
 
   test("invalid URL params canonicalize via replaceState exactly once", async () => {

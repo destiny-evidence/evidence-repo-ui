@@ -1,10 +1,20 @@
 import { parseYear } from "@/utils/year";
 
+export type SortOption = "newest" | "oldest";
+
 export interface SearchParams {
   q: string;
   page: number;
   startYear: number | undefined;
   endYear: number | undefined;
+  sort: SortOption | undefined;
+}
+
+// Strict whitelist: anything outside this set parses as undefined (relevance).
+// Decouples the user-facing URL from the backend's ES field naming so a future
+// rename of `publication_year` doesn't break shared bookmarks.
+function parseSort(raw: string | null): SortOption | undefined {
+  return raw === "newest" || raw === "oldest" ? raw : undefined;
 }
 
 // Strict: plain decimal digits only, safe integer range. Used here for `page`;
@@ -32,7 +42,9 @@ export function parseSearchParams(search: string): SearchParams {
     endYear = undefined;
   }
 
-  return { q, page, startYear, endYear };
+  const sort = parseSort(params.get("sort"));
+
+  return { q, page, startYear, endYear, sort };
 }
 
 export function toQueryString(params: SearchParams): string {
@@ -40,6 +52,7 @@ export function toQueryString(params: SearchParams): string {
   if (params.q) out.set("q", params.q);
   if (params.startYear !== undefined) out.set("start_year", String(params.startYear));
   if (params.endYear !== undefined) out.set("end_year", String(params.endYear));
+  if (params.sort !== undefined) out.set("sort", params.sort);
   if (params.page !== 1) out.set("page", String(params.page));
   return out.toString();
 }
