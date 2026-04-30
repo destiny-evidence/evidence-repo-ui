@@ -68,8 +68,8 @@ function SearchPageInner({ community }: { community: Community }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonicalQs, community.slug]);
 
-  const corpus = useCorpusTotal(community);
-  const results = useSearch(params, community.defaultAnnotations);
+  const corpus = useCorpusTotal();
+  const results = useSearch(params);
 
   // Meta-bar appears whenever the user has narrowed from browse mode (a query
   // or a year filter), or whenever an error needs surfacing. Empty q + no

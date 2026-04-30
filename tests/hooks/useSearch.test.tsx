@@ -1,6 +1,8 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/preact";
+import type { ComponentChildren } from "preact";
 import { useSearch } from "@/hooks/useSearch";
+import { CommunityProvider } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
 
@@ -12,7 +14,14 @@ import { searchReferences } from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
 
 const baseParams: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined };
-const annotations = ["domain-inclusion/jacobs-education"];
+
+// Drive the real CommunityProvider through the URL the way the runtime does.
+function withCommunityPath(path: string) {
+  window.history.replaceState(null, "", path);
+  return ({ children }: { children: ComponentChildren }) => (
+    <CommunityProvider>{children}</CommunityProvider>
+  );
+}
 
 function makeResult(count: number): SearchResult {
   return {
@@ -24,27 +33,33 @@ function makeResult(count: number): SearchResult {
 
 beforeEach(() => {
   mockSearch.mockReset();
+  window.history.replaceState(null, "", "/");
 });
 
 describe("useSearch", () => {
-  test("fetches on mount", async () => {
+  test("fetches on mount with community-derived annotations", async () => {
     mockSearch.mockResolvedValue(makeResult(47));
-    const { result } = renderHook(() => useSearch(baseParams, annotations));
+    const { result } = renderHook(() => useSearch(baseParams), {
+      wrapper: withCommunityPath("/esea"),
+    });
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.results?.total.count).toBe(47);
     expect(mockSearch).toHaveBeenCalledWith("phonics", {
       page: 1,
       startYear: undefined,
       endYear: undefined,
-      annotation: annotations,
+      annotation: ["domain-inclusion/jacobs-education"],
     });
   });
 
   test("no refetch on stable key", async () => {
     mockSearch.mockResolvedValue(makeResult(5));
     const { rerender } = renderHook(
-      ({ p }) => useSearch(p, annotations),
-      { initialProps: { p: { ...baseParams } } },
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: { ...baseParams } },
+      },
     );
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
     rerender({ p: { ...baseParams } });
@@ -55,22 +70,14 @@ describe("useSearch", () => {
   test("refetches when params change", async () => {
     mockSearch.mockResolvedValue(makeResult(5));
     const { rerender } = renderHook(
-      ({ p }) => useSearch(p, annotations),
-      { initialProps: { p: baseParams } },
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: baseParams },
+      },
     );
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
     rerender({ p: { ...baseParams, page: 2 } });
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
-  });
-
-  test("refetches when annotations change", async () => {
-    mockSearch.mockResolvedValue(makeResult(5));
-    const { rerender } = renderHook(
-      ({ a }) => useSearch(baseParams, a),
-      { initialProps: { a: annotations } },
-    );
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
-    rerender({ a: ["other-annotation"] });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
   });
 
@@ -81,14 +88,16 @@ describe("useSearch", () => {
     );
 
     const { result, rerender } = renderHook(
-      ({ p }) => useSearch(p, annotations),
-      { initialProps: { p: baseParams } },
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: baseParams },
+      },
     );
     resolvers[0](makeResult(10));
     await waitFor(() => expect(result.current.results?.total.count).toBe(10));
 
     rerender({ p: { ...baseParams, page: 2 } });
-    // Prior results stay on screen; loading flips to true.
     expect(result.current.results?.total.count).toBe(10);
     expect(result.current.loading).toBe(true);
 
@@ -99,8 +108,11 @@ describe("useSearch", () => {
   test("clears results to null on settled error", async () => {
     mockSearch.mockResolvedValueOnce(makeResult(10));
     const { result, rerender } = renderHook(
-      ({ p }) => useSearch(p, annotations),
-      { initialProps: { p: baseParams } },
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: baseParams },
+      },
     );
     await waitFor(() => expect(result.current.results?.total.count).toBe(10));
 
@@ -121,19 +133,24 @@ describe("useSearch", () => {
       .mockImplementationOnce(() => new Promise<SearchResult>((r) => { secondResolve = r; }));
 
     const { result, rerender } = renderHook(
-      ({ p }) => useSearch(p, annotations),
-      { initialProps: { p: baseParams } },
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: baseParams },
+      },
     );
     rerender({ p: { ...baseParams, page: 2 } });
 
-    firstResolve(makeResult(999));  // stale — must not appear
+    firstResolve(makeResult(999));
     secondResolve(makeResult(2));
     await waitFor(() => expect(result.current.results?.total.count).toBe(2));
   });
 
   test("error from initial fetch populates error (results stays null — nothing to preserve)", async () => {
     mockSearch.mockRejectedValue(new Error("boom"));
-    const { result } = renderHook(() => useSearch(baseParams, annotations));
+    const { result } = renderHook(() => useSearch(baseParams), {
+      wrapper: withCommunityPath("/esea"),
+    });
     await waitFor(() => {
       expect(result.current.error?.message).toBe("boom");
       expect(result.current.results).toBeNull();
@@ -142,10 +159,13 @@ describe("useSearch", () => {
   });
 
   test("retry refetches without mutating URL", async () => {
+    window.history.replaceState(null, "", "/esea");
     const pushSpy = vi.spyOn(history, "pushState");
     const replaceSpy = vi.spyOn(history, "replaceState");
     mockSearch.mockResolvedValue(makeResult(1));
-    const { result } = renderHook(() => useSearch(baseParams, annotations));
+    const { result } = renderHook(() => useSearch(baseParams), {
+      wrapper: ({ children }) => <CommunityProvider>{children}</CommunityProvider>,
+    });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
 
     act(() => { result.current.retry(); });
@@ -162,12 +182,13 @@ describe("useSearch", () => {
       () => new Promise<SearchResult>((r) => { resolvers.push(r); }),
     );
 
-    const { result } = renderHook(() => useSearch(baseParams, annotations));
+    const { result } = renderHook(() => useSearch(baseParams), {
+      wrapper: withCommunityPath("/esea"),
+    });
     resolvers[0](makeResult(10));
     await waitFor(() => expect(result.current.results?.total.count).toBe(10));
 
     act(() => { result.current.retry(); });
-    // Prior results remain visible during the retry in-flight.
     expect(result.current.results?.total.count).toBe(10);
     expect(result.current.loading).toBe(true);
 
@@ -175,15 +196,15 @@ describe("useSearch", () => {
     await waitFor(() => expect(result.current.results?.total.count).toBe(11));
   });
 
-  test("key disambiguates annotation arrays even when an element contains a comma", async () => {
+  test("returns idle (no fetch) when slug resolves to no community", () => {
     mockSearch.mockResolvedValue(makeResult(1));
-    const { rerender } = renderHook(
-      ({ a }) => useSearch(baseParams, a),
-      { initialProps: { a: ["a,b"] } },
-    );
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
-    // Two annotations "a" + "b" must be distinct from one "a,b" entry.
-    rerender({ a: ["a", "b"] });
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
+    const { result } = renderHook(() => useSearch(baseParams), {
+      wrapper: withCommunityPath("/banana"),
+    });
+    expect(result.current.results).toBeNull();
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBeNull();
+    expect(typeof result.current.retry).toBe("function");
+    expect(mockSearch).not.toHaveBeenCalled();
   });
 });

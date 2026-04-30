@@ -1,7 +1,10 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/preact";
+import { renderHook, waitFor, act } from "@testing-library/preact";
+import type { ComponentChildren } from "preact";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
-import type { Community, SearchResult } from "@/types/models";
+import { CommunityProvider } from "@/community/CommunityContext";
+import { URL_CHANGE_EVENT } from "@/services/navigation";
+import type { SearchResult } from "@/types/models";
 
 vi.mock("@/services/apiClient", () => ({
   searchReferences: vi.fn(),
@@ -10,26 +13,33 @@ vi.mock("@/services/apiClient", () => ({
 import { searchReferences } from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
 
-const community: Community = {
-  slug: "esea",
-  name: "Education",
-  defaultAnnotations: ["domain-inclusion/jacobs-education"],
-};
-
 const result: SearchResult = {
   total: { count: 5721, is_lower_bound: false },
   page: { count: 20, number: 1 },
   references: [],
 };
 
+// Drive the real CommunityProvider through the URL the way the runtime does.
+// Tests stay at the integration layer instead of leaking a context-injection
+// API just to satisfy synthetic fixtures.
+function withCommunityPath(path: string) {
+  window.history.replaceState(null, "", path);
+  return ({ children }: { children: ComponentChildren }) => (
+    <CommunityProvider>{children}</CommunityProvider>
+  );
+}
+
 beforeEach(() => {
   mockSearch.mockReset();
+  window.history.replaceState(null, "", "/");
 });
 
 describe("useCorpusTotal", () => {
   test("fires once with browse-mode query and community annotations", async () => {
     mockSearch.mockResolvedValue(result);
-    const { result: hook } = renderHook(() => useCorpusTotal(community));
+    const { result: hook } = renderHook(() => useCorpusTotal(), {
+      wrapper: withCommunityPath("/esea"),
+    });
     await waitFor(() => expect(hook.current.loading).toBe(false));
     expect(mockSearch).toHaveBeenCalledTimes(1);
     expect(mockSearch).toHaveBeenCalledWith(undefined, {
@@ -39,64 +49,52 @@ describe("useCorpusTotal", () => {
     expect(hook.current.error).toBeNull();
   });
 
-  test("does not refetch when community prop is stable", async () => {
+  test("does not refetch when URL stays on the same community", async () => {
     mockSearch.mockResolvedValue(result);
-    const { rerender } = renderHook(
-      ({ c }) => useCorpusTotal(c),
-      { initialProps: { c: community } },
-    );
+    const { rerender } = renderHook(() => useCorpusTotal(), {
+      wrapper: withCommunityPath("/esea"),
+    });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
-    rerender({ c: community });
-    rerender({ c: community });
+    rerender();
+    rerender();
     expect(mockSearch).toHaveBeenCalledTimes(1);
   });
 
-  test("refetches when community slug changes", async () => {
+  test("returns idle (no fetch, no loading) when slug resolves to no community", () => {
     mockSearch.mockResolvedValue(result);
-    const other: Community = { slug: "other", name: "Other", defaultAnnotations: [] };
-    const { rerender } = renderHook(
-      ({ c }) => useCorpusTotal(c),
-      { initialProps: { c: community } },
-    );
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
-    rerender({ c: other });
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
-  });
-
-  test("refetches when annotations change for same slug", async () => {
-    mockSearch.mockResolvedValue(result);
-    const reannotated: Community = {
-      ...community,
-      defaultAnnotations: ["domain-inclusion/jacobs-education", "source/extra-filter"],
-    };
-    const { rerender } = renderHook(
-      ({ c }) => useCorpusTotal(c),
-      { initialProps: { c: community } },
-    );
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
-    rerender({ c: reannotated });
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
-    expect(mockSearch).toHaveBeenLastCalledWith(undefined, {
-      annotation: ["domain-inclusion/jacobs-education", "source/extra-filter"],
+    const { result: hook } = renderHook(() => useCorpusTotal(), {
+      wrapper: withCommunityPath("/banana"),
     });
+    expect(hook.current.total).toBeNull();
+    expect(hook.current.loading).toBe(false);
+    expect(hook.current.error).toBeNull();
+    expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  test("key disambiguates annotation arrays even when an element contains a comma", async () => {
+  test("transitions to idle when navigating away to an unknown slug", async () => {
     mockSearch.mockResolvedValue(result);
-    const c1: Community = { ...community, defaultAnnotations: ["a,b"] };
-    const c2: Community = { ...community, defaultAnnotations: ["a", "b"] };
-    const { rerender } = renderHook(
-      ({ c }) => useCorpusTotal(c),
-      { initialProps: { c: c1 } },
-    );
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
-    rerender({ c: c2 });
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
+    const { result: hook } = renderHook(() => useCorpusTotal(), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(hook.current.total).not.toBeNull());
+
+    act(() => {
+      window.history.replaceState(null, "", "/banana");
+      window.dispatchEvent(new Event(URL_CHANGE_EVENT));
+    });
+
+    await waitFor(() => {
+      expect(hook.current.total).toBeNull();
+      expect(hook.current.loading).toBe(false);
+      expect(hook.current.error).toBeNull();
+    });
   });
 
   test("surfaces error", async () => {
     mockSearch.mockRejectedValue(new Error("boom"));
-    const { result: hook } = renderHook(() => useCorpusTotal(community));
+    const { result: hook } = renderHook(() => useCorpusTotal(), {
+      wrapper: withCommunityPath("/esea"),
+    });
     await waitFor(() => {
       expect(hook.current.error).toBeDefined();
       expect(hook.current.error!.message).toBe("boom");
