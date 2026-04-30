@@ -50,6 +50,14 @@
   margin: 0 0 var(--spacing-sm);
 }
 
+.investigation-card__coder {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  margin: var(--spacing-md) 0 0;
+}
+
 .investigation-card__doi {
   display: inline-flex;
   align-items: center;

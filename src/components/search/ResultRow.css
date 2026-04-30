@@ -90,6 +90,13 @@
   color: var(--color-text-secondary);
 }
 
+.row-coder {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+}
+
 /* Right column: deliberately un-positioned so clicks on its non-interactive
    children (stat-badges, empty space) fall through to the row-link overlay. */
 .row-right {

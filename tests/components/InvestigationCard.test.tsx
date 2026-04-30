@@ -112,6 +112,18 @@ describe("InvestigationCard", () => {
     ).toBeDefined();
   });
 
+  test("renders 'Coded by X' below the doc type when provided", () => {
+    render(<InvestigationCard {...DEFAULT_PROPS} codingInstitution="ESEA" />);
+    expect(screen.getByTestId("investigation-coder-text")).toHaveTextContent(
+      "Coded by ESEA",
+    );
+  });
+
+  test("does not render coding institution when null", () => {
+    render(<InvestigationCard {...DEFAULT_PROPS} codingInstitution={null} />);
+    expect(screen.queryByTestId("investigation-coder-text")).toBeNull();
+  });
+
   test("renders gracefully with missing optional fields", () => {
     const { container } = render(
       <InvestigationCard
