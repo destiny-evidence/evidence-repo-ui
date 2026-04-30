@@ -1,5 +1,5 @@
 import { useMemo } from "preact/hooks";
-import { findCommunity } from "@/services/communities";
+import { useCommunity } from "@/community/CommunityContext";
 import {
   extractBibliographic,
   extractLinkedData,
@@ -19,15 +19,11 @@ import "./RecordDetailPage.css";
 
 interface RecordDetailPageProps {
   path?: string;
-  community?: string;
   id?: string;
 }
 
-export function RecordDetailPage({
-  community: slug,
-  id,
-}: RecordDetailPageProps) {
-  const community = slug ? findCommunity(slug) : undefined;
+export function RecordDetailPage({ id }: RecordDetailPageProps) {
+  const community = useCommunity();
 
   const { reference, loading: refLoading, error: refError } = useReference(id);
   const bibliographic = reference ? extractBibliographic(reference) : null;

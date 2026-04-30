@@ -1,7 +1,16 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/preact";
 import { SearchPage } from "@/pages/SearchPage";
+import { CommunityProvider } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
+
+function renderSearchPage() {
+  return render(
+    <CommunityProvider>
+      <SearchPage />
+    </CommunityProvider>,
+  );
+}
 
 vi.mock("@/services/apiClient", () => ({
   searchReferences: vi.fn(),
@@ -63,7 +72,7 @@ describe("SearchPage", () => {
     // Browse mode: corpus and search fetches are identical (both q=undefined),
     // so corpus defaults to mirror results.
     mockBoth({ results: makeResult(5721, ["r1", "r2", "r3"]) });
-    render(<SearchPage community="esea" />);
+    renderSearchPage();
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(screen.getByText(/5,721 investigations across education research/i)).toBeInTheDocument();
@@ -73,7 +82,7 @@ describe("SearchPage", () => {
   test("year-only filter shows meta-bar count without 'for' framing", async () => {
     history.replaceState(null, "", "/esea?start_year=2015");
     mockBoth({ results: makeResult(120, ["r1"]) });
-    render(<SearchPage community="esea" />);
+    renderSearchPage();
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(screen.getByText(/results from/i)).toHaveTextContent(/120 results from 2015/i);
@@ -83,7 +92,7 @@ describe("SearchPage", () => {
   test("URL params on mount drive the fetch", async () => {
     history.replaceState(null, "", "/esea?q=phonics&start_year=2015&page=2");
     mockBoth({ results: makeResult(47, ["r1"]) });
-    render(<SearchPage community="esea" />);
+    renderSearchPage();
 
     await waitFor(() => {
       const queryCall = mockSearch.mock.calls.find(
@@ -104,7 +113,7 @@ describe("SearchPage", () => {
       return Promise.resolve(postSubmitResponse);
     });
 
-    render(<SearchPage community="esea" />);
+    renderSearchPage();
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(screen.getByText(/5,721 investigations/i)).toBeInTheDocument();
 
@@ -126,7 +135,7 @@ describe("SearchPage", () => {
     replaceSpy.mockClear();
     mockBoth({ results: makeResult(1, []) });
 
-    render(<SearchPage community="esea" />);
+    renderSearchPage();
     await waitFor(() => {
       expect(window.location.search).toBe("?q=phonics");
     });
@@ -135,7 +144,8 @@ describe("SearchPage", () => {
   });
 
   test("unknown community renders NotFoundPage", () => {
-    render(<SearchPage community="unknown-slug" />);
+    history.replaceState(null, "", "/unknown-slug");
+    renderSearchPage();
     expect(screen.getByRole("heading", { name: /not found/i })).toBeInTheDocument();
   });
 
@@ -148,7 +158,7 @@ describe("SearchPage", () => {
       if (q === undefined) return Promise.reject(new Error("corpus failed"));
       return Promise.resolve(makeResult(1, ["r1"]));
     });
-    render(<SearchPage community="esea" />);
+    renderSearchPage();
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(screen.getByText(/Education/)).toBeInTheDocument();
@@ -157,7 +167,7 @@ describe("SearchPage", () => {
 
   test("corpus subtitle suffixes '+' when total.is_lower_bound is true", async () => {
     mockBoth({ results: makeResult(10000, ["r1"], true) });
-    render(<SearchPage community="esea" />);
+    renderSearchPage();
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(screen.getByText(/10,000\+ investigations across Education/i)).toBeInTheDocument();
@@ -169,7 +179,7 @@ describe("SearchPage", () => {
       corpus: makeResult(5721, ["c1"]),
       results: makeResult(10000, ["r1"], true),
     });
-    render(<SearchPage community="esea" />);
+    renderSearchPage();
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(screen.getByText(/results for/i)).toHaveTextContent(/10,000\+ results for “education”/i);
@@ -179,7 +189,7 @@ describe("SearchPage", () => {
     history.replaceState(null, "", "/esea?q=phonics");
     const pushSpy = vi.spyOn(history, "pushState");
     mockSearch.mockRejectedValue(new Error("search failed"));
-    render(<SearchPage community="esea" />);
+    renderSearchPage();
 
     await waitFor(() => expect(screen.getByText(/couldn't load results/i)).toBeInTheDocument());
     const retryButton = screen.getByRole("button", { name: /try again/i });

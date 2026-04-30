@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/preact";
+import { render, screen, fireEvent } from "@testing-library/preact";
 import { App } from "@/App";
 
 test("renders the app header", () => {
@@ -26,4 +26,21 @@ test("renders not found for invalid community", () => {
   history.pushState({}, "", "/banana");
   render(<App />);
   expect(screen.getByText("Page not found")).toBeInTheDocument();
+});
+
+// Regression test for issue #27 review finding: preact-router intercepts
+// internal anchor clicks and routes via history.pushState without firing
+// popstate or our URL_CHANGE_EVENT. Without bridging that gap, the
+// CommunityProvider stays on the old slug and SearchPage falls back to
+// NotFound even though the router moved to /esea.
+test("clicking Go to search from /banana shows the search page", () => {
+  history.pushState({}, "", "/banana");
+  render(<App />);
+  expect(screen.getByText("Page not found")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("link", { name: /go to search/i }));
+
+  expect(
+    screen.getByRole("heading", { name: /search the evidence/i }),
+  ).toBeInTheDocument();
 });
