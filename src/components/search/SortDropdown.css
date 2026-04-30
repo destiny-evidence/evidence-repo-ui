@@ -1,0 +1,45 @@
+/* Wrapping span hosts the custom ▼ arrow as a pseudo-element overlay so the
+   <select> itself can stay a single unstyled control. The select keeps native
+   keyboard / screen-reader / mobile-picker behaviour; the wrapper just
+   restyles the chrome to match the prototype's button look. */
+.sort-dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.sort-dropdown__select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--color-bg-inset);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.2;
+  /* Right padding leaves room for the ▼ overlay; left padding mirrors
+     the prototype's 12px button inset. */
+  padding: 5px 26px 5px 12px;
+}
+
+.sort-dropdown__select:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.sort-dropdown__select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sort-dropdown::after {
+  content: "▼";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}

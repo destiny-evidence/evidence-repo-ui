@@ -43,12 +43,23 @@
 .search-results__meta {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-small);
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-inset);
+}
+
+/* Inner flex so summary text and the retry button stay grouped together
+   on the left while space-between pushes the dropdown to the right.
+   Empty span (browse mode) collapses to width 0 but still anchors the
+   left side of the bar. */
+.search-results__meta-left {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .search-results__meta-count {
