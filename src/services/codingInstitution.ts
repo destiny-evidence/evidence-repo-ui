@@ -1,7 +1,8 @@
 import type { Enhancement, OtherEnhancement, Reference } from "@/types/models";
 import { extractLatestEnhancement } from "@/services/referenceUtils";
 
-// Substring match: real source values are more convoluted (e.g. "esea-coder-v3").
+// Substring match: real source values are more convoluted
+// (e.g. "eef-eppi-review", "ad_hoc_ingestors.iiie_ingestor@1.0").
 const INSTITUTION_PATTERNS: ReadonlyArray<readonly [string, string]> = [
   ["eef", "EEF"],
   ["iiie", "IIIE"],

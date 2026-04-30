@@ -121,7 +121,7 @@ describe("ResultRow", () => {
         {
           id: "raw-1",
           reference_id: "ref-1",
-          source: "eef-coder-v3",
+          source: "eef-eppi-review",
           visibility: "public",
           robot_version: null,
           derived_from: null,

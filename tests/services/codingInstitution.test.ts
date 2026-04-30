@@ -56,11 +56,11 @@ function makeRef(enhancements: Enhancement[] | null): Reference {
 
 describe("resolveCodingInstitution", () => {
   test.each([
-    ["eef-coder-v3", "EEF"],
-    ["coder.iiie.team", "IIIE"],
-    ["essa-2024", "ESSA"],
+    ["eef-eppi-review", "EEF"],
+    ["ad_hoc_ingestors.iiie_ingestor@1.0", "IIIE"],
+    ["ad_hoc_ingestors.essa_ingestor@1.0", "ESSA"],
     ["wwhge-internal", "WWHGE"],
-    ["EEF-CODER", "EEF"],
+    ["EEF-EPPI-REVIEW", "EEF"],
   ])("maps %s to %s", (input, expected) => {
     expect(resolveCodingInstitution(input)).toBe(expected);
   });
@@ -88,8 +88,8 @@ describe("extractReferenceCodingInstitution", () => {
 
   test("uses the latest raw enhancement by created_at", () => {
     const ref = makeRef([
-      rawEnh("a", "eef-coder", "2024-01-01"),
-      rawEnh("b", "iiie-coder", "2024-06-01"),
+      rawEnh("a", "eef-eppi-review", "2024-01-01"),
+      rawEnh("b", "ad_hoc_ingestors.iiie_ingestor@1.0", "2024-06-01"),
     ]);
     expect(extractReferenceCodingInstitution(ref)).toBe("IIIE");
   });
@@ -108,7 +108,7 @@ describe("extractLinkedDataCodingInstitution", () => {
 
   test("returns null when LDE has no derived_from", () => {
     const lde = ldeEnh(null);
-    const ref = makeRef([rawEnh("raw-1", "eef-coder"), lde]);
+    const ref = makeRef([rawEnh("raw-1", "eef-eppi-review"), lde]);
     expect(extractLinkedDataCodingInstitution(ref, lde)).toBeNull();
   });
 
@@ -116,7 +116,7 @@ describe("extractLinkedDataCodingInstitution", () => {
     const lde = ldeEnh(["raw-2"]);
     const ref = makeRef([
       rawEnh("raw-1", "openalex"),
-      rawEnh("raw-2", "eef-coder-v3"),
+      rawEnh("raw-2", "eef-eppi-review-v3"),
       lde,
     ]);
     expect(extractLinkedDataCodingInstitution(ref, lde)).toBe("EEF");
@@ -126,8 +126,8 @@ describe("extractLinkedDataCodingInstitution", () => {
     const ldeA = { ...ldeEnh(["raw-1"]), id: "lde-a" };
     const ldeB = { ...ldeEnh(["raw-2"]), id: "lde-b" };
     const ref = makeRef([
-      rawEnh("raw-1", "eef-coder"),
-      rawEnh("raw-2", "iiie-coder"),
+      rawEnh("raw-1", "eef-eppi-review"),
+      rawEnh("raw-2", "ad_hoc_ingestors.iiie_ingestor@1.0"),
       ldeA,
       ldeB,
     ]);
@@ -137,7 +137,7 @@ describe("extractLinkedDataCodingInstitution", () => {
 
   test("returns null when derived_from points to a missing enhancement", () => {
     const lde = ldeEnh(["nonexistent-id"]);
-    const ref = makeRef([rawEnh("raw-1", "eef-coder"), lde]);
+    const ref = makeRef([rawEnh("raw-1", "eef-eppi-review"), lde]);
     expect(extractLinkedDataCodingInstitution(ref, lde)).toBeNull();
   });
 
