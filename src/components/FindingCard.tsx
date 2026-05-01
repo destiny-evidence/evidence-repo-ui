@@ -3,12 +3,29 @@ import { InterventionDetails } from "./InterventionDetails";
 import { ContextDetails } from "./ContextDetails";
 import { SampleDetails } from "./SampleDetails";
 import { OutcomeDetails } from "./OutcomeDetails";
-import type { FindingData } from "@/types/investigation";
+import { EffectEstimateCard } from "./EffectEstimateCard";
+import type {
+  ArmData,
+  EffectEstimateData,
+  FindingData,
+} from "@/types/investigation";
 import "./ComparisonRow.css";
 import "./InterventionDetails.css";
 import "./SampleDetails.css";
 import "./OutcomeDetails.css";
 import "./FindingCard.css";
+
+function armsForEstimate(
+  estimate: EffectEstimateData,
+  arms: ArmData[] | undefined,
+): ArmData[] {
+  if (!arms || arms.length === 0) return [];
+  if (!estimate.derivedFromIds || estimate.derivedFromIds.length === 0) {
+    return arms;
+  }
+  const ids = new Set(estimate.derivedFromIds);
+  return arms.filter((a) => ids.has(a.id));
+}
 
 interface FindingCardProps {
   finding: FindingData;
@@ -45,6 +62,8 @@ export function FindingCard({
 }: FindingCardProps) {
   const { intervention, control, context, outcome } = finding;
   const showSample = hasSampleData(finding);
+  const estimates = finding.effectEstimates ?? [];
+  const showOutcomeSection = Boolean(outcome) || estimates.length > 0;
 
   return (
     <article class="finding-card lg-card">
@@ -82,16 +101,27 @@ export function FindingCard({
         </>
       )}
 
-      {outcome && (
+      {showOutcomeSection && (
         <div class="finding-card__section">
           {!isShared && <hr class="finding-card__divider lg-divider" />}
           <h3 class="finding-card__section-label lg-section-label">Outcome</h3>
-          <OutcomeDetails
-            outcome={outcome}
-            labels={labels}
-            broader={broader}
-            definitions={definitions}
-          />
+          {outcome && (
+            <OutcomeDetails
+              outcome={outcome}
+              labels={labels}
+              broader={broader}
+              definitions={definitions}
+            />
+          )}
+          {estimates.map((estimate, i) => (
+            <EffectEstimateCard
+              key={`ee-${i}`}
+              estimate={estimate}
+              arms={armsForEstimate(estimate, finding.arms)}
+              intervention={intervention}
+              control={control}
+            />
+          ))}
         </div>
       )}
 

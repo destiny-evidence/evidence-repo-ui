@@ -1,0 +1,116 @@
+.ci-viz {
+  --ee-pos-bar-fill: rgba(36, 57, 107, 0.08);
+  --ee-pos-bar-border: rgba(36, 57, 107, 0.2);
+  --ee-neg-bar-fill: rgba(120, 40, 40, 0.06);
+  --ee-neg-bar-border: rgba(120, 40, 40, 0.18);
+  --ee-ns-bar-fill: rgba(154, 74, 18, 0.08);
+  --ee-ns-bar-border: rgba(154, 74, 18, 0.18);
+  --ee-pos-dot: #24396b;
+  --ee-neg-dot: #6b2020;
+  --ee-ns-dot: var(--color-text-tertiary);
+
+  position: relative;
+  height: 48px;
+  margin: 14px 0 16px;
+}
+
+/* Inner container insets the plot 20px on each side; track, zero line,
+   bar, dot, and scale are all positioned within this inner box so a single
+   percentage maps consistently to axis position. */
+.ci-viz__inner {
+  position: absolute;
+  inset: 0 20px;
+}
+
+.ci-viz__track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 23px;
+  height: 1px;
+  background: var(--color-border-strong);
+}
+
+.ci-viz__zero-label {
+  position: absolute;
+  top: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-text-tertiary);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.ci-viz__zero {
+  position: absolute;
+  top: 16px;
+  height: 14px;
+  width: 1px;
+  background: var(--color-text-tertiary);
+  transform: translateX(-50%);
+}
+
+.ci-viz__bar {
+  position: absolute;
+  top: 18px;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid;
+  box-sizing: border-box;
+}
+
+.ci-viz--pos .ci-viz__bar {
+  background: var(--ee-pos-bar-fill);
+  border-color: var(--ee-pos-bar-border);
+}
+.ci-viz--neg .ci-viz__bar {
+  background: var(--ee-neg-bar-fill);
+  border-color: var(--ee-neg-bar-border);
+}
+.ci-viz--ns .ci-viz__bar {
+  background: var(--ee-ns-bar-fill);
+  border-color: var(--ee-ns-bar-border);
+}
+
+.ci-viz__dot {
+  position: absolute;
+  top: 15px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  /* Halo separates the dot from the bar where they overlap. */
+  border: 2px solid var(--color-bg-inset);
+  box-sizing: border-box;
+  transform: translateX(-50%);
+}
+
+.ci-viz--pos .ci-viz__dot {
+  background: var(--ee-pos-dot);
+}
+.ci-viz--neg .ci-viz__dot {
+  background: var(--ee-neg-dot);
+}
+.ci-viz--ns .ci-viz__dot {
+  background: var(--ee-ns-dot);
+}
+
+.ci-viz__scale {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+}
+
+.ci-viz__tick {
+  position: absolute;
+  top: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--color-text-tertiary);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
