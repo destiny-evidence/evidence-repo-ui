@@ -1,13 +1,13 @@
 import type { Enhancement, OtherEnhancement, Reference } from "@/types/models";
 import { extractLatestEnhancement } from "@/services/referenceUtils";
 
-// Substring match: real source values are more convoluted
-// (e.g. "eef-eppi-review", "ad_hoc_ingestors.iiie_ingestor@1.0").
-const INSTITUTION_PATTERNS: ReadonlyArray<readonly [string, string]> = [
-  ["eef", "EEF"],
-  ["iiie", "IIIE"],
-  ["essa", "ESSA"],
-  ["wwhge", "WWHGE"],
+// Match institution tokens with non-letter boundaries: real source values are
+// more convoluted (e.g. "eef-eppi-review", "ad_hoc_ingestors.iiie_ingestor@1.0").
+const INSTITUTION_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(^|[^a-z])eef([^a-z]|$)/, "EEF"],
+  [/(^|[^a-z])iiie([^a-z]|$)/, "IIIE"],
+  [/(^|[^a-z])essa([^a-z]|$)/, "ESSA"],
+  [/(^|[^a-z])wwhge([^a-z]|$)/, "WWHGE"],
 ];
 
 export function resolveCodingInstitution(
@@ -16,7 +16,7 @@ export function resolveCodingInstitution(
   if (!source) return null;
   const lower = source.toLowerCase();
   for (const [pattern, label] of INSTITUTION_PATTERNS) {
-    if (lower.includes(pattern)) return label;
+    if (pattern.test(lower)) return label;
   }
   return null;
 }
