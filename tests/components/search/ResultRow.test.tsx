@@ -110,6 +110,35 @@ describe("ResultRow", () => {
     expect(container.querySelector(".row-right")).toHaveTextContent(/estimates/);
   });
 
+  test("does not render coding institution when no raw enhancement is present", () => {
+    render(<ResultRow communitySlug="esea" reference={makeRef()} />);
+    expect(screen.queryByTestId("coder-text")).toBeNull();
+  });
+
+  test("renders coding institution at the bottom of the right column", () => {
+    const ref = makeRef({
+      enhancements: [
+        {
+          id: "raw-1",
+          reference_id: "ref-1",
+          source: "eef-eppi-review",
+          visibility: "public",
+          robot_version: null,
+          derived_from: null,
+          created_at: "2024-01-01",
+          content: { enhancement_type: "raw" },
+        },
+      ],
+    });
+    const { container } = render(
+      <ResultRow communitySlug="esea" reference={ref} />,
+    );
+    const coder = screen.getByTestId("coder-text");
+    expect(coder).toHaveTextContent("EEF");
+    const right = container.querySelector(".row-right");
+    expect(right?.lastElementChild).toBe(coder);
+  });
+
   test("renders without throwing when bibliographic missing; row-anchor falls back to id", () => {
     const ref = makeRef({ enhancements: [] });
     render(<ResultRow communitySlug="esea" reference={ref} />);

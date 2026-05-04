@@ -133,10 +133,17 @@ export function bibliographicEnh(
   };
 }
 
-/** Build a linked-data Enhancement wrapping an Investigation dict. */
+interface LinkedDataEnhOpts {
+  id?: string;
+  derivedFrom?: string[] | null;
+  createdAt?: string | null;
+  investigation?: Record<string, unknown>;
+}
+
+/** Build a linked-data Enhancement, optionally wrapping an Investigation dict. */
 export function linkedDataEnh(
   refId: string,
-  investigation: Record<string, unknown>,
+  opts: LinkedDataEnhOpts = {},
 ): Enhancement {
   const content: LinkedDataEnhancement = {
     enhancement_type: "linked_data",
@@ -144,18 +151,40 @@ export function linkedDataEnh(
     data: {
       "@context": "https://vocab.example/context.jsonld",
       "@type": "LinkedDataEnhancement",
-      hasInvestigation: { "@type": "Investigation", ...investigation },
+      hasInvestigation: { "@type": "Investigation", ...(opts.investigation ?? {}) },
     },
   };
   return {
-    id: `${refId}-ld`,
+    id: opts.id ?? `${refId}-ld`,
     reference_id: refId,
     source: "robot",
     visibility: "public",
     robot_version: "0.1.0",
-    derived_from: null,
-    created_at: null,
+    derived_from: opts.derivedFrom ?? null,
+    created_at: opts.createdAt ?? null,
     content,
+  };
+}
+
+interface RawEnhOpts {
+  id?: string;
+  source?: string;
+  createdAt?: string | null;
+}
+
+/** Build a raw Enhancement (used for ingestor/coder provenance). */
+export function rawEnh(refId: string, opts: RawEnhOpts = {}): Enhancement {
+  return {
+    id: opts.id ?? `${refId}-raw`,
+    reference_id: refId,
+    source: opts.source ?? "openalex",
+    visibility: "public",
+    robot_version: null,
+    derived_from: null,
+    created_at: opts.createdAt ?? null,
+    content: {
+      enhancement_type: "raw",
+    },
   };
 }
 
@@ -176,7 +205,7 @@ export function makeReference(opts: ReferenceOpts = {}): Reference {
     opts.enhancements ??
     [
       bibliographicEnh(id, opts.bibliographic),
-      opts.investigation ? linkedDataEnh(id, opts.investigation) : null,
+      opts.investigation ? linkedDataEnh(id, { investigation: opts.investigation }) : null,
     ].filter((e): e is Enhancement => e !== null);
 
   return {

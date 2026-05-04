@@ -3,8 +3,10 @@ import { useCommunity } from "@/community/CommunityContext";
 import {
   extractBibliographic,
   extractLinkedData,
+  extractLinkedDataEnhancement,
   extractDoi,
 } from "@/services/referenceUtils";
+import { extractLinkedDataCodingInstitution } from "@/services/codingInstitution";
 import {
   parseInvestigation,
   extractIsRetracted,
@@ -89,6 +91,10 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
   if (!reference) return <NotFoundPage />;
 
   const doi = extractDoi(reference.identifiers);
+  const lde = extractLinkedDataEnhancement(reference);
+  const codingInstitution = lde
+    ? extractLinkedDataCodingInstitution(reference, lde)
+    : null;
 
   return (
     <div class="record-detail-page">
@@ -101,6 +107,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
           doi={doi}
           publicationYear={bibliographic?.publication_year ?? null}
           documentType={investigation?.documentType}
+          codingInstitution={codingInstitution}
           isRetracted={isRetracted}
           hasInvestigation={hasLinkedData}
           vocabUnavailable={!!vocabUnavailable}

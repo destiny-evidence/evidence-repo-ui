@@ -2,6 +2,7 @@ import { describe, test, expect } from "vitest";
 import {
   extractBibliographic,
   extractLinkedData,
+  extractLinkedDataEnhancement,
   extractDoi,
   formatPagination,
 } from "@/services/referenceUtils";
@@ -131,6 +132,34 @@ describe("extractLinkedData", () => {
     const ref = makeRef([makeEnhancement(ld)]);
     expect(extractLinkedData(ref)).toBe(ld);
   });
+});
+
+describe("extractLinkedDataEnhancement", () => {
+  test("returns null when enhancements is null", () => {
+    expect(extractLinkedDataEnhancement(makeRef(null))).toBeNull();
+  });
+
+  test("returns null when no linked_data enhancement exists", () => {
+    const ref = makeRef([
+      makeEnhancement({
+        enhancement_type: "abstract",
+        process: "x",
+        abstract: "y",
+      }),
+    ]);
+    expect(extractLinkedDataEnhancement(ref)).toBeNull();
+  });
+
+  test("returns the wrapping enhancement when linked_data is present", () => {
+    const ld: LinkedDataEnhancement = {
+      enhancement_type: "linked_data",
+      vocabulary_uri: "http://example.com",
+      data: { key: "value" },
+    };
+    const wrapper = makeEnhancement(ld);
+    const ref = makeRef([wrapper]);
+    expect(extractLinkedDataEnhancement(ref)).toBe(wrapper);
+  });
 
   test("returns the most recent linked_data enhancement by created_at", () => {
     const older: LinkedDataEnhancement = {
@@ -143,11 +172,12 @@ describe("extractLinkedData", () => {
       vocabulary_uri: "http://newer.com",
       data: { n: 2 },
     };
+    const newerWrapper = makeEnhancement(newer, "2026-02-01T00:00:00Z");
     const ref = makeRef([
-      makeEnhancement(newer, "2026-02-01T00:00:00Z"),
+      newerWrapper,
       makeEnhancement(older, "2025-01-01T00:00:00Z"),
     ]);
-    expect(extractLinkedData(ref)).toBe(newer);
+    expect(extractLinkedDataEnhancement(ref)).toBe(newerWrapper);
   });
 });
 
