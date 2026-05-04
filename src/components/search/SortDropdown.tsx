@@ -1,4 +1,4 @@
-import type { SortOption } from "@/services/searchParams";
+import { parseSort, type SortOption } from "@/services/searchParams";
 import "./SortDropdown.css";
 
 interface SortDropdownProps {
@@ -12,8 +12,7 @@ interface SortDropdownProps {
 // to undefined so the URL stays clean (no `sort` param) for the default.
 export function SortDropdown({ value, onChange, disabled = false }: SortDropdownProps) {
   function handleChange(e: Event) {
-    const raw = (e.target as HTMLSelectElement).value;
-    onChange(raw === "newest" || raw === "oldest" ? raw : undefined);
+    onChange(parseSort((e.target as HTMLSelectElement).value));
   }
 
   return (
