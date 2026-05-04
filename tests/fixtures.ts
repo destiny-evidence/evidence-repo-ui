@@ -133,6 +133,24 @@ export function bibliographicEnh(
   };
 }
 
+/** Build an abstract Enhancement. */
+export function abstractEnh(refId: string, abstract: string): Enhancement {
+  return {
+    id: `${refId}-abs`,
+    reference_id: refId,
+    source: "openalex",
+    visibility: "public",
+    robot_version: null,
+    derived_from: null,
+    created_at: null,
+    content: {
+      enhancement_type: "abstract",
+      process: "openalex",
+      abstract,
+    },
+  };
+}
+
 interface LinkedDataEnhOpts {
   id?: string;
   derivedFrom?: string[] | null;
@@ -192,20 +210,24 @@ interface ReferenceOpts {
   id?: string;
   doi?: string;
   bibliographic?: BibOpts;
+  abstract?: string;
   /** Investigation dict to wrap in a linked_data enhancement, if any. */
   investigation?: Record<string, unknown>;
-  /** Override enhancements entirely (skips bibliographic/investigation). */
+  /** Override enhancements entirely (skips bibliographic/abstract/investigation). */
   enhancements?: Enhancement[];
 }
 
-/** Build a Reference with optional bibliographic and linked-data enhancements. */
+/** Build a Reference with optional bibliographic, abstract, and linked-data enhancements. */
 export function makeReference(opts: ReferenceOpts = {}): Reference {
   const id = opts.id ?? "abc-123";
   const enhancements =
     opts.enhancements ??
     [
       bibliographicEnh(id, opts.bibliographic),
-      opts.investigation ? linkedDataEnh(id, { investigation: opts.investigation }) : null,
+      opts.abstract ? abstractEnh(id, opts.abstract) : null,
+      opts.investigation
+        ? linkedDataEnh(id, { investigation: opts.investigation })
+        : null,
     ].filter((e): e is Enhancement => e !== null);
 
   return {

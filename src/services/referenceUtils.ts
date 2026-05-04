@@ -7,6 +7,9 @@ import type {
   ExternalIdentifier,
   Pagination,
 } from "@/types/models";
+export function isDict(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
 
 export function extractLatestEnhancement<T extends EnhancementContent>(
   reference: Reference,
@@ -49,6 +52,30 @@ export function extractLinkedData(
   reference: Reference,
 ): LinkedDataEnhancement | null {
   return extractLinkedDataEnhancement(reference)?.content ?? null;
+}
+
+// Counts are read straight from raw JSON-LD so badges render on first paint
+// without waiting on vocabulary resolution. Returns null when the reference
+// has no linked-data enhancement, preserving the `—` fallback path.
+export function extractFindingsAndEstimatesCount(
+  reference: Reference,
+): { findings: number; estimates: number } | null {
+  const ld = extractLinkedData(reference);
+  if (!ld) return null;
+  const root = isDict(ld.data) ? ld.data : null;
+  const investigation =
+    root && isDict(root["hasInvestigation"]) ? root["hasInvestigation"] : root;
+  const rawFindings =
+    investigation && Array.isArray(investigation["hasFinding"])
+      ? investigation["hasFinding"]
+      : [];
+  let estimates = 0;
+  for (const f of rawFindings) {
+    if (isDict(f) && Array.isArray(f["hasEffectEstimate"])) {
+      estimates += f["hasEffectEstimate"].length;
+    }
+  }
+  return { findings: rawFindings.length, estimates };
 }
 
 export function extractDoi(
