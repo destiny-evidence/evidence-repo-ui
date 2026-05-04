@@ -10,10 +10,7 @@ export interface SearchFilters {
   sort?: string[];
 }
 
-// Translation between the user-facing URL alias and the backend's ES-style
-// `[-]field_name` wire format. Lives here (the API boundary) so callers
-// upstream stay in alias space and a future backend rename of
-// `publication_year` only touches one map.
+// URL alias → backend ES-style `[-]field_name` wire format.
 export const SORT_BACKEND: Record<SortOption, string> = {
   newest: "-publication_year",
   oldest: "publication_year",

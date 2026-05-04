@@ -72,11 +72,8 @@ function SearchPageInner({ community }: { community: Community }) {
   const corpus = useCorpusTotal();
   const results = useSearch(params);
 
-  // The bar itself shows whenever there's anything to put in it: the sort
-  // dropdown (once results exist), an error to surface, or the
-  // narrowed/loading summary text. Initial browse-mode load (no results
-  // yet, no error) keeps the bar hidden so the skeleton has the full bar's
-  // worth of vertical space.
+  // Hide the bar on the initial browse-mode load so the skeleton owns the
+  // full vertical space; show it as soon as there's anything to put in it.
   const showMetaBar =
     results.results !== null ||
     results.error !== null ||
@@ -84,8 +81,7 @@ function SearchPageInner({ community }: { community: Community }) {
     params.startYear !== undefined ||
     params.endYear !== undefined;
 
-  // The left summary slot stays empty in browse mode so we don't duplicate
-  // the corpus count the hero subtitle already shows.
+  // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary =
     params.q !== "" ||
     params.startYear !== undefined ||
@@ -93,11 +89,7 @@ function SearchPageInner({ community }: { community: Community }) {
     results.error !== null;
 
   function handleSubmit(q: string, startYear: number | undefined, endYear: number | undefined) {
-    // Preserve sort across query submit. Sort is a presentation preference
-    // orthogonal to the query terms; clearing it on every submit would silently
-    // strand a user who picked "newest" and then refined their query.
-    const nextParams = { ...params, q, page: 1, startYear, endYear };
-    navigate(buildSearchUrl(community.slug, nextParams));
+    navigate(buildSearchUrl(community.slug, { ...params, q, page: 1, startYear, endYear }));
   }
 
   function handlePageChange(page: number) {

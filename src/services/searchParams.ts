@@ -10,9 +10,7 @@ export interface SearchParams {
   sort: SortOption | undefined;
 }
 
-// Strict whitelist: anything outside this set parses as undefined (relevance).
-// Decouples the user-facing URL from the backend's ES field naming so a future
-// rename of `publication_year` doesn't break shared bookmarks.
+// Unknown values fall back to undefined (relevance).
 export function parseSort(raw: string | null): SortOption | undefined {
   return raw === "newest" || raw === "oldest" ? raw : undefined;
 }

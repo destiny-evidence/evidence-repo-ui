@@ -7,9 +7,6 @@ interface SortDropdownProps {
   disabled?: boolean;
 }
 
-// Native <select> for free keyboard nav, screen-reader semantics, and the
-// mobile native picker. Empty string value (option label "Relevance") maps
-// to undefined so the URL stays clean (no `sort` param) for the default.
 export function SortDropdown({ value, onChange, disabled = false }: SortDropdownProps) {
   function handleChange(e: Event) {
     onChange(parseSort((e.target as HTMLSelectElement).value));

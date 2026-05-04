@@ -52,10 +52,6 @@
   background: var(--color-bg-inset);
 }
 
-/* Inner flex so summary text and the retry button stay grouped together
-   on the left while space-between pushes the dropdown to the right.
-   Empty span (browse mode) collapses to width 0 but still anchors the
-   left side of the bar. */
 .search-results__meta-left {
   display: inline-flex;
   align-items: center;
