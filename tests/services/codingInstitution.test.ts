@@ -24,8 +24,8 @@ describe("resolveCodingInstitution", () => {
   });
 
   test("does not match patterns embedded in larger words", () => {
-    // "feeder" should not match "eef"; "messa" should not match "essa"; etc.
-    expect(resolveCodingInstitution("feeder")).toBeNull();
+    // "beef" should not match "eef"; "messa" should not match "essa"; etc.
+    expect(resolveCodingInstitution("beef")).toBeNull();
     expect(resolveCodingInstitution("messaging")).toBeNull();
   });
 
@@ -52,7 +52,11 @@ describe("extractReferenceCodingInstitution", () => {
   test("uses the latest raw enhancement by created_at", () => {
     const ref = makeReference({
       enhancements: [
-        rawEnh("ref-1", { id: "a", source: "eef-eppi-review", createdAt: "2024-01-01" }),
+        rawEnh("ref-1", {
+          id: "a",
+          source: "eef-eppi-review",
+          createdAt: "2024-01-01",
+        }),
         rawEnh("ref-1", {
           id: "b",
           source: "ad_hoc_ingestors.iiie_ingestor@1.0",
@@ -66,7 +70,11 @@ describe("extractReferenceCodingInstitution", () => {
   test("returns null when raw source is unknown", () => {
     const ref = makeReference({
       enhancements: [
-        rawEnh("ref-1", { id: "a", source: "openalex", createdAt: "2024-01-01" }),
+        rawEnh("ref-1", {
+          id: "a",
+          source: "openalex",
+          createdAt: "2024-01-01",
+        }),
       ],
     });
     expect(extractReferenceCodingInstitution(ref)).toBeNull();
@@ -109,8 +117,14 @@ describe("extractLinkedDataCodingInstitution", () => {
   });
 
   test("resolves the provenance of the specific LDE passed in", () => {
-    const ldeA = linkedDataEnh("ref-1", { id: "lde-a", derivedFrom: ["raw-1"] });
-    const ldeB = linkedDataEnh("ref-1", { id: "lde-b", derivedFrom: ["raw-2"] });
+    const ldeA = linkedDataEnh("ref-1", {
+      id: "lde-a",
+      derivedFrom: ["raw-1"],
+    });
+    const ldeB = linkedDataEnh("ref-1", {
+      id: "lde-b",
+      derivedFrom: ["raw-2"],
+    });
     const ref = makeReference({
       enhancements: [
         rawEnh("ref-1", { id: "raw-1", source: "eef-eppi-review" }),
