@@ -12,9 +12,10 @@ function renderSearchPage() {
   );
 }
 
-vi.mock("@/services/apiClient", () => ({
-  searchReferences: vi.fn(),
-}));
+vi.mock("@/services/apiClient", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/apiClient")>();
+  return { ...actual, searchReferences: vi.fn() };
+});
 
 import { searchReferences } from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
@@ -68,7 +69,7 @@ beforeEach(() => {
 });
 
 describe("SearchPage", () => {
-  test("browse mode on mount: hero shows corpus count, rows render, meta-bar hidden", async () => {
+  test("browse mode on mount: hero shows corpus count, rows render, meta-bar shows sort but no summary", async () => {
     // Browse mode: corpus and search fetches are identical (both q=undefined),
     // so corpus defaults to mirror results.
     mockBoth({ results: makeResult(5721, ["r1", "r2", "r3"]) });
@@ -76,7 +77,51 @@ describe("SearchPage", () => {
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(screen.getByText(/5,721 investigations across education research/i)).toBeInTheDocument();
+    // Summary text only renders when narrowed; browse mode shows the bar
+    // with just the sort dropdown so users can flip relevance ↔ newest.
     expect(screen.queryByText(/results for/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/sort results/i)).toBeInTheDocument();
+  });
+
+  test("sort change navigates to URL with new alias and resets page to 1", async () => {
+    history.replaceState(null, "", "/esea?q=phonics&page=3");
+    mockBoth({ results: makeResult(47, ["r1"]) });
+    renderSearchPage();
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/sort results/i), {
+      target: { value: "newest" },
+    });
+
+    await waitFor(() => expect(window.location.search).toContain("sort=newest"));
+    expect(window.location.search).toContain("q=phonics");
+    expect(window.location.search).not.toContain("page=");
+  });
+
+  test("sort dropdown reflects current URL sort param", async () => {
+    history.replaceState(null, "", "/esea?sort=oldest");
+    mockBoth({ results: makeResult(47, ["r1"]) });
+    renderSearchPage();
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    const select = screen.getByLabelText(/sort results/i) as HTMLSelectElement;
+    expect(select.value).toBe("oldest");
+  });
+
+  test("clearing sort to Relevance drops the URL param", async () => {
+    history.replaceState(null, "", "/esea?q=phonics&sort=newest");
+    mockBoth({ results: makeResult(3, ["r1"]) });
+    renderSearchPage();
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/sort results/i), {
+      target: { value: "" },
+    });
+
+    await waitFor(() => expect(window.location.search).not.toContain("sort="));
+    expect(window.location.search).toContain("q=phonics");
   });
 
   test("year-only filter shows meta-bar count without 'for' framing", async () => {
@@ -127,6 +172,21 @@ describe("SearchPage", () => {
     expect(window.location.search).toBe("?q=phonics");
     // Corpus subtitle is unchanged throughout the transition.
     expect(screen.getByText(/5,721 investigations/i)).toBeInTheDocument();
+  });
+
+  test("submitting a query preserves an existing sort selection", async () => {
+    history.replaceState(null, "", "/esea?sort=newest");
+    mockBoth({ results: makeResult(3, ["r1"]) });
+
+    renderSearchPage();
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+    fireEvent.input(screen.getByRole("searchbox"), { target: { value: "phonics" } });
+    fireEvent.click(screen.getByRole("button", { name: /search/i }));
+
+    await waitFor(() => expect(window.location.search).toContain("q=phonics"));
+    expect(window.location.search).toContain("sort=newest");
+    expect(window.location.search).not.toContain("page=");
   });
 
   test("invalid URL params canonicalize via replaceState exactly once", async () => {

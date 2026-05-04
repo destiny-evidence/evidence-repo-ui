@@ -1,5 +1,6 @@
 import { api } from "@/api/client";
 import type { Reference, SearchResult } from "@/types/models";
+import type { SortOption } from "@/services/searchParams";
 
 export interface SearchFilters {
   page?: number;
@@ -8,6 +9,12 @@ export interface SearchFilters {
   annotation?: string[];
   sort?: string[];
 }
+
+// URL alias → backend ES-style `[-]field_name` wire format.
+export const SORT_BACKEND: Record<SortOption, string> = {
+  newest: "-publication_year",
+  oldest: "publication_year",
+};
 
 // Mirrors parseSearchParams: page must be >= 1, years > 0, all safe integers.
 // Defends the API boundary against NaN/Infinity/floats from programmatic callers.

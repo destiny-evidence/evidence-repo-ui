@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
-import { searchReferences } from "@/services/apiClient";
+import { searchReferences, SORT_BACKEND, type SearchFilters } from "@/services/apiClient";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
@@ -14,6 +14,7 @@ function paramsKey(params: SearchParams, slug: string, annotations: string[]): s
     `page=${params.page}`,
     `start=${params.startYear ?? ""}`,
     `end=${params.endYear ?? ""}`,
+    `sort=${params.sort ?? ""}`,
     `slug=${slug}`,
     `ann=${JSON.stringify(annotations)}`,
   ].join("&");
@@ -45,12 +46,15 @@ export function useSearch(params: SearchParams): {
     setError(null);
     setLoading(true);
 
-    searchReferences(params.q || undefined, {
+    const filters: SearchFilters = {
       page: params.page,
       startYear: params.startYear,
       endYear: params.endYear,
       annotation: community.defaultAnnotations,
-    })
+    };
+    if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
+
+    searchReferences(params.q || undefined, filters)
       .then((r) => { if (!cancelled) setResults(r); })
       .catch((e) => {
         if (cancelled) return;

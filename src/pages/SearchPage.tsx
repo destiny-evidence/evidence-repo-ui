@@ -1,12 +1,13 @@
 import { useEffect } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import type { Community } from "@/types/models";
-import { parseSearchParams, toQueryString, buildSearchUrl } from "@/services/searchParams";
+import { parseSearchParams, toQueryString, buildSearchUrl, type SortOption } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
 import { SearchBar } from "@/components/search/SearchBar";
+import { SortDropdown } from "@/components/search/SortDropdown";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/Pagination";
 import { NotFoundPage } from "./NotFoundPage";
@@ -71,23 +72,32 @@ function SearchPageInner({ community }: { community: Community }) {
   const corpus = useCorpusTotal();
   const results = useSearch(params);
 
-  // Meta-bar appears whenever the user has narrowed from browse mode (a query
-  // or a year filter), or whenever an error needs surfacing. Empty q + no
-  // year filters = browse mode, where the hero subtitle already carries the
-  // corpus count.
+  // Hide the bar on the initial browse-mode load so the skeleton owns the
+  // full vertical space; show it as soon as there's anything to put in it.
   const showMetaBar =
+    results.results !== null ||
+    results.error !== null ||
+    params.q !== "" ||
+    params.startYear !== undefined ||
+    params.endYear !== undefined;
+
+  // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
+  const showSummary =
     params.q !== "" ||
     params.startYear !== undefined ||
     params.endYear !== undefined ||
     results.error !== null;
 
   function handleSubmit(q: string, startYear: number | undefined, endYear: number | undefined) {
-    const nextParams = { q, page: 1, startYear, endYear };
-    navigate(buildSearchUrl(community.slug, nextParams));
+    navigate(buildSearchUrl(community.slug, { ...params, q, page: 1, startYear, endYear }));
   }
 
   function handlePageChange(page: number) {
     navigate(buildSearchUrl(community.slug, { ...params, page }));
+  }
+
+  function handleSortChange(sort: SortOption | undefined) {
+    navigate(buildSearchUrl(community.slug, { ...params, sort, page: 1 }));
   }
 
   // Page size comes from the API response (page.count) so the UI stays in
@@ -122,27 +132,38 @@ function SearchPageInner({ community }: { community: Community }) {
 
       <section class="search-results">
         {showMetaBar && (
-          <div class="search-results__meta" aria-live="polite">
-            {results.error
-              ? (
-                <>
-                  <span>Couldn't load results.</span>
-                  <button
-                    type="button"
-                    class="search-results__retry"
-                    onClick={() => results.retry()}
-                  >
-                    Try again
-                  </button>
-                </>
-              )
-              : results.loading && results.results === null
-                ? "Searching…"
-                : results.loading
-                  ? "Updating results…"
-                  : results.results
-                    ? formatResultsSummary(params.q, params.startYear, params.endYear, results.results.total)
-                    : null}
+          <div class="search-results__meta">
+            <span class="search-results__meta-left" aria-live="polite">
+              {showSummary
+                ? results.error
+                  ? (
+                    <>
+                      <span>Couldn't load results.</span>
+                      <button
+                        type="button"
+                        class="search-results__retry"
+                        onClick={() => results.retry()}
+                      >
+                        Try again
+                      </button>
+                    </>
+                  )
+                  : results.loading && results.results === null
+                    ? "Searching…"
+                    : results.loading
+                      ? "Updating results…"
+                      : results.results
+                        ? formatResultsSummary(params.q, params.startYear, params.endYear, results.results.total)
+                        : null
+                : null}
+            </span>
+            {results.results && (
+              <SortDropdown
+                value={params.sort}
+                onChange={handleSortChange}
+                disabled={results.loading}
+              />
+            )}
           </div>
         )}
 

@@ -6,14 +6,15 @@ import { CommunityProvider } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
 
-vi.mock("@/services/apiClient", () => ({
-  searchReferences: vi.fn(),
-}));
+vi.mock("@/services/apiClient", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/apiClient")>();
+  return { ...actual, searchReferences: vi.fn() };
+});
 
 import { searchReferences } from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
 
-const baseParams: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined };
+const baseParams: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
 
 // Drive the real CommunityProvider through the URL the way the runtime does.
 function withCommunityPath(path: string) {
@@ -194,6 +195,44 @@ describe("useSearch", () => {
 
     resolvers[1](makeResult(11));
     await waitFor(() => expect(result.current.results?.total.count).toBe(11));
+  });
+
+  test.each([
+    { sort: "newest" as const, wire: "-publication_year" },
+    { sort: "oldest" as const, wire: "publication_year" },
+  ])("translates sort=$sort to backend wire format $wire", async ({ sort, wire }) => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    renderHook(() => useSearch({ ...baseParams, sort }), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    expect(mockSearch).toHaveBeenCalledWith("phonics", expect.objectContaining({ sort: [wire] }));
+  });
+
+  test("omits sort filter when params.sort is undefined", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    renderHook(() => useSearch(baseParams), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    const [, filters] = mockSearch.mock.calls[0];
+    expect(filters).not.toHaveProperty("sort");
+  });
+
+  test("refetches when sort changes (cache key includes sort)", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const { rerender } = renderHook(
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: baseParams },
+      },
+    );
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    rerender({ p: { ...baseParams, sort: "newest" as const } });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
+    rerender({ p: { ...baseParams, sort: "oldest" as const } });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(3));
   });
 
   test("returns idle (no fetch) when slug resolves to no community", () => {
