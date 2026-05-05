@@ -1,6 +1,8 @@
 import type {
+  ArmData,
   ContextData,
   ControlConditionData,
+  EffectEstimateData,
   FindingData,
   InterventionData,
 } from "@/types/investigation";
@@ -59,6 +61,32 @@ export function makeRichFinding(overrides: Partial<FindingData> = {}): FindingDa
       outcomes: [{ value: { uri: "u:2", label: "Basic Skills" } }],
     },
     sampleSize: { value: 50 },
+    ...overrides,
+  };
+}
+
+/** Default effect estimate: positive significant Hedges' g. */
+export function makeEffectEstimate(
+  overrides: Partial<EffectEstimateData> = {},
+): EffectEstimateData {
+  return {
+    pointEstimate: 0.33,
+    standardError: 0.078,
+    ciLower: 0.18,
+    ciUpper: 0.48,
+    effectSizeMetric: { uri: "evrepo:HEDGES_G", label: "Hedges' g" },
+    baselineAdjusted: true,
+    clusteringAdjusted: "no",
+    ...overrides,
+  };
+}
+
+/** Default arm: bound to the matching makeFinding intervention by default. */
+export function makeArm(overrides: Partial<ArmData> = {}): ArmData {
+  return {
+    id: "_:armI",
+    conditionRef: "_:int",
+    n: 222,
     ...overrides,
   };
 }

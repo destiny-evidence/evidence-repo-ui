@@ -1,0 +1,100 @@
+.ee-card {
+  background: var(--color-bg-inset);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 22px 26px;
+  margin: 16px 0 12px;
+}
+
+.ee-card__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-tertiary);
+  margin: 0 0 14px;
+}
+
+.ee-card__headline {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+.ee-card__estimate {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.ee-card__estimate--pos {
+  color: var(--color-accent);
+}
+.ee-card__estimate--neg {
+  color: var(--color-estimate-neg);
+}
+.ee-card__estimate--ns {
+  color: var(--color-text-tertiary);
+}
+
+.ee-card__metric {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.ee-card__se {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+}
+
+.ee-card__ci {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.ee-card__ci-bracket {
+  color: var(--color-text-tertiary);
+}
+
+.ee-card__source {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  margin: var(--spacing-xs) 0 0;
+}
+
+.ee-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+/* Ghost-outlined adjustment indicator (matches the prototype's .pill styling
+   in the klim-b override: transparent fill, strong border). */
+.ee-card__tag {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 3px;
+  padding: 3px 8px;
+  color: var(--color-text-secondary);
+}
+
+.ee-card__not-clustering {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin: var(--spacing-xs) 0 0;
+}

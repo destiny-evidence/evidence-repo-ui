@@ -11,6 +11,8 @@ import type {
   ContextData,
   OutcomeData,
   FindingData,
+  EffectEstimateData,
+  ArmData,
 } from "@/types/investigation";
 
 type Dict = Record<string, unknown>;
@@ -243,6 +245,65 @@ function parseContext(
   };
 }
 
+function getIdRef(v: unknown): string | undefined {
+  if (typeof v === "string") return v;
+  if (isDict(v) && typeof v["@id"] === "string") return v["@id"] as string;
+  return undefined;
+}
+
+function resolveConceptRef(
+  v: unknown,
+  prefixes: Map<string, string>,
+  labels: Map<string, string>,
+): ResolvedConcept | undefined {
+  const id = getIdRef(v);
+  if (!id) return undefined;
+  const uri = expandCompactUri(id, prefixes);
+  return { uri, label: labels.get(uri) };
+}
+
+function parseArm(node: Dict): ArmData {
+  const numField = (key: string) => resolveNumericValue(node[key]);
+  return {
+    id: getString(node["@id"]) ?? "",
+    conditionRef: getIdRef(node["forCondition"]),
+    n: numField("n"),
+    mean: numField("mean"),
+    sd: numField("sd"),
+    se: numField("se"),
+    preMean: numField("preMean"),
+    preSd: numField("preSd"),
+    clusterCount: numField("clusterCount"),
+    icc: numField("icc"),
+    events: numField("events"),
+  };
+}
+
+function parseEffectEstimate(
+  node: Dict,
+  prefixes: Map<string, string>,
+  labels: Map<string, string>,
+): EffectEstimateData {
+  const derivedFromIds = ensureArray(node["derivedFrom"])
+    .map(getIdRef)
+    .filter((s): s is string => s !== undefined);
+  return {
+    pointEstimate: resolveNumericValue(node["pointEstimate"]),
+    standardError: resolveNumericValue(node["standardError"]),
+    confidenceLevel: resolveNumericValue(node["confidenceLevel"]),
+    ciLower: resolveNumericValue(node["confidenceIntervalLower"]),
+    ciUpper: resolveNumericValue(node["confidenceIntervalUpper"]),
+    effectSizeMetric: resolveConceptRef(node["effectSizeMetric"], prefixes, labels),
+    estimateSource: resolveConceptRef(node["estimateSource"], prefixes, labels),
+    baselineAdjusted:
+      typeof node["baselineAdjusted"] === "boolean"
+        ? (node["baselineAdjusted"] as boolean)
+        : undefined,
+    clusteringAdjusted: resolveStringValue(node["clusteringAdjusted"]),
+    derivedFromIds: derivedFromIds.length > 0 ? derivedFromIds : undefined,
+  };
+}
+
 function parseOutcome(
   node: Dict,
   prefixes: Map<string, string>,
@@ -300,6 +361,11 @@ function parseSingleFinding(
     labels,
   );
 
+  const arms = ensureArray(raw["hasArmData"]).filter(isDict).map(parseArm);
+  const effectEstimates = ensureArray(raw["hasEffectEstimate"])
+    .filter(isDict)
+    .map((n) => parseEffectEstimate(n, prefixes, labels));
+
   return {
     intervention: interv.data,
     interventionRef: interv.ref,
@@ -317,6 +383,8 @@ function parseSingleFinding(
       resolveStringAnnotation(n, prefixes),
     ),
     sampleFeatures: sampleFeatures.length > 0 ? sampleFeatures : undefined,
+    arms: arms.length > 0 ? arms : undefined,
+    effectEstimates: effectEstimates.length > 0 ? effectEstimates : undefined,
   };
 }
 

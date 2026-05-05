@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { FindingCard } from "@/components/FindingCard";
 import type { FindingData } from "@/types/investigation";
-import { makeRichFinding } from "../fixtures";
+import { makeArm, makeEffectEstimate, makeRichFinding } from "../fixtures";
 
 function renderCard(opts: { finding?: Partial<FindingData>; isShared?: boolean } = {}) {
   return render(
@@ -43,5 +43,25 @@ describe("FindingCard", () => {
     expect(
       screen.getByText(/Same intervention, control, and context as above/),
     ).toBeDefined();
+  });
+
+  test("renders effect estimate inset and arm rows when provided", () => {
+    renderCard({
+      finding: {
+        effectEstimates: [
+          makeEffectEstimate({ derivedFromIds: ["_:armI", "_:armC"] }),
+        ],
+        arms: [
+          makeArm({ id: "_:armI", conditionRef: "_:int", n: 222 }),
+          makeArm({ id: "_:armC", conditionRef: "_:ctrl", n: 222 }),
+        ],
+      },
+    });
+    expect(screen.getByText("0.33")).toBeDefined();
+    expect(screen.getByText("Hedges' g")).toBeDefined();
+    // "Test Intervention" appears in both ComparisonRow and the arm table.
+    // "Control" appears as the ComparisonRow label and the arm row name.
+    expect(screen.getAllByText("Test Intervention").length).toBe(2);
+    expect(screen.getAllByText("Control").length).toBe(2);
   });
 });
