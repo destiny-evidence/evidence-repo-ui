@@ -105,7 +105,7 @@ export function EffectEstimateCard({
       )}
 
       {showNotClustering && (
-        <p class="ee-card__not-clustering">Not clustering adjusted</p>
+        <p class="ee-card__not-clustering">Not adjusted for clustering</p>
       )}
 
       <ArmDataTable arms={arms} intervention={intervention} control={control} />

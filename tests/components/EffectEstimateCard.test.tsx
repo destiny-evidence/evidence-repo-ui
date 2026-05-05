@@ -94,11 +94,11 @@ describe("EffectEstimateCard", () => {
     expect(screen.queryByText("Baseline adjusted")).toBeNull();
   });
 
-  test("Not clustering adjusted text only when clusteringAdjusted === 'no'", () => {
+  test("Not adjusted for clustering text only when clusteringAdjusted === 'no'", () => {
     const { rerender } = renderCard(
       makeEffectEstimate({ clusteringAdjusted: "no" }),
     );
-    expect(screen.getByText("Not clustering adjusted")).toBeDefined();
+    expect(screen.getByText("Not adjusted for clustering")).toBeDefined();
 
     rerender(
       <EffectEstimateCard
@@ -108,7 +108,7 @@ describe("EffectEstimateCard", () => {
         control={control}
       />,
     );
-    expect(screen.queryByText("Not clustering adjusted")).toBeNull();
+    expect(screen.queryByText("Not adjusted for clustering")).toBeNull();
   });
 
   test("renders ArmDataTable when arms present", () => {

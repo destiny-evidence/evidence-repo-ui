@@ -1,12 +1,12 @@
 .ci-viz {
   --ee-pos-bar-fill: rgba(36, 57, 107, 0.08);
   --ee-pos-bar-border: rgba(36, 57, 107, 0.2);
-  --ee-neg-bar-fill: rgba(120, 40, 40, 0.06);
-  --ee-neg-bar-border: rgba(120, 40, 40, 0.18);
+  --ee-neg-bar-fill: rgba(185, 28, 28, 0.08);
+  --ee-neg-bar-border: rgba(185, 28, 28, 0.18);
   --ee-ns-bar-fill: rgba(154, 74, 18, 0.08);
   --ee-ns-bar-border: rgba(154, 74, 18, 0.18);
   --ee-pos-dot: #24396b;
-  --ee-neg-dot: #6b2020;
+  --ee-neg-dot: var(--color-estimate-neg);
   --ee-ns-dot: var(--color-text-tertiary);
 
   position: relative;
