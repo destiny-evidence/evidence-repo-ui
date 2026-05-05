@@ -157,12 +157,22 @@
 
 /* `pointer-events: none` lets clicks in the gaps between pills fall through
    to the stretched-link overlay, so the row stays clickable. Individual
-   pills re-enable pointer-events so their tooltip (`:hover`) still fires. */
+   pills re-enable pointer-events so their tooltip (`:hover`) still fires.
+   `display: contents` on the inner TagGroup lets the `+N more` pill share
+   the same wrap flow as the other tags. */
 .row-pills {
   position: relative;
   z-index: 1;
   grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--spacing-sm);
   pointer-events: none;
+}
+
+.row-pills > .tag-group {
+  display: contents;
 }
 
 .row-pills .tag-group__tag {
