@@ -425,6 +425,128 @@ describe("parseInvestigation", () => {
     expect(result.findings[1].sampleSize?.value).toBe(47);
   });
 
+  test("parses effect estimates with CI bounds, metric, and adjustment flags", () => {
+    const labels = new Map([
+      ...LABELS,
+      ["https://vocab.evidence-repository.org/HEDGES_G", "Hedges' g"],
+      [
+        "https://vocab.evidence-repository.org/COMPUTED",
+        "Computed from summary statistics",
+      ],
+    ]);
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          hasArmData: [
+            {
+              "@id": "_:armI",
+              "@type": "ObservedResult",
+              forCondition: "_:int",
+              n: 222,
+            },
+            {
+              "@id": "_:armC",
+              "@type": "ObservedResult",
+              forCondition: "_:ctrl",
+              n: 222,
+            },
+          ],
+          hasEffectEstimate: [
+            {
+              "@type": "EffectEstimate",
+              pointEstimate: -0.48,
+              standardError: 0.096,
+              confidenceIntervalLower: -0.67,
+              confidenceIntervalUpper: -0.29,
+              effectSizeMetric: "evrepo:HEDGES_G",
+              estimateSource: "evrepo:COMPUTED",
+              baselineAdjusted: true,
+              clusteringAdjusted: "no",
+              derivedFrom: ["_:armI", "_:armC"],
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = parseInvestigation(data, PREFIXES, labels);
+    const finding = result.findings[0];
+
+    expect(finding.effectEstimates).toHaveLength(1);
+    const ee = finding.effectEstimates![0];
+    expect(ee.pointEstimate).toBe(-0.48);
+    expect(ee.standardError).toBe(0.096);
+    expect(ee.ciLower).toBe(-0.67);
+    expect(ee.ciUpper).toBe(-0.29);
+    expect(ee.effectSizeMetric?.label).toBe("Hedges' g");
+    expect(ee.estimateSource?.label).toBe("Computed from summary statistics");
+    expect(ee.baselineAdjusted).toBe(true);
+    expect(ee.clusteringAdjusted).toBe("no");
+    expect(ee.derivedFromIds).toEqual(["_:armI", "_:armC"]);
+
+    expect(finding.arms).toHaveLength(2);
+    expect(finding.arms![0]).toMatchObject({
+      id: "_:armI",
+      conditionRef: "_:int",
+      n: 222,
+    });
+  });
+
+  test("parses sparse arm data: only n populated, other fields undefined", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          hasArmData: [
+            {
+              "@id": "_:armI",
+              "@type": "ObservedResult",
+              forCondition: "_:int",
+              n: 50,
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    const arm = result.findings[0].arms![0];
+    expect(arm.n).toBe(50);
+    expect(arm.mean).toBeUndefined();
+    expect(arm.sd).toBeUndefined();
+    expect(arm.se).toBeUndefined();
+  });
+
+  test("handles forCondition as object reference with @id", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          hasArmData: [
+            {
+              "@id": "_:armI",
+              "@type": "ObservedResult",
+              forCondition: { "@id": "_:int" },
+              n: 12,
+            },
+          ],
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.findings[0].arms![0].conditionRef).toBe("_:int");
+  });
+
+  test("findings without effect estimates or arms leave fields undefined", () => {
+    const data = makeData({
+      hasFinding: [{ "@type": "Finding" }],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.findings[0].effectEstimates).toBeUndefined();
+    expect(result.findings[0].arms).toBeUndefined();
+  });
+
   test("returns undefined label when concept not in vocabulary", () => {
     const data = makeData({
       documentType: {
