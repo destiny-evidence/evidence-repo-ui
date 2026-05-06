@@ -1,4 +1,5 @@
 import { expandCompactUri } from "./vocabulary/contextService";
+import { isDict } from "./referenceUtils";
 import type {
   InvestigationData,
   CodedAnnotation,
@@ -17,10 +18,6 @@ import type {
 type Dict = Record<string, unknown>;
 
 const SKIP_STATUSES = ["notReported", "notApplicable"];
-
-function isDict(v: unknown): v is Dict {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
-}
 
 function ensureArray(v: unknown): unknown[] {
   if (v === undefined || v === null) return [];

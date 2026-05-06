@@ -1,6 +1,23 @@
+import { useMemo } from "preact/hooks";
 import type { Reference } from "@/types/models";
-import { extractBibliographic, extractDoi, formatPagination } from "@/services/referenceUtils";
+import type {
+  CodedAnnotation,
+  InvestigationData,
+  ResolvedConcept,
+} from "@/types/investigation";
+import {
+  extractBibliographic,
+  extractDoi,
+  extractFindingsAndEstimatesCount,
+  extractLinkedData,
+  formatPagination,
+} from "@/services/referenceUtils";
 import { extractReferenceCodingInstitution } from "@/services/codingInstitution";
+import { parseInvestigation } from "@/services/investigationParser";
+import { conceptsToTags } from "@/services/conceptLabels";
+import { useVocabulary } from "@/hooks/useVocabulary";
+import { useContextPrefixes } from "@/hooks/useContextPrefixes";
+import { TagGroup } from "@/components/TagGroup";
 import "./ResultRow.css";
 
 interface ResultRowProps {
@@ -9,6 +26,7 @@ interface ResultRowProps {
 }
 
 const MAX_AUTHORS_SHOWN = 3;
+export const PILL_CAP = 8;
 
 function formatAuthors(authors: { display_name: string }[]): string {
   if (authors.length === 0) return "";
@@ -26,10 +44,64 @@ function findAbstract(reference: Reference): string | null {
   return abs && abs.content.enhancement_type === "abstract" ? abs.content.abstract : null;
 }
 
+// Document type first, then per-finding context/intervention/outcome concepts
+// and sample features. De-duped by URI; insertion order preserved so the
+// document type pill leads.
+function aggregatePillConcepts(
+  inv: InvestigationData,
+): CodedAnnotation<ResolvedConcept>[] {
+  const seen = new Set<string>();
+  const out: CodedAnnotation<ResolvedConcept>[] = [];
+  const add = (a: CodedAnnotation<ResolvedConcept>) => {
+    const uri = a.value.uri;
+    if (uri && !seen.has(uri)) {
+      seen.add(uri);
+      out.push(a);
+    }
+  };
+  const addAll = (xs?: CodedAnnotation<ResolvedConcept>[]) => xs?.forEach(add);
+
+  if (inv.documentType) add(inv.documentType);
+  for (const f of inv.findings) {
+    addAll(f.context?.educationLevels);
+    addAll(f.context?.settings);
+    addAll(f.intervention?.educationThemes);
+    addAll(f.outcome?.outcomes);
+    addAll(f.sampleFeatures);
+  }
+  return out;
+}
+
 export function ResultRow({ communitySlug, reference }: ResultRowProps) {
   const bib = extractBibliographic(reference);
   const doi = extractDoi(reference.identifiers);
   const abstract = findAbstract(reference);
+  const counts = extractFindingsAndEstimatesCount(reference);
+
+  const linkedData = extractLinkedData(reference);
+  const rawContext = linkedData?.data?.["@context"];
+  const contextUrl = typeof rawContext === "string" ? rawContext : undefined;
+
+  const { labels, definitions } = useVocabulary(linkedData?.vocabulary_uri);
+  const { context } = useContextPrefixes(contextUrl);
+
+  const pillTags = useMemo(() => {
+    if (!linkedData?.data || !labels || !context) return null;
+    const investigation = parseInvestigation(
+      linkedData.data,
+      context.prefixes,
+      labels,
+    );
+    const concepts = aggregatePillConcepts(investigation);
+    // Flat pills (no parent breadcrumb) — pass an empty `broader` map.
+    // Definitions still drive the hover tooltip.
+    return conceptsToTags(
+      concepts,
+      labels,
+      new Map(),
+      definitions ?? new Map(),
+    );
+  }, [linkedData, labels, definitions, context]);
 
   const title = bib?.title ?? reference.id;
   const authors = bib?.authorship ? formatAuthors(bib.authorship) : "";
@@ -39,6 +111,19 @@ export function ResultRow({ communitySlug, reference }: ResultRowProps) {
     ? String(bib.publication_year)
     : "";
   const codingInstitution = extractReferenceCodingInstitution(reference);
+
+  const findingsLabel = counts ? String(counts.findings) : "—";
+  const estimatesLabel = counts ? String(counts.estimates) : "—";
+
+  // If a single extra pill would be hidden behind "+1 more", just show it —
+  // the real estate is the same.
+  const showAllPills = pillTags !== null && pillTags.length <= PILL_CAP + 1;
+  const visibleTags = !pillTags
+    ? []
+    : showAllPills
+      ? pillTags
+      : pillTags.slice(0, PILL_CAP);
+  const overflow = pillTags ? pillTags.length - visibleTags.length : 0;
 
   // Stretched-link pattern: the .row-link <a> wraps left-column content, and
   // its ::before extends a transparent overlay across the whole .result-row
@@ -79,10 +164,10 @@ export function ResultRow({ communitySlug, reference }: ResultRowProps) {
           </a>
         )}
         <span class="stat-badge">
-          <span class="stat-num">—</span> findings
+          <span class="stat-num">{findingsLabel}</span> findings
         </span>
         <span class="stat-badge">
-          <span class="stat-num">—</span> estimates
+          <span class="stat-num">{estimatesLabel}</span> estimates
         </span>
         {codingInstitution && (
           <span class="row-coder" data-testid="coder-text">
@@ -90,6 +175,16 @@ export function ResultRow({ communitySlug, reference }: ResultRowProps) {
           </span>
         )}
       </div>
+      {pillTags && pillTags.length > 0 && (
+        <div class="row-pills">
+          <TagGroup tags={visibleTags} />
+          {overflow > 0 && (
+            <span class="tag-group__tag tag-group__tag--more">
+              +{overflow} more
+            </span>
+          )}
+        </div>
+      )}
     </article>
   );
 }

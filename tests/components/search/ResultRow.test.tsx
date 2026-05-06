@@ -1,56 +1,57 @@
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { ResultRow } from "@/components/search/ResultRow";
-import type { Reference } from "@/types/models";
+import { PILL_CAP, ResultRow } from "@/components/search/ResultRow";
+import { makeReference } from "../../fixtures";
 
-function makeRef(overrides: Partial<Reference> = {}): Reference {
-  return {
-    id: "ref-1",
-    visibility: "public",
-    identifiers: [{ identifier: "10.1000/abc", identifier_type: "doi" }],
-    enhancements: [
-      {
-        id: "e1",
-        reference_id: "ref-1",
-        source: "openalex",
-        visibility: "public",
-        robot_version: null,
-        derived_from: null,
-        created_at: "2024-01-01",
-        content: {
-          enhancement_type: "bibliographic",
-          authorship: [
-            { display_name: "Smith, J.", orcid: null, position: "first" },
-            { display_name: "Jones, K.", orcid: null, position: "last" },
-          ],
-          cited_by_count: 42,
-          created_date: null,
-          updated_date: null,
-          publication_date: "2020-06-01",
-          publication_year: 2020,
-          publisher: null,
-          title: "On phonics instruction",
-          pagination: null,
-          publication_venue: { display_name: "Journal of Education", venue_type: "journal" },
-        },
-      },
-      {
-        id: "e2",
-        reference_id: "ref-1",
-        source: "openalex",
-        visibility: "public",
-        robot_version: null,
-        derived_from: null,
-        created_at: "2024-01-02",
-        content: {
-          enhancement_type: "abstract",
-          process: "openalex",
-          abstract: "This is the abstract body text used for the snippet preview.",
-        },
-      },
-    ],
-    ...overrides,
-  };
+const vocabState = {
+  labels: null as Map<string, string> | null,
+  broader: null as Map<string, string> | null,
+  definitions: null as Map<string, string> | null,
+};
+const contextState = {
+  context: null as { prefixes: Map<string, string> } | null,
+};
+
+vi.mock("@/hooks/useVocabulary", () => ({
+  useVocabulary: () => ({
+    labels: vocabState.labels,
+    broader: vocabState.broader,
+    definitions: vocabState.definitions,
+    loading: false,
+    error: null,
+  }),
+}));
+
+vi.mock("@/hooks/useContextPrefixes", () => ({
+  useContextPrefixes: () => ({
+    context: contextState.context,
+    loading: false,
+    error: null,
+  }),
+}));
+
+beforeEach(() => {
+  vocabState.labels = null;
+  vocabState.broader = null;
+  vocabState.definitions = null;
+  contextState.context = null;
+});
+
+const REF_ID = "ref-1";
+
+function makeRef(opts: Parameters<typeof makeReference>[0] = {}) {
+  return makeReference({
+    id: REF_ID,
+    doi: "10.1000/abc",
+    bibliographic: {
+      title: "On phonics instruction",
+      authors: ["Smith, J.", "Jones, K."],
+      year: 2020,
+      venue: "Journal of Education",
+    },
+    abstract: "This is the abstract body text used for the snippet preview.",
+    ...opts,
+  });
 }
 
 describe("ResultRow", () => {
@@ -69,9 +70,13 @@ describe("ResultRow", () => {
 
   test("primary content (title, authors, venue, abstract) is all wrapped in the row anchor", () => {
     render(<ResultRow communitySlug="esea" reference={makeRef()} />);
-    const rowLink = screen.getByRole("link", { name: /on phonics instruction/i });
-    expect(rowLink).toHaveAttribute("href", "/esea/references/ref-1");
-    expect(rowLink).toContainElement(screen.getByText("On phonics instruction"));
+    const rowLink = screen.getByRole("link", {
+      name: /on phonics instruction/i,
+    });
+    expect(rowLink).toHaveAttribute("href", `/esea/references/${REF_ID}`);
+    expect(rowLink).toContainElement(
+      screen.getByText("On phonics instruction"),
+    );
     expect(rowLink).toContainElement(screen.getByText(/Smith, J\./));
     expect(rowLink).toContainElement(screen.getByText(/Journal of Education/));
     expect(rowLink).toContainElement(screen.getByText(/2020/));
@@ -81,7 +86,9 @@ describe("ResultRow", () => {
   });
 
   test("row anchor carries the stretched-link class so CSS can extend its hit area", () => {
-    const { container } = render(<ResultRow communitySlug="esea" reference={makeRef()} />);
+    const { container } = render(
+      <ResultRow communitySlug="esea" reference={makeRef()} />,
+    );
     const link = container.querySelector(".row-link");
     expect(link).not.toBeNull();
     expect(link?.tagName).toBe("A");
@@ -95,19 +102,149 @@ describe("ResultRow", () => {
   });
 
   test("DOI link is not rendered when no DOI identifier present", () => {
-    const ref = makeRef({ identifiers: [] });
-    render(<ResultRow communitySlug="esea" reference={ref} />);
+    render(
+      <ResultRow
+        communitySlug="esea"
+        reference={makeRef({ doi: undefined })}
+      />,
+    );
     expect(screen.queryByRole("link", { name: /^doi/i })).toBeNull();
   });
 
-  test("renders findings/estimates placeholder badges in right column", () => {
-    const { container } = render(<ResultRow communitySlug="esea" reference={makeRef()} />);
+  test("falls back to — for findings/estimates badges when reference has no linked-data", () => {
+    const { container } = render(
+      <ResultRow communitySlug="esea" reference={makeRef()} />,
+    );
     const nums = container.querySelectorAll(".stat-num");
     expect(nums).toHaveLength(2);
     expect(nums[0]).toHaveTextContent("—");
     expect(nums[1]).toHaveTextContent("—");
     expect(container.querySelector(".row-right")).toHaveTextContent(/findings/);
-    expect(container.querySelector(".row-right")).toHaveTextContent(/estimates/);
+    expect(container.querySelector(".row-right")).toHaveTextContent(
+      /estimates/,
+    );
+    expect(container.querySelector(".row-pills")).toBeNull();
+  });
+
+  test("renders real findings/estimates counts from linked-data", () => {
+    const ref = makeRef({
+      investigation: {
+        hasFinding: [
+          { hasEffectEstimate: [{}, {}] },
+          { hasEffectEstimate: [{}] },
+        ],
+      },
+    });
+    const { container } = render(
+      <ResultRow communitySlug="esea" reference={ref} />,
+    );
+    const nums = container.querySelectorAll(".stat-num");
+    expect(nums[0]).toHaveTextContent("2"); // 2 findings
+    expect(nums[1]).toHaveTextContent("3"); // 3 estimates
+  });
+
+  test("counts render even when vocabulary is unresolved (pills wait)", () => {
+    // labels/context left null — pills cannot resolve, but counts are
+    // derived synchronously from raw JSON-LD.
+    const ref = makeRef({
+      investigation: { hasFinding: [{ hasEffectEstimate: [{}] }] },
+    });
+    const { container } = render(
+      <ResultRow communitySlug="esea" reference={ref} />,
+    );
+    const nums = container.querySelectorAll(".stat-num");
+    expect(nums[0]).toHaveTextContent("1");
+    expect(nums[1]).toHaveTextContent("1");
+    expect(container.querySelector(".row-pills")).toBeNull();
+  });
+
+  test("renders concept pills under the abstract once vocabulary resolves", () => {
+    vocabState.labels = new Map([
+      ["http://ex/Trial", "Randomised trial"],
+      ["http://ex/Maths", "Mathematics"],
+    ]);
+    vocabState.broader = new Map();
+    vocabState.definitions = new Map();
+    contextState.context = { prefixes: new Map() };
+
+    const ref = makeRef({
+      investigation: {
+        documentType: { codedValue: { "@id": "http://ex/Trial" } },
+        hasFinding: [
+          {
+            evaluates: {
+              educationTheme: [{ codedValue: { "@id": "http://ex/Maths" } }],
+            },
+          },
+        ],
+      },
+    });
+    const { container } = render(
+      <ResultRow communitySlug="esea" reference={ref} />,
+    );
+    const pills = container.querySelector(".row-pills");
+    expect(pills).not.toBeNull();
+    expect(pills).toHaveTextContent("Randomised trial");
+    expect(pills).toHaveTextContent("Mathematics");
+    expect(pills?.querySelector(".tag-group__tag--more")).toBeNull();
+  });
+
+  test("caps pill list at PILL_CAP and renders +N more", () => {
+    const overflow = 4;
+    const labels = new Map<string, string>();
+    const findings: unknown[] = [];
+    for (let i = 0; i < PILL_CAP + overflow; i++) {
+      const uri = `http://ex/concept-${i}`;
+      labels.set(uri, `Concept ${i}`);
+      findings.push({
+        hasOutcome: { outcome: [{ codedValue: { "@id": uri } }] },
+      });
+    }
+    vocabState.labels = labels;
+    vocabState.broader = new Map();
+    vocabState.definitions = new Map();
+    contextState.context = { prefixes: new Map() };
+
+    const ref = makeRef({ investigation: { hasFinding: findings } });
+    const { container } = render(
+      <ResultRow communitySlug="esea" reference={ref} />,
+    );
+    const pills = container.querySelector(".row-pills");
+    expect(pills).not.toBeNull();
+    const tagEls = pills!.querySelectorAll(
+      ".tag-group__tag:not(.tag-group__tag--more)",
+    );
+    expect(tagEls).toHaveLength(PILL_CAP);
+    expect(pills!.querySelector(".tag-group__tag--more")).toHaveTextContent(
+      `+${overflow} more`,
+    );
+  });
+
+  test("renders the extra pill instead of '+1 more' when only one would be hidden", () => {
+    const labels = new Map<string, string>();
+    const findings: unknown[] = [];
+    for (let i = 0; i < PILL_CAP + 1; i++) {
+      const uri = `http://ex/concept-${i}`;
+      labels.set(uri, `Concept ${i}`);
+      findings.push({
+        hasOutcome: { outcome: [{ codedValue: { "@id": uri } }] },
+      });
+    }
+    vocabState.labels = labels;
+    vocabState.broader = new Map();
+    vocabState.definitions = new Map();
+    contextState.context = { prefixes: new Map() };
+
+    const ref = makeRef({ investigation: { hasFinding: findings } });
+    const { container } = render(
+      <ResultRow communitySlug="esea" reference={ref} />,
+    );
+    const pills = container.querySelector(".row-pills");
+    const tagEls = pills!.querySelectorAll(
+      ".tag-group__tag:not(.tag-group__tag--more)",
+    );
+    expect(tagEls).toHaveLength(PILL_CAP + 1);
+    expect(pills!.querySelector(".tag-group__tag--more")).toBeNull();
   });
 
   test("does not render coding institution when no raw enhancement is present", () => {
@@ -142,7 +279,7 @@ describe("ResultRow", () => {
   test("renders without throwing when bibliographic missing; row-anchor falls back to id", () => {
     const ref = makeRef({ enhancements: [] });
     render(<ResultRow communitySlug="esea" reference={ref} />);
-    const rowLink = screen.getByRole("link", { name: /ref-1/i });
-    expect(rowLink).toHaveAttribute("href", "/esea/references/ref-1");
+    const rowLink = screen.getByRole("link", { name: new RegExp(REF_ID, "i") });
+    expect(rowLink).toHaveAttribute("href", `/esea/references/${REF_ID}`);
   });
 });
