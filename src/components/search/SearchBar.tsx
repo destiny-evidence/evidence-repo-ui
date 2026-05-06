@@ -1,36 +1,32 @@
-import { useState, useEffect } from "preact/hooks";
 import { MagnifierIcon } from "@/components/icons";
-import { parseYear } from "@/utils/year";
 import "./SearchBar.css";
 
 interface SearchBarProps {
-  q: string;
-  startYear: number | undefined;
-  endYear: number | undefined;
-  onSubmit: (q: string, startYear: number | undefined, endYear: number | undefined) => void;
+  draftQ: string;
+  draftStart: string;
+  draftEnd: string;
+  onDraftQChange: (q: string) => void;
+  onDraftStartChange: (s: string) => void;
+  onDraftEndChange: (e: string) => void;
+  validationError: string | null;
+  onSubmit: () => void;
   disabled?: boolean;
 }
 
-export function SearchBar({ q, startYear, endYear, onSubmit, disabled = false }: SearchBarProps) {
-  const [draftQ, setDraftQ] = useState(q);
-  const [draftStart, setDraftStart] = useState(startYear !== undefined ? String(startYear) : "");
-  const [draftEnd, setDraftEnd] = useState(endYear !== undefined ? String(endYear) : "");
-  const [validationError, setValidationError] = useState<string | null>(null);
-
-  useEffect(() => { setDraftQ(q); }, [q]);
-  useEffect(() => { setDraftStart(startYear !== undefined ? String(startYear) : ""); }, [startYear]);
-  useEffect(() => { setDraftEnd(endYear !== undefined ? String(endYear) : ""); }, [endYear]);
-
+export function SearchBar({
+  draftQ,
+  draftStart,
+  draftEnd,
+  onDraftQChange,
+  onDraftStartChange,
+  onDraftEndChange,
+  validationError,
+  onSubmit,
+  disabled = false,
+}: SearchBarProps) {
   function handleSubmit(e?: Event) {
     e?.preventDefault();
-    const s = parseYear(draftStart);
-    const en = parseYear(draftEnd);
-    if (s !== undefined && en !== undefined && s > en) {
-      setValidationError("Start year must not exceed end year.");
-      return;
-    }
-    setValidationError(null);
-    onSubmit(draftQ.trim(), s, en);
+    onSubmit();
   }
 
   return (
@@ -45,7 +41,7 @@ export function SearchBar({ q, startYear, endYear, onSubmit, disabled = false }:
             aria-label="Search query"
             placeholder="Search the evidence"
             value={draftQ}
-            onInput={(e) => setDraftQ((e.target as HTMLInputElement).value)}
+            onInput={(e) => onDraftQChange((e.target as HTMLInputElement).value)}
             disabled={disabled}
           />
           <button type="submit" class="search-btn" disabled={disabled}>
@@ -66,10 +62,7 @@ export function SearchBar({ q, startYear, endYear, onSubmit, disabled = false }:
           aria-label="Start year"
           class="search-filters__year"
           value={draftStart}
-          onInput={(e) => {
-            setDraftStart((e.target as HTMLInputElement).value);
-            setValidationError(null);
-          }}
+          onInput={(e) => onDraftStartChange((e.target as HTMLInputElement).value)}
           disabled={disabled}
         />
         <span class="search-filters__sep" aria-hidden="true">—</span>
@@ -83,10 +76,7 @@ export function SearchBar({ q, startYear, endYear, onSubmit, disabled = false }:
           aria-label="End year"
           class="search-filters__year"
           value={draftEnd}
-          onInput={(e) => {
-            setDraftEnd((e.target as HTMLInputElement).value);
-            setValidationError(null);
-          }}
+          onInput={(e) => onDraftEndChange((e.target as HTMLInputElement).value)}
           disabled={disabled}
         />
       </div>

@@ -1,8 +1,9 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import type { Community } from "@/types/models";
 import { parseSearchParams, toQueryString, buildSearchUrl, type SortOption } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
+import { parseYear } from "@/utils/year";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
@@ -69,6 +70,17 @@ function SearchPageInner({ community }: { community: Community }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonicalQs, community.slug]);
 
+  // Draft state lives here (not in SearchBar) so sibling controls like
+  // SortDropdown can commit pending text/year edits when they navigate.
+  const [draftQ, setDraftQ] = useState(params.q);
+  const [draftStart, setDraftStart] = useState(params.startYear !== undefined ? String(params.startYear) : "");
+  const [draftEnd, setDraftEnd] = useState(params.endYear !== undefined ? String(params.endYear) : "");
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => { setDraftQ(params.q); }, [params.q]);
+  useEffect(() => { setDraftStart(params.startYear !== undefined ? String(params.startYear) : ""); }, [params.startYear]);
+  useEffect(() => { setDraftEnd(params.endYear !== undefined ? String(params.endYear) : ""); }, [params.endYear]);
+
   const corpus = useCorpusTotal();
   const results = useSearch(params);
 
@@ -88,8 +100,22 @@ function SearchPageInner({ community }: { community: Community }) {
     params.endYear !== undefined ||
     results.error !== null;
 
-  function handleSubmit(q: string, startYear: number | undefined, endYear: number | undefined) {
-    navigate(buildSearchUrl(community.slug, { ...params, q, page: 1, startYear, endYear }));
+  // Returns parsed draft values, or null if the year range is invalid.
+  function commitDraft(): { q: string; startYear: number | undefined; endYear: number | undefined } | null {
+    const s = parseYear(draftStart);
+    const en = parseYear(draftEnd);
+    if (s !== undefined && en !== undefined && s > en) {
+      setValidationError("Start year must not exceed end year.");
+      return null;
+    }
+    setValidationError(null);
+    return { q: draftQ.trim(), startYear: s, endYear: en };
+  }
+
+  function handleSubmit() {
+    const draft = commitDraft();
+    if (!draft) return;
+    navigate(buildSearchUrl(community.slug, { ...params, ...draft, page: 1 }));
   }
 
   function handlePageChange(page: number) {
@@ -97,7 +123,19 @@ function SearchPageInner({ community }: { community: Community }) {
   }
 
   function handleSortChange(sort: SortOption | undefined) {
-    navigate(buildSearchUrl(community.slug, { ...params, sort, page: 1 }));
+    const draft = commitDraft();
+    if (!draft) return;
+    navigate(buildSearchUrl(community.slug, { ...params, ...draft, sort, page: 1 }));
+  }
+
+  function handleDraftStartChange(s: string) {
+    setDraftStart(s);
+    setValidationError(null);
+  }
+
+  function handleDraftEndChange(e: string) {
+    setDraftEnd(e);
+    setValidationError(null);
   }
 
   // Page size comes from the API response (page.count) so the UI stays in
@@ -122,9 +160,13 @@ function SearchPageInner({ community }: { community: Community }) {
               : community.name}
         </p>
         <SearchBar
-          q={params.q}
-          startYear={params.startYear}
-          endYear={params.endYear}
+          draftQ={draftQ}
+          draftStart={draftStart}
+          draftEnd={draftEnd}
+          onDraftQChange={setDraftQ}
+          onDraftStartChange={handleDraftStartChange}
+          onDraftEndChange={handleDraftEndChange}
+          validationError={validationError}
           onSubmit={handleSubmit}
           disabled={results.loading && results.results !== null}
         />
