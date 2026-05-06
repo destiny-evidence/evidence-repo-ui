@@ -219,6 +219,33 @@ describe("ResultRow", () => {
     );
   });
 
+  test("renders the 9th pill instead of '+1 more' when only one would be hidden", () => {
+    const labels = new Map<string, string>();
+    const findings: unknown[] = [];
+    for (let i = 0; i < 9; i++) {
+      const uri = `http://ex/concept-${i}`;
+      labels.set(uri, `Concept ${i}`);
+      findings.push({
+        hasOutcome: { outcome: [{ codedValue: { "@id": uri } }] },
+      });
+    }
+    vocabState.labels = labels;
+    vocabState.broader = new Map();
+    vocabState.definitions = new Map();
+    contextState.context = { prefixes: new Map() };
+
+    const ref = makeRef({ investigation: { hasFinding: findings } });
+    const { container } = render(
+      <ResultRow communitySlug="esea" reference={ref} />,
+    );
+    const pills = container.querySelector(".row-pills");
+    const tagEls = pills!.querySelectorAll(
+      ".tag-group__tag:not(.tag-group__tag--more)",
+    );
+    expect(tagEls).toHaveLength(9);
+    expect(pills!.querySelector(".tag-group__tag--more")).toBeNull();
+  });
+
   test("does not render coding institution when no raw enhancement is present", () => {
     render(<ResultRow communitySlug="esea" reference={makeRef()} />);
     expect(screen.queryByTestId("coder-text")).toBeNull();

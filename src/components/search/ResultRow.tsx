@@ -93,8 +93,8 @@ export function ResultRow({ communitySlug, reference }: ResultRowProps) {
       labels,
     );
     const concepts = aggregatePillConcepts(investigation);
-    // Search rows render flat pills (no parent breadcrumb) per the prototype,
-    // so we pass an empty `broader` map. Definitions still drive the tooltip.
+    // Flat pills (no parent breadcrumb) — pass an empty `broader` map.
+    // Definitions still drive the hover tooltip.
     return conceptsToTags(
       concepts,
       labels,
@@ -115,7 +115,14 @@ export function ResultRow({ communitySlug, reference }: ResultRowProps) {
   const findingsLabel = counts ? String(counts.findings) : "—";
   const estimatesLabel = counts ? String(counts.estimates) : "—";
 
-  const visibleTags = pillTags ? pillTags.slice(0, PILL_CAP) : [];
+  // If a single extra pill would be hidden behind "+1 more", just show it —
+  // the real estate is the same.
+  const showAllPills = pillTags !== null && pillTags.length <= PILL_CAP + 1;
+  const visibleTags = !pillTags
+    ? []
+    : showAllPills
+      ? pillTags
+      : pillTags.slice(0, PILL_CAP);
   const overflow = pillTags ? pillTags.length - visibleTags.length : 0;
 
   // Stretched-link pattern: the .row-link <a> wraps left-column content, and
