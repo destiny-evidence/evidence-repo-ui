@@ -245,6 +245,65 @@ describe("SearchPage", () => {
     expect(screen.getByText(/results for/i)).toHaveTextContent(/10,000\+ results for “education”/i);
   });
 
+  test("changing sort commits unsubmitted draft query and year filters", async () => {
+    // Regression: previously the sort dropdown navigated using URL params
+    // only, dropping any text/year edits the user hadn't yet submitted.
+    mockBoth({ results: makeResult(5721, ["r1"]) });
+    renderSearchPage();
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+    fireEvent.input(screen.getByRole("searchbox"), { target: { value: "literacy" } });
+    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2001" } });
+    fireEvent.input(screen.getByLabelText(/end year/i), { target: { value: "2010" } });
+
+    fireEvent.change(screen.getByLabelText(/sort results/i), { target: { value: "oldest" } });
+
+    await waitFor(() => expect(window.location.search).toContain("sort=oldest"));
+    expect(window.location.search).toContain("q=literacy");
+    expect(window.location.search).toContain("start_year=2001");
+    expect(window.location.search).toContain("end_year=2010");
+  });
+
+  test("invalid year range blocks submit and shows validation message", async () => {
+    mockBoth({ results: makeResult(5721, ["r1"]) });
+    renderSearchPage();
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2024" } });
+    fireEvent.input(screen.getByLabelText(/end year/i), { target: { value: "2010" } });
+    fireEvent.click(screen.getByRole("button", { name: /search/i }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/start year must not exceed end year/i);
+    expect(window.location.search).toBe("");
+  });
+
+  test("validation error clears when user edits a year field", async () => {
+    mockBoth({ results: makeResult(5721, ["r1"]) });
+    renderSearchPage();
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2024" } });
+    fireEvent.input(screen.getByLabelText(/end year/i), { target: { value: "2010" } });
+    fireEvent.click(screen.getByRole("button", { name: /search/i }));
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+
+    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2000" } });
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  test("drafts resync when the URL changes externally (back/forward)", async () => {
+    history.replaceState(null, "", "/esea?q=alpha");
+    mockBoth({ results: makeResult(5721, ["r1"]) });
+    renderSearchPage();
+    await waitFor(() => expect(screen.getByRole("searchbox")).toHaveValue("alpha"));
+
+    history.pushState(null, "", "/esea?q=beta&start_year=2020");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+
+    await waitFor(() => expect(screen.getByRole("searchbox")).toHaveValue("beta"));
+    expect(screen.getByLabelText(/start year/i)).toHaveValue("2020");
+  });
+
   test("search failure: renders retry, retry refetches without URL change", async () => {
     history.replaceState(null, "", "/esea?q=phonics");
     const pushSpy = vi.spyOn(history, "pushState");

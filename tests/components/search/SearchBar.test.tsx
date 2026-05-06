@@ -2,106 +2,67 @@ import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/preact";
 import { SearchBar } from "@/components/search/SearchBar";
 
+function renderBar(overrides: Partial<Parameters<typeof SearchBar>[0]> = {}) {
+  const props = {
+    draftQ: "",
+    draftStart: "",
+    draftEnd: "",
+    onDraftQChange: vi.fn(),
+    onDraftStartChange: vi.fn(),
+    onDraftEndChange: vi.fn(),
+    validationError: null,
+    onSubmit: vi.fn(),
+    ...overrides,
+  };
+  render(<SearchBar {...props} />);
+  return props;
+}
+
 describe("SearchBar", () => {
-  test("renders initial values from props", () => {
-    render(
-      <SearchBar
-        q="phonics"
-        startYear={2010}
-        endYear={2024}
-        onSubmit={() => {}}
-      />,
-    );
+  test("renders draft values from props", () => {
+    renderBar({ draftQ: "phonics", draftStart: "2010", draftEnd: "2024" });
     expect(screen.getByRole("searchbox")).toHaveValue("phonics");
     expect(screen.getByLabelText(/start year/i)).toHaveValue("2010");
     expect(screen.getByLabelText(/end year/i)).toHaveValue("2024");
   });
 
-  test("submit via button calls onSubmit with draft values", () => {
-    const onSubmit = vi.fn();
-    render(<SearchBar q="" startYear={undefined} endYear={undefined} onSubmit={onSubmit} />);
+  test("typing in the query field calls onDraftQChange", () => {
+    const props = renderBar();
     fireEvent.input(screen.getByRole("searchbox"), { target: { value: "phonics" } });
+    expect(props.onDraftQChange).toHaveBeenCalledWith("phonics");
+  });
+
+  test("typing in the year fields calls the matching draft callback", () => {
+    const props = renderBar();
     fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2010" } });
-    fireEvent.click(screen.getByRole("button", { name: /search/i }));
-    expect(onSubmit).toHaveBeenCalledWith("phonics", 2010, undefined);
+    expect(props.onDraftStartChange).toHaveBeenCalledWith("2010");
+    fireEvent.input(screen.getByLabelText(/end year/i), { target: { value: "2024" } });
+    expect(props.onDraftEndChange).toHaveBeenCalledWith("2024");
   });
 
-  test("Enter inside the input submits the form exactly once", () => {
+  test("submit button calls onSubmit", () => {
+    const props = renderBar({ draftQ: "phonics" });
+    fireEvent.click(screen.getByRole("button", { name: /search/i }));
+    expect(props.onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  test("submitting the form (Enter) calls onSubmit exactly once", () => {
     const onSubmit = vi.fn();
-    const { container } = render(
-      <SearchBar q="" startYear={undefined} endYear={undefined} onSubmit={onSubmit} />,
-    );
-    const input = screen.getByRole("searchbox");
-    fireEvent.input(input, { target: { value: "phonics" } });
-    fireEvent.submit(container.querySelector("form")!);
+    renderBar({ onSubmit });
+    fireEvent.submit(document.querySelector("form")!);
     expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit).toHaveBeenCalledWith("phonics", undefined, undefined);
   });
 
-  test("empty year inputs pass undefined, not NaN", () => {
-    const onSubmit = vi.fn();
-    render(<SearchBar q="x" startYear={undefined} endYear={undefined} onSubmit={onSubmit} />);
-    fireEvent.click(screen.getByRole("button", { name: /search/i }));
-    expect(onSubmit).toHaveBeenCalledWith("x", undefined, undefined);
-  });
-
-  test("startYear > endYear blocks submit and shows validation", () => {
-    const onSubmit = vi.fn();
-    render(<SearchBar q="x" startYear={undefined} endYear={undefined} onSubmit={onSubmit} />);
-    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2024" } });
-    fireEvent.input(screen.getByLabelText(/end year/i), { target: { value: "2010" } });
-    fireEvent.click(screen.getByRole("button", { name: /search/i }));
-    expect(onSubmit).not.toHaveBeenCalled();
+  test("renders the validationError prop as an alert", () => {
+    renderBar({ validationError: "Start year must not exceed end year." });
     expect(screen.getByRole("alert")).toHaveTextContent(/start year must not exceed end year/i);
   });
 
-  test("resyncs when props change externally (back/forward)", () => {
-    const { rerender } = render(
-      <SearchBar q="a" startYear={undefined} endYear={undefined} onSubmit={() => {}} />,
-    );
-    expect(screen.getByRole("searchbox")).toHaveValue("a");
-    rerender(<SearchBar q="b" startYear={2020} endYear={undefined} onSubmit={() => {}} />);
-    expect(screen.getByRole("searchbox")).toHaveValue("b");
-    expect(screen.getByLabelText(/start year/i)).toHaveValue("2020");
-  });
-
-  test("typing does not trigger onSubmit (draft-local)", () => {
-    const onSubmit = vi.fn();
-    render(<SearchBar q="" startYear={undefined} endYear={undefined} onSubmit={onSubmit} />);
-    fireEvent.input(screen.getByRole("searchbox"), { target: { value: "phonics" } });
-    expect(onSubmit).not.toHaveBeenCalled();
-  });
-
-  test("validation error clears when user edits either year field", () => {
-    const onSubmit = vi.fn();
-    render(<SearchBar q="x" startYear={undefined} endYear={undefined} onSubmit={onSubmit} />);
-    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2024" } });
-    fireEvent.input(screen.getByLabelText(/end year/i), { target: { value: "2010" } });
-    fireEvent.click(screen.getByRole("button", { name: /search/i }));
-    expect(screen.getByRole("alert")).toBeInTheDocument();
-
-    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2000" } });
-    expect(screen.queryByRole("alert")).toBeNull();
-  });
-
-  test.each([
-    { label: "scientific notation", raw: "2e3" },
-    { label: "hex notation",        raw: "0x10" },
-    { label: "fractional",          raw: "2.5" },
-    { label: "alpha",               raw: "abc" },
-  ])("year input '$raw' ($label) is rejected and submits as undefined", ({ raw }) => {
-    const onSubmit = vi.fn();
-    render(<SearchBar q="x" startYear={undefined} endYear={undefined} onSubmit={onSubmit} />);
-    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: raw } });
-    fireEvent.click(screen.getByRole("button", { name: /search/i }));
-    expect(onSubmit).toHaveBeenCalledWith("x", undefined, undefined);
-  });
-
-  test("year input with surrounding whitespace is trimmed and accepted", () => {
-    const onSubmit = vi.fn();
-    render(<SearchBar q="x" startYear={undefined} endYear={undefined} onSubmit={onSubmit} />);
-    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "  2010  " } });
-    fireEvent.click(screen.getByRole("button", { name: /search/i }));
-    expect(onSubmit).toHaveBeenCalledWith("x", 2010, undefined);
+  test("disabled prop disables inputs and submit", () => {
+    renderBar({ disabled: true });
+    expect(screen.getByRole("searchbox")).toBeDisabled();
+    expect(screen.getByLabelText(/start year/i)).toBeDisabled();
+    expect(screen.getByLabelText(/end year/i)).toBeDisabled();
+    expect(screen.getByRole("button", { name: /search/i })).toBeDisabled();
   });
 });

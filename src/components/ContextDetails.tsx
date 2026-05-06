@@ -2,6 +2,7 @@ import { TagGroup } from "./TagGroup";
 import { SourceEvidenceToggle } from "./SourceEvidenceToggle";
 import { evidenceFrom } from "@/services/sourceEvidence";
 import { conceptsToTags } from "@/services/conceptLabels";
+import { countryName } from "@/utils/country";
 import type { ContextData } from "@/types/investigation";
 
 interface ContextDetailsProps {
@@ -52,7 +53,7 @@ export function ContextDetails({
         {context.countries && context.countries.length > 0 && (
           <div class="lg-field">
             <span class="lg-label">Country</span>
-            <span>{context.countries.map((c) => c.value).join(", ")}</span>
+            <span>{context.countries.map((c) => countryName(c.value)).join(", ")}</span>
           </div>
         )}
         {context.countryLevel1 && (

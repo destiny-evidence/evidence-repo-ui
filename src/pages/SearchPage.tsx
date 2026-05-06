@@ -6,6 +6,7 @@ import { navigate } from "@/services/navigation";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
+import { useSearchDraft } from "@/hooks/useSearchDraft";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
 import { ResultRow } from "@/components/search/ResultRow";
@@ -69,6 +70,8 @@ function SearchPageInner({ community }: { community: Community }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonicalQs, community.slug]);
 
+  const draft = useSearchDraft(params);
+
   const corpus = useCorpusTotal();
   const results = useSearch(params);
 
@@ -88,8 +91,10 @@ function SearchPageInner({ community }: { community: Community }) {
     params.endYear !== undefined ||
     results.error !== null;
 
-  function handleSubmit(q: string, startYear: number | undefined, endYear: number | undefined) {
-    navigate(buildSearchUrl(community.slug, { ...params, q, page: 1, startYear, endYear }));
+  function handleSubmit() {
+    const committed = draft.commitDraft();
+    if (!committed) return;
+    navigate(buildSearchUrl(community.slug, { ...params, ...committed, page: 1 }));
   }
 
   function handlePageChange(page: number) {
@@ -97,7 +102,9 @@ function SearchPageInner({ community }: { community: Community }) {
   }
 
   function handleSortChange(sort: SortOption | undefined) {
-    navigate(buildSearchUrl(community.slug, { ...params, sort, page: 1 }));
+    const committed = draft.commitDraft();
+    if (!committed) return;
+    navigate(buildSearchUrl(community.slug, { ...params, ...committed, sort, page: 1 }));
   }
 
   // Page size comes from the API response (page.count) so the UI stays in
@@ -122,9 +129,13 @@ function SearchPageInner({ community }: { community: Community }) {
               : community.name}
         </p>
         <SearchBar
-          q={params.q}
-          startYear={params.startYear}
-          endYear={params.endYear}
+          draftQ={draft.draftQ}
+          draftStart={draft.draftStart}
+          draftEnd={draft.draftEnd}
+          onDraftQChange={draft.setDraftQ}
+          onDraftStartChange={draft.setDraftStart}
+          onDraftEndChange={draft.setDraftEnd}
+          validationError={draft.validationError}
           onSubmit={handleSubmit}
           disabled={results.loading && results.results !== null}
         />
