@@ -26,7 +26,7 @@ interface ResultRowProps {
 }
 
 const MAX_AUTHORS_SHOWN = 3;
-const PILL_CAP = 8;
+export const PILL_CAP = 8;
 
 function formatAuthors(authors: { display_name: string }[]): string {
   if (authors.length === 0) return "";

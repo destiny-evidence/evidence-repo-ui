@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { ResultRow } from "@/components/search/ResultRow";
+import { PILL_CAP, ResultRow } from "@/components/search/ResultRow";
 import { makeReference } from "../../fixtures";
 
 const vocabState = {
@@ -190,9 +190,10 @@ describe("ResultRow", () => {
   });
 
   test("caps pill list at PILL_CAP and renders +N more", () => {
+    const overflow = 4;
     const labels = new Map<string, string>();
     const findings: unknown[] = [];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < PILL_CAP + overflow; i++) {
       const uri = `http://ex/concept-${i}`;
       labels.set(uri, `Concept ${i}`);
       findings.push({
@@ -213,16 +214,16 @@ describe("ResultRow", () => {
     const tagEls = pills!.querySelectorAll(
       ".tag-group__tag:not(.tag-group__tag--more)",
     );
-    expect(tagEls).toHaveLength(8);
+    expect(tagEls).toHaveLength(PILL_CAP);
     expect(pills!.querySelector(".tag-group__tag--more")).toHaveTextContent(
-      "+4 more",
+      `+${overflow} more`,
     );
   });
 
-  test("renders the 9th pill instead of '+1 more' when only one would be hidden", () => {
+  test("renders the extra pill instead of '+1 more' when only one would be hidden", () => {
     const labels = new Map<string, string>();
     const findings: unknown[] = [];
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < PILL_CAP + 1; i++) {
       const uri = `http://ex/concept-${i}`;
       labels.set(uri, `Concept ${i}`);
       findings.push({
@@ -242,7 +243,7 @@ describe("ResultRow", () => {
     const tagEls = pills!.querySelectorAll(
       ".tag-group__tag:not(.tag-group__tag--more)",
     );
-    expect(tagEls).toHaveLength(9);
+    expect(tagEls).toHaveLength(PILL_CAP + 1);
     expect(pills!.querySelector(".tag-group__tag--more")).toBeNull();
   });
 
