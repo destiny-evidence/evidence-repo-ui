@@ -1,12 +1,12 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import type { Community } from "@/types/models";
 import { parseSearchParams, toQueryString, buildSearchUrl, type SortOption } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
-import { parseYear } from "@/utils/year";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
+import { useSearchDraft } from "@/hooks/useSearchDraft";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
 import { ResultRow } from "@/components/search/ResultRow";
@@ -70,16 +70,7 @@ function SearchPageInner({ community }: { community: Community }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonicalQs, community.slug]);
 
-  // Draft state lives here (not in SearchBar) so sibling controls like
-  // SortDropdown can commit pending text/year edits when they navigate.
-  const [draftQ, setDraftQ] = useState(params.q);
-  const [draftStart, setDraftStart] = useState(params.startYear !== undefined ? String(params.startYear) : "");
-  const [draftEnd, setDraftEnd] = useState(params.endYear !== undefined ? String(params.endYear) : "");
-  const [validationError, setValidationError] = useState<string | null>(null);
-
-  useEffect(() => { setDraftQ(params.q); }, [params.q]);
-  useEffect(() => { setDraftStart(params.startYear !== undefined ? String(params.startYear) : ""); }, [params.startYear]);
-  useEffect(() => { setDraftEnd(params.endYear !== undefined ? String(params.endYear) : ""); }, [params.endYear]);
+  const draft = useSearchDraft(params);
 
   const corpus = useCorpusTotal();
   const results = useSearch(params);
@@ -100,22 +91,10 @@ function SearchPageInner({ community }: { community: Community }) {
     params.endYear !== undefined ||
     results.error !== null;
 
-  // Returns parsed draft values, or null if the year range is invalid.
-  function commitDraft(): { q: string; startYear: number | undefined; endYear: number | undefined } | null {
-    const s = parseYear(draftStart);
-    const en = parseYear(draftEnd);
-    if (s !== undefined && en !== undefined && s > en) {
-      setValidationError("Start year must not exceed end year.");
-      return null;
-    }
-    setValidationError(null);
-    return { q: draftQ.trim(), startYear: s, endYear: en };
-  }
-
   function handleSubmit() {
-    const draft = commitDraft();
-    if (!draft) return;
-    navigate(buildSearchUrl(community.slug, { ...params, ...draft, page: 1 }));
+    const committed = draft.commitDraft();
+    if (!committed) return;
+    navigate(buildSearchUrl(community.slug, { ...params, ...committed, page: 1 }));
   }
 
   function handlePageChange(page: number) {
@@ -123,19 +102,9 @@ function SearchPageInner({ community }: { community: Community }) {
   }
 
   function handleSortChange(sort: SortOption | undefined) {
-    const draft = commitDraft();
-    if (!draft) return;
-    navigate(buildSearchUrl(community.slug, { ...params, ...draft, sort, page: 1 }));
-  }
-
-  function handleDraftStartChange(s: string) {
-    setDraftStart(s);
-    setValidationError(null);
-  }
-
-  function handleDraftEndChange(e: string) {
-    setDraftEnd(e);
-    setValidationError(null);
+    const committed = draft.commitDraft();
+    if (!committed) return;
+    navigate(buildSearchUrl(community.slug, { ...params, ...committed, sort, page: 1 }));
   }
 
   // Page size comes from the API response (page.count) so the UI stays in
@@ -160,13 +129,13 @@ function SearchPageInner({ community }: { community: Community }) {
               : community.name}
         </p>
         <SearchBar
-          draftQ={draftQ}
-          draftStart={draftStart}
-          draftEnd={draftEnd}
-          onDraftQChange={setDraftQ}
-          onDraftStartChange={handleDraftStartChange}
-          onDraftEndChange={handleDraftEndChange}
-          validationError={validationError}
+          draftQ={draft.draftQ}
+          draftStart={draft.draftStart}
+          draftEnd={draft.draftEnd}
+          onDraftQChange={draft.setDraftQ}
+          onDraftStartChange={draft.setDraftStart}
+          onDraftEndChange={draft.setDraftEnd}
+          validationError={draft.validationError}
           onSubmit={handleSubmit}
           disabled={results.loading && results.results !== null}
         />
