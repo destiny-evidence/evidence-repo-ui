@@ -108,6 +108,14 @@ resource "github_actions_environment_variable" "vite_keycloak_client_id" {
   value         = var.keycloak_client_id
 }
 
+resource "github_actions_environment_variable" "vite_matomo_container_url" {
+  count         = var.matomo_container_url != "" ? 1 : 0
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_MATOMO_CONTAINER_URL"
+  value         = var.matomo_container_url
+}
+
 resource "github_actions_environment_variable" "frontdoor_resource_group" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment

@@ -94,3 +94,9 @@ variable "keycloak_client_id" {
   type        = string
 }
 
+variable "matomo_container_url" {
+  description = "Matomo Tag Manager container URL for this environment; empty disables analytics"
+  type        = string
+  default     = ""
+}
+
