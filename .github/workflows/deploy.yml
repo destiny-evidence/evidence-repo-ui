@@ -97,5 +97,6 @@ jobs:
               --resource-group ${{ vars.FRONTDOOR_RESOURCE_GROUP }} \
               --profile-name ${{ vars.FRONTDOOR_PROFILE_NAME }} \
               --endpoint-name ${{ vars.FRONTDOOR_ENDPOINT_NAME }} \
+              --domains ${{ vars.CUSTOM_DOMAIN }} \
               --content-paths "/*" \
               --no-wait
