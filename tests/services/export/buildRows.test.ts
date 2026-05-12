@@ -9,10 +9,78 @@ import {
 } from "@/services/export/build-rows.ts";
 import type {
   ConceptResolver,
-  Enhancement,
   Finding,
-  Reference,
 } from "@/services/export/types.ts";
+import type {
+  BibliographicMetadataEnhancement,
+  Enhancement,
+  EnhancementContent,
+  LinkedDataEnhancement,
+  Reference,
+} from "@/types/models";
+
+/**
+ * Pad a Reference with the required-but-nullable fields the model has
+ * but the tests don't care about. `overrides` wins.
+ */
+function makeRef(overrides: Partial<Reference>): Reference {
+  return {
+    id: "ref-1",
+    visibility: "public",
+    identifiers: null,
+    enhancements: null,
+    ...overrides,
+  };
+}
+
+/**
+ * Pad an Enhancement with the required-but-nullable wrapper fields the
+ * model has but the tests don't care about. `overrides` wins; pass
+ * `content` to specify the discriminated payload.
+ */
+function makeEnh(
+  content: EnhancementContent,
+  overrides: Partial<Enhancement> = {},
+): Enhancement {
+  return {
+    id: "enh-1",
+    reference_id: "ref-1",
+    source: "test",
+    visibility: "public",
+    robot_version: null,
+    derived_from: null,
+    created_at: "2024-01-01T00:00:00Z",
+    content,
+    ...overrides,
+  };
+}
+
+/**
+ * Pad a BibliographicMetadataEnhancement content with the
+ * required-but-nullable fields the tests don't care about. Provides
+ * sensible defaults for the bits the row builder reads.
+ */
+function makeBibContent(
+  overrides: Partial<BibliographicMetadataEnhancement> = {},
+): BibliographicMetadataEnhancement {
+  return {
+    enhancement_type: "bibliographic",
+    title: "Music and literacy",
+    authorship: [
+      { display_name: "Smith J", orcid: null, position: "first" },
+      { display_name: "Jones K", orcid: null, position: "middle" },
+    ],
+    publication_year: 2010,
+    cited_by_count: null,
+    created_date: null,
+    updated_date: null,
+    publication_date: null,
+    publisher: null,
+    pagination: null,
+    publication_venue: null,
+    ...overrides,
+  };
+}
 
 const PREFIXES = new Map([["esea", "https://vocab.esea.education/"]]);
 
@@ -29,45 +97,39 @@ const LABELS = new Map([
 
 const VOCAB: ConceptResolver = { prefixes: PREFIXES, labels: LABELS };
 
-function bibEnh(overrides: Partial<Enhancement> = {}): Enhancement {
+function bibEnh(
+  overrides: Partial<Enhancement> = {},
+): Enhancement & { content: BibliographicMetadataEnhancement } {
   return {
-    id: "bib-1",
-    reference_id: "ref-1",
-    created_at: "2024-01-01T00:00:00Z",
-    content: {
-      enhancement_type: "bibliographic",
-      title: "Music and literacy",
-      authorship: [
-        { display_name: "Smith J" },
-        { display_name: "Jones K" },
-      ],
-      publication_year: 2010,
-    },
+    ...makeEnh(makeBibContent(), { id: "bib-1" }),
     ...overrides,
+    content: makeBibContent(),
   };
 }
 
 function linkedEnh(
   investigation: Record<string, unknown>,
   overrides: Partial<Enhancement> = {},
-): Enhancement {
+): Enhancement & { content: LinkedDataEnhancement } {
+  const content: LinkedDataEnhancement = {
+    enhancement_type: "linked_data",
+    vocabulary_uri: "https://vocab.esea.education/v1",
+    data: { hasInvestigation: investigation },
+  };
   return {
-    id: "ld-1",
-    reference_id: "ref-1",
-    created_at: "2024-01-02T00:00:00Z",
-    derived_from: ["raw-1"],
-    content: {
-      enhancement_type: "linked_data",
-      vocabulary_uri: "https://vocab.esea.education/v1",
-      data: { hasInvestigation: investigation },
-    },
+    ...makeEnh(content, {
+      id: "ld-1",
+      created_at: "2024-01-02T00:00:00Z",
+      derived_from: ["raw-1"],
+    }),
     ...overrides,
+    content,
   };
 }
 
 describe("latestEnhancementOfType", () => {
   test("returns null when no enhancement of that type exists", () => {
-    const ref: Reference = { id: "ref-1", enhancements: [bibEnh()] };
+    const ref = makeRef({ enhancements: [bibEnh()] });
     expect(latestEnhancementOfType(ref, "linked_data")).toBeNull();
   });
 
@@ -82,17 +144,14 @@ describe("latestEnhancementOfType", () => {
       reference_id: "other-ref",
       created_at: "2025-01-01T00:00:00Z",
     });
-    const ref: Reference = {
-      id: "ref-1",
-      enhancements: [duplicate, canonical],
-    };
+    const ref = makeRef({ enhancements: [duplicate, canonical] });
     expect(latestEnhancementOfType(ref, "bibliographic")?.id).toBe("bib-canon");
   });
 
   test("within a bucket, picks the enhancement with the latest created_at", () => {
     const older = bibEnh({ id: "bib-old", created_at: "2024-01-01T00:00:00Z" });
     const newer = bibEnh({ id: "bib-new", created_at: "2024-06-01T00:00:00Z" });
-    const ref: Reference = { id: "ref-1", enhancements: [older, newer] };
+    const ref = makeRef({ enhancements: [older, newer] });
     expect(latestEnhancementOfType(ref, "bibliographic")?.id).toBe("bib-new");
   });
 
@@ -101,7 +160,7 @@ describe("latestEnhancementOfType", () => {
       id: "bib-dup",
       reference_id: "other-ref",
     });
-    const ref: Reference = { id: "ref-1", enhancements: [dup] };
+    const ref = makeRef({ enhancements: [dup] });
     expect(latestEnhancementOfType(ref, "bibliographic")?.id).toBe("bib-dup");
   });
 });
@@ -155,14 +214,13 @@ describe("buildInvestigationRow", () => {
   test("pulls doi and openalex identifiers, joins authors, and resolves docType", () => {
     const linked = linkedEnh({});
     const bib = bibEnh();
-    const ref: Reference = {
-      id: "ref-1",
+    const ref = makeRef({
       identifiers: [
-        { identifier_type: "doi", identifier: "10.1/abc" },
-        { identifier_type: "open_alex", identifier: "W123" },
+        { identifier: "10.1/abc", identifier_type: "doi" },
+        { identifier: "W123", identifier_type: "open_alex" },
       ],
       enhancements: [bib, linked],
-    };
+    });
     const row = buildInvestigationRow(
       ref,
       bib,
@@ -192,14 +250,12 @@ describe("buildInvestigationRow", () => {
       ["random-other-thing", "random-other-thing"],
     ];
     for (const [rawSource, expected] of cases) {
-      const raw: Enhancement = {
-        id: "raw-1",
-        reference_id: "ref-1",
-        source: rawSource,
-        content: { enhancement_type: "raw" },
-      };
+      const raw = makeEnh(
+        { enhancement_type: "raw" },
+        { id: "raw-1", source: rawSource },
+      );
       const linked = linkedEnh({});
-      const ref: Reference = { id: "ref-1", enhancements: [raw, linked] };
+      const ref = makeRef({ enhancements: [raw, linked] });
       const row = buildInvestigationRow(ref, null, linked, {}, VOCAB);
       expect(row.source, `source ${rawSource}`).toBe(expected);
     }
@@ -207,7 +263,7 @@ describe("buildInvestigationRow", () => {
 
   test("source is null when derived_from is empty", () => {
     const linked = linkedEnh({}, { derived_from: null });
-    const ref: Reference = { id: "ref-1", enhancements: [linked] };
+    const ref = makeRef({ enhancements: [linked] });
     const row = buildInvestigationRow(ref, null, linked, {}, VOCAB);
     expect(row.source).toBeNull();
   });

@@ -6,10 +6,8 @@ import {
   parseJsonl,
   workbookToArrayBuffer,
 } from "@/services/export/generate.ts";
-import type {
-  ConceptResolver,
-  Reference,
-} from "@/services/export/types.ts";
+import type { ConceptResolver } from "@/services/export/types.ts";
+import type { Authorship, Reference } from "@/types/models";
 
 const MINIMAL_VOCAB: ConceptResolver = {
   prefixes: new Map([["esea", "https://vocab.esea.education/"]]),
@@ -24,24 +22,45 @@ const MINIMAL_VOCAB: ConceptResolver = {
  * without bringing in the heavy fixtures.
  */
 function syntheticReference(id: string): Reference {
+  const author: Authorship = {
+    display_name: "Smith J",
+    orcid: null,
+    position: "first",
+  };
   return {
     id,
-    identifiers: [{ identifier_type: "doi", identifier: `10.1/${id}` }],
+    visibility: "public",
+    identifiers: [{ identifier: `10.1/${id}`, identifier_type: "doi" }],
     enhancements: [
       {
         id: `bib-${id}`,
         reference_id: id,
+        source: "test",
+        visibility: "public",
+        robot_version: null,
+        derived_from: null,
         created_at: "2024-01-01T00:00:00Z",
         content: {
           enhancement_type: "bibliographic",
           title: `Title ${id}`,
-          authorship: [{ display_name: "Smith J" }],
+          authorship: [author],
           publication_year: 2020,
+          cited_by_count: null,
+          created_date: null,
+          updated_date: null,
+          publication_date: null,
+          publisher: null,
+          pagination: null,
+          publication_venue: null,
         },
       },
       {
         id: `ld-${id}`,
         reference_id: id,
+        source: "test",
+        visibility: "public",
+        robot_version: null,
+        derived_from: null,
         created_at: "2024-01-02T00:00:00Z",
         content: {
           enhancement_type: "linked_data",
@@ -97,15 +116,14 @@ describe("generateWorkbook", () => {
   });
 
   test("skips references that have no linked_data enhancement", async () => {
+    // A reference with bibliographic but no linked_data — the skip path.
+    const skipRef = syntheticReference("ref-skip");
     const noLinked: Reference = {
-      id: "ref-skip",
-      enhancements: [
-        {
-          id: "bib-only",
-          reference_id: "ref-skip",
-          content: { enhancement_type: "bibliographic", title: "Only bib" },
-        },
-      ],
+      ...skipRef,
+      enhancements:
+        skipRef.enhancements?.filter(
+          (e) => e.content.enhancement_type !== "linked_data",
+        ) ?? null,
     };
     const wb = await generateWorkbook(
       [noLinked, syntheticReference("ref-keep")],

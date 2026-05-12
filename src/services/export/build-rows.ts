@@ -5,22 +5,25 @@
  * snake_case to match the wire format.
  */
 
+import { extractDoi, isDict } from "@/services/referenceUtils";
 import { expandCompactUri } from "@/services/vocabulary";
+import type {
+  BibliographicMetadataEnhancement,
+  Enhancement,
+  EnhancementContent,
+  LinkedDataEnhancement,
+  Reference,
+} from "@/types/models";
 
 import type {
   ArmRow,
-  BibliographicContent,
   CellValue,
   CodedAnnotation,
   ConceptResolver,
-  Enhancement,
-  EnhancementType,
   Finding,
   Investigation,
   InvestigationRow,
-  LinkedDataContent,
   OutcomeRow,
-  Reference,
 } from "./types.ts";
 
 export const SHEET_HEADERS = {
@@ -102,14 +105,6 @@ const ARM_KEY_FIELDS = [
 type PlainRecord = Record<string, unknown>;
 
 /**
- * True for non-null, non-array objects. Excludes arrays so callers can
- * distinguish "structured annotation" from "list of annotations".
- */
-function isPlainObject(v: unknown): v is PlainRecord {
-  return v !== null && typeof v === "object" && !Array.isArray(v);
-}
-
-/**
  * Round numeric cells to 5 decimal places. The Python writer's %.16g
  * serialization disagrees with a native JS round-trip on the last digit
  * or two, and no field here (effect sizes, means, SDs, n) needs more
@@ -141,9 +136,9 @@ function label(curie: unknown, vocab: ConceptResolver): unknown {
  * annotation is not a structured object.
  */
 function codedId(annotation: unknown, vocab: ConceptResolver): CellValue {
-  if (!isPlainObject(annotation)) return null;
+  if (!isDict(annotation)) return null;
   const cv = (annotation as CodedAnnotation).codedValue;
-  if (isPlainObject(cv)) {
+  if (isDict(cv)) {
     const conceptId = cv["@id"];
     if (conceptId !== undefined && conceptId !== null) {
       return label(conceptId, vocab) as CellValue;
@@ -159,9 +154,9 @@ function codedId(annotation: unknown, vocab: ConceptResolver): CellValue {
  * port's rounding behaviour.
  */
 function codedValue(annotation: unknown): CellValue {
-  if (!isPlainObject(annotation)) return null;
+  if (!isDict(annotation)) return null;
   const cv = (annotation as CodedAnnotation).codedValue;
-  if (isPlainObject(cv)) return round5Cell((cv["@value"] ?? null) as CellValue);
+  if (isDict(cv)) return round5Cell((cv["@value"] ?? null) as CellValue);
   return null;
 }
 
@@ -170,7 +165,7 @@ function codedValue(annotation: unknown): CellValue {
  * input isn't a structured annotation object.
  */
 function supportingText(annotation: unknown): string | null {
-  if (isPlainObject(annotation)) {
+  if (isDict(annotation)) {
     const txt = (annotation as CodedAnnotation).supportingText;
     return typeof txt === "string" ? txt : null;
   }
@@ -221,7 +216,7 @@ function joinSupportingTexts(annotations: unknown): string {
  * dict (`{"@id": "_:foo", ...}`) or a bare string ref (`"_:foo"`).
  */
 function refId(value: unknown): string | null {
-  if (isPlainObject(value)) {
+  if (isDict(value)) {
     const id = value["@id"];
     return typeof id === "string" ? id : null;
   }
@@ -240,7 +235,7 @@ function buildBlankNodeLookup(findings: Finding[]): Map<string, PlainRecord> {
   for (const finding of findings) {
     for (const key of ["comparedTo", "evaluates", "hasContext", "sampleSize", "attrition", "cost"] as const) {
       const value = finding[key];
-      if (isPlainObject(value)) {
+      if (isDict(value)) {
         const id = value["@id"];
         if (typeof id === "string") lookup.set(id, value);
       }
@@ -260,7 +255,7 @@ type Resolver = (value: unknown) => PlainRecord;
 function makeResolver(lookup: Map<string, PlainRecord>): Resolver {
   return (value) => {
     if (typeof value === "string") return lookup.get(value) ?? {};
-    if (isPlainObject(value)) return value;
+    if (isDict(value)) return value;
     return {};
   };
 }
@@ -369,16 +364,18 @@ function derivedSource(reference: Reference, linkedEnhancement: Enhancement | nu
  * duplicate is newer. Falls back to the most recent duplicate enhancement
  * when the canonical bucket has none of this type.
  */
-export function latestEnhancementOfType(
+export function latestEnhancementOfType<T extends EnhancementContent>(
   reference: Reference,
-  enhancementType: EnhancementType,
-): Enhancement | null {
-  const canonical: Enhancement[] = [];
-  const duplicate: Enhancement[] = [];
+  enhancementType: T["enhancement_type"],
+): (Enhancement & { content: T }) | null {
+  type Narrowed = Enhancement & { content: T };
+  const canonical: Narrowed[] = [];
+  const duplicate: Narrowed[] = [];
   for (const e of reference.enhancements ?? []) {
-    if (e?.content?.enhancement_type !== enhancementType) continue;
-    if (e.reference_id === reference.id) canonical.push(e);
-    else duplicate.push(e);
+    if (e.content.enhancement_type !== enhancementType) continue;
+    const narrowed = e as Narrowed;
+    if (e.reference_id === reference.id) canonical.push(narrowed);
+    else duplicate.push(narrowed);
   }
   const bucket = canonical.length ? canonical : duplicate;
   if (bucket.length === 0) return null;
@@ -396,35 +393,31 @@ export function latestEnhancementOfType(
  */
 export function buildInvestigationRow(
   reference: Reference,
-  bibliographic: Enhancement | null,
-  linked: Enhancement,
+  bibliographic: (Enhancement & { content: BibliographicMetadataEnhancement }) | null,
+  linked: Enhancement & { content: LinkedDataEnhancement },
   investigation: Investigation,
   vocab: ConceptResolver,
 ): InvestigationRow {
   const docType = investigation.documentType ?? {};
-  const bibContent =
-    bibliographic && bibliographic.content.enhancement_type === "bibliographic"
-      ? (bibliographic.content as BibliographicContent)
-      : null;
+  const bibContent = bibliographic?.content ?? null;
   const authors = bibContent?.authorship
     ? bibContent.authorship.map((a) => a.display_name).join("; ")
     : null;
-  const identifiersByType: Record<string, string> = {};
-  for (const i of reference.identifiers ?? []) {
-    identifiersByType[i.identifier_type] = i.identifier;
-  }
-  const linkedContent = linked.content as LinkedDataContent;
+  const openAlex = (reference.identifiers ?? []).find(
+    (i) => i.identifier_type === "open_alex",
+  );
   return {
     reference_id: String(reference.id),
     source: derivedSource(reference, linked),
     title: bibContent?.title ?? null,
     authors: authors || null,
     publication_year: bibContent?.publication_year ?? null,
-    doi: identifiersByType["doi"] ?? null,
-    openalex_id: identifiersByType["open_alex"] ?? null,
+    doi: extractDoi(reference.identifiers ?? null),
+    openalex_id:
+      typeof openAlex?.identifier === "string" ? openAlex.identifier : null,
     documentType: codedId(docType, vocab),
     studyDesign: codedId(investigation.studyDesign ?? {}, vocab),
-    vocabulary: String(linkedContent.vocabulary_uri),
+    vocabulary: linked.content.vocabulary_uri,
   };
 }
 
@@ -503,7 +496,7 @@ export function buildOutcomeRows(
   for (let i = 0; i < findings.length; i++) {
     const finding = findings[i]!;
     const armId = armIds[i]!;
-    const outcomeBlock = isPlainObject(finding["hasOutcome"]) ? (finding["hasOutcome"] as PlainRecord) : {};
+    const outcomeBlock = isDict(finding["hasOutcome"]) ? (finding["hasOutcome"] as PlainRecord) : {};
     const outcomeConcepts = joinCodedIds(outcomeBlock["outcome"], vocab);
     const outcomeConceptsSupporting = joinSupportingTexts(outcomeBlock["outcome"]);
 

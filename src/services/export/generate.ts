@@ -15,15 +15,21 @@ import {
   buildOutcomeRows,
   latestEnhancementOfType,
 } from "./build-rows.ts";
+import { isDict } from "@/services/referenceUtils";
+import type {
+  BibliographicMetadataEnhancement,
+  LinkedDataEnhancement,
+  Reference,
+} from "@/types/models";
+
 import type {
   ArmRow,
   BuiltRows,
   ConceptResolver,
   Finding,
+  Investigation,
   InvestigationRow,
-  LinkedDataContent,
   OutcomeRow,
-  Reference,
 } from "./types.ts";
 
 const SHEET_NAMES = {
@@ -114,12 +120,19 @@ export async function buildAllRows(
   const arms: ArmRow[] = [];
   const outcomes: OutcomeRow[] = [];
   for await (const reference of references) {
-    const linked = latestEnhancementOfType(reference, "linked_data");
+    const linked = latestEnhancementOfType<LinkedDataEnhancement>(
+      reference,
+      "linked_data",
+    );
     if (!linked) continue;
-    const bibliographic = latestEnhancementOfType(reference, "bibliographic");
+    const bibliographic =
+      latestEnhancementOfType<BibliographicMetadataEnhancement>(
+        reference,
+        "bibliographic",
+      );
     const referenceId = String(reference.id);
-    const linkedContent = linked.content as LinkedDataContent;
-    const inv = linkedContent.data.hasInvestigation ?? {};
+    const rawInvestigation = linked.content.data["hasInvestigation"];
+    const inv: Investigation = isDict(rawInvestigation) ? rawInvestigation : {};
     const findings = (Array.isArray(inv["hasFinding"]) ? inv["hasFinding"] : []) as Finding[];
     const armIds = assignArmIds(findings);
     investigation.push(

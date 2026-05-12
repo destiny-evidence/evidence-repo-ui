@@ -1,82 +1,25 @@
 /**
- * Shared types for the SheetJS export pipeline.
+ * Export-pipeline-local types.
  *
- * The Reference / Enhancement shapes mirror the wire format of the
- * destiny-sdk JSON used by the Python reference implementation
- * (snake_case fields straight off the API). JSON-LD investigation
- * structures are highly variant — blank-node refs, optional fields,
- * mixed scalar/concept annotations — so they are intentionally typed
- * loosely with `Record<string, unknown>` and narrowed by helpers in
- * `build-rows.ts`. The row types are strict because consumers will
- * write them straight into worksheet columns.
+ * The shared models in `@/types/models` are the source of truth for
+ * `Reference`, `Enhancement`, etc.; this module only holds shapes
+ * specific to the export pipeline:
+ *
+ * - `Investigation` and `Finding` describe the **raw JSON-LD wire
+ *   format** inside `LinkedDataEnhancement.data`. The post-parse
+ *   equivalents in `@/types/investigation` (`InvestigationData`,
+ *   `FindingData`) are not interchangeable — blank-node refs and
+ *   missing fields are still in play here.
+ * - `CodedAnnotation` likewise describes the wire shape
+ *   (`codedValue: { "@id"?, "@value"? }`) rather than the post-parse
+ *   `CodedAnnotation<T>` exported from `@/types/investigation`.
+ * - `ConceptResolver` bundles the prefix + label maps the row
+ *   builders need.
+ * - `CellValue` and the three row types describe worksheet output and
+ *   are not consumed outside this module.
  */
 
-export type EnhancementType =
-  | "linked_data"
-  | "bibliographic"
-  | "abstract"
-  | "raw"
-  | "annotation"
-  | (string & {});
-
-export interface Identifier {
-  identifier_type: string;
-  identifier: string;
-}
-
-export interface Authorship {
-  display_name: string;
-  orcid?: string | null;
-  position?: string;
-}
-
-export interface BibliographicContent {
-  enhancement_type: "bibliographic";
-  title?: string;
-  authorship?: Authorship[] | null;
-  publication_year?: number;
-  [key: string]: unknown;
-}
-
-export interface LinkedDataContent {
-  enhancement_type: "linked_data";
-  vocabulary_uri: string;
-  data: LinkedData;
-}
-
-export interface LinkedData {
-  "@context"?: string;
-  "@type"?: string;
-  hasInvestigation?: Investigation;
-  [key: string]: unknown;
-}
-
-export interface GenericEnhancementContent {
-  enhancement_type: EnhancementType;
-  [key: string]: unknown;
-}
-
-export type EnhancementContent =
-  | BibliographicContent
-  | LinkedDataContent
-  | GenericEnhancementContent;
-
-export interface Enhancement {
-  id?: string;
-  reference_id?: string;
-  source?: string;
-  derived_from?: string[] | null;
-  created_at?: string;
-  content: EnhancementContent;
-}
-
-export interface Reference {
-  id: string;
-  identifiers?: Identifier[] | null;
-  enhancements?: Enhancement[] | null;
-}
-
-// JSON-LD structures inside LinkedDataContent.data are kept loose: any
+// JSON-LD structures inside LinkedDataEnhancement.data are kept loose: any
 // node can be either an inline object or a blank-node ref string, and
 // most fields are optional. We treat them as Record<string, unknown>
 // and let the row builders narrow defensively.

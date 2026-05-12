@@ -9,7 +9,7 @@
  * Node 18+, so the same code path runs in both environments.
  */
 
-import type { Reference } from "./types.ts";
+import type { Reference } from "@/types/models";
 
 /**
  * Yield parsed JSON objects from a `ReadableStream<Uint8Array>` one per
