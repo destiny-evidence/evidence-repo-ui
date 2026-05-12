@@ -136,3 +136,10 @@ resource "github_actions_environment_variable" "frontdoor_endpoint_name" {
   variable_name = "FRONTDOOR_ENDPOINT_NAME"
   value         = azurerm_cdn_frontdoor_endpoint.this.name
 }
+
+resource "github_actions_environment_variable" "custom_domain" {
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "CUSTOM_DOMAIN"
+  value         = local.custom_domain
+}
