@@ -1,24 +1,3 @@
-/**
- * Export-pipeline-local types.
- *
- * The shared models in `@/types/models` are the source of truth for
- * `Reference`, `Enhancement`, etc.; this module only holds shapes
- * specific to the export pipeline:
- *
- * - `Investigation` and `Finding` describe the **raw JSON-LD wire
- *   format** inside `LinkedDataEnhancement.data`. The post-parse
- *   equivalents in `@/types/investigation` (`InvestigationData`,
- *   `FindingData`) are not interchangeable — blank-node refs and
- *   missing fields are still in play here.
- * - `CodedAnnotation` likewise describes the wire shape
- *   (`codedValue: { "@id"?, "@value"? }`) rather than the post-parse
- *   `CodedAnnotation<T>` exported from `@/types/investigation`.
- * - `ConceptResolver` bundles the prefix + label maps the row
- *   builders need.
- * - `CellValue` and the three row types describe worksheet output and
- *   are not consumed outside this module.
- */
-
 // JSON-LD structures inside LinkedDataEnhancement.data are kept loose: any
 // node can be either an inline object or a blank-node ref string, and
 // most fields are optional. We treat them as Record<string, unknown>

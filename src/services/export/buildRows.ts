@@ -6,7 +6,11 @@
  */
 
 import { extractLinkedDataCodingInstitution } from "@/services/codingInstitution";
-import { extractDoi, isDict } from "@/services/referenceUtils";
+import {
+  extractDoi,
+  extractOpenAlexId,
+  isDict,
+} from "@/services/referenceUtils";
 import { expandCompactUri } from "@/services/vocabulary";
 import type {
   BibliographicMetadataEnhancement,
@@ -329,28 +333,23 @@ function dedupeRows<T extends object>(rows: T[]): T[] {
  */
 export function buildInvestigationRow(
   reference: Reference,
-  bibliographic: (Enhancement & { content: BibliographicMetadataEnhancement }) | null,
+  bibliographic: BibliographicMetadataEnhancement | null,
   linked: Enhancement & { content: LinkedDataEnhancement },
   investigation: Investigation,
   vocab: ConceptResolver,
 ): InvestigationRow {
   const docType = investigation.documentType ?? {};
-  const bibContent = bibliographic?.content ?? null;
-  const authors = bibContent?.authorship
-    ? bibContent.authorship.map((a) => a.display_name).join("; ")
+  const authors = bibliographic?.authorship
+    ? bibliographic.authorship.map((a) => a.display_name).join("; ")
     : null;
-  const openAlex = (reference.identifiers ?? []).find(
-    (i) => i.identifier_type === "open_alex",
-  );
   return {
     reference_id: String(reference.id),
     source: extractLinkedDataCodingInstitution(reference, linked),
-    title: bibContent?.title ?? null,
+    title: bibliographic?.title ?? null,
     authors: authors || null,
-    publication_year: bibContent?.publication_year ?? null,
+    publication_year: bibliographic?.publication_year ?? null,
     doi: extractDoi(reference.identifiers ?? null),
-    openalex_id:
-      typeof openAlex?.identifier === "string" ? openAlex.identifier : null,
+    openalex_id: extractOpenAlexId(reference.identifiers ?? null),
     documentType: codedId(docType, vocab),
     studyDesign: codedId(investigation.studyDesign ?? {}, vocab),
     vocabulary: linked.content.vocabulary_uri,

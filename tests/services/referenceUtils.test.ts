@@ -5,6 +5,7 @@ import {
   extractLinkedData,
   extractLinkedDataEnhancement,
   extractDoi,
+  extractOpenAlexId,
   formatPagination,
 } from "@/services/referenceUtils";
 import type {
@@ -168,6 +169,32 @@ describe("extractDoi", () => {
   test("returns null for non-string DOI identifier", () => {
     expect(
       extractDoi([{ identifier: 12345, identifier_type: "doi" }]),
+    ).toBeNull();
+  });
+});
+
+describe("extractOpenAlexId", () => {
+  test("returns null when identifiers is null", () => {
+    expect(extractOpenAlexId(null)).toBeNull();
+  });
+
+  test("returns null when no open_alex identifier exists", () => {
+    expect(
+      extractOpenAlexId([{ identifier: "10.1/x", identifier_type: "doi" }]),
+    ).toBeNull();
+  });
+
+  test("returns OpenAlex string when present", () => {
+    expect(
+      extractOpenAlexId([
+        { identifier: "W123", identifier_type: "open_alex" },
+      ]),
+    ).toBe("W123");
+  });
+
+  test("returns null for non-string open_alex identifier", () => {
+    expect(
+      extractOpenAlexId([{ identifier: 12345, identifier_type: "open_alex" }]),
     ).toBeNull();
   });
 });

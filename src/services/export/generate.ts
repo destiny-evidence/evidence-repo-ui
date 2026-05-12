@@ -15,14 +15,11 @@ import {
   buildOutcomeRows,
 } from "./buildRows.ts";
 import {
-  extractLatestEnhancement,
+  extractBibliographic,
+  extractLinkedDataEnhancement,
   isDict,
 } from "@/services/referenceUtils";
-import type {
-  BibliographicMetadataEnhancement,
-  LinkedDataEnhancement,
-  Reference,
-} from "@/types/models";
+import type { Reference } from "@/types/models";
 
 import type {
   ArmRow,
@@ -122,16 +119,9 @@ export async function buildAllRows(
   const arms: ArmRow[] = [];
   const outcomes: OutcomeRow[] = [];
   for await (const reference of references) {
-    const linked = extractLatestEnhancement<LinkedDataEnhancement>(
-      reference,
-      "linked_data",
-    );
+    const linked = extractLinkedDataEnhancement(reference);
     if (!linked) continue;
-    const bibliographic =
-      extractLatestEnhancement<BibliographicMetadataEnhancement>(
-        reference,
-        "bibliographic",
-      );
+    const bibliographic = extractBibliographic(reference);
     const referenceId = String(reference.id);
     const rawInvestigation = linked.content.data["hasInvestigation"];
     const inv: Investigation = isDict(rawInvestigation) ? rawInvestigation : {};

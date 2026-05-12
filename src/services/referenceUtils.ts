@@ -105,6 +105,16 @@ export function extractDoi(
   return typeof doi?.identifier === "string" ? doi.identifier : null;
 }
 
+export function extractOpenAlexId(
+  identifiers: ExternalIdentifier[] | null,
+): string | null {
+  if (!identifiers) return null;
+  const openAlex = identifiers.find(
+    (i) => i.identifier_type === "open_alex",
+  );
+  return typeof openAlex?.identifier === "string" ? openAlex.identifier : null;
+}
+
 // Editorial citation format: `volume(issue), first_page–last_page`.
 // Uses en dash (U+2013) for page ranges per typographic convention.
 // Returns "" when nothing meaningful to render.

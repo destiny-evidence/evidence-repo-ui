@@ -184,7 +184,7 @@ describe("buildInvestigationRow", () => {
     });
     const row = buildInvestigationRow(
       ref,
-      bib,
+      bib.content,
       linked,
       {
         documentType: { codedValue: { "@id": "esea:DocumentTypeScheme/C00008" } },
