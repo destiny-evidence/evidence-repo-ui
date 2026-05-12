@@ -5,6 +5,7 @@
  * snake_case to match the wire format.
  */
 
+import { extractLinkedDataCodingInstitution } from "@/services/codingInstitution";
 import { extractDoi, isDict } from "@/services/referenceUtils";
 import { expandCompactUri } from "@/services/vocabulary";
 import type {
@@ -321,39 +322,6 @@ function dedupeRows<T extends object>(rows: T[]): T[] {
 }
 
 /**
- * Map an upstream-enhancement source string to its sponsoring
- * organization (EEF / IIIE / ESSA), falling back to the raw source so
- * unrecognized values stay visible in the export.
- */
-function mapSource(rawSource: string | undefined | null): string | null {
-  if (!rawSource) return null;
-  const lowered = rawSource.toLowerCase();
-  if (lowered.includes("eef")) return "EEF";
-  if (lowered.includes("essa")) return "ESSA";
-  if (lowered.includes("iie")) return "IIIE";
-  return rawSource;
-}
-
-/**
- * Resolve the human-readable source for a linked-data enhancement by
- * following its `derived_from` chain to the upstream raw enhancement on
- * the same reference, then mapping that source to its sponsoring
- * organization.
- */
-function derivedSource(reference: Reference, linkedEnhancement: Enhancement | null): string | null {
-  if (!linkedEnhancement) return null;
-  const byId = new Map<string, Enhancement>();
-  for (const e of reference.enhancements ?? []) {
-    if (e.id) byId.set(e.id, e);
-  }
-  for (const upstreamId of linkedEnhancement.derived_from ?? []) {
-    const upstream = byId.get(upstreamId);
-    if (upstream) return mapSource(upstream.source);
-  }
-  return null;
-}
-
-/**
  * Build the single Investigation Details row for one reference. Pulls
  * bibliographic metadata from the latest bibliographic enhancement,
  * external identifiers from the reference, and document/study-design
@@ -376,7 +344,7 @@ export function buildInvestigationRow(
   );
   return {
     reference_id: String(reference.id),
-    source: derivedSource(reference, linked),
+    source: extractLinkedDataCodingInstitution(reference, linked),
     title: bibContent?.title ?? null,
     authors: authors || null,
     publication_year: bibContent?.publication_year ?? null,

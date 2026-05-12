@@ -203,30 +203,19 @@ describe("buildInvestigationRow", () => {
     expect(row.vocabulary).toBe("https://vocab.esea.education/v1");
   });
 
-  test("maps the derived_from upstream raw source to its sponsoring org", () => {
-    const cases: Array<[string, string]> = [
-      ["eef-eppi-review", "EEF"],
-      ["ESSA-something", "ESSA"],
-      ["iie-upload", "IIIE"],
-      ["random-other-thing", "random-other-thing"],
-    ];
-    for (const [rawSource, expected] of cases) {
-      const raw = makeEnh(
-        { enhancement_type: "raw" },
-        { id: "raw-1", source: rawSource },
-      );
-      const linked = linkedEnh({});
-      const ref = makeRef({ enhancements: [raw, linked] });
-      const row = buildInvestigationRow(ref, null, linked, {}, VOCAB);
-      expect(row.source, `source ${rawSource}`).toBe(expected);
-    }
-  });
-
-  test("source is null when derived_from is empty", () => {
-    const linked = linkedEnh({}, { derived_from: null });
-    const ref = makeRef({ enhancements: [linked] });
+  // Token-by-token resolver behaviour and edge cases (null derived_from,
+  // unknown sources, non-raw upstream filter) live in
+  // tests/services/codingInstitution.test.ts. Here we just smoke-test
+  // that buildInvestigationRow plumbs the resolved value into row.source.
+  test("source reflects extractLinkedDataCodingInstitution of the linked enhancement", () => {
+    const raw = makeEnh(
+      { enhancement_type: "raw" },
+      { id: "raw-1", source: "eef-eppi-review" },
+    );
+    const linked = linkedEnh({});
+    const ref = makeRef({ enhancements: [raw, linked] });
     const row = buildInvestigationRow(ref, null, linked, {}, VOCAB);
-    expect(row.source).toBeNull();
+    expect(row.source).toBe("EEF");
   });
 });
 
