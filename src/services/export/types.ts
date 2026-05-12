@@ -92,8 +92,17 @@ export interface CodedAnnotation {
   [key: string]: unknown;
 }
 
-/** Map of vocabulary CURIE (e.g. `esea:DocumentTypeScheme/C00008`) to prefLabel. */
-export type LabelLookup = Map<string, string>;
+/**
+ * Bundle of the maps needed to turn a CURIE coded value into a human label:
+ * `prefixes` maps a CURIE prefix to its namespace URI (from the JSON-LD
+ * @context), `labels` maps a full URI to its SKOS prefLabel (from the
+ * vocabulary @graph). Mirrors the (prefixes, labels) pair that
+ * `investigationParser` threads through.
+ */
+export interface ConceptResolver {
+  prefixes: Map<string, string>;
+  labels: Map<string, string>;
+}
 
 // Row types — the column set each sheet writes. Values are the raw
 // JS primitives written into cells; `null` is used uniformly for blanks

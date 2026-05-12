@@ -6,47 +6,59 @@ import { fileURLToPath } from "node:url";
 import * as XLSX from "xlsx";
 
 import { exportReferencesToExcel } from "@/services/export/export.ts";
+import { _resetContextCache } from "@/services/vocabulary/contextService";
+import { _resetVocabularyCache } from "@/services/vocabulary/vocabularyService";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = resolve(HERE, "fixtures");
 
-const TTL_URL = "https://vocab.example.org/v1.ttl";
+const VOCAB_URL = "https://vocab.example.org/v1";
+const VOCAB_JSONLD_URL = "https://vocab.example.org/v1.jsonld";
+const CONTEXT_URL = "https://vocab.example.org/context.jsonld";
 const JSONL_URL = "https://signed.example.com/refs.jsonl?sig=abc";
 
-const TTL_BODY = `
-@prefix esea: <https://vocab.esea.education/> .
-
-<https://vocab.esea.education/DocumentTypeScheme/C00008>
-  skos:prefLabel "Journal Article" .
-`;
-
-const JSONL_BODY = JSON.stringify({
-  id: "ref-1",
-  identifiers: [{ identifier_type: "doi", identifier: "10.1/x" }],
-  enhancements: [
+const VOCAB_JSONLD_BODY = JSON.stringify({
+  "@graph": [
     {
-      id: "ld-1",
-      reference_id: "ref-1",
-      created_at: "2024-01-02T00:00:00Z",
-      content: {
-        enhancement_type: "linked_data",
-        vocabulary_uri: "https://vocab.esea.education/v1",
-        data: {
-          hasInvestigation: {
-            hasFinding: [
-              {
-                evaluates: { "@id": "_:i1", name: "Phonics" },
-                comparedTo: { "@id": "_:c1" },
-                hasOutcome: { name: "Reading" },
-                hasEffectEstimate: [{ pointEstimate: 0.5 }],
-              },
-            ],
+      "@id": "https://vocab.esea.education/DocumentTypeScheme/C00008",
+      "@type": "skos:Concept",
+      "skos:prefLabel": "Journal Article",
+    },
+  ],
+});
+
+const CONTEXT_JSONLD_BODY = JSON.stringify({
+  "@context": { esea: "https://vocab.esea.education/" },
+});
+
+const JSONL_BODY =
+  JSON.stringify({
+    id: "ref-1",
+    identifiers: [{ identifier_type: "doi", identifier: "10.1/x" }],
+    enhancements: [
+      {
+        id: "ld-1",
+        reference_id: "ref-1",
+        created_at: "2024-01-02T00:00:00Z",
+        content: {
+          enhancement_type: "linked_data",
+          vocabulary_uri: "https://vocab.esea.education/v1",
+          data: {
+            hasInvestigation: {
+              hasFinding: [
+                {
+                  evaluates: { "@id": "_:i1", name: "Phonics" },
+                  comparedTo: { "@id": "_:c1" },
+                  hasOutcome: { name: "Reading" },
+                  hasEffectEstimate: [{ pointEstimate: 0.5 }],
+                },
+              ],
+            },
           },
         },
       },
-    },
-  ],
-}) + "\n";
+    ],
+  }) + "\n";
 
 interface CapturedDownload {
   blob: Blob | null;
@@ -55,15 +67,29 @@ interface CapturedDownload {
   revoked: boolean;
 }
 
+type BodySetting =
+  | string
+  | { status: number; statusText?: string; body?: string };
+
+function respond(setting: BodySetting): Response {
+  if (typeof setting === "string") return new Response(setting, { status: 200 });
+  return new Response(setting.body ?? "", {
+    status: setting.status,
+    statusText: setting.statusText,
+  });
+}
+
 /**
- * Install fetch + download spies for an export test. Routes URLs that
- * look like vocabulary requests (host contains "vocab") to `ttlBody`,
- * everything else to `jsonlBody`. Returns the capture object plus the
- * fetch spy so callers can inspect call args.
+ * Install fetch + download spies for an export test. Routes fetches by
+ * URL: anything containing "context" goes to `contextBody`; anything
+ * else containing "vocab" goes to `vocabBody`; everything else goes to
+ * `jsonlBody` (streamed through a `ReadableStream` to exercise the
+ * incremental parser).
  */
 function installSpies(opts: {
-  jsonlBody?: string | { status: number; statusText?: string; body?: string };
-  ttlBody?: string | { status: number; statusText?: string; body?: string };
+  jsonlBody?: BodySetting;
+  vocabBody?: BodySetting;
+  contextBody?: BodySetting;
   jsonlChunks?: number;
 } = {}) {
   const captured: CapturedDownload = {
@@ -111,25 +137,16 @@ function installSpies(opts: {
   });
 
   const jsonlSetting = opts.jsonlBody ?? JSONL_BODY;
-  const ttlSetting = opts.ttlBody ?? TTL_BODY;
+  const vocabSetting = opts.vocabBody ?? VOCAB_JSONLD_BODY;
+  const contextSetting = opts.contextBody ?? CONTEXT_JSONLD_BODY;
   const jsonlChunks = opts.jsonlChunks ?? 1;
 
   const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
     async (input) => {
       const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("vocab")) {
-        if (typeof ttlSetting === "string") return new Response(ttlSetting);
-        return new Response(ttlSetting.body ?? "", {
-          status: ttlSetting.status,
-          statusText: ttlSetting.statusText,
-        });
-      }
-      if (typeof jsonlSetting !== "string") {
-        return new Response(jsonlSetting.body ?? "", {
-          status: jsonlSetting.status,
-          statusText: jsonlSetting.statusText,
-        });
-      }
+      if (url.includes("context")) return respond(contextSetting);
+      if (url.includes("vocab")) return respond(vocabSetting);
+      if (typeof jsonlSetting !== "string") return respond(jsonlSetting);
       const bytes = new TextEncoder().encode(jsonlSetting);
       const chunkSize = Math.max(1, Math.ceil(bytes.length / jsonlChunks));
       const slices: Uint8Array[] = [];
@@ -150,9 +167,15 @@ function installSpies(opts: {
   return { captured, fetchSpy };
 }
 
+function resetCaches(): void {
+  _resetVocabularyCache();
+  _resetContextCache();
+}
+
 describe("exportReferencesToExcel", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    resetCaches();
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -160,7 +183,7 @@ describe("exportReferencesToExcel", () => {
 
   test("triggers a download with the given filename and xlsx MIME type", async () => {
     const { captured } = installSpies();
-    await exportReferencesToExcel(JSONL_URL, "https://vocab.example.org/v1", "out.xlsx");
+    await exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx");
 
     expect(captured.filename).toBe("out.xlsx");
     expect(captured.blob).not.toBeNull();
@@ -171,40 +194,51 @@ describe("exportReferencesToExcel", () => {
     expect(captured.revoked).toBe(true);
   });
 
-  test("normalises vocabulary URLs to their .ttl form", async () => {
+  test("normalises any vocabulary URL form to its .jsonld variant", async () => {
     for (const input of [
-      "https://vocab.example.org/v1",
-      "https://vocab.example.org/v1.jsonld",
+      VOCAB_URL,
+      VOCAB_JSONLD_URL,
       "https://vocab.example.org/v1.ttl",
       "https://vocab.example.org/v1/",
     ]) {
       const { fetchSpy } = installSpies();
-      await exportReferencesToExcel(JSONL_URL, input, "out.xlsx");
-      const ttlCalls = fetchSpy.mock.calls
+      await exportReferencesToExcel(JSONL_URL, input, CONTEXT_URL, "out.xlsx");
+      const vocabCalls = fetchSpy.mock.calls
         .map((c) => (typeof c[0] === "string" ? c[0] : c[0]!.toString()))
-        .filter((u) => u.includes("vocab"));
-      expect(ttlCalls, `input ${input}`).toContain("https://vocab.example.org/v1.ttl");
+        .filter((u) => u.includes("vocab") && !u.includes("context"));
+      expect(vocabCalls, `input ${input}`).toContain(VOCAB_JSONLD_URL);
       vi.restoreAllMocks();
+      resetCaches();
     }
   });
 
-  test("fetches both the TTL and the JSONL", async () => {
+  test("fetches the vocabulary, context, and JSONL", async () => {
     const { fetchSpy } = installSpies();
-    await exportReferencesToExcel(JSONL_URL, "https://vocab.example.org/v1", "out.xlsx");
+    await exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx");
     const urls = fetchSpy.mock.calls.map((c) =>
       typeof c[0] === "string" ? c[0] : c[0]!.toString(),
     );
-    expect(urls).toContain(TTL_URL);
+    expect(urls).toContain(VOCAB_JSONLD_URL);
+    expect(urls).toContain(CONTEXT_URL);
     expect(urls).toContain(JSONL_URL);
   });
 
-  test("propagates a descriptive error on TTL fetch failure", async () => {
+  test("propagates a descriptive error on vocabulary fetch failure", async () => {
     installSpies({
-      ttlBody: { status: 404, statusText: "Not Found", body: "nope" },
+      vocabBody: { status: 404, statusText: "Not Found", body: "nope" },
     });
     await expect(
-      exportReferencesToExcel(JSONL_URL, "https://vocab.example.org/v1", "out.xlsx"),
-    ).rejects.toThrow(/Failed to fetch vocabulary TTL: HTTP 404/);
+      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx"),
+    ).rejects.toThrow(/Failed to fetch vocabulary: 404/);
+  });
+
+  test("propagates a descriptive error on context fetch failure", async () => {
+    installSpies({
+      contextBody: { status: 404, statusText: "Not Found", body: "nope" },
+    });
+    await expect(
+      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx"),
+    ).rejects.toThrow(/Failed to fetch context: 404/);
   });
 
   test("propagates errors from the JSONL stream", async () => {
@@ -212,13 +246,18 @@ describe("exportReferencesToExcel", () => {
       jsonlBody: { status: 500, statusText: "Server Error", body: "" },
     });
     await expect(
-      exportReferencesToExcel(JSONL_URL, "https://vocab.example.org/v1", "out.xlsx"),
+      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx"),
     ).rejects.toThrow(/HTTP 500/);
   });
 
   test("succeeds when JSONL bytes are split across multiple stream chunks", async () => {
     const { captured } = installSpies({ jsonlChunks: 8 });
-    await exportReferencesToExcel(JSONL_URL, "https://vocab.example.org/v1", "chunked.xlsx");
+    await exportReferencesToExcel(
+      JSONL_URL,
+      VOCAB_URL,
+      CONTEXT_URL,
+      "chunked.xlsx",
+    );
     expect(captured.filename).toBe("chunked.xlsx");
     expect(captured.blob!.size).toBeGreaterThan(0);
   });
@@ -268,15 +307,17 @@ describe.each([
 ] as const)("end-to-end cell parity vs snapshot: %s", (stem) => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    resetCaches();
   });
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
   test("exported workbook matches the committed snapshot cell-for-cell", async () => {
-    const [jsonlBody, ttlBody, snapshotText] = await Promise.all([
+    const [jsonlBody, vocabBody, contextBody, snapshotText] = await Promise.all([
       readFile(resolve(FIXTURES, `${stem}.jsonl`), "utf-8"),
-      readFile(resolve(FIXTURES, "vocabulary.ttl"), "utf-8"),
+      readFile(resolve(FIXTURES, "vocabulary.jsonld"), "utf-8"),
+      readFile(resolve(FIXTURES, "context.jsonld"), "utf-8"),
       readFile(resolve(FIXTURES, `${stem}_expected.json`), "utf-8"),
     ]);
     const expected = JSON.parse(snapshotText) as Snapshot;
@@ -284,13 +325,15 @@ describe.each([
     // Multi-chunk delivery exercises the streaming parser as part of the E2E.
     const { captured } = installSpies({
       jsonlBody,
-      ttlBody,
+      vocabBody,
+      contextBody,
       jsonlChunks: 4,
     });
 
     await exportReferencesToExcel(
-      "https://signed.example.com/refs.jsonl?sig=abc",
-      "https://vocab.example.org/v1",
+      JSONL_URL,
+      VOCAB_URL,
+      CONTEXT_URL,
       `${stem}.xlsx`,
     );
 

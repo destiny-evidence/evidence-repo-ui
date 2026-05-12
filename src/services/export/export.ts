@@ -1,46 +1,22 @@
 /**
- * Browser entry point for the Excel export pipeline. Fetches the JSONL of
- * references from a signed URL, fetches the SKOS vocabulary TTL, hands
- * both to `generateWorkbook`, and triggers a browser download of the
- * resulting `.xlsx`.
- *
- * Plays the role the Node CLI wrapper (`bin/generate.ts` in the original
- * port) plays on the server side: a thin shell around `generateWorkbook`
- * that handles I/O and delivery.
+ * Browser entry point for the Excel export pipeline. Fetches the JSONL
+ * of references from a signed URL, fetches the SKOS vocabulary and
+ * JSON-LD @context document via the shared `vocabularyService` /
+ * `contextService` (so cached vocab/context loads are reused with the
+ * rest of the UI), hands the result to `generateWorkbook`, and
+ * triggers a browser download of the resulting `.xlsx`.
  */
 
-import { proxyVocabUrl } from "@/config";
+import {
+  getCachedContext,
+  getCachedVocabulary,
+} from "@/services/vocabulary";
 
 import { generateWorkbook, workbookToArrayBuffer } from "./generate.ts";
 import { streamJsonlFromUrl } from "./jsonl-stream.ts";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-/**
- * Normalise a vocabulary URL to its `.ttl` form: strip any existing
- * format extension and trailing slash, then append `.ttl`. Mirrors the
- * `toJsonLdUrl` helper in `vocabularyService.ts` so the TTL endpoint
- * lives next to the JSON-LD endpoint on the same host.
- */
-function toTtlUrl(vocabularyUrl: string): string {
-  const url = new URL(vocabularyUrl);
-  url.pathname =
-    url.pathname.replace(/\/+$/, "").replace(/\.(jsonld|json|ttl|rdf|xml)$/, "") +
-    ".ttl";
-  return url.toString();
-}
-
-async function fetchVocabularyTtl(vocabularyUrl: string): Promise<string> {
-  const url = proxyVocabUrl(toTtlUrl(vocabularyUrl));
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch vocabulary TTL: HTTP ${response.status} ${response.statusText} (${url})`,
-    );
-  }
-  return response.text();
-}
 
 /**
  * Trigger a browser download of `data` as a file named `filename`. Uses a
@@ -60,17 +36,22 @@ function triggerDownload(data: ArrayBuffer, filename: string): void {
 }
 
 /**
- * Stream the JSONL at `jsonlUrl`, parse it against the vocabulary at
- * `vocabularyUrl`, build the three-tab workbook, and prompt the user to
- * download it as `filename`.
+ * Stream the JSONL at `jsonlUrl`, resolve concepts against the JSON-LD
+ * vocabulary at `vocabularyUrl` (URI-keyed prefLabels) and the JSON-LD
+ * @context at `contextUrl` (prefix → namespace map), build the
+ * three-tab workbook, and prompt the user to download it as `filename`.
  */
 export async function exportReferencesToExcel(
   jsonlUrl: string,
   vocabularyUrl: string,
+  contextUrl: string,
   filename: string,
 ): Promise<void> {
   const references = streamJsonlFromUrl(jsonlUrl);
-  const vocabularyTtl = await fetchVocabularyTtl(vocabularyUrl);
-  const wb = await generateWorkbook(references, vocabularyTtl);
+  const [{ labels }, { prefixes }] = await Promise.all([
+    getCachedVocabulary(vocabularyUrl),
+    getCachedContext(contextUrl),
+  ]);
+  const wb = await generateWorkbook(references, { prefixes, labels });
   triggerDownload(workbookToArrayBuffer(wb), filename);
 }

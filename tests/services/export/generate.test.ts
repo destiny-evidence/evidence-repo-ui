@@ -6,14 +6,17 @@ import {
   parseJsonl,
   workbookToArrayBuffer,
 } from "@/services/export/generate.ts";
-import type { Reference } from "@/services/export/types.ts";
+import type {
+  ConceptResolver,
+  Reference,
+} from "@/services/export/types.ts";
 
-const MINIMAL_TTL = `
-@prefix esea: <https://vocab.esea.education/> .
-
-<https://vocab.esea.education/DocumentTypeScheme/C00008>
-  skos:prefLabel "Journal Article" .
-`;
+const MINIMAL_VOCAB: ConceptResolver = {
+  prefixes: new Map([["esea", "https://vocab.esea.education/"]]),
+  labels: new Map([
+    ["https://vocab.esea.education/DocumentTypeScheme/C00008", "Journal Article"],
+  ]),
+};
 
 /**
  * Build a Reference with a `linked_data` enhancement containing one
@@ -84,7 +87,7 @@ describe("generateWorkbook", () => {
   test("produces the three expected sheets in the documented order", async () => {
     const wb = await generateWorkbook(
       [syntheticReference("ref-1")],
-      MINIMAL_TTL,
+      MINIMAL_VOCAB,
     );
     expect(wb.SheetNames).toEqual([
       "Investigation Details",
@@ -106,7 +109,7 @@ describe("generateWorkbook", () => {
     };
     const wb = await generateWorkbook(
       [noLinked, syntheticReference("ref-keep")],
-      MINIMAL_TTL,
+      MINIMAL_VOCAB,
     );
     const inv = wb.Sheets["Investigation Details"]!;
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(inv);
@@ -120,7 +123,7 @@ describe("generateWorkbook", () => {
       yield syntheticReference("ref-1");
       yield syntheticReference("ref-2");
     }
-    const wb = await generateWorkbook(gen(), MINIMAL_TTL);
+    const wb = await generateWorkbook(gen(), MINIMAL_VOCAB);
     const inv = wb.Sheets["Investigation Details"]!;
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(inv);
     expect(rows.map((r) => r.reference_id)).toEqual(["ref-1", "ref-2"]);
@@ -129,7 +132,7 @@ describe("generateWorkbook", () => {
   test("freezes the first row of each sheet", async () => {
     const wb = await generateWorkbook(
       [syntheticReference("ref-1")],
-      MINIMAL_TTL,
+      MINIMAL_VOCAB,
     );
     for (const name of wb.SheetNames) {
       const ws = wb.Sheets[name] as unknown as { "!freeze"?: { ySplit: number } };
@@ -142,7 +145,7 @@ describe("workbookToArrayBuffer", () => {
   test("returns an ArrayBuffer that XLSX.read round-trips", async () => {
     const wb = await generateWorkbook(
       [syntheticReference("ref-1")],
-      MINIMAL_TTL,
+      MINIMAL_VOCAB,
     );
     const buf = workbookToArrayBuffer(wb);
     expect(buf).toBeInstanceOf(ArrayBuffer);

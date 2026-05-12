@@ -8,22 +8,26 @@ import {
   latestEnhancementOfType,
 } from "@/services/export/build-rows.ts";
 import type {
+  ConceptResolver,
   Enhancement,
   Finding,
-  LabelLookup,
   Reference,
 } from "@/services/export/types.ts";
 
-const LABELS: LabelLookup = new Map([
-  ["esea:DocumentTypeScheme/C00008", "Journal Article"],
-  ["esea:StudyDesignScheme/RCT", "Randomised Controlled Trial"],
-  ["esea:EducationLevelScheme/Primary", "Primary"],
-  ["esea:EducationThemeScheme/Literacy", "Literacy"],
-  ["esea:SettingScheme/Urban", "Urban"],
-  ["esea:ImplementerScheme/Teacher", "Teacher"],
-  ["esea:FidelityScheme/High", "High"],
-  ["esea:EffectMetricScheme/SMD", "Standardised Mean Difference"],
+const PREFIXES = new Map([["esea", "https://vocab.esea.education/"]]);
+
+const LABELS = new Map([
+  ["https://vocab.esea.education/DocumentTypeScheme/C00008", "Journal Article"],
+  ["https://vocab.esea.education/StudyDesignScheme/RCT", "Randomised Controlled Trial"],
+  ["https://vocab.esea.education/EducationLevelScheme/Primary", "Primary"],
+  ["https://vocab.esea.education/EducationThemeScheme/Literacy", "Literacy"],
+  ["https://vocab.esea.education/SettingScheme/Urban", "Urban"],
+  ["https://vocab.esea.education/ImplementerScheme/Teacher", "Teacher"],
+  ["https://vocab.esea.education/FidelityScheme/High", "High"],
+  ["https://vocab.esea.education/EffectMetricScheme/SMD", "Standardised Mean Difference"],
 ]);
+
+const VOCAB: ConceptResolver = { prefixes: PREFIXES, labels: LABELS };
 
 function bibEnh(overrides: Partial<Enhancement> = {}): Enhancement {
   return {
@@ -167,7 +171,7 @@ describe("buildInvestigationRow", () => {
         documentType: { codedValue: { "@id": "esea:DocumentTypeScheme/C00008" } },
         studyDesign: { codedValue: { "@id": "esea:StudyDesignScheme/RCT" } },
       },
-      LABELS,
+      VOCAB,
     );
     expect(row.reference_id).toBe("ref-1");
     expect(row.doi).toBe("10.1/abc");
@@ -196,7 +200,7 @@ describe("buildInvestigationRow", () => {
       };
       const linked = linkedEnh({});
       const ref: Reference = { id: "ref-1", enhancements: [raw, linked] };
-      const row = buildInvestigationRow(ref, null, linked, {}, LABELS);
+      const row = buildInvestigationRow(ref, null, linked, {}, VOCAB);
       expect(row.source, `source ${rawSource}`).toBe(expected);
     }
   });
@@ -204,7 +208,7 @@ describe("buildInvestigationRow", () => {
   test("source is null when derived_from is empty", () => {
     const linked = linkedEnh({}, { derived_from: null });
     const ref: Reference = { id: "ref-1", enhancements: [linked] };
-    const row = buildInvestigationRow(ref, null, linked, {}, LABELS);
+    const row = buildInvestigationRow(ref, null, linked, {}, VOCAB);
     expect(row.source).toBeNull();
   });
 });
@@ -227,7 +231,7 @@ describe("buildFindingRows", () => {
       // String refs resolve to the same objects.
       { evaluates: "_:i1", comparedTo: "_:c1", hasContext: "_:ctx" },
     ];
-    const rows = buildFindingRows("ref-1", findings, [1, 1], LABELS);
+    const rows = buildFindingRows("ref-1", findings, [1, 1], VOCAB);
     // Dedup collapses the two identical rows.
     expect(rows).toHaveLength(1);
     expect(rows[0]!.intervention_name).toBe("Phonics programme");
@@ -247,7 +251,7 @@ describe("buildFindingRows", () => {
         },
       },
     ];
-    const rows = buildFindingRows("ref-1", findings, [1], LABELS);
+    const rows = buildFindingRows("ref-1", findings, [1], VOCAB);
     expect(rows[0]!.intervention_description).toBe(
       "Paragraph one.\n\nParagraph two.",
     );
@@ -258,7 +262,7 @@ describe("buildFindingRows", () => {
       evaluates: { "@id": "_:i1", name: "X" },
       comparedTo: { "@id": "_:c1" },
     };
-    const rows = buildFindingRows("ref-1", [finding, finding], [1, 1], LABELS);
+    const rows = buildFindingRows("ref-1", [finding, finding], [1, 1], VOCAB);
     expect(rows).toHaveLength(1);
   });
 
@@ -274,7 +278,7 @@ describe("buildFindingRows", () => {
         },
       },
     ];
-    const rows = buildFindingRows("ref-1", findings, [1], LABELS);
+    const rows = buildFindingRows("ref-1", findings, [1], VOCAB);
     // Known concept resolves to label, unknown falls back to CURIE.
     expect(rows[0]!.intervention_educationTheme).toBe(
       "Literacy; esea:UnknownScheme/X",
@@ -305,7 +309,7 @@ describe("buildOutcomeRows", () => {
         ],
       },
     ];
-    const rows = buildOutcomeRows("ref-1", findings, [1], LABELS);
+    const rows = buildOutcomeRows("ref-1", findings, [1], VOCAB);
     expect(rows).toHaveLength(2);
     expect(rows[0]!.effect_metric).toBe("Standardised Mean Difference");
     // round5: 0.123456789 → 0.12346
@@ -323,7 +327,7 @@ describe("buildOutcomeRows", () => {
         hasOutcome: { name: "Reading score" },
       },
     ];
-    const rows = buildOutcomeRows("ref-1", findings, [1], LABELS);
+    const rows = buildOutcomeRows("ref-1", findings, [1], VOCAB);
     expect(rows).toHaveLength(1);
     expect(rows[0]!.outcome_name).toBe("Reading score");
     expect(rows[0]!.point_estimate).toBeNull();
@@ -342,7 +346,7 @@ describe("buildOutcomeRows", () => {
         hasEffectEstimate: [{ pointEstimate: 0.5 }],
       },
     ];
-    const rows = buildOutcomeRows("ref-1", findings, [1], LABELS);
+    const rows = buildOutcomeRows("ref-1", findings, [1], VOCAB);
     expect(rows[0]!.intervention_n).toBe(100);
     // round5: 12.3456789 → 12.34568
     expect(rows[0]!.intervention_mean).toBeCloseTo(12.34568, 10);
@@ -366,7 +370,7 @@ describe("buildOutcomeRows", () => {
         hasEffectEstimate: [{ pointEstimate: 0.1 }],
       },
     ];
-    const rows = buildOutcomeRows("ref-1", findings, [1], LABELS);
+    const rows = buildOutcomeRows("ref-1", findings, [1], VOCAB);
     expect(rows[0]!.intervention_n).toBe(50);
     expect(rows[0]!.control_n).toBe(48);
   });

@@ -18,14 +18,13 @@ import {
 import type {
   ArmRow,
   BuiltRows,
+  ConceptResolver,
   Finding,
   InvestigationRow,
-  LabelLookup,
   LinkedDataContent,
   OutcomeRow,
   Reference,
 } from "./types.ts";
-import { buildLabelLookup } from "./vocabulary.ts";
 
 const SHEET_NAMES = {
   investigation: "Investigation Details",
@@ -109,7 +108,7 @@ function appendSheet<R extends AnyRow>(
  */
 export async function buildAllRows(
   references: ReferenceSource,
-  labelLookup: LabelLookup,
+  vocab: ConceptResolver,
 ): Promise<BuiltRows> {
   const investigation: InvestigationRow[] = [];
   const arms: ArmRow[] = [];
@@ -124,30 +123,31 @@ export async function buildAllRows(
     const findings = (Array.isArray(inv["hasFinding"]) ? inv["hasFinding"] : []) as Finding[];
     const armIds = assignArmIds(findings);
     investigation.push(
-      buildInvestigationRow(reference, bibliographic, linked, inv, labelLookup),
+      buildInvestigationRow(reference, bibliographic, linked, inv, vocab),
     );
-    arms.push(...buildFindingRows(referenceId, findings, armIds, labelLookup));
-    outcomes.push(...buildOutcomeRows(referenceId, findings, armIds, labelLookup));
+    arms.push(...buildFindingRows(referenceId, findings, armIds, vocab));
+    outcomes.push(...buildOutcomeRows(referenceId, findings, armIds, vocab));
   }
   return { investigation, arms, outcomes };
 }
 
 /**
- * Top-level export: parse the vocabulary, build rows for every reference,
- * and assemble the three-tab workbook (Investigation Details,
- * Investigation Arms, Outcomes). Pure with respect to its inputs — no
- * disk or network access — so it runs in the browser as well as Node.
+ * Top-level export: build rows for every reference and assemble the
+ * three-tab workbook (Investigation Details, Investigation Arms,
+ * Outcomes). Pure with respect to its inputs — no disk or network
+ * access — so it runs in the browser as well as Node.
  *
  * The references argument can be a sync iterable (array) or async
  * iterable (JSONL stream), letting callers either load the whole file or
- * stream it from a signed URL.
+ * stream it from a signed URL. The `vocab` argument bundles the
+ * JSON-LD @context prefix map and the URI-keyed prefLabel map fetched
+ * via `vocabularyService` / `contextService`.
  */
 export async function generateWorkbook(
   references: ReferenceSource,
-  vocabularyTtl: string,
+  vocab: ConceptResolver,
 ): Promise<XLSX.WorkBook> {
-  const labelLookup = buildLabelLookup(vocabularyTtl);
-  const rows = await buildAllRows(references, labelLookup);
+  const rows = await buildAllRows(references, vocab);
   const wb = XLSX.utils.book_new();
   appendSheet(wb, SHEET_NAMES.investigation, SHEET_HEADERS.investigation, rows.investigation);
   appendSheet(wb, SHEET_NAMES.arms, SHEET_HEADERS.arms, rows.arms);

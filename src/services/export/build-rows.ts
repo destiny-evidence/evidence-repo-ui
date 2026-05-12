@@ -5,17 +5,19 @@
  * snake_case to match the wire format.
  */
 
+import { expandCompactUri } from "@/services/vocabulary";
+
 import type {
   ArmRow,
   BibliographicContent,
   CellValue,
   CodedAnnotation,
+  ConceptResolver,
   Enhancement,
   EnhancementType,
   Finding,
   Investigation,
   InvestigationRow,
-  LabelLookup,
   LinkedDataContent,
   OutcomeRow,
   Reference,
@@ -121,13 +123,16 @@ function round5Cell(value: CellValue): CellValue {
 }
 
 /**
- * Resolve a CURIE-style concept ID to its vocabulary prefLabel, falling
- * back to the raw CURIE when no entry is registered. Pass-through for
- * non-string inputs so callers can use this on values of mixed type.
+ * Resolve a CURIE-style concept ID to its vocabulary prefLabel by
+ * expanding the CURIE to its full URI (via the JSON-LD @context prefix
+ * map) and consulting the URI-keyed label map. Falls back to the raw
+ * CURIE when no entry is registered. Pass-through for non-string inputs
+ * so callers can use this on values of mixed type.
  */
-function label(curie: unknown, labelLookup: LabelLookup): unknown {
+function label(curie: unknown, vocab: ConceptResolver): unknown {
   if (typeof curie !== "string") return curie;
-  return labelLookup.get(curie) ?? curie;
+  const uri = expandCompactUri(curie, vocab.prefixes);
+  return vocab.labels.get(uri) ?? curie;
 }
 
 /**
@@ -135,13 +140,13 @@ function label(curie: unknown, labelLookup: LabelLookup): unknown {
  * `@id`/`@value` when no prefLabel match is found. Returns null if the
  * annotation is not a structured object.
  */
-function codedId(annotation: unknown, labelLookup: LabelLookup): CellValue {
+function codedId(annotation: unknown, vocab: ConceptResolver): CellValue {
   if (!isPlainObject(annotation)) return null;
   const cv = (annotation as CodedAnnotation).codedValue;
   if (isPlainObject(cv)) {
     const conceptId = cv["@id"];
     if (conceptId !== undefined && conceptId !== null) {
-      return label(conceptId, labelLookup) as CellValue;
+      return label(conceptId, vocab) as CellValue;
     }
     return (cv["@value"] ?? null) as CellValue;
   }
@@ -177,10 +182,10 @@ function supportingText(annotation: unknown): string | null {
  * Nullish and empty entries are dropped so the output is a clean
  * delimiter-separated string.
  */
-function joinCodedIds(annotations: unknown, labelLookup: LabelLookup): string {
+function joinCodedIds(annotations: unknown, vocab: ConceptResolver): string {
   const list = Array.isArray(annotations) ? annotations : [];
   return list
-    .map((a) => codedId(a, labelLookup))
+    .map((a) => codedId(a, vocab))
     .filter((v): v is string | number | boolean => v != null && v !== "")
     .join("; ");
 }
@@ -394,7 +399,7 @@ export function buildInvestigationRow(
   bibliographic: Enhancement | null,
   linked: Enhancement,
   investigation: Investigation,
-  labelLookup: LabelLookup,
+  vocab: ConceptResolver,
 ): InvestigationRow {
   const docType = investigation.documentType ?? {};
   const bibContent =
@@ -417,8 +422,8 @@ export function buildInvestigationRow(
     publication_year: bibContent?.publication_year ?? null,
     doi: identifiersByType["doi"] ?? null,
     openalex_id: identifiersByType["open_alex"] ?? null,
-    documentType: codedId(docType, labelLookup),
-    studyDesign: codedId(investigation.studyDesign ?? {}, labelLookup),
+    documentType: codedId(docType, vocab),
+    studyDesign: codedId(investigation.studyDesign ?? {}, vocab),
     vocabulary: String(linkedContent.vocabulary_uri),
   };
 }
@@ -435,7 +440,7 @@ export function buildFindingRows(
   referenceId: string,
   findings: Finding[],
   armIds: number[],
-  labelLookup: LabelLookup,
+  vocab: ConceptResolver,
 ): ArmRow[] {
   const resolve = makeResolver(buildBlankNodeLookup(findings));
   const rows: ArmRow[] = [];
@@ -456,11 +461,11 @@ export function buildFindingRows(
       control_description: flattenDescription(control["description"]),
       intervention_duration_value: codedValue(intervention["duration"]),
       intervention_duration_supportingText: supportingText(intervention["duration"]),
-      intervention_educationTheme: joinCodedIds(intervention["educationTheme"], labelLookup),
+      intervention_educationTheme: joinCodedIds(intervention["educationTheme"], vocab),
       intervention_educationTheme_supportingText: joinSupportingTexts(intervention["educationTheme"]),
-      intervention_implementationFidelity: codedId(intervention["implementationFidelity"], labelLookup),
+      intervention_implementationFidelity: codedId(intervention["implementationFidelity"], vocab),
       intervention_implementationFidelity_supportingText: supportingText(intervention["implementationFidelity"]),
-      intervention_implementerType: codedId(intervention["implementerType"], labelLookup),
+      intervention_implementerType: codedId(intervention["implementerType"], vocab),
       intervention_implementerType_supportingText: supportingText(intervention["implementerType"]),
       sampleSize_value: codedValue(sampleSize),
       sampleSize_supportingText: supportingText(sampleSize),
@@ -469,12 +474,12 @@ export function buildFindingRows(
       cost_value: codedValue(cost),
       context_country: joinCodedValues(ctx["country"]),
       context_countryLevel1: joinCodedValues(ctx["countryLevel1"]),
-      context_educationLevel: joinCodedIds(ctx["educationLevel"], labelLookup),
+      context_educationLevel: joinCodedIds(ctx["educationLevel"], vocab),
       context_educationLevel_supportingText: joinSupportingTexts(ctx["educationLevel"]),
       context_participants: joinCodedValues(ctx["participants"]),
-      context_sampleFeatures: joinCodedIds(ctx["sampleFeatures"], labelLookup),
+      context_sampleFeatures: joinCodedIds(ctx["sampleFeatures"], vocab),
       context_sampleFeatures_supportingText: joinSupportingTexts(ctx["sampleFeatures"]),
-      context_setting: joinCodedIds(ctx["setting"], labelLookup),
+      context_setting: joinCodedIds(ctx["setting"], vocab),
       context_setting_supportingText: joinSupportingTexts(ctx["setting"]),
     });
   }
@@ -492,14 +497,14 @@ export function buildOutcomeRows(
   referenceId: string,
   findings: Finding[],
   armIds: number[],
-  labelLookup: LabelLookup,
+  vocab: ConceptResolver,
 ): OutcomeRow[] {
   const rows: OutcomeRow[] = [];
   for (let i = 0; i < findings.length; i++) {
     const finding = findings[i]!;
     const armId = armIds[i]!;
     const outcomeBlock = isPlainObject(finding["hasOutcome"]) ? (finding["hasOutcome"] as PlainRecord) : {};
-    const outcomeConcepts = joinCodedIds(outcomeBlock["outcome"], labelLookup);
+    const outcomeConcepts = joinCodedIds(outcomeBlock["outcome"], vocab);
     const outcomeConceptsSupporting = joinSupportingTexts(outcomeBlock["outcome"]);
 
     const armData = Array.isArray(finding["hasArmData"]) ? (finding["hasArmData"] as PlainRecord[]) : [];
@@ -523,7 +528,7 @@ export function buildOutcomeRows(
         outcome_description: typeof outcomeBlock["description"] === "string" ? (outcomeBlock["description"] as string) : null,
         outcome_concepts: outcomeConcepts,
         outcome_concepts_supportingText: outcomeConceptsSupporting,
-        effect_metric: label(effect["effectSizeMetric"], labelLookup) as CellValue,
+        effect_metric: label(effect["effectSizeMetric"], vocab) as CellValue,
         point_estimate: round5Cell((effect["pointEstimate"] ?? null) as CellValue),
         ci_lower: round5Cell((effect["confidenceIntervalLower"] ?? null) as CellValue),
         ci_upper: round5Cell((effect["confidenceIntervalUpper"] ?? null) as CellValue),
