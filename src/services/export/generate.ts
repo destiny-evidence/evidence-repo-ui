@@ -13,9 +13,11 @@ import {
   buildFindingRows,
   buildInvestigationRow,
   buildOutcomeRows,
-  latestEnhancementOfType,
 } from "./build-rows.ts";
-import { isDict } from "@/services/referenceUtils";
+import {
+  extractLatestEnhancement,
+  isDict,
+} from "@/services/referenceUtils";
 import type {
   BibliographicMetadataEnhancement,
   LinkedDataEnhancement,
@@ -120,13 +122,13 @@ export async function buildAllRows(
   const arms: ArmRow[] = [];
   const outcomes: OutcomeRow[] = [];
   for await (const reference of references) {
-    const linked = latestEnhancementOfType<LinkedDataEnhancement>(
+    const linked = extractLatestEnhancement<LinkedDataEnhancement>(
       reference,
       "linked_data",
     );
     if (!linked) continue;
     const bibliographic =
-      latestEnhancementOfType<BibliographicMetadataEnhancement>(
+      extractLatestEnhancement<BibliographicMetadataEnhancement>(
         reference,
         "bibliographic",
       );

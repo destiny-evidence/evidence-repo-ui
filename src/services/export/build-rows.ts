@@ -10,7 +10,6 @@ import { expandCompactUri } from "@/services/vocabulary";
 import type {
   BibliographicMetadataEnhancement,
   Enhancement,
-  EnhancementContent,
   LinkedDataEnhancement,
   Reference,
 } from "@/types/models";
@@ -352,37 +351,6 @@ function derivedSource(reference: Reference, linkedEnhancement: Enhancement | nu
     if (upstream) return mapSource(upstream.source);
   }
   return null;
-}
-
-/**
- * Return the highest-priority enhancement of the given type, or null.
- *
- * Priority: canonical-reference enhancements first, then most recent by
- * `created_at`. Search-result references carry enhancements from the
- * canonical reference (`enhancement.reference_id === reference.id`)
- * alongside any deduplicated duplicates; canonical data wins even when a
- * duplicate is newer. Falls back to the most recent duplicate enhancement
- * when the canonical bucket has none of this type.
- */
-export function latestEnhancementOfType<T extends EnhancementContent>(
-  reference: Reference,
-  enhancementType: T["enhancement_type"],
-): (Enhancement & { content: T }) | null {
-  type Narrowed = Enhancement & { content: T };
-  const canonical: Narrowed[] = [];
-  const duplicate: Narrowed[] = [];
-  for (const e of reference.enhancements ?? []) {
-    if (e.content.enhancement_type !== enhancementType) continue;
-    const narrowed = e as Narrowed;
-    if (e.reference_id === reference.id) canonical.push(narrowed);
-    else duplicate.push(narrowed);
-  }
-  const bucket = canonical.length ? canonical : duplicate;
-  if (bucket.length === 0) return null;
-  // created_at is an ISO-8601 timestamp; lexical sort matches chronological.
-  return bucket.reduce((best, e) =>
-    (e.created_at ?? "") > (best.created_at ?? "") ? e : best,
-  );
 }
 
 /**

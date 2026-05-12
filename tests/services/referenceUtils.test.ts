@@ -1,6 +1,7 @@
 import { describe, test, expect } from "vitest";
 import {
   extractBibliographic,
+  extractLatestEnhancement,
   extractLinkedData,
   extractLinkedDataEnhancement,
   extractDoi,
@@ -38,92 +39,90 @@ function makeRef(enhancements: Enhancement[] | null): Reference {
   };
 }
 
+function bibEnh(overrides: Partial<Enhancement> = {}): Enhancement {
+  const content: BibliographicMetadataEnhancement = {
+    enhancement_type: "bibliographic",
+    authorship: null,
+    cited_by_count: null,
+    created_date: null,
+    updated_date: null,
+    publication_date: null,
+    publication_year: null,
+    publisher: null,
+    title: "T",
+    pagination: null,
+    publication_venue: null,
+  };
+  return {
+    id: "bib-1",
+    reference_id: "ref-1",
+    source: "test",
+    visibility: "public",
+    robot_version: null,
+    derived_from: null,
+    created_at: "2024-01-01T00:00:00Z",
+    content,
+    ...overrides,
+  };
+}
+
+describe("extractLatestEnhancement", () => {
+  test("returns null when the reference has no enhancements", () => {
+    expect(extractLatestEnhancement(makeRef(null), "bibliographic")).toBeNull();
+  });
+
+  test("returns null when no enhancement of that type exists", () => {
+    const ref = makeRef([bibEnh()]);
+    expect(extractLatestEnhancement(ref, "linked_data")).toBeNull();
+  });
+
+  test("prefers canonical (reference_id === reference.id) over newer duplicates", () => {
+    const canonical = bibEnh({
+      id: "bib-canon",
+      reference_id: "ref-1",
+      created_at: "2024-01-01T00:00:00Z",
+    });
+    const duplicate = bibEnh({
+      id: "bib-dup",
+      reference_id: "other-ref",
+      created_at: "2025-01-01T00:00:00Z",
+    });
+    const ref = makeRef([duplicate, canonical]);
+    expect(extractLatestEnhancement(ref, "bibliographic")?.id).toBe("bib-canon");
+  });
+
+  test("within a bucket, picks the enhancement with the latest created_at", () => {
+    const older = bibEnh({ id: "bib-old", created_at: "2024-01-01T00:00:00Z" });
+    const newer = bibEnh({ id: "bib-new", created_at: "2024-06-01T00:00:00Z" });
+    const ref = makeRef([older, newer]);
+    expect(extractLatestEnhancement(ref, "bibliographic")?.id).toBe("bib-new");
+  });
+
+  test("falls back to the duplicate bucket when no canonical exists", () => {
+    const dup = bibEnh({
+      id: "bib-dup",
+      reference_id: "other-ref",
+    });
+    const ref = makeRef([dup]);
+    expect(extractLatestEnhancement(ref, "bibliographic")?.id).toBe("bib-dup");
+  });
+});
+
+// The three wrappers below are thin shape adapters over
+// `extractLatestEnhancement` — the dedup, null handling and recency
+// sort are covered by its tests above. Each wrapper test below asserts
+// only the shape difference: content vs full Enhancement.
+
 describe("extractBibliographic", () => {
-  test("returns null when enhancements is null", () => {
-    expect(extractBibliographic(makeRef(null))).toBeNull();
-  });
-
-  test("returns null when no bibliographic enhancement exists", () => {
-    const ref = makeRef([
-      makeEnhancement({
-        enhancement_type: "abstract",
-        process: "x",
-        abstract: "y",
-      }),
-    ]);
-    expect(extractBibliographic(ref)).toBeNull();
-  });
-
-  test("returns bibliographic content when present", () => {
-    const bib: BibliographicMetadataEnhancement = {
-      enhancement_type: "bibliographic",
-      authorship: null,
-      cited_by_count: 5,
-      created_date: null,
-      updated_date: null,
-      publication_date: null,
-      publication_year: 2024,
-      publisher: null,
-      title: "Test",
-      pagination: null,
-      publication_venue: null,
-    };
-    const ref = makeRef([makeEnhancement(bib)]);
-    expect(extractBibliographic(ref)).toBe(bib);
-  });
-
-  test("returns the most recent bibliographic enhancement by created_at", () => {
-    const older: BibliographicMetadataEnhancement = {
-      enhancement_type: "bibliographic",
-      authorship: null,
-      cited_by_count: null,
-      created_date: null,
-      updated_date: null,
-      publication_date: null,
-      publication_year: 2020,
-      publisher: null,
-      title: "Older",
-      pagination: null,
-      publication_venue: null,
-    };
-    const newer: BibliographicMetadataEnhancement = {
-      enhancement_type: "bibliographic",
-      authorship: null,
-      cited_by_count: null,
-      created_date: null,
-      updated_date: null,
-      publication_date: null,
-      publication_year: 2024,
-      publisher: null,
-      title: "Newer",
-      pagination: null,
-      publication_venue: null,
-    };
-    const ref = makeRef([
-      makeEnhancement(newer, "2026-01-01T00:00:00Z"),
-      makeEnhancement(older, "2025-01-01T00:00:00Z"),
-    ]);
-    expect(extractBibliographic(ref)).toBe(newer);
+  test("returns the bibliographic content (not the wrapper)", () => {
+    const wrapper = bibEnh();
+    const ref = makeRef([wrapper]);
+    expect(extractBibliographic(ref)).toBe(wrapper.content);
   });
 });
 
 describe("extractLinkedData", () => {
-  test("returns null when enhancements is null", () => {
-    expect(extractLinkedData(makeRef(null))).toBeNull();
-  });
-
-  test("returns null when no linked_data enhancement exists", () => {
-    const ref = makeRef([
-      makeEnhancement({
-        enhancement_type: "abstract",
-        process: "x",
-        abstract: "y",
-      }),
-    ]);
-    expect(extractLinkedData(ref)).toBeNull();
-  });
-
-  test("returns linked_data content when present", () => {
+  test("returns the linked_data content (not the wrapper)", () => {
     const ld: LinkedDataEnhancement = {
       enhancement_type: "linked_data",
       vocabulary_uri: "http://example.com",
@@ -135,22 +134,7 @@ describe("extractLinkedData", () => {
 });
 
 describe("extractLinkedDataEnhancement", () => {
-  test("returns null when enhancements is null", () => {
-    expect(extractLinkedDataEnhancement(makeRef(null))).toBeNull();
-  });
-
-  test("returns null when no linked_data enhancement exists", () => {
-    const ref = makeRef([
-      makeEnhancement({
-        enhancement_type: "abstract",
-        process: "x",
-        abstract: "y",
-      }),
-    ]);
-    expect(extractLinkedDataEnhancement(ref)).toBeNull();
-  });
-
-  test("returns the wrapping enhancement when linked_data is present", () => {
+  test("returns the wrapping Enhancement (not just the content)", () => {
     const ld: LinkedDataEnhancement = {
       enhancement_type: "linked_data",
       vocabulary_uri: "http://example.com",
@@ -159,25 +143,6 @@ describe("extractLinkedDataEnhancement", () => {
     const wrapper = makeEnhancement(ld);
     const ref = makeRef([wrapper]);
     expect(extractLinkedDataEnhancement(ref)).toBe(wrapper);
-  });
-
-  test("returns the most recent linked_data enhancement by created_at", () => {
-    const older: LinkedDataEnhancement = {
-      enhancement_type: "linked_data",
-      vocabulary_uri: "http://older.com",
-      data: { n: 1 },
-    };
-    const newer: LinkedDataEnhancement = {
-      enhancement_type: "linked_data",
-      vocabulary_uri: "http://newer.com",
-      data: { n: 2 },
-    };
-    const newerWrapper = makeEnhancement(newer, "2026-02-01T00:00:00Z");
-    const ref = makeRef([
-      newerWrapper,
-      makeEnhancement(older, "2025-01-01T00:00:00Z"),
-    ]);
-    expect(extractLinkedDataEnhancement(ref)).toBe(newerWrapper);
   });
 });
 

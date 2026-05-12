@@ -5,7 +5,6 @@ import {
   buildFindingRows,
   buildInvestigationRow,
   buildOutcomeRows,
-  latestEnhancementOfType,
 } from "@/services/export/build-rows.ts";
 import type {
   ConceptResolver,
@@ -126,44 +125,6 @@ function linkedEnh(
     content,
   };
 }
-
-describe("latestEnhancementOfType", () => {
-  test("returns null when no enhancement of that type exists", () => {
-    const ref = makeRef({ enhancements: [bibEnh()] });
-    expect(latestEnhancementOfType(ref, "linked_data")).toBeNull();
-  });
-
-  test("prefers canonical (reference_id === reference.id) over newer duplicates", () => {
-    const canonical = bibEnh({
-      id: "bib-canon",
-      reference_id: "ref-1",
-      created_at: "2024-01-01T00:00:00Z",
-    });
-    const duplicate = bibEnh({
-      id: "bib-dup",
-      reference_id: "other-ref",
-      created_at: "2025-01-01T00:00:00Z",
-    });
-    const ref = makeRef({ enhancements: [duplicate, canonical] });
-    expect(latestEnhancementOfType(ref, "bibliographic")?.id).toBe("bib-canon");
-  });
-
-  test("within a bucket, picks the enhancement with the latest created_at", () => {
-    const older = bibEnh({ id: "bib-old", created_at: "2024-01-01T00:00:00Z" });
-    const newer = bibEnh({ id: "bib-new", created_at: "2024-06-01T00:00:00Z" });
-    const ref = makeRef({ enhancements: [older, newer] });
-    expect(latestEnhancementOfType(ref, "bibliographic")?.id).toBe("bib-new");
-  });
-
-  test("falls back to the duplicate bucket when no canonical exists", () => {
-    const dup = bibEnh({
-      id: "bib-dup",
-      reference_id: "other-ref",
-    });
-    const ref = makeRef({ enhancements: [dup] });
-    expect(latestEnhancementOfType(ref, "bibliographic")?.id).toBe("bib-dup");
-  });
-});
 
 describe("assignArmIds", () => {
   test("assigns sequential 1-based IDs in encounter order", () => {
