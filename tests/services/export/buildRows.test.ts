@@ -5,7 +5,7 @@ import {
   buildFindingRows,
   buildInvestigationRow,
   buildOutcomeRows,
-} from "@/services/export/build-rows.ts";
+} from "@/services/export/buildRows.ts";
 import type {
   ConceptResolver,
   Finding,

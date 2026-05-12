@@ -13,7 +13,7 @@ import {
   buildFindingRows,
   buildInvestigationRow,
   buildOutcomeRows,
-} from "./build-rows.ts";
+} from "./buildRows.ts";
 import {
   extractLatestEnhancement,
   isDict,

@@ -3,7 +3,7 @@ import { describe, test, expect, vi, afterEach } from "vitest";
 import {
   streamJsonlFromBody,
   streamJsonlFromUrl,
-} from "@/services/export/jsonl-stream.ts";
+} from "@/services/export/jsonlStream.ts";
 
 /**
  * Build a `ReadableStream<Uint8Array>` that emits the given byte chunks

@@ -13,7 +13,7 @@ import {
 } from "@/services/vocabulary";
 
 import { generateWorkbook, workbookToArrayBuffer } from "./generate.ts";
-import { streamJsonlFromUrl } from "./jsonl-stream.ts";
+import { streamJsonlFromUrl } from "./jsonlStream.ts";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
