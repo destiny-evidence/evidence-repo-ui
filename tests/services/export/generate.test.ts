@@ -1,0 +1,153 @@
+import { describe, test, expect } from "vitest";
+import * as XLSX from "xlsx";
+
+import {
+  generateWorkbook,
+  parseJsonl,
+  workbookToArrayBuffer,
+} from "@/services/export/generate.ts";
+import type { Reference } from "@/services/export/types.ts";
+
+const MINIMAL_TTL = `
+@prefix esea: <https://vocab.esea.education/> .
+
+<https://vocab.esea.education/DocumentTypeScheme/C00008>
+  skos:prefLabel "Journal Article" .
+`;
+
+/**
+ * Build a Reference with a `linked_data` enhancement containing one
+ * finding. Enough structure to drive `generateWorkbook` end-to-end
+ * without bringing in the heavy fixtures.
+ */
+function syntheticReference(id: string): Reference {
+  return {
+    id,
+    identifiers: [{ identifier_type: "doi", identifier: `10.1/${id}` }],
+    enhancements: [
+      {
+        id: `bib-${id}`,
+        reference_id: id,
+        created_at: "2024-01-01T00:00:00Z",
+        content: {
+          enhancement_type: "bibliographic",
+          title: `Title ${id}`,
+          authorship: [{ display_name: "Smith J" }],
+          publication_year: 2020,
+        },
+      },
+      {
+        id: `ld-${id}`,
+        reference_id: id,
+        created_at: "2024-01-02T00:00:00Z",
+        content: {
+          enhancement_type: "linked_data",
+          vocabulary_uri: "https://vocab.esea.education/v1",
+          data: {
+            hasInvestigation: {
+              documentType: {
+                codedValue: { "@id": "esea:DocumentTypeScheme/C00008" },
+              },
+              hasFinding: [
+                {
+                  evaluates: { "@id": `_:i-${id}`, name: "Intervention" },
+                  comparedTo: { "@id": `_:c-${id}` },
+                  hasOutcome: { name: "Reading score" },
+                  hasEffectEstimate: [{ pointEstimate: 0.5 }],
+                },
+              ],
+            },
+          },
+        },
+      },
+    ],
+  };
+}
+
+describe("parseJsonl", () => {
+  test("parses each non-blank line into a Reference object", () => {
+    const text = '{"id":"a"}\n\n{"id":"b"}\n';
+    expect(parseJsonl(text)).toEqual([{ id: "a" }, { id: "b" }]);
+  });
+
+  test("handles CRLF line endings", () => {
+    const text = '{"id":"a"}\r\n{"id":"b"}\r\n';
+    expect(parseJsonl(text)).toEqual([{ id: "a" }, { id: "b" }]);
+  });
+
+  test("throws on malformed JSON", () => {
+    expect(() => parseJsonl("{bad")).toThrow();
+  });
+});
+
+describe("generateWorkbook", () => {
+  test("produces the three expected sheets in the documented order", async () => {
+    const wb = await generateWorkbook(
+      [syntheticReference("ref-1")],
+      MINIMAL_TTL,
+    );
+    expect(wb.SheetNames).toEqual([
+      "Investigation Details",
+      "Investigation Arms",
+      "Outcomes",
+    ]);
+  });
+
+  test("skips references that have no linked_data enhancement", async () => {
+    const noLinked: Reference = {
+      id: "ref-skip",
+      enhancements: [
+        {
+          id: "bib-only",
+          reference_id: "ref-skip",
+          content: { enhancement_type: "bibliographic", title: "Only bib" },
+        },
+      ],
+    };
+    const wb = await generateWorkbook(
+      [noLinked, syntheticReference("ref-keep")],
+      MINIMAL_TTL,
+    );
+    const inv = wb.Sheets["Investigation Details"]!;
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(inv);
+    // Header row excluded by sheet_to_json; exactly one body row.
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.reference_id).toBe("ref-keep");
+  });
+
+  test("accepts an async iterable of references", async () => {
+    async function* gen(): AsyncGenerator<Reference> {
+      yield syntheticReference("ref-1");
+      yield syntheticReference("ref-2");
+    }
+    const wb = await generateWorkbook(gen(), MINIMAL_TTL);
+    const inv = wb.Sheets["Investigation Details"]!;
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(inv);
+    expect(rows.map((r) => r.reference_id)).toEqual(["ref-1", "ref-2"]);
+  });
+
+  test("freezes the first row of each sheet", async () => {
+    const wb = await generateWorkbook(
+      [syntheticReference("ref-1")],
+      MINIMAL_TTL,
+    );
+    for (const name of wb.SheetNames) {
+      const ws = wb.Sheets[name] as unknown as { "!freeze"?: { ySplit: number } };
+      expect(ws["!freeze"]?.ySplit).toBe(1);
+    }
+  });
+});
+
+describe("workbookToArrayBuffer", () => {
+  test("returns an ArrayBuffer that XLSX.read round-trips", async () => {
+    const wb = await generateWorkbook(
+      [syntheticReference("ref-1")],
+      MINIMAL_TTL,
+    );
+    const buf = workbookToArrayBuffer(wb);
+    expect(buf).toBeInstanceOf(ArrayBuffer);
+
+    const reparsed = XLSX.read(new Uint8Array(buf), { type: "array" });
+    expect(reparsed.SheetNames).toEqual(wb.SheetNames);
+  });
+});
