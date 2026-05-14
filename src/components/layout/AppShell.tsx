@@ -1,6 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
+import { FeedbackFAB } from "@/components/feedback/FeedbackFAB";
 import "./AppShell.css";
 
 interface AppShellProps {
@@ -38,6 +39,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
       <main class="app-main">{children}</main>
+      <FeedbackFAB />
     </div>
   );
 }
