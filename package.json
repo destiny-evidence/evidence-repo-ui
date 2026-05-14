@@ -13,7 +13,8 @@
   "dependencies": {
     "keycloak-js": "^26.2.4",
     "preact": "^10.25.4",
-    "preact-router": "^4.1.2"
+    "preact-router": "^4.1.2",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.9.4",

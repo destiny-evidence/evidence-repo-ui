@@ -11,20 +11,37 @@ export function isDict(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+/**
+ * Return the highest-priority enhancement of the given type on a
+ * reference, or null.
+ *
+ * Search-result references arrive with enhancements from the canonical
+ * reference (`enhancement.reference_id === reference.id`) alongside any
+ * deduplicated duplicates. Canonical data wins even when a duplicate
+ * was created more recently. Within the chosen bucket the most recent
+ * enhancement by `created_at` wins. We only fall back to the duplicate
+ * bucket when the canonical reference has no enhancement of this type
+ * at all.
+ */
 export function extractLatestEnhancement<T extends EnhancementContent>(
   reference: Reference,
   enhancementType: T["enhancement_type"],
 ): (Enhancement & { content: T }) | null {
-  if (!reference.enhancements) return null;
-  const matches = reference.enhancements.filter(
-    (e): e is Enhancement & { content: T } =>
-      e.content.enhancement_type === enhancementType,
+  type Narrowed = Enhancement & { content: T };
+  const canonical: Narrowed[] = [];
+  const duplicate: Narrowed[] = [];
+  for (const e of reference.enhancements ?? []) {
+    if (e.content.enhancement_type !== enhancementType) continue;
+    const narrowed = e as Narrowed;
+    if (e.reference_id === reference.id) canonical.push(narrowed);
+    else duplicate.push(narrowed);
+  }
+  const bucket = canonical.length ? canonical : duplicate;
+  if (bucket.length === 0) return null;
+  // created_at is an ISO-8601 timestamp; lexical sort matches chronological.
+  return bucket.reduce((best, e) =>
+    (e.created_at ?? "") > (best.created_at ?? "") ? e : best,
   );
-  if (matches.length === 0) return null;
-  const sorted = matches.sort((a, b) =>
-    (a.created_at ?? "").localeCompare(b.created_at ?? ""),
-  );
-  return sorted[sorted.length - 1];
 }
 
 export function extractBibliographic(
@@ -86,6 +103,16 @@ export function extractDoi(
     (i) => i.identifier_type === "doi",
   );
   return typeof doi?.identifier === "string" ? doi.identifier : null;
+}
+
+export function extractOpenAlexId(
+  identifiers: ExternalIdentifier[] | null,
+): string | null {
+  if (!identifiers) return null;
+  const openAlex = identifiers.find(
+    (i) => i.identifier_type === "open_alex",
+  );
+  return typeof openAlex?.identifier === "string" ? openAlex.identifier : null;
 }
 
 // Editorial citation format: `volume(issue), first_page–last_page`.

@@ -1,0 +1,4476 @@
+{
+  "@context": {
+    "dct": "http://purl.org/dc/terms/",
+    "esea": "https://vocab.esea.education/",
+    "evrepo": "https://vocab.evidence-repository.org/",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00116",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00114"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Health Outcomes"
+    },
+    {
+      "@id": "evrepo:NumericCodingAnnotation",
+      "@type": "owl:Class",
+      "dct:description": "CodingAnnotation where codedValue is a decimal or integer.",
+      "rdfs:label": "Numeric Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:N8a715afdf31243de9eead1ae9a412e48"
+        }
+      ]
+    },
+    {
+      "@id": "_:N8a715afdf31243de9eead1ae9a412e48",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "xsd:decimal"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/SampleFeaturesScheme/C00191",
+      "@type": [
+        "skos:Concept",
+        "esea:SampleFeaturesConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:SampleFeaturesScheme"
+      },
+      "skos:prefLabel": "Learning Differences"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00069",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00021"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Curriculum Reform"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00024",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Equity and Inclusion: Socio-economic Status"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00155",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00145"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Alternative Basic Education (Formal)"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00025",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Equity and Inclusion: Special Education"
+    },
+    {
+      "@id": "esea:ImplementationDescriptionCodingAnnotation",
+      "@type": "owl:Class",
+      "rdfs:label": "Implementation Description Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:Na6956f542ba84df5a12a04cc319eb910"
+        }
+      ]
+    },
+    {
+      "@id": "_:Na6956f542ba84df5a12a04cc319eb910",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "esea:ImplementationDescriptionConcept"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00151",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00145"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Early Childhood Centre (Formal)"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00071",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Classroom Management"
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00202",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/StudyDesignScheme/C00201"
+      },
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:prefLabel": "Systematic Review"
+    },
+    {
+      "@id": "evrepo:preMean",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "pre-test mean",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00031",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Transportation"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00091",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00023"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Results-based Financing (RbF)"
+    },
+    {
+      "@id": "evrepo:truePositive",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Count of test-positive, reference-positive cases.",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "true positive",
+      "rdfs:range": {
+        "@id": "xsd:integer"
+      }
+    },
+    {
+      "@id": "esea:outcome",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Type of educational or other outcome measured. 2-level hierarchy: access/education/externalities/learning/returns categories with specific outcome types. Multiple values may be coded.",
+      "rdfs:domain": {
+        "@id": "evrepo:Outcome"
+      },
+      "rdfs:label": "outcome",
+      "rdfs:range": {
+        "@id": "esea:OutcomeCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00063",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Leadership Practices"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00100",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00096"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Household Expenditure"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00125",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00122"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Early Childhood Outcomes"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00130",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:narrower": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00131"
+      },
+      "skos:prefLabel": "Returns to Education"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00078",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Summer School"
+    },
+    {
+      "@id": "esea:isRetracted",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Boolean flag indicating whether the publication has been retracted. Retrieved from OpenAlex or other metadata source.",
+      "rdfs:domain": {
+        "@id": "evrepo:Investigation"
+      },
+      "rdfs:label": "is retracted",
+      "rdfs:range": {
+        "@id": "xsd:boolean"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementationFidelityScheme/C00144",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementationFidelityConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementationFidelityScheme"
+      },
+      "skos:prefLabel": "Qualitative"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00098",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00096"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Enrolment and Attendance"
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementationDescriptionScheme/C00141",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementationDescriptionConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementationDescriptionScheme"
+      },
+      "skos:prefLabel": "Government Reform"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00049",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00018"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Private Tutoring"
+    },
+    {
+      "@id": "https://vocab.esea.education/SampleFeaturesScheme/C00187",
+      "@type": [
+        "skos:Concept",
+        "esea:SampleFeaturesConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:SampleFeaturesScheme"
+      },
+      "skos:prefLabel": "Female"
+    },
+    {
+      "@id": "esea:groupDifferences",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Binary indicator of whether baseline group differences were reported. Coded as yes/no in StringCodingAnnotation.",
+      "rdfs:domain": {
+        "@id": "evrepo:Finding"
+      },
+      "rdfs:label": "group differences",
+      "rdfs:range": {
+        "@id": "evrepo:StringCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00108",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00105"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Private Delivery of Education"
+    },
+    {
+      "@id": "evrepo:Context",
+      "@type": "owl:Class",
+      "dct:description": "The 'Given' component of a Finding — describes country, education level, setting, sample features, and participants.",
+      "rdfs:label": "Context"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00109",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00105"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Quality of Education"
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/cohensD",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EffectSizeMetricConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EffectSizeMetricScheme"
+      },
+      "skos:prefLabel": "Cohen's d"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00166",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Mobile Classroom / Outreach"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00037",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00016"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Education Regulation"
+    },
+    {
+      "@id": "esea:implementationName",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Name or title of the intervention. Open text field.",
+      "rdfs:domain": {
+        "@id": "evrepo:Intervention"
+      },
+      "rdfs:label": "implementation name",
+      "rdfs:range": {
+        "@id": "evrepo:StringCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00052",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00019"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "International Assessments"
+    },
+    {
+      "@id": "evrepo:LinkedDataEnhancement",
+      "@type": "owl:Class",
+      "dct:description": "A structured linked-data annotation attached to a Reference in the repository. Contains one or more Investigations.",
+      "rdfs:label": "Linked Data Enhancement"
+    },
+    {
+      "@id": "esea:DocumentTypeCodingAnnotation",
+      "@type": "owl:Class",
+      "rdfs:label": "Document Type Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:N2174144685ca488f9198f0d14e9fcd8a"
+        }
+      ]
+    },
+    {
+      "@id": "_:N2174144685ca488f9198f0d14e9fcd8a",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "esea:DocumentTypeConcept"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "esea:countryLevel1",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Sub-national region, province, state, or administrative division (country Level 1). Open text field allowing multiple values.",
+      "rdfs:domain": {
+        "@id": "evrepo:Context"
+      },
+      "rdfs:label": "country level 1",
+      "rdfs:range": {
+        "@id": "evrepo:StringCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00123",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00122"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Basic Skills and Literacy"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00033",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Student Engagement and Participation"
+    },
+    {
+      "@id": "evrepo:ObservedResult",
+      "@type": "owl:Class",
+      "dct:description": "Raw summary statistics for a single arm/condition as reported in the study. Each ObservedResult is linked to its Condition via forCondition, making it self-describing. Provenance (codedBy, supportingText) is at the class level, not per-field.",
+      "rdfs:label": "Observed Result"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00055",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Workforce Professional Development"
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EstimateSourceScheme/extractedFromPaper",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EstimateSourceConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EstimateSourceScheme"
+      },
+      "skos:prefLabel": "Extracted from paper"
+    },
+    {
+      "@id": "https://vocab.esea.education/DocumentTypeScheme/C00013",
+      "@type": [
+        "skos:Concept",
+        "esea:DocumentTypeConcept"
+      ],
+      "skos:definition": "Any kind of report published by a state or national government.",
+      "skos:inScheme": {
+        "@id": "esea:DocumentTypeScheme"
+      },
+      "skos:prefLabel": "Government Report/Document"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00048",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00018"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Distance Learning"
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/riskRatio",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EffectSizeMetricConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EffectSizeMetricScheme"
+      },
+      "skos:prefLabel": "Risk ratio"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00161",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00162"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00173"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00169"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00165"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00168"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00171"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00166"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00163"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00172"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00170"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00164"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00167"
+        }
+      ],
+      "skos:prefLabel": "Informal / Non-Formal"
+    },
+    {
+      "@id": "evrepo:Investigation",
+      "@type": "owl:Class",
+      "dct:description": "A study reported within a Reference. An Investigation produces one or more Findings.",
+      "rdfs:label": "Investigation"
+    },
+    {
+      "@id": "esea:implementationDescription",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Type of implementation activity or modality. Multiple values may be coded.",
+      "rdfs:domain": {
+        "@id": "evrepo:Intervention"
+      },
+      "rdfs:label": "implementation description",
+      "rdfs:range": {
+        "@id": "esea:ImplementationDescriptionCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/oddsRatio",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EffectSizeMetricConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EffectSizeMetricScheme"
+      },
+      "skos:prefLabel": "Odds ratio"
+    },
+    {
+      "@id": "esea:sampleSize",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Total number of participants in the study. Integer field.",
+      "rdfs:domain": {
+        "@id": "evrepo:Finding"
+      },
+      "rdfs:label": "sample size",
+      "rdfs:range": {
+        "@id": "evrepo:NumericCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/hedgesG",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EffectSizeMetricConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EffectSizeMetricScheme"
+      },
+      "skos:prefLabel": "Hedges' g"
+    },
+    {
+      "@id": "esea:EducationThemeCodingAnnotation",
+      "@type": "owl:Class",
+      "rdfs:label": "Education Theme Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:N636e8706c2a847f4a819b16e48716b6d"
+        }
+      ]
+    },
+    {
+      "@id": "_:N636e8706c2a847f4a819b16e48716b6d",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "esea:EducationThemeConcept"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00040",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00017"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Tracking of Students"
+    },
+    {
+      "@id": "evrepo:effectSizeMetric",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "What metric was used: Hedges' g, Cohen's d, odds ratio, etc.",
+      "rdfs:domain": {
+        "@id": "evrepo:EffectEstimate"
+      },
+      "rdfs:label": "effect size metric",
+      "rdfs:range": {
+        "@id": "evrepo:EffectSizeMetricScheme"
+      }
+    },
+    {
+      "@id": "esea:implementerType",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "The type of organization implementing the intervention. Single-select enumerated type.",
+      "rdfs:domain": {
+        "@id": "evrepo:Intervention"
+      },
+      "rdfs:label": "implementer type",
+      "rdfs:range": {
+        "@id": "esea:ImplementerTypeCodingAnnotation"
+      }
+    },
+    {
+      "@id": "evrepo:clusteringAdjusted",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Whether clustering was accounted for. Values: yes, no, unknown, not-applicable.",
+      "rdfs:domain": {
+        "@id": "evrepo:EffectEstimate"
+      },
+      "rdfs:label": "clustering adjusted",
+      "rdfs:range": {
+        "@id": "xsd:string"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00134",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementerTypeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementerTypeScheme"
+      },
+      "skos:prefLabel": "Academic (University/Researcher)"
+    },
+    {
+      "@id": "esea:attrition",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Reported attrition or dropout rate as a percentage (0 to 100).",
+      "rdfs:domain": {
+        "@id": "evrepo:Finding"
+      },
+      "rdfs:label": "attrition",
+      "rdfs:range": {
+        "@id": "evrepo:NumericCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00118",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00114"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Student Behaviour, Attitudes and Well-being"
+    },
+    {
+      "@id": "evrepo:estimateSource",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "How this estimate was obtained: computed from summary stats, extracted from paper, etc.",
+      "rdfs:domain": {
+        "@id": "evrepo:EffectEstimate"
+      },
+      "rdfs:label": "estimate source",
+      "rdfs:range": {
+        "@id": "evrepo:EstimateSourceScheme"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00106",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00105"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Education Facilities"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00038",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00016"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Evidence Use"
+    },
+    {
+      "@id": "evrepo:confidenceIntervalUpper",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Applies to EffectEstimate (effect size CI) and ObservedResult (group mean CI).",
+      "rdfs:domain": {
+        "@id": "_:N0120d52c3f15453793eb4f59c9237fe4"
+      },
+      "rdfs:label": "confidence interval upper bound",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "_:N0120d52c3f15453793eb4f59c9237fe4",
+      "@type": "owl:Class",
+      "owl:unionOf": {
+        "@list": [
+          {
+            "@id": "evrepo:EffectEstimate"
+          },
+          {
+            "@id": "evrepo:ObservedResult"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00135",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementerTypeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementerTypeScheme"
+      },
+      "skos:prefLabel": "Local/Regional/District Education Authority"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00017",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00042"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00039"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00043"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00041"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00040"
+        }
+      ],
+      "skos:prefLabel": "School Organization"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00056",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Workforce Retention"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00086",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Pedagogical Innovation"
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00196",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:prefLabel": "Other quantitative study design"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00185",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00179"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Urban"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00039",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00017"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Grade Retention"
+    },
+    {
+      "@id": "esea:SampleFeaturesCodingAnnotation",
+      "@type": "owl:Class",
+      "rdfs:label": "Sample Features Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:Nd6bc3442beaf4dc089d89ad81cbd1d03"
+        }
+      ]
+    },
+    {
+      "@id": "_:Nd6bc3442beaf4dc089d89ad81cbd1d03",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "esea:SampleFeaturesConcept"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00073",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Feedback"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00053",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00019"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Completion Standards"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00117",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00114"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Household Knowledge and Skills"
+    },
+    {
+      "@id": "evrepo:hasEffectEstimate",
+      "@type": "owl:ObjectProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:Finding"
+      },
+      "rdfs:label": "has effect estimate",
+      "rdfs:range": {
+        "@id": "evrepo:EffectEstimate"
+      }
+    },
+    {
+      "@id": "evrepo:EffectSizeMetricScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Controlled vocabulary of effect size metrics.",
+      "dct:title": "Effect Size Metric",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/cohensD"
+        },
+        {
+          "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/correlationR"
+        },
+        {
+          "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/glassDelta"
+        },
+        {
+          "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/hedgesG"
+        },
+        {
+          "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/meanDifference"
+        },
+        {
+          "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/oddsRatio"
+        },
+        {
+          "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/riskDifference"
+        },
+        {
+          "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/riskRatio"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationLevelScheme/C00006",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationLevelConcept"
+      ],
+      "skos:definition": "Accelerated education programmes, Alternative Basic Education, second chance programmes, youth livelihoods training, speed schools.",
+      "skos:inScheme": {
+        "@id": "esea:EducationLevelScheme"
+      },
+      "skos:prefLabel": "Alternative Education"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00107",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00105"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Parental Involvement"
+    },
+    {
+      "@id": "evrepo:comparedTo",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "The condition being compared against (control, pre-test, etc.).",
+      "rdfs:domain": {
+        "@id": "evrepo:Finding"
+      },
+      "rdfs:label": "compared to",
+      "rdfs:range": {
+        "@id": "evrepo:Condition"
+      }
+    },
+    {
+      "@id": "esea:ImplementationDescriptionConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Implementation Description Concept"
+    },
+    {
+      "@id": "esea:EducationThemeScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Strategic domains of focus within education systems. 2-level hierarchy with 9 top-level categories.",
+      "dct:title": "Education Theme Scheme",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00021"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00023"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00016"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00018"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00017"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00019"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00023",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00095"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00087"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00093"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00092"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00091"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00088"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00089"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00094"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00090"
+        }
+      ],
+      "skos:prefLabel": "Education Finance"
+    },
+    {
+      "@id": "https://vocab.esea.education/DocumentTypeScheme/C00011",
+      "@type": [
+        "skos:Concept",
+        "esea:DocumentTypeConcept"
+      ],
+      "skos:definition": "Research shared at academic or professional conferences.",
+      "skos:inScheme": {
+        "@id": "esea:DocumentTypeScheme"
+      },
+      "skos:prefLabel": "Conference Paper"
+    },
+    {
+      "@id": "evrepo:baselineAdjusted",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:EffectEstimate"
+      },
+      "rdfs:label": "baseline adjusted",
+      "rdfs:range": {
+        "@id": "xsd:boolean"
+      }
+    },
+    {
+      "@id": "esea:EducationThemeConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Education Theme Concept"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00047",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00018"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Homeschooling"
+    },
+    {
+      "@id": "https://vocab.esea.education/DocumentTypeScheme/C00014",
+      "@type": [
+        "skos:Concept",
+        "esea:DocumentTypeConcept"
+      ],
+      "skos:definition": "Any other report, e.g. a technical report, project report, or annual report from a non-governmental institution or organisation.",
+      "skos:inScheme": {
+        "@id": "esea:DocumentTypeScheme"
+      },
+      "skos:prefLabel": "Other Report (Technical/Institutional)"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00162",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Community Learning Centre"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationLevelScheme/C00004",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationLevelConcept"
+      ],
+      "skos:definition": "Upper secondary education (senior secondary), typically covering grades 10-12.",
+      "skos:inScheme": {
+        "@id": "esea:EducationLevelScheme"
+      },
+      "skos:prefLabel": "Upper Secondary"
+    },
+    {
+      "@id": "esea:setting",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Physical or organizational setting where education provision occurs. 3-level hierarchy: Formal / Informal-NonFormal / Contextual, with specific setting types. Multiple values may be coded.",
+      "rdfs:domain": {
+        "@id": "evrepo:Context"
+      },
+      "rdfs:label": "setting",
+      "rdfs:range": {
+        "@id": "esea:SettingCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationLevelScheme/C00002",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationLevelConcept"
+      ],
+      "skos:definition": "Primary education, typically covering grades 1-6 depending on country context.",
+      "skos:inScheme": {
+        "@id": "esea:EducationLevelScheme"
+      },
+      "skos:prefLabel": "Primary Education"
+    },
+    {
+      "@id": "evrepo:falsePositive",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Count of test-positive, reference-negative cases.",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "false positive",
+      "rdfs:range": {
+        "@id": "xsd:integer"
+      }
+    },
+    {
+      "@id": "evrepo:preSd",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "pre-test standard deviation",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00163",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "NGO Program Space"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00077",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Socio-Emotional Learning"
+    },
+    {
+      "@id": "evrepo:ControlCondition",
+      "@type": "owl:Class",
+      "dct:description": "A comparison state without the intervention of interest (e.g. business-as-usual, waitlist, active control, placebo).",
+      "rdfs:label": "Control Condition",
+      "rdfs:subClassOf": {
+        "@id": "evrepo:Condition"
+      }
+    },
+    {
+      "@id": "esea:OutcomeCodingAnnotation",
+      "@type": "owl:Class",
+      "rdfs:label": "Outcome Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:N26a4c95f75ab41c5aca80b3c80ba9fa9"
+        }
+      ]
+    },
+    {
+      "@id": "_:N26a4c95f75ab41c5aca80b3c80ba9fa9",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "esea:OutcomeConcept"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00058",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Workforce Recruitment"
+    },
+    {
+      "@id": "evrepo:events",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Number of events for binary outcomes.",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "number of events",
+      "rdfs:range": {
+        "@id": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00061",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Leadership Training"
+    },
+    {
+      "@id": "https://vocab.esea.education/SampleFeaturesScheme/C00190",
+      "@type": [
+        "skos:Concept",
+        "esea:SampleFeaturesConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:SampleFeaturesScheme"
+      },
+      "skos:prefLabel": "Minority"
+    },
+    {
+      "@id": "evrepo:codedBy",
+      "@type": "rdf:Property",
+      "dct:description": "The agent (human coder or LLM) who performed the coding.",
+      "rdfs:domain": {
+        "@id": "_:N3157ebde57a6468bbc421df4ae8fd94f"
+      },
+      "rdfs:label": "coded by"
+    },
+    {
+      "@id": "_:N3157ebde57a6468bbc421df4ae8fd94f",
+      "@type": "owl:Class",
+      "owl:unionOf": {
+        "@list": [
+          {
+            "@id": "evrepo:CodingAnnotation"
+          },
+          {
+            "@id": "evrepo:EffectEstimate"
+          },
+          {
+            "@id": "evrepo:ObservedResult"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00090",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00023"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Vouchers"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00018",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00044"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00048"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00047"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00045"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00046"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00049"
+        }
+      ],
+      "skos:prefLabel": "Household and Community Engagement"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00036",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00016"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Education Accountability"
+    },
+    {
+      "@id": "esea:SampleFeaturesConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Sample Features Concept"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00181",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00179"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Informal Settlement"
+    },
+    {
+      "@id": "evrepo:StringCodingAnnotation",
+      "@type": "owl:Class",
+      "dct:description": "CodingAnnotation where codedValue is a string literal.",
+      "rdfs:label": "String Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:N27ec2d186b2f42cab72dbb168c791924"
+        }
+      ]
+    },
+    {
+      "@id": "_:N27ec2d186b2f42cab72dbb168c791924",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "xsd:string"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00200",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:prefLabel": "Cross-country analysis"
+    },
+    {
+      "@id": "esea:DocumentTypeScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Types of publications and documents in which evidence is reported.",
+      "dct:title": "Document Type Scheme",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/DocumentTypeScheme/C00010"
+        },
+        {
+          "@id": "https://vocab.esea.education/DocumentTypeScheme/C00011"
+        },
+        {
+          "@id": "https://vocab.esea.education/DocumentTypeScheme/C00013"
+        },
+        {
+          "@id": "https://vocab.esea.education/DocumentTypeScheme/C00008"
+        },
+        {
+          "@id": "https://vocab.esea.education/DocumentTypeScheme/C00014"
+        },
+        {
+          "@id": "https://vocab.esea.education/DocumentTypeScheme/C00009"
+        },
+        {
+          "@id": "https://vocab.esea.education/DocumentTypeScheme/C00012"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00184",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00179"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Emergency Response"
+    },
+    {
+      "@id": "esea:OutcomeScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Types of educational and related outcomes measured in studies. 2-level hierarchy with 5 top-level categories.",
+      "dct:title": "Outcome Scheme",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00096"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00114"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00122"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00105"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00130"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00043",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00017"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Management Information Systems/EMIS"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00173",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Correctional Facility / Juvenile Program"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00027",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Equity and Inclusion: Gender"
+    },
+    {
+      "@id": "evrepo:hasContext",
+      "@type": "owl:ObjectProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:Finding"
+      },
+      "rdfs:label": "has context",
+      "rdfs:range": {
+        "@id": "evrepo:Context"
+      }
+    },
+    {
+      "@id": "esea:ImplementationDescriptionScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Categorization of implementation activities and modalities.",
+      "dct:title": "Implementation Description Scheme",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/ImplementationDescriptionScheme/C00139"
+        },
+        {
+          "@id": "https://vocab.esea.education/ImplementationDescriptionScheme/C00141"
+        },
+        {
+          "@id": "https://vocab.esea.education/ImplementationDescriptionScheme/C00140"
+        },
+        {
+          "@id": "https://vocab.esea.education/ImplementationDescriptionScheme/C00138"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00021",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00069"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00068"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00067"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00066"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00065"
+        }
+      ],
+      "skos:prefLabel": "Curriculum and Educational Resources"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00062",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Leadership Recruitment and Retention"
+    },
+    {
+      "@id": "esea:ImplementerTypeConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Implementer Type Concept"
+    },
+    {
+      "@id": "evrepo:Finding",
+      "@type": "owl:Class",
+      "dct:description": "The atomic unit of evidence — a single comparison for a specific outcome. A Finding evaluates one Condition compared to another, with Context describing the setting, Outcome describing what was measured, and ObservedResult/EffectEstimate carrying the quantitative data.",
+      "rdfs:label": "Finding"
+    },
+    {
+      "@id": "evrepo:name",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Short name or title for this condition or outcome (e.g. intervention programme name, control label).",
+      "rdfs:domain": {
+        "@id": "_:Nbaa4627f1294456ca10f6d3e4e42bb42"
+      },
+      "rdfs:label": "name",
+      "rdfs:range": {
+        "@id": "xsd:string"
+      }
+    },
+    {
+      "@id": "_:Nbaa4627f1294456ca10f6d3e4e42bb42",
+      "@type": "owl:Class",
+      "owl:unionOf": {
+        "@list": [
+          {
+            "@id": "evrepo:Condition"
+          },
+          {
+            "@id": "evrepo:Outcome"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00068",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00021"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Education Facilities"
+    },
+    {
+      "@id": "esea:ImplementerTypeScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Classification of organizations implementing interventions.",
+      "dct:title": "Implementer Type Scheme",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00134"
+        },
+        {
+          "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00133"
+        },
+        {
+          "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00135"
+        },
+        {
+          "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00137"
+        },
+        {
+          "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00136"
+        },
+        {
+          "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00132"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00096",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00097"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00098"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00099"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00100"
+        }
+      ],
+      "skos:prefLabel": "Access to Education"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00054",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Pre-service Workforce Training"
+    },
+    {
+      "@id": "evrepo:n",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "sample size",
+      "rdfs:range": {
+        "@id": "xsd:integer"
+      }
+    },
+    {
+      "@id": "esea:educationLevel",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "The ISCED-aligned level of education in which the target population is participating. Based on ISCED 2011, with additions from the INEE framework for informal education. Multiple values may be coded.",
+      "rdfs:domain": {
+        "@id": "evrepo:Context"
+      },
+      "rdfs:label": "education level",
+      "rdfs:range": {
+        "@id": "esea:EducationLevelCodingAnnotation"
+      }
+    },
+    {
+      "@id": "esea:ImplementerTypeCodingAnnotation",
+      "@type": "owl:Class",
+      "rdfs:label": "Implementer Type Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:N226c0ec3b5874bf29ee0573dfb415332"
+        }
+      ]
+    },
+    {
+      "@id": "_:N226c0ec3b5874bf29ee0573dfb415332",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "esea:ImplementerTypeConcept"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementationFidelityScheme/C00142",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementationFidelityConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementationFidelityScheme"
+      },
+      "skos:prefLabel": "None"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00076",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Other Subjects"
+    },
+    {
+      "@id": "https://vocab.esea.education/DocumentTypeScheme/C00010",
+      "@type": [
+        "skos:Concept",
+        "esea:DocumentTypeConcept"
+      ],
+      "skos:definition": "Contribution to an edited academic volume.",
+      "skos:inScheme": {
+        "@id": "esea:DocumentTypeScheme"
+      },
+      "skos:prefLabel": "Book Chapter"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00020",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00054"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00064"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00063"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00062"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00061"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00057"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00059"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00055"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00058"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00056"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00060"
+        }
+      ],
+      "skos:prefLabel": "School Workforce"
+    },
+    {
+      "@id": "https://vocab.esea.education/SampleFeaturesScheme/C00188",
+      "@type": [
+        "skos:Concept",
+        "esea:SampleFeaturesConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:SampleFeaturesScheme"
+      },
+      "skos:prefLabel": "Male"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00147",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00145"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Private School"
+    },
+    {
+      "@id": "esea:StudyDesignConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Study Design Concept"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00079",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Digital Technology"
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00193",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:definition": "Natural experiment (in which exposure to treatment is random), Regression Discontinuity Design (RDD), Difference-in-Differences (DID) / Fixed effects estimation, Instrumental variable (IV) estimation, Endogenous treatment-effects models (including endogenous switching regression, and other methods synonymous to the Heckman two-step model), Statistical matching (includes PSM or statistical weighting), Interrupted time series (ITS), Synthetic control.",
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:prefLabel": "Quasi-experimental study"
+    },
+    {
+      "@id": "evrepo:hasOutcome",
+      "@type": "owl:ObjectProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:Finding"
+      },
+      "rdfs:label": "has outcome",
+      "rdfs:range": {
+        "@id": "evrepo:Outcome"
+      }
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/riskDifference",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EffectSizeMetricConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EffectSizeMetricScheme"
+      },
+      "skos:prefLabel": "Risk difference"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00046",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00018"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Parental/Household Engagement"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00180",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00179"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Refugee Camp"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00169",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Digital Learning Platform"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00146",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00145"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Public School"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00126",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00122"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Progression"
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/meanDifference",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EffectSizeMetricConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EffectSizeMetricScheme"
+      },
+      "skos:prefLabel": "Mean difference"
+    },
+    {
+      "@id": "evrepo:EstimateSourceScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Controlled vocabulary for how an effect estimate was obtained.",
+      "dct:title": "Estimate Source",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.evidence-repository.org/EstimateSourceScheme/authorProvided"
+        },
+        {
+          "@id": "https://vocab.evidence-repository.org/EstimateSourceScheme/computedFromStats"
+        },
+        {
+          "@id": "https://vocab.evidence-repository.org/EstimateSourceScheme/convertedFromOther"
+        },
+        {
+          "@id": "https://vocab.evidence-repository.org/EstimateSourceScheme/extractedFromPaper"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00097",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00096"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Education Finance"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00148",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00145"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Faith-Based School"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00016",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00035"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00036"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00037"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00038"
+        }
+      ],
+      "skos:prefLabel": "Education Governance"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00171",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Makerspace / Innovation Lab"
+    },
+    {
+      "@id": "evrepo:Outcome",
+      "@type": "owl:Class",
+      "dct:description": "What was measured — the educational or other outcome type and description. Orthogonal to the conditions being compared.",
+      "rdfs:label": "Outcome"
+    },
+    {
+      "@id": "esea:SampleFeaturesScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Classification of participant characteristics and demographic features.",
+      "dct:title": "Sample Features Scheme",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/SampleFeaturesScheme/C00187"
+        },
+        {
+          "@id": "https://vocab.esea.education/SampleFeaturesScheme/C00191"
+        },
+        {
+          "@id": "https://vocab.esea.education/SampleFeaturesScheme/C00188"
+        },
+        {
+          "@id": "https://vocab.esea.education/SampleFeaturesScheme/C00190"
+        },
+        {
+          "@id": "https://vocab.esea.education/SampleFeaturesScheme/C00189"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00067",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00021"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Language of Instruction"
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00195",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:prefLabel": "Pre/Post Design"
+    },
+    {
+      "@id": "esea:EducationLevelScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Education levels based on ISCED 2011, with informal education items from the INEE framework.",
+      "dct:title": "Education Level Scheme",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/EducationLevelScheme/C00006"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationLevelScheme/C00001"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationLevelScheme/C00003"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationLevelScheme/C00002"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationLevelScheme/C00005"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationLevelScheme/C00007"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationLevelScheme/C00004"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00082",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Sports and Physical Activity"
+    },
+    {
+      "@id": "esea:studyDesign",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "The research design methodology of the investigation.",
+      "rdfs:domain": {
+        "@id": "evrepo:Investigation"
+      },
+      "rdfs:label": "study design",
+      "rdfs:range": {
+        "@id": "esea:StudyDesignCodingAnnotation"
+      }
+    },
+    {
+      "@id": "esea:ImplementationFidelityCodingAnnotation",
+      "@type": "owl:Class",
+      "rdfs:label": "Implementation Fidelity Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:N78f3c768417b46f0817f05d048a5ef00"
+        }
+      ]
+    },
+    {
+      "@id": "_:N78f3c768417b46f0817f05d048a5ef00",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "esea:ImplementationFidelityConcept"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "esea:EducationLevelConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Education Level Concept"
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementationFidelityScheme/C00143",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementationFidelityConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementationFidelityScheme"
+      },
+      "skos:prefLabel": "Quantitative"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00041",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00017"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Climate"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00032",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Student Mobility"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationLevelScheme/C00001",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationLevelConcept"
+      ],
+      "skos:definition": "Early childhood education and care, including ECD centres, community-based playgroups, nursery, and pre-primary programmes.",
+      "skos:inScheme": {
+        "@id": "esea:EducationLevelScheme"
+      },
+      "skos:prefLabel": "Early Childhood"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00015",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00029"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00027"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00026"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00024"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00025"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00030"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00034"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00028"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00031"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00033"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00032"
+        }
+      ],
+      "skos:prefLabel": "Access and Participation"
+    },
+    {
+      "@id": "esea:ImplementationFidelityConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Implementation Fidelity Concept"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00083",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Homework"
+    },
+    {
+      "@id": "evrepo:EstimateSourceConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Estimate Source Concept"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationLevelScheme/C00005",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationLevelConcept"
+      ],
+      "skos:altLabel": "TVET",
+      "skos:definition": "Technical and vocational institutes, polytechnics, teacher training colleges (pre-Bachelor), health training institutes.",
+      "skos:inScheme": {
+        "@id": "esea:EducationLevelScheme"
+      },
+      "skos:prefLabel": "Technical Vocational Education and Training"
+    },
+    {
+      "@id": "evrepo:confidenceLevel",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "e.g. 0.95 for a 95% confidence interval.",
+      "rdfs:domain": {
+        "@id": "evrepo:EffectEstimate"
+      },
+      "rdfs:label": "confidence level",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/DocumentTypeScheme/C00008",
+      "@type": [
+        "skos:Concept",
+        "esea:DocumentTypeConcept"
+      ],
+      "skos:definition": "Peer-reviewed publication presenting original research or reviews.",
+      "skos:inScheme": {
+        "@id": "esea:DocumentTypeScheme"
+      },
+      "skos:prefLabel": "Journal Article"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00030",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Health and Nutrition"
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00198",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:prefLabel": "Other qualitative study designs"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00060",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Workforce Support Staff"
+    },
+    {
+      "@id": "evrepo:hasArmData",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Links a Finding to per-arm summary statistics. A two-arm trial typically has two ObservedResults; multi-arm trials have more.",
+      "rdfs:domain": {
+        "@id": "evrepo:Finding"
+      },
+      "rdfs:label": "has arm data",
+      "rdfs:range": {
+        "@id": "evrepo:ObservedResult"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00119",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00114"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Time Allocation"
+    },
+    {
+      "@id": "esea:StudyDesignCodingAnnotation",
+      "@type": "owl:Class",
+      "rdfs:label": "Study Design Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:Nf7afd49ae66045b9b62ec9d833b7fbc9"
+        }
+      ]
+    },
+    {
+      "@id": "_:Nf7afd49ae66045b9b62ec9d833b7fbc9",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "esea:StudyDesignConcept"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "esea:participants",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "The stakeholder group for whom the outcomes apply (e.g., Students, Teachers, Parents, School Leaders). Open text field; multiple values may be coded.",
+      "rdfs:domain": {
+        "@id": "evrepo:Context"
+      },
+      "rdfs:label": "participants",
+      "rdfs:range": {
+        "@id": "evrepo:StringCodingAnnotation"
+      }
+    },
+    {
+      "@id": "esea:SettingScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Classification of educational settings. 3-level hierarchy with 3 main categories.",
+      "dct:title": "Setting Scheme",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00179"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00145"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00161"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00094",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00023"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Funding Schemes"
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementationDescriptionScheme/C00140",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementationDescriptionConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementationDescriptionScheme"
+      },
+      "skos:prefLabel": "Materials"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00149",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00145"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Boarding School"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00085",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Project-based Learning"
+    },
+    {
+      "@id": "esea:funderResearch",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Organization or entity that funded the research or study. Open text field.",
+      "rdfs:domain": {
+        "@id": "evrepo:Investigation"
+      },
+      "rdfs:label": "funder research",
+      "rdfs:range": {
+        "@id": "evrepo:StringCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/DocumentTypeScheme/C00012",
+      "@type": [
+        "skos:Concept",
+        "esea:DocumentTypeConcept"
+      ],
+      "skos:definition": "Graduate-level academic research (e.g. MA, PhD).",
+      "skos:inScheme": {
+        "@id": "esea:DocumentTypeScheme"
+      },
+      "skos:prefLabel": "Thesis/Dissertation"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00186",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00179"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Rural"
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EstimateSourceScheme/authorProvided",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EstimateSourceConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EstimateSourceScheme"
+      },
+      "skos:prefLabel": "Author provided"
+    },
+    {
+      "@id": "evrepo:hasInvestigation",
+      "@type": "owl:ObjectProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:LinkedDataEnhancement"
+      },
+      "rdfs:label": "has investigation",
+      "rdfs:range": {
+        "@id": "evrepo:Investigation"
+      }
+    },
+    {
+      "@id": "evrepo:status",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "The lifecycle state of this coding annotation.",
+      "rdfs:domain": {
+        "@id": "evrepo:CodingAnnotation"
+      },
+      "rdfs:label": "status",
+      "rdfs:range": {
+        "@id": "evrepo:CodingStatus"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00064",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Administrative Staff"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00099",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00096"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Gender Disparities in Education"
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00194",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:altLabel": "RCT",
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:prefLabel": "Randomised Controlled Trial"
+    },
+    {
+      "@id": "evrepo:CodingStatus",
+      "@type": "owl:Class",
+      "dct:description": "The lifecycle state of a coding annotation.",
+      "rdfs:label": "Coding Status"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00115",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00114"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Family Externalities"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00154",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00145"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Open/Distance University"
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementationDescriptionScheme/C00138",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementationDescriptionConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementationDescriptionScheme"
+      },
+      "skos:prefLabel": "Professional Development/Training"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00145",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00155"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00149"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00151"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00148"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00153"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00154"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00147"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00146"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00150"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00152"
+        }
+      ],
+      "skos:prefLabel": "Formal"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00022",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00080"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00081"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00070"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00071"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00079"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00073"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00083"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00074"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00075"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00076"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00086"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00085"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00077"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00082"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00084"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00078"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00072"
+        }
+      ],
+      "skos:prefLabel": "Teaching and Learning"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00045",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00018"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Parental/Household Communication"
+    },
+    {
+      "@id": "evrepo:codedValue",
+      "@type": "rdf:Property",
+      "dct:description": "The extracted value. Type varies by CodingAnnotation subclass.",
+      "rdfs:domain": {
+        "@id": "evrepo:CodingAnnotation"
+      },
+      "rdfs:label": "coded value"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00065",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00021"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Time Spent in School"
+    },
+    {
+      "@id": "evrepo:se",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Standard error of the mean. Alternative to sd when that is what is reported.",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "standard error",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00026",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Equity and Inclusion: Migrants and Refugees"
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00133",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementerTypeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementerTypeScheme"
+      },
+      "skos:prefLabel": "Charity/Voluntary Organisation/NGO"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00044",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00018"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Community-based"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00131",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00130"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Social Returns"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00088",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00023"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Scholarships"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00074",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Literacy and Reading Interventions"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00165",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Home Learning / Homeschooling"
+    },
+    {
+      "@id": "evrepo:EffectSizeMetricConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Effect Size Metric Concept"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00168",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Learning-on-the-job / Apprenticeship"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00167",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Youth Club / After-School Program"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00170",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Radio/TV Education Broadcast"
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EstimateSourceScheme/computedFromStats",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EstimateSourceConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EstimateSourceScheme"
+      },
+      "skos:prefLabel": "Computed from summary statistics"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00182",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00179"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Pastoralist Community"
+    },
+    {
+      "@id": "evrepo:forCondition",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Which condition this arm data is for. Makes each ObservedResult self-describing without traversing back to the Finding.",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "for condition",
+      "rdfs:range": {
+        "@id": "evrepo:Condition"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00122",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00123"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00124"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00125"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00126"
+        }
+      ],
+      "skos:prefLabel": "Educational Outcomes and Learning"
+    },
+    {
+      "@id": "esea:funderIntervention",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Organization or entity that funded the intervention being evaluated. Open text field.",
+      "rdfs:domain": {
+        "@id": "evrepo:Intervention"
+      },
+      "rdfs:label": "funder intervention",
+      "rdfs:range": {
+        "@id": "evrepo:StringCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00072",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Targeted Support"
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/correlationR",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EffectSizeMetricConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EffectSizeMetricScheme"
+      },
+      "skos:prefLabel": "Correlation (r)"
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00136",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementerTypeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementerTypeScheme"
+      },
+      "skos:prefLabel": "Private or Commercial Company"
+    },
+    {
+      "@id": "evrepo:clusterCount",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Number of clusters (schools, classrooms, etc.) for cluster RCTs.",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "cluster count",
+      "rdfs:range": {
+        "@id": "xsd:integer"
+      }
+    },
+    {
+      "@id": "evrepo:TemporalCondition",
+      "@type": "owl:Class",
+      "dct:description": "A time-defined measurement occasion (e.g. pre-test, post-test, follow-up, pre-policy period).",
+      "rdfs:label": "Temporal Condition",
+      "rdfs:subClassOf": {
+        "@id": "evrepo:Condition"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00050",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00019"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Classroom Assessments"
+    },
+    {
+      "@id": "esea:SettingCodingAnnotation",
+      "@type": "owl:Class",
+      "rdfs:label": "Setting Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:N20bcb40dbcee499ca18beb6c044e2298"
+        }
+      ]
+    },
+    {
+      "@id": "_:N20bcb40dbcee499ca18beb6c044e2298",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "esea:SettingConcept"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00114",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00115"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00116"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00117"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00118"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00119"
+        }
+      ],
+      "skos:prefLabel": "Educational Externalities"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00059",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Workforce Evaluation"
+    },
+    {
+      "@id": "evrepo:trueNegative",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Count of test-negative, reference-negative cases.",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "true negative",
+      "rdfs:range": {
+        "@id": "xsd:integer"
+      }
+    },
+    {
+      "@id": "evrepo:mean",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "mean",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "evrepo:supportingText",
+      "@type": "rdf:Property",
+      "dct:description": "Verbatim or near-verbatim text from the source material that supports the coded value.",
+      "rdfs:domain": {
+        "@id": "_:N052d360daffe4b23bb56efcf2b3fe22a"
+      },
+      "rdfs:label": "supporting text",
+      "rdfs:range": {
+        "@id": "xsd:string"
+      }
+    },
+    {
+      "@id": "_:N052d360daffe4b23bb56efcf2b3fe22a",
+      "@type": "owl:Class",
+      "owl:unionOf": {
+        "@list": [
+          {
+            "@id": "evrepo:CodingAnnotation"
+          },
+          {
+            "@id": "evrepo:EffectEstimate"
+          },
+          {
+            "@id": "evrepo:ObservedResult"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00153",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00145"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Higher Education Institution"
+    },
+    {
+      "@id": "esea:cost",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Whether the research contains quantitative costing data. Binary yes/no field coded as StringCodingAnnotation.",
+      "rdfs:domain": {
+        "@id": "evrepo:Finding"
+      },
+      "rdfs:label": "cost",
+      "rdfs:range": {
+        "@id": "evrepo:StringCodingAnnotation"
+      }
+    },
+    {
+      "@id": "evrepo:CodingAnnotation",
+      "@type": "owl:Class",
+      "dct:description": "A coded value with provenance from source material. Wraps each coded property value with supporting text, coder identity, and coding status.",
+      "rdfs:label": "Coding Annotation"
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00137",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementerTypeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementerTypeScheme"
+      },
+      "skos:prefLabel": "National or State Government"
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00199",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:prefLabel": "Cost analysis"
+    },
+    {
+      "@id": "evrepo:standardError",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:EffectEstimate"
+      },
+      "rdfs:label": "standard error",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "evrepo:pointEstimate",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:EffectEstimate"
+      },
+      "rdfs:label": "point estimate",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00201",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:narrower": {
+        "@id": "https://vocab.esea.education/StudyDesignScheme/C00202"
+      },
+      "skos:prefLabel": "Review"
+    },
+    {
+      "@id": "evrepo:falseNegative",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Count of test-negative, reference-positive cases.",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "false negative",
+      "rdfs:range": {
+        "@id": "xsd:integer"
+      }
+    },
+    {
+      "@id": "evrepo:Condition",
+      "@type": "owl:Class",
+      "dct:description": "A state or context in which measurements were taken — the circumstances under which observations were made.",
+      "rdfs:label": "Condition"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00179",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00184"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00183"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00181"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00182"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00180"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00186"
+        },
+        {
+          "@id": "https://vocab.esea.education/SettingScheme/C00185"
+        }
+      ],
+      "skos:prefLabel": "Contextual Tag"
+    },
+    {
+      "@id": "evrepo:confidenceIntervalLower",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Applies to EffectEstimate (effect size CI) and ObservedResult (group mean CI).",
+      "rdfs:domain": {
+        "@id": "_:Nd8e77866c1254d6ca7622644f7a8b77f"
+      },
+      "rdfs:label": "confidence interval lower bound",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "_:Nd8e77866c1254d6ca7622644f7a8b77f",
+      "@type": "owl:Class",
+      "owl:unionOf": {
+        "@list": [
+          {
+            "@id": "evrepo:EffectEstimate"
+          },
+          {
+            "@id": "evrepo:ObservedResult"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EstimateSourceScheme/convertedFromOther",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EstimateSourceConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EstimateSourceScheme"
+      },
+      "skos:prefLabel": "Converted from other metric"
+    },
+    {
+      "@id": "evrepo:hasFinding",
+      "@type": "owl:ObjectProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:Investigation"
+      },
+      "rdfs:label": "has finding",
+      "rdfs:range": {
+        "@id": "evrepo:Finding"
+      }
+    },
+    {
+      "@id": "esea:country",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Country or countries where the study was conducted. Values are ISO 3166-1 alpha-2 codes (e.g., 'KE' for Kenya, 'GH' for Ghana). Multiple values may be coded.",
+      "rdfs:domain": {
+        "@id": "evrepo:Context"
+      },
+      "rdfs:label": "country",
+      "rdfs:range": {
+        "@id": "evrepo:StringCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00066",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00021"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Learning Materials"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00105",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00106"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00107"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00108"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00109"
+        },
+        {
+          "@id": "https://vocab.esea.education/OutcomeScheme/C00110"
+        }
+      ],
+      "skos:prefLabel": "Education Quality and Administration"
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00197",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:prefLabel": "Qualitative designs for impact evaluation"
+    },
+    {
+      "@id": "esea:educationTheme",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Strategic domain of focus within education systems that the intervention or policy addresses. 2-level hierarchy: category and specific theme. Multiple values may be coded.",
+      "rdfs:domain": {
+        "@id": "evrepo:Intervention"
+      },
+      "rdfs:label": "education theme",
+      "rdfs:range": {
+        "@id": "esea:EducationThemeCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00051",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00019"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "National Assessments"
+    },
+    {
+      "@id": "https://vocab.esea.education/DocumentTypeScheme/C00009",
+      "@type": [
+        "skos:Concept",
+        "esea:DocumentTypeConcept"
+      ],
+      "skos:definition": "Preliminary findings, not yet peer-reviewed.",
+      "skos:inScheme": {
+        "@id": "esea:DocumentTypeScheme"
+      },
+      "skos:prefLabel": "Pre-print/Working Paper"
+    },
+    {
+      "@id": "esea:OutcomeConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Outcome Concept"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationLevelScheme/C00007",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationLevelConcept"
+      ],
+      "skos:definition": "Learning readiness, catch-up programmes, bridging programmes (e.g. language).",
+      "skos:inScheme": {
+        "@id": "esea:EducationLevelScheme"
+      },
+      "skos:prefLabel": "Transitional Programs"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00150",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00145"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Special Needs School"
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementerTypeScheme/C00132",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementerTypeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementerTypeScheme"
+      },
+      "skos:prefLabel": "School or Group of Schools"
+    },
+    {
+      "@id": "https://vocab.esea.education/ImplementationDescriptionScheme/C00139",
+      "@type": [
+        "skos:Concept",
+        "esea:ImplementationDescriptionConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:ImplementationDescriptionScheme"
+      },
+      "skos:prefLabel": "Digital Technology"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00089",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00023"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Fees"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00183",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00179"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Indigenous Community"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00087",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00023"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Conditional Cash Transfers (CCTs)"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00019",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:narrower": [
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00050"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00053"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00052"
+        },
+        {
+          "@id": "https://vocab.esea.education/EducationThemeScheme/C00051"
+        }
+      ],
+      "skos:prefLabel": "Student Assessments"
+    },
+    {
+      "@id": "esea:implementationFidelity",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Type of fidelity or adherence measurement reported in the study.",
+      "rdfs:domain": {
+        "@id": "evrepo:Intervention"
+      },
+      "rdfs:label": "implementation fidelity",
+      "rdfs:range": {
+        "@id": "esea:ImplementationFidelityCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00075",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Numeracy Interventions"
+    },
+    {
+      "@id": "https://vocab.evidence-repository.org/EffectSizeMetricScheme/glassDelta",
+      "@type": [
+        "skos:Concept",
+        "evrepo:EffectSizeMetricConcept"
+      ],
+      "skos:inScheme": {
+        "@id": "evrepo:EffectSizeMetricScheme"
+      },
+      "skos:prefLabel": "Glass's delta"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00029",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Drop-out Prevention"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00110",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00105"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Teacher Wellbeing and Performance"
+    },
+    {
+      "@id": "evrepo:description",
+      "@type": "owl:DatatypeProperty",
+      "dct:description": "Free-text description of this condition or outcome.",
+      "rdfs:domain": {
+        "@id": "_:N973fa43ac47541be88a04ef189bbb38c"
+      },
+      "rdfs:label": "description",
+      "rdfs:range": {
+        "@id": "xsd:string"
+      }
+    },
+    {
+      "@id": "_:N973fa43ac47541be88a04ef189bbb38c",
+      "@type": "owl:Class",
+      "owl:unionOf": {
+        "@list": [
+          {
+            "@id": "evrepo:Condition"
+          },
+          {
+            "@id": "evrepo:Outcome"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00095",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00023"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Blended Finance"
+    },
+    {
+      "@id": "esea:sampleFeatures",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Characteristics of the study sample. Multiple values may be coded.",
+      "rdfs:domain": {
+        "@id": "evrepo:Context"
+      },
+      "rdfs:label": "sample features",
+      "rdfs:range": {
+        "@id": "esea:SampleFeaturesCodingAnnotation"
+      }
+    },
+    {
+      "@id": "evrepo:derivedFrom",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Links an EffectEstimate back to the ObservedResult(s) it was computed from.",
+      "rdfs:domain": {
+        "@id": "evrepo:EffectEstimate"
+      },
+      "rdfs:label": "derived from",
+      "rdfs:range": {
+        "@id": "evrepo:ObservedResult"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00164",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Religious/Community Hall"
+    },
+    {
+      "@id": "https://vocab.esea.education/StudyDesignScheme/C00192",
+      "@type": [
+        "skos:Concept",
+        "esea:StudyDesignConcept"
+      ],
+      "skos:definition": "Study design collecting the same data from the same units at multiple time points.",
+      "skos:inScheme": {
+        "@id": "esea:StudyDesignScheme"
+      },
+      "skos:prefLabel": "Longitudinal Research"
+    },
+    {
+      "@id": "evrepo:EffectEstimate",
+      "@type": "owl:Class",
+      "dct:description": "A computed or reported effect size estimate derived from ObservedResults or extracted from the paper. Multiple EffectEstimates per Finding are permitted (e.g. unadjusted, baseline-adjusted, author-reported).",
+      "rdfs:label": "Effect Estimate"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00057",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00020"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Workforce Absenteeism"
+    },
+    {
+      "@id": "evrepo:Intervention",
+      "@type": "owl:Class",
+      "dct:description": "An active treatment or programme. Carries coded properties describing the intervention's characteristics (theme, duration, fidelity, funder, etc.).",
+      "rdfs:label": "Intervention",
+      "rdfs:subClassOf": {
+        "@id": "evrepo:Condition"
+      }
+    },
+    {
+      "@id": "esea:documentType",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "The format and purpose of the document — e.g. journal article, report, working paper. Placed on Investigation since it describes the type of study reported.",
+      "rdfs:domain": {
+        "@id": "evrepo:Investigation"
+      },
+      "rdfs:label": "document type",
+      "rdfs:range": {
+        "@id": "esea:DocumentTypeCodingAnnotation"
+      }
+    },
+    {
+      "@id": "evrepo:variance",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:EffectEstimate"
+      },
+      "rdfs:label": "variance",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00042",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00017"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Class Sizes"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00034",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Admissions"
+    },
+    {
+      "@id": "evrepo:icc",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "intraclass correlation coefficient",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/SampleFeaturesScheme/C00189",
+      "@type": [
+        "skos:Concept",
+        "esea:SampleFeaturesConcept"
+      ],
+      "skos:definition": "Socio-economic status.",
+      "skos:inScheme": {
+        "@id": "esea:SampleFeaturesScheme"
+      },
+      "skos:prefLabel": "SES"
+    },
+    {
+      "@id": "esea:EducationLevelCodingAnnotation",
+      "@type": "owl:Class",
+      "rdfs:label": "Education Level Coding Annotation",
+      "rdfs:subClassOf": [
+        {
+          "@id": "evrepo:CodingAnnotation"
+        },
+        {
+          "@id": "_:N759ab5f1429c4180a66d06d156b9e64b"
+        }
+      ]
+    },
+    {
+      "@id": "_:N759ab5f1429c4180a66d06d156b9e64b",
+      "@type": "owl:Restriction",
+      "owl:allValuesFrom": {
+        "@id": "esea:EducationLevelConcept"
+      },
+      "owl:onProperty": {
+        "@id": "evrepo:codedValue"
+      }
+    },
+    {
+      "@id": "esea:duration",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "Length of the intervention, typically measured in weeks. Numeric field.",
+      "rdfs:domain": {
+        "@id": "evrepo:Intervention"
+      },
+      "rdfs:label": "duration",
+      "rdfs:range": {
+        "@id": "evrepo:NumericCodingAnnotation"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00084",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Student Engagement"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00172",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00161"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Playgroup / Parent-Led Group"
+    },
+    {
+      "@id": "https://vocab.esea.education/SettingScheme/C00152",
+      "@type": [
+        "skos:Concept",
+        "esea:SettingConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/SettingScheme/C00145"
+      },
+      "skos:inScheme": {
+        "@id": "esea:SettingScheme"
+      },
+      "skos:prefLabel": "Technical/Vocational School (TVET)"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00070",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Behavioural"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00081",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Arts Participation"
+    },
+    {
+      "@id": "esea:StudyDesignScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Study design methodologies for impact evaluations and related research.",
+      "dct:title": "Study Design Scheme",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/StudyDesignScheme/C00199"
+        },
+        {
+          "@id": "https://vocab.esea.education/StudyDesignScheme/C00200"
+        },
+        {
+          "@id": "https://vocab.esea.education/StudyDesignScheme/C00192"
+        },
+        {
+          "@id": "https://vocab.esea.education/StudyDesignScheme/C00198"
+        },
+        {
+          "@id": "https://vocab.esea.education/StudyDesignScheme/C00196"
+        },
+        {
+          "@id": "https://vocab.esea.education/StudyDesignScheme/C00195"
+        },
+        {
+          "@id": "https://vocab.esea.education/StudyDesignScheme/C00197"
+        },
+        {
+          "@id": "https://vocab.esea.education/StudyDesignScheme/C00193"
+        },
+        {
+          "@id": "https://vocab.esea.education/StudyDesignScheme/C00194"
+        },
+        {
+          "@id": "https://vocab.esea.education/StudyDesignScheme/C00201"
+        }
+      ]
+    },
+    {
+      "@id": "esea:ImplementationFidelityScheme",
+      "@type": "skos:ConceptScheme",
+      "dct:description": "Types of implementation fidelity/adherence measurement.",
+      "dct:title": "Implementation Fidelity Scheme",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/ImplementationFidelityScheme/C00142"
+        },
+        {
+          "@id": "https://vocab.esea.education/ImplementationFidelityScheme/C00144"
+        },
+        {
+          "@id": "https://vocab.esea.education/ImplementationFidelityScheme/C00143"
+        }
+      ]
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00093",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00023"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Public Expenditure"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00028",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00015"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "School Attendance"
+    },
+    {
+      "@id": "esea:DocumentTypeConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Document Type Concept"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00080",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Accelerated Learning"
+    },
+    {
+      "@id": "https://vocab.esea.education/OutcomeScheme/C00124",
+      "@type": [
+        "skos:Concept",
+        "esea:OutcomeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/OutcomeScheme/C00122"
+      },
+      "skos:inScheme": {
+        "@id": "esea:OutcomeScheme"
+      },
+      "skos:prefLabel": "Cognitive Development"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00035",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00016"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Decentralization of System"
+    },
+    {
+      "@id": "evrepo:evaluates",
+      "@type": "owl:ObjectProperty",
+      "dct:description": "The condition being evaluated. A positive effect size means this condition outperformed the comparedTo condition.",
+      "rdfs:domain": {
+        "@id": "evrepo:Finding"
+      },
+      "rdfs:label": "evaluates",
+      "rdfs:range": {
+        "@id": "evrepo:Condition"
+      }
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationLevelScheme/C00003",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationLevelConcept"
+      ],
+      "skos:definition": "Lower secondary education (junior secondary, middle school), typically covering grades 7-9.",
+      "skos:inScheme": {
+        "@id": "esea:EducationLevelScheme"
+      },
+      "skos:prefLabel": "Lower Secondary"
+    },
+    {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00092",
+      "@type": [
+        "skos:Concept",
+        "esea:EducationThemeConcept"
+      ],
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00023"
+      },
+      "skos:inScheme": {
+        "@id": "esea:EducationThemeScheme"
+      },
+      "skos:prefLabel": "Public-Private Partnerships (PPPs)"
+    },
+    {
+      "@id": "evrepo:sourceLocation",
+      "@type": "rdf:Property",
+      "dct:description": "Location in the source document where the data was found (e.g. table number, page reference).",
+      "rdfs:domain": {
+        "@id": "_:Ne3c3a7e69912493685f88c76469fb158"
+      },
+      "rdfs:label": "source location",
+      "rdfs:range": {
+        "@id": "xsd:string"
+      }
+    },
+    {
+      "@id": "_:Ne3c3a7e69912493685f88c76469fb158",
+      "@type": "owl:Class",
+      "owl:unionOf": {
+        "@list": [
+          {
+            "@id": "evrepo:EffectEstimate"
+          },
+          {
+            "@id": "evrepo:ObservedResult"
+          }
+        ]
+      }
+    },
+    {
+      "@id": "evrepo:sd",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:domain": {
+        "@id": "evrepo:ObservedResult"
+      },
+      "rdfs:label": "standard deviation",
+      "rdfs:range": {
+        "@id": "xsd:decimal"
+      }
+    },
+    {
+      "@id": "esea:dataSource",
+      "@type": "rdf:Property",
+      "dct:description": "System-generated field capturing the organization or system that entered the coding annotation.",
+      "rdfs:domain": {
+        "@id": "evrepo:Investigation"
+      },
+      "rdfs:label": "data source",
+      "rdfs:range": {
+        "@id": "xsd:string"
+      }
+    },
+    {
+      "@id": "esea:SettingConcept",
+      "@type": "owl:Class",
+      "rdfs:label": "Setting Concept"
+    }
+  ]
+}
