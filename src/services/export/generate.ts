@@ -89,8 +89,7 @@ function colWidths<R extends AnyRow>(
 
 /**
  * Materialise one tab on the workbook: convert rows to AoA, set column
- * widths, freeze the header row, and append the sheet under the given
- * name.
+ * widths, and append the sheet under the given name.
  */
 function appendSheet<R extends AnyRow>(
   wb: XLSX.WorkBook,
@@ -100,7 +99,6 @@ function appendSheet<R extends AnyRow>(
 ): void {
   const ws = XLSX.utils.aoa_to_sheet(rowsToAoa(headers, rows));
   ws["!cols"] = colWidths(headers, rows);
-  (ws as unknown as { "!freeze"?: unknown })["!freeze"] = { xSplit: 0, ySplit: 1 };
   XLSX.utils.book_append_sheet(wb, ws, name);
 }
 

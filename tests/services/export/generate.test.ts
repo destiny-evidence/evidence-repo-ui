@@ -146,17 +146,6 @@ describe("generateWorkbook", () => {
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(inv);
     expect(rows.map((r) => r.reference_id)).toEqual(["ref-1", "ref-2"]);
   });
-
-  test("freezes the first row of each sheet", async () => {
-    const wb = await generateWorkbook(
-      [syntheticReference("ref-1")],
-      MINIMAL_VOCAB,
-    );
-    for (const name of wb.SheetNames) {
-      const ws = wb.Sheets[name] as unknown as { "!freeze"?: { ySplit: number } };
-      expect(ws["!freeze"]?.ySplit).toBe(1);
-    }
-  });
 });
 
 describe("workbookToArrayBuffer", () => {
