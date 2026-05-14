@@ -1,8 +1,6 @@
 /**
- * Row-building logic for the three sheets — port of the same-named helpers in
- * generate_example_combined_results_effects.py. Operates on raw JSON
- * structures (no pydantic equivalent on the JS side); field accesses use
- * snake_case to match the wire format.
+ * Row-building logic for the three sheets. Operates on raw JSON
+ * structures; field accesses use snake_case to match the wire format.
  */
 
 import { extractLinkedDataCodingInstitution } from "@/services/codingInstitution";
@@ -109,12 +107,8 @@ const ARM_KEY_FIELDS = [
 type PlainRecord = Record<string, unknown>;
 
 /**
- * Round numeric cells to 5 decimal places. The Python writer's %.16g
- * serialization disagrees with a native JS round-trip on the last digit
- * or two, and no field here (effect sizes, means, SDs, n) needs more
- * precision than that. The Python script applies the same rounding so the
- * two outputs match byte-for-byte. Pass-through for non-finite numbers
- * and non-numeric values.
+ * Round numeric cells to 5 decimal places.
+ * Pass-through for non-finite numbers and non-numeric values.
  */
 function round5Cell(value: CellValue): CellValue {
   if (typeof value !== "number" || !Number.isFinite(value)) return value;
@@ -154,8 +148,8 @@ function codedId(annotation: unknown, vocab: ConceptResolver): CellValue {
 
 /**
  * Return the `@value` of a numeric/string coding annotation, or null.
- * Numeric values pass through `round5` so the result matches the Python
- * port's rounding behaviour.
+ * The value is routed through `round5Cell`, which rounds numerics
+ * and passes other types through unchanged.
  */
 function codedValue(annotation: unknown): CellValue {
   if (!isDict(annotation)) return null;
@@ -204,8 +198,7 @@ function joinCodedValues(annotations: unknown): string {
 
 /**
  * Concatenate the `supportingText` field of each annotation with a blank
- * line between entries. Mirrors the Python writer so wrapped cells render
- * identically in Excel.
+ * line between entries.
  */
 function joinSupportingTexts(annotations: unknown): string {
   const list = Array.isArray(annotations) ? annotations : [];

@@ -1,8 +1,8 @@
 /**
- * Browser-friendly entry point. `generateWorkbook` takes already-loaded
- * inputs (an iterable of Reference objects and the vocabulary TTL text)
- * and returns a SheetJS workbook ready to write. The Node CLI wrapper in
- * bin/generate.ts does the filesystem I/O; nothing in this module touches it.
+ * Browser-friendly entry point. `generateWorkbook` takes an iterable of
+ * Reference objects and a `ConceptResolver` and returns a SheetJS workbook
+ * ready to write. Pure with respect to its inputs — no disk or network
+ * access — so it runs in the browser as well as Node.
  */
 
 import * as XLSX from "xlsx";
@@ -64,10 +64,11 @@ function rowsToAoa<R extends AnyRow>(
 }
 
 /**
- * Compute per-column widths for the worksheet using the same heuristic as
- * the Python `write_sheet`: width is the length of the longest single
+ * Compute per-column widths for the worksheet
+ * Width is the length of the longest single
  * line in the column (header or any row), padded by 2, then clamped to
- * the range [12, 60]. Multi-line cell contents are measured per line so
+ * the range [12, 60].
+ * Multi-line cell contents are measured per line so
  * wrapped cells don't blow the column out.
  */
 function colWidths<R extends AnyRow>(
