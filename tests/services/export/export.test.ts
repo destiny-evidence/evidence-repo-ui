@@ -191,6 +191,9 @@ describe("exportReferencesToExcel", () => {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     expect(captured.blob!.size).toBeGreaterThan(0);
+    // Revoke is deferred via setTimeout so the browser can read the blob
+    // before the URL is invalidated; wait one task for the timer to fire.
+    await new Promise((r) => setTimeout(r, 0));
     expect(captured.revoked).toBe(true);
   });
 
