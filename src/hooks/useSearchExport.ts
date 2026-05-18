@@ -30,17 +30,27 @@ export interface UseSearchExportResult {
 
 const POLL_INTERVAL_MS = 2000;
 
+/**
+ * Drives the export request → polling → download pipeline.
+ *
+ * **Cancellation.** Each call to `start` increments `runIdRef` and captures the
+ * new id in a closure. Every async callback compares its captured id against
+ * the live ref via `isCurrentRun()` and bails if they differ — meaning the
+ * user called `start` again, `reset`, or unmounted. State writes on stale
+ * callbacks would either warn (post-unmount) or corrupt the current run's
+ * state machine. AbortController would be the canonical alternative but
+ * would mean threading `signal` through the API client, the export module
+ * and `streamJsonlFromUrl`; revisit if any of those grow other reasons to
+ * abort.
+ */
 export function useSearchExport(): UseSearchExportResult {
   const [status, setStatus] = useState<ExportStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Generation counter — bumped on reset/unmount. Callbacks that started under
-  // generation N bail if cancelRef.current !== N, so a late poll response from
-  // a cancelled run never writes state.
-  const cancelRef = useRef(0);
+  const runIdRef = useRef(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearTimeoutRef = useCallback(() => {
+  const clearScheduledPoll = useCallback(() => {
     if (timeoutRef.current !== null) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -48,18 +58,18 @@ export function useSearchExport(): UseSearchExportResult {
   }, []);
 
   const reset = useCallback(() => {
-    cancelRef.current += 1;
-    clearTimeoutRef();
+    runIdRef.current += 1;
+    clearScheduledPoll();
     setStatus("idle");
     setErrorMessage(null);
-  }, [clearTimeoutRef]);
+  }, [clearScheduledPoll]);
 
   useEffect(() => {
     return () => {
-      cancelRef.current += 1;
-      clearTimeoutRef();
+      runIdRef.current += 1;
+      clearScheduledPoll();
     };
-  }, [clearTimeoutRef]);
+  }, [clearScheduledPoll]);
 
   const start = useCallback(
     (
@@ -67,9 +77,9 @@ export function useSearchExport(): UseSearchExportResult {
       filters: Omit<SearchFilters, "page">,
       filename: string,
     ) => {
-      cancelRef.current += 1;
-      const generation = cancelRef.current;
-      clearTimeoutRef();
+      runIdRef.current += 1;
+      const runId = runIdRef.current;
+      clearScheduledPoll();
       setErrorMessage(null);
 
       // Vocab/context URLs are optional — the workbook falls back to raw
@@ -84,13 +94,20 @@ export function useSearchExport(): UseSearchExportResult {
 
       setStatus("requesting");
 
-      const isActive = () => cancelRef.current === generation;
+      const isCurrentRun = () => runIdRef.current === runId;
+
+      // Drop the run into the error state, but only if it's still the
+      // current one — cancelled runs must not overwrite a fresh run's state.
+      const fail = (message: string) => {
+        if (!isCurrentRun()) return;
+        setErrorMessage(message);
+        setStatus("error");
+      };
 
       const handleCompleted = async (job: SearchExportRead) => {
-        if (!isActive()) return;
+        if (!isCurrentRun()) return;
         if (!job.result_url) {
-          setErrorMessage("Export finished but no download URL was returned.");
-          setStatus("error");
+          fail("Export finished but no download URL was returned.");
           return;
         }
         setStatus("downloading");
@@ -102,55 +119,47 @@ export function useSearchExport(): UseSearchExportResult {
             filename,
           );
         } catch (err) {
-          if (!isActive()) return;
-          setErrorMessage(
-            err instanceof Error ? err.message : "Failed to build the Excel file.",
-          );
-          setStatus("error");
+          fail(err instanceof Error ? err.message : "Failed to build the Excel file.");
           return;
         }
-        if (!isActive()) return;
+        if (!isCurrentRun()) return;
         setStatus("done");
       };
 
       const poll = (jobId: string) => {
-        if (!isActive()) return;
+        if (!isCurrentRun()) return;
         getSearchExport(jobId)
           .then((job) => {
-            if (!isActive()) return;
+            if (!isCurrentRun()) return;
             if (job.status === "completed") {
               void handleCompleted(job);
               return;
             }
             if (job.status === "failed") {
-              setErrorMessage(job.error || "The export job failed.");
-              setStatus("error");
+              fail(job.error || "The export job failed.");
               return;
             }
             // pending or running — keep polling.
             timeoutRef.current = setTimeout(() => poll(jobId), POLL_INTERVAL_MS);
           })
           .catch((err) => {
-            if (!isActive()) return;
-            setErrorMessage(
+            fail(
               err instanceof Error
                 ? err.message
                 : "Lost contact with the export job. Please try again.",
             );
-            setStatus("error");
           });
       };
 
       requestSearchExport(query, filters)
         .then((job) => {
-          if (!isActive()) return;
+          if (!isCurrentRun()) return;
           if (job.status === "completed") {
             void handleCompleted(job);
             return;
           }
           if (job.status === "failed") {
-            setErrorMessage(job.error || "The export job failed.");
-            setStatus("error");
+            fail(job.error || "The export job failed.");
             return;
           }
           setStatus("polling");
@@ -160,14 +169,10 @@ export function useSearchExport(): UseSearchExportResult {
           );
         })
         .catch((err) => {
-          if (!isActive()) return;
-          setErrorMessage(
-            err instanceof Error ? err.message : "Failed to start the export.",
-          );
-          setStatus("error");
+          fail(err instanceof Error ? err.message : "Failed to start the export.");
         });
     },
-    [clearTimeoutRef],
+    [clearScheduledPoll],
   );
 
   return { status, errorMessage, start, reset };
