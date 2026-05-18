@@ -1,5 +1,5 @@
 import { api } from "@/api/client";
-import type { Reference, SearchResult } from "@/types/models";
+import type { Reference, SearchExportRead, SearchResult } from "@/types/models";
 import type { SortOption } from "@/services/searchParams";
 
 export interface SearchFilters {
@@ -40,6 +40,31 @@ export async function searchReferences(
   for (const a of filters.annotation ?? []) params.append("annotation", a);
   for (const s of filters.sort ?? []) params.append("sort", s);
   return api.get<SearchResult>(`/v1/references/search/?${params.toString()}`);
+}
+
+// Unlike searchReferences, no empty-q → "*" shim: the export endpoint is
+// gated at the search page (button disabled when q is empty), and an
+// explicit "*" from the user is forwarded as-is.
+export async function requestSearchExport(
+  query: string,
+  filters: Omit<SearchFilters, "page"> = {},
+): Promise<SearchExportRead> {
+  const params = new URLSearchParams();
+  params.set("q", query.trim());
+  if (isPositiveSafeInt(filters.startYear)) params.set("start_year", String(filters.startYear));
+  if (isPositiveSafeInt(filters.endYear)) params.set("end_year", String(filters.endYear));
+  for (const a of filters.annotation ?? []) params.append("annotation", a);
+  for (const s of filters.sort ?? []) params.append("sort", s);
+  return api.post<SearchExportRead>(
+    `/v1/references/search/exports/?${params.toString()}`,
+    undefined,
+  );
+}
+
+export async function getSearchExport(id: string): Promise<SearchExportRead> {
+  return api.get<SearchExportRead>(
+    `/v1/references/search/exports/${encodeURIComponent(id)}/`,
+  );
 }
 
 export async function getReference(id: string): Promise<Reference | null> {

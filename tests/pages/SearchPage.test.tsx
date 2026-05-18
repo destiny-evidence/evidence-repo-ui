@@ -14,11 +14,26 @@ function renderSearchPage() {
 
 vi.mock("@/services/apiClient", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/apiClient")>();
-  return { ...actual, searchReferences: vi.fn() };
+  return {
+    ...actual,
+    searchReferences: vi.fn(),
+    requestSearchExport: vi.fn(),
+    getSearchExport: vi.fn(),
+  };
 });
 
-import { searchReferences } from "@/services/apiClient";
+vi.mock("@/services/export/export", () => ({
+  exportReferencesToExcel: vi.fn().mockResolvedValue(undefined),
+}));
+
+import {
+  searchReferences,
+  requestSearchExport,
+  getSearchExport,
+} from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
+const mockRequestExport = vi.mocked(requestSearchExport);
+const mockGetExport = vi.mocked(getSearchExport);
 
 function makeResult(count: number, ids: string[] = [], isLowerBound = false): SearchResult {
   return {
@@ -65,6 +80,8 @@ function mockBoth(opts: {
 
 beforeEach(() => {
   mockSearch.mockReset();
+  mockRequestExport.mockReset();
+  mockGetExport.mockReset();
   history.replaceState(null, "", "/esea");
 });
 
@@ -320,5 +337,100 @@ describe("SearchPage", () => {
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(pushSpy).not.toHaveBeenCalled();
     pushSpy.mockRestore();
+  });
+
+  describe("export button", () => {
+    test("disabled in browse mode (empty query) with explanatory tooltip", async () => {
+      mockBoth({ results: makeResult(5721, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).toBeDisabled();
+      expect(btn.parentElement).toHaveAttribute(
+        "data-tooltip",
+        expect.stringMatching(/enter a search query/i),
+      );
+    });
+
+    test("disabled in year-only URL (still empty q)", async () => {
+      history.replaceState(null, "", "/esea?start_year=2020");
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).toBeDisabled();
+    });
+
+    test("explicit q=* is allowed (passes the empty-q gate)", async () => {
+      history.replaceState(null, "", "/esea?q=*");
+      mockBoth({ results: makeResult(50, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).not.toBeDisabled();
+    });
+
+    test("disabled when result set is empty", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: makeResult(0, []) });
+      renderSearchPage();
+      await waitFor(() =>
+        expect(screen.getByText(/no matches/i)).toBeInTheDocument(),
+      );
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).toBeDisabled();
+    });
+
+    test("disabled past the 10k cap with tooltip", async () => {
+      history.replaceState(null, "", "/esea?q=education");
+      mockBoth({ results: makeResult(10000, ["r1"], true) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).toBeDisabled();
+      expect(btn.parentElement).toHaveAttribute(
+        "data-tooltip",
+        expect.stringMatching(/limited to 10,000 results/i),
+      );
+    });
+
+    test("click POSTs with current filters and shows preparing status", async () => {
+      history.replaceState(null, "", "/esea?q=phonics&start_year=2015");
+      mockBoth({ results: makeResult(47, ["r1"]) });
+      mockRequestExport.mockResolvedValue({
+        id: "job-1",
+        status: "pending",
+        truncated: false,
+      });
+      // Keep polling pending forever so the test settles on "Preparing…".
+      mockGetExport.mockResolvedValue({
+        id: "job-1",
+        status: "pending",
+        truncated: false,
+      });
+
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      fireEvent.click(btn);
+
+      await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
+      expect(mockRequestExport).toHaveBeenCalledWith("phonics", {
+        startYear: 2015,
+        endYear: undefined,
+        annotation: ["domain-inclusion/jacobs-education"],
+      });
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: /preparing/i }),
+        ).toBeInTheDocument(),
+      );
+    });
   });
 });

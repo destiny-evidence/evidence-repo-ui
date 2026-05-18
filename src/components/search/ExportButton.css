@@ -1,0 +1,26 @@
+.export-button {
+  background: var(--color-bg-inset);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  line-height: 1.2;
+  padding: 5px 12px;
+}
+
+.export-button:hover:not(:disabled) {
+  background: var(--color-bg-elevated, var(--color-bg-inset));
+  color: var(--color-text-primary);
+}
+
+.export-button:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.export-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

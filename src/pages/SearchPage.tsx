@@ -7,8 +7,11 @@ import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
+import { useSearchExport } from "@/hooks/useSearchExport";
+import { SORT_BACKEND, type SearchFilters } from "@/services/apiClient";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
+import { ExportButton } from "@/components/search/ExportButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/Pagination";
 import { NotFoundPage } from "./NotFoundPage";
@@ -30,6 +33,17 @@ function formatYearClause(start: number | undefined, end: number | undefined): s
   if (start !== undefined) return ` from ${start}`;
   if (end !== undefined) return ` to ${end}`;
   return "";
+}
+
+// 10k is destiny-repository's max_result_window; deep pagination + exports
+// past that are explicitly out of scope. Mirrors the search backend cap.
+const EXPORT_MAX_RESULTS = 10000;
+
+function formatExportFilename(slug: string, now: Date = new Date()): string {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `destiny-evidence-${slug}-${y}${m}${d}.xlsx`;
 }
 
 function formatResultsSummary(
@@ -74,6 +88,7 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const corpus = useCorpusTotal();
   const results = useSearch(params);
+  const exportJob = useSearchExport();
 
   // Hide the bar on the initial browse-mode load so the skeleton owns the
   // full vertical space; show it as soon as there's anything to put in it.
@@ -105,6 +120,33 @@ function SearchPageInner({ community }: { community: Community }) {
     const committed = draft.commitDraft();
     if (!committed) return;
     navigate(buildSearchUrl(community.slug, { ...params, ...committed, sort, page: 1 }));
+  }
+
+  const queryEmpty = params.q.trim() === "";
+  const hasResults = results.results !== null && results.results.references.length > 0;
+  const overCap =
+    results.results !== null
+    && results.results.total.is_lower_bound
+    && results.results.total.count >= EXPORT_MAX_RESULTS;
+  const exportBusy =
+    exportJob.status === "requesting"
+    || exportJob.status === "polling"
+    || exportJob.status === "downloading";
+  const exportDisabled = queryEmpty || !hasResults || overCap || exportBusy;
+  const exportTooltip = queryEmpty
+    ? "Enter a search query to export."
+    : overCap
+      ? `Refine your search — exports are limited to ${EXPORT_MAX_RESULTS.toLocaleString()} results.`
+      : undefined;
+
+  function handleExport() {
+    const filters: Omit<SearchFilters, "page"> = {
+      startYear: params.startYear,
+      endYear: params.endYear,
+      annotation: community.defaultAnnotations,
+    };
+    if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
+    exportJob.start(params.q, filters, formatExportFilename(community.slug));
   }
 
   // Page size comes from the API response (page.count) so the UI stays in
@@ -169,11 +211,27 @@ function SearchPageInner({ community }: { community: Community }) {
                 : null}
             </span>
             {results.results && (
-              <SortDropdown
-                value={params.sort}
-                onChange={handleSortChange}
-                disabled={results.loading}
-              />
+              <span class="search-results__meta-right">
+                {exportJob.status === "error" && (
+                  <span
+                    class="search-results__export-status"
+                    role="alert"
+                  >
+                    {exportJob.errorMessage ?? "Export failed."}
+                  </span>
+                )}
+                <ExportButton
+                  disabled={exportDisabled}
+                  status={exportJob.status}
+                  onClick={handleExport}
+                  tooltip={exportTooltip}
+                />
+                <SortDropdown
+                  value={params.sort}
+                  onChange={handleSortChange}
+                  disabled={results.loading}
+                />
+              </span>
             )}
           </div>
         )}
