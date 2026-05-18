@@ -16,6 +16,15 @@ vi.mock("@/services/export/export", () => ({
   exportReferencesToExcel: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("@/config", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/config")>();
+  return {
+    ...actual,
+    EXPORT_VOCABULARY_URL: "https://test.example/vocab",
+    EXPORT_CONTEXT_URL: "https://test.example/context",
+  };
+});
+
 import {
   requestSearchExport,
   getSearchExport,
@@ -85,8 +94,8 @@ describe("useSearchExport", () => {
     await vi.waitFor(() => expect(result.current.status).toBe("done"));
     expect(mockExport).toHaveBeenCalledWith(
       "https://blob/result.jsonl",
-      expect.any(String),
-      expect.any(String),
+      "https://test.example/vocab",
+      "https://test.example/context",
       "file.xlsx",
     );
     expect(mockRequest).toHaveBeenCalledWith("phonics", { annotation: ["x"] });
