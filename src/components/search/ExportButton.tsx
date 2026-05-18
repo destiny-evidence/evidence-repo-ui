@@ -40,7 +40,6 @@ export function ExportButton({
         class="export-button"
         onClick={disabled ? undefined : onClick}
         aria-disabled={disabled ? "true" : undefined}
-        aria-label={label}
         aria-describedby={tooltip ? tooltipId : undefined}
       >
         {label}
