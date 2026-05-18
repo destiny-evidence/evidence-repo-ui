@@ -421,6 +421,41 @@ describe("SearchPage", () => {
       );
     });
 
+    test("disabled while a follow-up search is in flight (stale results, gate before fresh data)", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      // Resolve the first fetch (47 results), then leave the second fetch
+      // pending so loading=true while the prior results still render.
+      let resolveSecond: ((value: SearchResult) => void) | undefined;
+      mockSearch.mockImplementationOnce(() => Promise.resolve(makeResult(5721, ["c1"])))
+        .mockImplementationOnce(() => Promise.resolve(makeResult(47, ["r1"])))
+        .mockImplementationOnce(
+          () => new Promise<SearchResult>((r) => { resolveSecond = r; }),
+        );
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+      // First settled state: 47 results → button enabled.
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).not.toHaveAttribute("aria-disabled", "true");
+
+      // Submit a new query — keeps showing r1 (dim) while the second fetch hangs.
+      fireEvent.input(screen.getByRole("searchbox"), { target: { value: "literacy" } });
+      fireEvent.click(screen.getByRole("button", { name: /search/i }));
+
+      // Button is disabled while loading even though stale `results.results`
+      // would have said `hasResults && !overCap`.
+      await waitFor(() =>
+        expect(btn).toHaveAttribute("aria-disabled", "true"),
+      );
+      // Tooltip is suppressed during loading to avoid asserting a stale count.
+      expect(btn.parentElement).not.toHaveAttribute("data-tooltip");
+
+      // Resolve the second fetch; button re-enables.
+      resolveSecond?.(makeResult(12, ["r2"]));
+      await waitFor(() =>
+        expect(btn).not.toHaveAttribute("aria-disabled", "true"),
+      );
+    });
+
     test("disabled past the 10k cap with tooltip", async () => {
       history.replaceState(null, "", "/esea?q=education");
       mockBoth({ results: makeResult(10000, ["r1"], true) });

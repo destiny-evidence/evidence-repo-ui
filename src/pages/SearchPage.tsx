@@ -136,14 +136,24 @@ function SearchPageInner({ community }: { community: Community }) {
     exportJob.status === "requesting"
     || exportJob.status === "polling"
     || exportJob.status === "downloading";
-  const exportDisabled = noFilters || !hasResults || overCap || exportBusy;
+  // Gate on results.loading too: useSearch keeps prior results visible while
+  // a new fetch is in flight, so `hasResults` / `overCap` would otherwise
+  // reflect the previous search and let an export through against stale state.
+  const exportDisabled =
+    noFilters
+    || !hasResults
+    || overCap
+    || exportBusy
+    || results.loading;
   const exportTooltip = noFilters
     ? "Submit a search query to export."
-    : overCap
-      ? `Refine your search — exports are limited to ${EXPORT_MAX_RESULTS.toLocaleString()} results.`
-      : results.results !== null && !hasResults
-        ? "No results to export."
-        : undefined;
+    : results.loading
+      ? undefined
+      : overCap
+        ? `Refine your search — exports are limited to ${EXPORT_MAX_RESULTS.toLocaleString()} results.`
+        : !hasResults
+          ? "No results to export."
+          : undefined;
   const exportLiveAnnouncement =
     exportJob.status === "requesting" || exportJob.status === "polling"
       ? "Preparing export…"
