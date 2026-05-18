@@ -346,11 +346,17 @@ describe("SearchPage", () => {
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
       const btn = screen.getByRole("button", { name: /export to excel/i });
-      expect(btn).toBeDisabled();
+      expect(btn).toHaveAttribute("aria-disabled", "true");
       expect(btn.parentElement).toHaveAttribute(
         "data-tooltip",
         expect.stringMatching(/submit a search query/i),
       );
+      // Tooltip text is also exposed to AT via aria-describedby + a hidden node,
+      // since data-tooltip is purely a CSS hook.
+      const describedById = btn.getAttribute("aria-describedby");
+      expect(describedById).toBeTruthy();
+      const describedBy = document.getElementById(describedById!);
+      expect(describedBy?.textContent).toMatch(/submit a search query/i);
     });
 
     test("enabled in year-only URL; click POSTs with q=* and the year filter", async () => {
@@ -370,7 +376,7 @@ describe("SearchPage", () => {
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
       const btn = screen.getByRole("button", { name: /export to excel/i });
-      expect(btn).not.toBeDisabled();
+      expect(btn).not.toHaveAttribute("aria-disabled", "true");
       fireEvent.click(btn);
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
       expect(mockRequestExport).toHaveBeenCalledWith("*", {
@@ -390,7 +396,7 @@ describe("SearchPage", () => {
       expect(btn).not.toBeDisabled();
     });
 
-    test("disabled when result set is empty", async () => {
+    test("disabled when result set is empty with explanatory tooltip", async () => {
       history.replaceState(null, "", "/esea?q=phonics");
       mockBoth({ results: makeResult(0, []) });
       renderSearchPage();
@@ -399,7 +405,11 @@ describe("SearchPage", () => {
       );
 
       const btn = screen.getByRole("button", { name: /export to excel/i });
-      expect(btn).toBeDisabled();
+      expect(btn).toHaveAttribute("aria-disabled", "true");
+      expect(btn.parentElement).toHaveAttribute(
+        "data-tooltip",
+        expect.stringMatching(/no results to export/i),
+      );
     });
 
     test("disabled past the 10k cap with tooltip", async () => {
@@ -409,7 +419,7 @@ describe("SearchPage", () => {
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
       const btn = screen.getByRole("button", { name: /export to excel/i });
-      expect(btn).toBeDisabled();
+      expect(btn).toHaveAttribute("aria-disabled", "true");
       expect(btn.parentElement).toHaveAttribute(
         "data-tooltip",
         expect.stringMatching(/limited to 10,000 results/i),

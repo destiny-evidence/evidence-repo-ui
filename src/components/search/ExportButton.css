@@ -10,7 +10,7 @@
   padding: 5px 12px;
 }
 
-.export-button:hover:not(:disabled) {
+.export-button:hover:not([aria-disabled="true"]) {
   background: var(--color-bg-elevated, var(--color-bg-inset));
   color: var(--color-text-primary);
 }
@@ -20,7 +20,7 @@
   outline-offset: -1px;
 }
 
-.export-button:disabled {
+.export-button[aria-disabled="true"] {
   opacity: 0.5;
   cursor: not-allowed;
 }

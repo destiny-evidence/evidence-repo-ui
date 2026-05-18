@@ -139,7 +139,17 @@ function SearchPageInner({ community }: { community: Community }) {
     ? "Submit a search query to export."
     : overCap
       ? `Refine your search — exports are limited to ${EXPORT_MAX_RESULTS.toLocaleString()} results.`
-      : undefined;
+      : results.results !== null && !hasResults
+        ? "No results to export."
+        : undefined;
+  const exportLiveAnnouncement =
+    exportJob.status === "requesting" || exportJob.status === "polling"
+      ? "Preparing export…"
+      : exportJob.status === "downloading"
+        ? "Downloading export…"
+        : exportJob.status === "done"
+          ? "Export downloaded."
+          : "";
 
   function handleExport() {
     const filters: Omit<SearchFilters, "page"> = {
@@ -225,6 +235,13 @@ function SearchPageInner({ community }: { community: Community }) {
                     {exportJob.errorMessage ?? "Export failed."}
                   </span>
                 )}
+                <span
+                  class="visually-hidden"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {exportLiveAnnouncement}
+                </span>
                 <ExportButton
                   disabled={exportDisabled}
                   status={exportJob.status}

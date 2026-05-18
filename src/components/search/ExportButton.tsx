@@ -1,3 +1,4 @@
+import { useId } from "preact/hooks";
 import { Tooltip } from "@/components/Tooltip";
 import type { ExportStatus } from "@/hooks/useSearchExport";
 import "./ExportButton.css";
@@ -27,19 +28,28 @@ export function ExportButton({
   onClick,
   tooltip,
 }: ExportButtonProps) {
-  // Tooltip wraps the button so :hover fires on the wrapper rather than the
-  // disabled <button>, which Firefox doesn't route hover events to.
+  const tooltipId = useId();
+  const label = labelFor(status);
+  // aria-disabled (rather than native disabled) keeps the button in the tab
+  // order so keyboard / screen-reader users can focus it, hear the reason
+  // it's unavailable via aria-describedby, and move on. Click is guarded.
   return (
     <Tooltip text={tooltip}>
       <button
         type="button"
         class="export-button"
-        onClick={onClick}
-        disabled={disabled}
-        aria-label={labelFor(status)}
+        onClick={disabled ? undefined : onClick}
+        aria-disabled={disabled ? "true" : undefined}
+        aria-label={label}
+        aria-describedby={tooltip ? tooltipId : undefined}
       >
-        {labelFor(status)}
+        {label}
       </button>
+      {tooltip && (
+        <span id={tooltipId} class="visually-hidden">
+          {tooltip}
+        </span>
+      )}
     </Tooltip>
   );
 }

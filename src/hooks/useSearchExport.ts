@@ -71,6 +71,17 @@ export function useSearchExport(): UseSearchExportResult {
       const generation = cancelRef.current;
       clearTimeoutRef();
       setErrorMessage(null);
+
+      // Fail loud-but-friendly when the deploy is missing vocab/context URLs
+      // rather than letting fetch("undefined") produce a confusing 404.
+      if (!EXPORT_VOCABULARY_URL || !EXPORT_CONTEXT_URL) {
+        setErrorMessage(
+          "Export is not configured for this deployment. Contact an administrator.",
+        );
+        setStatus("error");
+        return;
+      }
+
       setStatus("requesting");
 
       const isActive = () => cancelRef.current === generation;
