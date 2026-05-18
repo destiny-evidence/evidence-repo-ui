@@ -33,15 +33,12 @@ const POLL_INTERVAL_MS = 2000;
 /**
  * Drives the export request → polling → download pipeline.
  *
- * **Cancellation.** Each call to `start` increments `runIdRef` and captures the
- * new id in a closure. Every async callback compares its captured id against
- * the live ref via `isCurrentRun()` and bails if they differ — meaning the
- * user called `start` again, `reset`, or unmounted. State writes on stale
- * callbacks would either warn (post-unmount) or corrupt the current run's
- * state machine. AbortController would be the canonical alternative but
- * would mean threading `signal` through the API client, the export module
- * and `streamJsonlFromUrl`; revisit if any of those grow other reasons to
- * abort.
+ * **Cancellation.** Each call to `start` increments `runIdRef` and captures
+ * the new id in a closure. Every async callback compares its captured id
+ * against the live ref via `isCurrentRun()` and bails if they differ —
+ * meaning the user called `start` again, `reset`, or unmounted. Without the
+ * guard, a stale callback from a cancelled run could clobber the current
+ * run's state machine.
  */
 export function useSearchExport(): UseSearchExportResult {
   const [status, setStatus] = useState<ExportStatus>("idle");
@@ -64,27 +61,19 @@ export function useSearchExport(): UseSearchExportResult {
     setErrorMessage(null);
   }, [clearScheduledPoll]);
 
-  useEffect(() => {
-    return () => {
-      runIdRef.current += 1;
-      clearScheduledPoll();
-    };
-  }, [clearScheduledPoll]);
+  // Cancel any in-flight run on unmount. The setStatus/setErrorMessage
+  // inside reset() are no-ops on the unmounted component.
+  useEffect(() => reset, [reset]);
 
   const start = useCallback(
-    (
-      query: string,
-      filters: Omit<SearchFilters, "page">,
-      filename: string,
-    ) => {
+    (query: string, filters: Omit<SearchFilters, "page">, filename: string) => {
       runIdRef.current += 1;
       const runId = runIdRef.current;
       clearScheduledPoll();
       setErrorMessage(null);
 
-      // Vocab/context URLs are optional — the workbook falls back to raw
-      // CURIEs when they're missing. Warn so misconfiguration is visible
-      // in devtools without surfacing a user-facing error.
+      // The workbook falls back to raw CURIEs when Vocab/context URLs are missing.
+      // Warn so misconfiguration is visible in devtools without surfacing a user-facing error.
       if (!EXPORT_VOCABULARY_URL || !EXPORT_CONTEXT_URL) {
         console.warn(
           "Export vocab/context URLs not configured; concept cells will contain raw CURIEs.",
@@ -119,11 +108,34 @@ export function useSearchExport(): UseSearchExportResult {
             filename,
           );
         } catch (err) {
-          fail(err instanceof Error ? err.message : "Failed to build the Excel file.");
+          fail(
+            err instanceof Error
+              ? err.message
+              : "Failed to build the Excel file.",
+          );
           return;
         }
         if (!isCurrentRun()) return;
         setStatus("done");
+      };
+
+      const schedulePoll = (jobId: string) => {
+        timeoutRef.current = setTimeout(() => poll(jobId), POLL_INTERVAL_MS);
+      };
+
+      const handleStatus = (job: SearchExportRead) => {
+        if (job.status === "completed") {
+          handleCompleted(job);
+          return;
+        }
+        if (job.status === "failed") {
+          fail(job.error || "The export job failed.");
+          return;
+        }
+        // pending or running — keep polling. setStatus is idempotent on the
+        // second-and-later passes; Preact bails on same-value state writes.
+        setStatus("polling");
+        schedulePoll(job.id);
       };
 
       const poll = (jobId: string) => {
@@ -131,16 +143,7 @@ export function useSearchExport(): UseSearchExportResult {
         getSearchExport(jobId)
           .then((job) => {
             if (!isCurrentRun()) return;
-            if (job.status === "completed") {
-              void handleCompleted(job);
-              return;
-            }
-            if (job.status === "failed") {
-              fail(job.error || "The export job failed.");
-              return;
-            }
-            // pending or running — keep polling.
-            timeoutRef.current = setTimeout(() => poll(jobId), POLL_INTERVAL_MS);
+            handleStatus(job);
           })
           .catch((err) => {
             fail(
@@ -154,22 +157,12 @@ export function useSearchExport(): UseSearchExportResult {
       requestSearchExport(query, filters)
         .then((job) => {
           if (!isCurrentRun()) return;
-          if (job.status === "completed") {
-            void handleCompleted(job);
-            return;
-          }
-          if (job.status === "failed") {
-            fail(job.error || "The export job failed.");
-            return;
-          }
-          setStatus("polling");
-          timeoutRef.current = setTimeout(
-            () => poll(job.id),
-            POLL_INTERVAL_MS,
-          );
+          handleStatus(job);
         })
         .catch((err) => {
-          fail(err instanceof Error ? err.message : "Failed to start the export.");
+          fail(
+            err instanceof Error ? err.message : "Failed to start the export.",
+          );
         });
     },
     [clearScheduledPoll],
