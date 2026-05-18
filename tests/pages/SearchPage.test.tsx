@@ -340,7 +340,7 @@ describe("SearchPage", () => {
   });
 
   describe("export button", () => {
-    test("disabled in browse mode (empty query) with explanatory tooltip", async () => {
+    test("disabled in browse mode (no q, no years) with explanatory tooltip", async () => {
       mockBoth({ results: makeResult(5721, ["r1"]) });
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
@@ -349,18 +349,35 @@ describe("SearchPage", () => {
       expect(btn).toBeDisabled();
       expect(btn.parentElement).toHaveAttribute(
         "data-tooltip",
-        expect.stringMatching(/enter a search query/i),
+        expect.stringMatching(/submit a search query/i),
       );
     });
 
-    test("disabled in year-only URL (still empty q)", async () => {
+    test("enabled in year-only URL; click POSTs with q=* and the year filter", async () => {
       history.replaceState(null, "", "/esea?start_year=2020");
       mockBoth({ results: makeResult(120, ["r1"]) });
+      mockRequestExport.mockResolvedValue({
+        id: "job-yr",
+        status: "pending",
+        truncated: false,
+      });
+      mockGetExport.mockResolvedValue({
+        id: "job-yr",
+        status: "pending",
+        truncated: false,
+      });
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
       const btn = screen.getByRole("button", { name: /export to excel/i });
-      expect(btn).toBeDisabled();
+      expect(btn).not.toBeDisabled();
+      fireEvent.click(btn);
+      await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
+      expect(mockRequestExport).toHaveBeenCalledWith("*", {
+        startYear: 2020,
+        endYear: undefined,
+        annotation: ["domain-inclusion/jacobs-education"],
+      });
     });
 
     test("explicit q=* is allowed (passes the empty-q gate)", async () => {

@@ -123,6 +123,8 @@ function SearchPageInner({ community }: { community: Community }) {
   }
 
   const queryEmpty = params.q.trim() === "";
+  const hasYearFilter = params.startYear !== undefined || params.endYear !== undefined;
+  const noFilters = queryEmpty && !hasYearFilter;
   const hasResults = results.results !== null && results.results.references.length > 0;
   const overCap =
     results.results !== null
@@ -132,9 +134,9 @@ function SearchPageInner({ community }: { community: Community }) {
     exportJob.status === "requesting"
     || exportJob.status === "polling"
     || exportJob.status === "downloading";
-  const exportDisabled = queryEmpty || !hasResults || overCap || exportBusy;
-  const exportTooltip = queryEmpty
-    ? "Enter a search query to export."
+  const exportDisabled = noFilters || !hasResults || overCap || exportBusy;
+  const exportTooltip = noFilters
+    ? "Submit a search query to export."
     : overCap
       ? `Refine your search — exports are limited to ${EXPORT_MAX_RESULTS.toLocaleString()} results.`
       : undefined;
@@ -146,7 +148,10 @@ function SearchPageInner({ community }: { community: Community }) {
       annotation: community.defaultAnnotations,
     };
     if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
-    exportJob.start(params.q, filters, formatExportFilename(community.slug));
+    // Backend requires q with min_length=1; substitute "*" for year-only
+    // searches so the year filter is the user-supplied intent.
+    const exportQuery = queryEmpty ? "*" : params.q;
+    exportJob.start(exportQuery, filters, formatExportFilename(community.slug));
   }
 
   // Page size comes from the API response (page.count) so the UI stays in
