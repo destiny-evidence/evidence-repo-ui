@@ -7,7 +7,7 @@ import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
-import { useSearchExport } from "@/hooks/useSearchExport";
+import { useSearchExport, type ExportStatus } from "@/hooks/useSearchExport";
 import { SORT_BACKEND, type SearchFilters } from "@/services/apiClient";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
@@ -46,6 +46,20 @@ function formatExportFilename(slug: string, now: Date = new Date()): string {
   const m = String(now.getUTCMonth() + 1).padStart(2, "0");
   const d = String(now.getUTCDate()).padStart(2, "0");
   return `destiny-evidence-${slug}-${y}${m}${d}.xlsx`;
+}
+
+function exportAnnouncementFor(status: ExportStatus): string {
+  switch (status) {
+    case "requesting":
+    case "polling":
+      return "Preparing export…";
+    case "downloading":
+      return "Downloading export…";
+    case "done":
+      return "Export downloaded.";
+    default:
+      return "";
+  }
 }
 
 function formatResultsSummary(
@@ -155,14 +169,7 @@ function SearchPageInner({ community }: { community: Community }) {
     if (!hasResults) return "No results to export.";
     return undefined;
   })();
-  const exportLiveAnnouncement =
-    exportJob.status === "requesting" || exportJob.status === "polling"
-      ? "Preparing export…"
-      : exportJob.status === "downloading"
-        ? "Downloading export…"
-        : exportJob.status === "done"
-          ? "Export downloaded."
-          : "";
+  const exportAnnouncement = exportAnnouncementFor(exportJob.status);
 
   function handleExport() {
     const filters: Omit<SearchFilters, "page"> = {
@@ -253,7 +260,7 @@ function SearchPageInner({ community }: { community: Community }) {
                   role="status"
                   aria-live="polite"
                 >
-                  {exportLiveAnnouncement}
+                  {exportAnnouncement}
                 </span>
                 <ExportButton
                   disabled={exportDisabled}

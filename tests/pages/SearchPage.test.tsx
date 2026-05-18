@@ -402,7 +402,7 @@ describe("SearchPage", () => {
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
       const btn = screen.getByRole("button", { name: /export to excel/i });
-      expect(btn).not.toBeDisabled();
+      expect(btn).not.toHaveAttribute("aria-disabled", "true");
     });
 
     test("disabled when result set is empty with explanatory tooltip", async () => {
@@ -423,34 +423,46 @@ describe("SearchPage", () => {
 
     test("disabled while a follow-up search is in flight (stale results, gate before fresh data)", async () => {
       history.replaceState(null, "", "/esea?q=phonics");
-      // Resolve the first fetch (47 results), then leave the second fetch
-      // pending so loading=true while the prior results still render.
-      let resolveSecond: ((value: SearchResult) => void) | undefined;
-      mockSearch.mockImplementationOnce(() => Promise.resolve(makeResult(5721, ["c1"])))
-        .mockImplementationOnce(() => Promise.resolve(makeResult(47, ["r1"])))
-        .mockImplementationOnce(
-          () => new Promise<SearchResult>((r) => { resolveSecond = r; }),
-        );
+      // Route by query so the test isn't sensitive to mock call order:
+      // corpus query → 5,721; phonics → 47 results immediately; literacy
+      // hangs until we explicitly resolve it, so loading=true while the
+      // phonics rows still render.
+      let resolveLiteracy: ((value: SearchResult) => void) | undefined;
+      mockSearch.mockImplementation((q) => {
+        if (q === undefined)
+          return Promise.resolve(makeResult(5721, ["corpus-ref"]));
+        if (q === "phonics")
+          return Promise.resolve(makeResult(47, ["phonics-ref"]));
+        if (q === "literacy") {
+          return new Promise<SearchResult>((r) => {
+            resolveLiteracy = r;
+          });
+        }
+        return Promise.reject(new Error(`unexpected query: ${q}`));
+      });
       renderSearchPage();
-      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText("Title phonics-ref")).toBeInTheDocument(),
+      );
       // First settled state: 47 results → button enabled.
       const btn = screen.getByRole("button", { name: /export to excel/i });
       expect(btn).not.toHaveAttribute("aria-disabled", "true");
 
-      // Submit a new query — keeps showing r1 (dim) while the second fetch hangs.
-      fireEvent.input(screen.getByRole("searchbox"), { target: { value: "literacy" } });
+      // Submit a new query — keeps phonics-ref visible (dim) while the
+      // literacy fetch hangs.
+      fireEvent.input(screen.getByRole("searchbox"), {
+        target: { value: "literacy" },
+      });
       fireEvent.click(screen.getByRole("button", { name: /search/i }));
 
       // Button is disabled while loading even though stale `results.results`
       // would have said `hasResults && !overCap`.
-      await waitFor(() =>
-        expect(btn).toHaveAttribute("aria-disabled", "true"),
-      );
+      await waitFor(() => expect(btn).toHaveAttribute("aria-disabled", "true"));
       // Tooltip is suppressed during loading to avoid asserting a stale count.
       expect(btn.parentElement).not.toHaveAttribute("data-tooltip");
 
-      // Resolve the second fetch; button re-enables.
-      resolveSecond?.(makeResult(12, ["r2"]));
+      // Resolve the literacy fetch; button re-enables.
+      resolveLiteracy?.(makeResult(12, ["literacy-ref"]));
       await waitFor(() =>
         expect(btn).not.toHaveAttribute("aria-disabled", "true"),
       );

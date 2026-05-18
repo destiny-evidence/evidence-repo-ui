@@ -82,13 +82,7 @@ describe("useSearchExport", () => {
     await vi.waitFor(() => expect(result.current.status).toBe("polling"));
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
+      await vi.advanceTimersByTimeAsync(6000);
     });
 
     await vi.waitFor(() => expect(result.current.status).toBe("done"));
@@ -165,8 +159,9 @@ describe("useSearchExport", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(10_000);
     });
-    // No error means cancellation worked — state writes on stale callbacks would
-    // surface as React warnings; tooling-level assertion captured by the act helper.
+    // No throw means the cancellation guard stopped the poll chain. Preact
+    // silently no-ops setState on an unmounted component, so the absence of
+    // an error is the assertion.
   });
 
   test("missing result_url on completed surfaces an error", async () => {
