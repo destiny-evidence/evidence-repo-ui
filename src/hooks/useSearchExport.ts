@@ -72,14 +72,14 @@ export function useSearchExport(): UseSearchExportResult {
       clearTimeoutRef();
       setErrorMessage(null);
 
-      // Fail loud-but-friendly when the deploy is missing vocab/context URLs
-      // rather than letting fetch("undefined") produce a confusing 404.
+      // Vocab/context URLs are optional — the workbook falls back to raw
+      // CURIEs when they're missing. Warn so misconfiguration is visible
+      // in devtools without surfacing a user-facing error.
       if (!EXPORT_VOCABULARY_URL || !EXPORT_CONTEXT_URL) {
-        setErrorMessage(
-          "Export is not configured for this deployment. Contact an administrator.",
+        console.warn(
+          "Export vocab/context URLs not configured; concept cells will contain raw CURIEs.",
+          { EXPORT_VOCABULARY_URL, EXPORT_CONTEXT_URL },
         );
-        setStatus("error");
-        return;
       }
 
       setStatus("requesting");
