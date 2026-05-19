@@ -1,6 +1,7 @@
 import { useMemo } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import {
+  extractAbstract,
   extractBibliographic,
   extractLinkedData,
   extractLinkedDataEnhancement,
@@ -14,6 +15,7 @@ import {
 import { useReference } from "@/hooks/useReference";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
+import { AbstractSection } from "@/components/AbstractSection";
 import { InvestigationCard } from "@/components/InvestigationCard";
 import { FindingsSection } from "@/components/FindingsSection";
 import { NotFoundPage } from "./NotFoundPage";
@@ -95,6 +97,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
   const codingInstitution = lde
     ? extractLinkedDataCodingInstitution(reference, lde)
     : null;
+  const abstract = extractAbstract(reference);
 
   return (
     <div class="record-detail-page">
@@ -112,6 +115,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
           hasInvestigation={hasLinkedData}
           vocabUnavailable={!!vocabUnavailable}
         />
+        <AbstractSection abstract={abstract} />
         {investigation && investigation.findings.length > 0 && (
           <>
             {vocabUnavailable && (

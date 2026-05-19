@@ -8,6 +8,7 @@ import type {
 } from "@/types/investigation";
 import type { SharedContext } from "@/services/findingGroups";
 import type {
+  AbstractContentEnhancement,
   BibliographicMetadataEnhancement,
   Enhancement,
   LinkedDataEnhancement,
@@ -161,21 +162,34 @@ export function bibliographicEnh(
   };
 }
 
-/** Build an abstract Enhancement. */
-export function abstractEnh(refId: string, abstract: string): Enhancement {
+interface AbstractOpts {
+  text?: string;
+  process?: string;
+  /** Mirrors Enhancement.created_at (string | null). Defaults to null when omitted. */
+  createdAt?: string | null;
+  /** Override the source field. Defaults to "openalex". */
+  source?: string;
+}
+
+/** Build an abstract Enhancement with sensible defaults. */
+export function abstractEnh(
+  refId: string,
+  opts: AbstractOpts = {},
+): Enhancement {
+  const content: AbstractContentEnhancement = {
+    enhancement_type: "abstract",
+    process: opts.process ?? "uninverted",
+    abstract: opts.text ?? "Default abstract body for fixture.",
+  };
   return {
     id: `${refId}-abs`,
     reference_id: refId,
-    source: "openalex",
+    source: opts.source ?? "openalex",
     visibility: "public",
     robot_version: null,
     derived_from: null,
-    created_at: null,
-    content: {
-      enhancement_type: "abstract",
-      process: "openalex",
-      abstract,
-    },
+    created_at: opts.createdAt ?? null,
+    content,
   };
 }
 
@@ -238,7 +252,8 @@ interface ReferenceOpts {
   id?: string;
   doi?: string;
   bibliographic?: BibOpts;
-  abstract?: string;
+  /** Abstract text + options. When provided, an abstractEnh is appended. */
+  abstract?: AbstractOpts;
   /** Investigation dict to wrap in a linked_data enhancement, if any. */
   investigation?: Record<string, unknown>;
   /** Override enhancements entirely (skips bibliographic/abstract/investigation). */
@@ -252,7 +267,7 @@ export function makeReference(opts: ReferenceOpts = {}): Reference {
     opts.enhancements ??
     [
       bibliographicEnh(id, opts.bibliographic),
-      opts.abstract ? abstractEnh(id, opts.abstract) : null,
+      opts.abstract !== undefined ? abstractEnh(id, opts.abstract) : null,
       opts.investigation
         ? linkedDataEnh(id, { investigation: opts.investigation })
         : null,

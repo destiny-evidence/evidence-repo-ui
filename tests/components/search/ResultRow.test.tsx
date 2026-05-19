@@ -50,7 +50,7 @@ function makeRef(opts: Parameters<typeof makeReference>[0] = {}) {
       year: 2020,
       venue: "Journal of Education",
     },
-    abstract: "This is the abstract body text used for the snippet preview.",
+    abstract: { text: "This is the abstract body text used for the snippet preview." },
     ...opts,
   });
 }
