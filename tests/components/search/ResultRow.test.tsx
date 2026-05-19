@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { PILL_CAP, ResultRow } from "@/components/search/ResultRow";
+import type { Reference } from "@/types/models";
 import { makeReference } from "../../fixtures";
 
 const vocabState = {
@@ -281,5 +282,71 @@ describe("ResultRow", () => {
     render(<ResultRow communitySlug="esea" reference={ref} />);
     const rowLink = screen.getByRole("link", { name: new RegExp(REF_ID, "i") });
     expect(rowLink).toHaveAttribute("href", `/esea/references/${REF_ID}`);
+  });
+
+  test("selects the longer abstract when two abstract enhancements differ in length (longest-wins via extractAbstract)", () => {
+    const ref: Reference = {
+      id: "ref-1",
+      visibility: "public",
+      identifiers: [{ identifier: "10.1000/abc", identifier_type: "doi" }],
+      enhancements: [
+        {
+          id: "bib",
+          reference_id: "ref-1",
+          source: "openalex",
+          visibility: "public",
+          robot_version: null,
+          derived_from: null,
+          created_at: "2024-01-01",
+          content: {
+            enhancement_type: "bibliographic",
+            authorship: null,
+            cited_by_count: null,
+            created_date: null,
+            updated_date: null,
+            publication_date: null,
+            publication_year: 2020,
+            publisher: null,
+            title: "Two-abstract ref",
+            pagination: null,
+            publication_venue: null,
+          },
+        },
+        {
+          // Newer but truncated re-ingest (regression case for inline
+          // findAbstract, which used .find() and returned whichever appeared
+          // first in array order).
+          id: "abs-newer-shorter",
+          reference_id: "ref-1",
+          source: "openalex",
+          visibility: "public",
+          robot_version: null,
+          derived_from: null,
+          created_at: "2026-05-01T00:00:00Z",
+          content: {
+            enhancement_type: "abstract",
+            process: "uninverted",
+            abstract: "TRUNCATED TAIL",
+          },
+        },
+        {
+          id: "abs-older-longer",
+          reference_id: "ref-1",
+          source: "openalex",
+          visibility: "public",
+          robot_version: null,
+          derived_from: null,
+          created_at: "2024-01-02T00:00:00Z",
+          content: {
+            enhancement_type: "abstract",
+            process: "uninverted",
+            abstract: "FULL INTACT ABSTRACT BODY".padEnd(800, "."),
+          },
+        },
+      ],
+    };
+    render(<ResultRow communitySlug="esea" reference={ref} />);
+    expect(screen.getByText(/FULL INTACT ABSTRACT BODY/)).toBeInTheDocument();
+    expect(screen.queryByText("TRUNCATED TAIL")).toBeNull();
   });
 });
