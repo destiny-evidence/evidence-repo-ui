@@ -13,7 +13,6 @@ import {
   extractLinkedData,
   formatPagination,
 } from "@/services/referenceUtils";
-import { stripAbstractLabelPrefix } from "@/services/textUtils";
 import { extractReferenceCodingInstitution } from "@/services/codingInstitution";
 import { parseInvestigation } from "@/services/investigationParser";
 import { conceptsToTags } from "@/services/conceptLabels";
@@ -70,8 +69,7 @@ function aggregatePillConcepts(
 export function ResultRow({ communitySlug, reference }: ResultRowProps) {
   const bib = extractBibliographic(reference);
   const doi = extractDoi(reference.identifiers);
-  const rawAbstract = extractAbstract(reference)?.abstract ?? null;
-  const abstract = rawAbstract ? stripAbstractLabelPrefix(rawAbstract) : null;
+  const abstract = extractAbstract(reference)?.abstract ?? null;
   const counts = extractFindingsAndEstimatesCount(reference);
 
   const linkedData = extractLinkedData(reference);

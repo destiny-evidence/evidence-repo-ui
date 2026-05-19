@@ -163,6 +163,7 @@ export function bibliographicEnh(
 }
 
 interface AbstractOpts {
+  id?: string;
   text?: string;
   process?: string;
   /** Mirrors Enhancement.created_at (string | null). Defaults to null when omitted. */
@@ -182,7 +183,7 @@ export function abstractEnh(
     abstract: opts.text ?? "Default abstract body for fixture.",
   };
   return {
-    id: `${refId}-abs`,
+    id: opts.id ?? `${refId}-abs`,
     reference_id: refId,
     source: opts.source ?? "openalex",
     visibility: "public",
@@ -253,7 +254,7 @@ interface ReferenceOpts {
   doi?: string;
   bibliographic?: BibOpts;
   /** Abstract text + options. When provided, an abstractEnh is appended. */
-  abstract?: AbstractOpts;
+  abstract?: string | AbstractOpts;
   /** Investigation dict to wrap in a linked_data enhancement, if any. */
   investigation?: Record<string, unknown>;
   /** Override enhancements entirely (skips bibliographic/abstract/investigation). */
@@ -263,11 +264,14 @@ interface ReferenceOpts {
 /** Build a Reference with optional bibliographic, abstract, and linked-data enhancements. */
 export function makeReference(opts: ReferenceOpts = {}): Reference {
   const id = opts.id ?? "abc-123";
+  const abstractOpts = typeof opts.abstract === "string"
+    ? { text: opts.abstract }
+    : opts.abstract;
   const enhancements =
     opts.enhancements ??
     [
       bibliographicEnh(id, opts.bibliographic),
-      opts.abstract !== undefined ? abstractEnh(id, opts.abstract) : null,
+      abstractOpts !== undefined ? abstractEnh(id, abstractOpts) : null,
       opts.investigation
         ? linkedDataEnh(id, { investigation: opts.investigation })
         : null,

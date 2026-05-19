@@ -281,6 +281,16 @@ describe("extractAbstract", () => {
     expect(extractAbstract(ref)).toBe(abs);
   });
 
+  test("normalizes abstract text before returning it", () => {
+    const abs: AbstractContentEnhancement = {
+      enhancement_type: "abstract",
+      process: "other",
+      abstract: "Abstract A &gt; B",
+    };
+    const ref = makeRef([makeEnhancement(abs)]);
+    expect(extractAbstract(ref)?.abstract).toBe("A > B");
+  });
+
   test("longest wins within canonical bucket (W4411634320 truncation regression)", () => {
     const newerShorter: AbstractContentEnhancement = {
       enhancement_type: "abstract",

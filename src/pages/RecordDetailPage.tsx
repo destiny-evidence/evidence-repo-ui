@@ -15,7 +15,6 @@ import {
 import { useReference } from "@/hooks/useReference";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
-import { AbstractSection } from "@/components/AbstractSection";
 import { InvestigationCard } from "@/components/InvestigationCard";
 import { FindingsSection } from "@/components/FindingsSection";
 import { NotFoundPage } from "./NotFoundPage";
@@ -108,6 +107,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
           venue={bibliographic?.publication_venue ?? null}
           pagination={bibliographic?.pagination ?? null}
           doi={doi}
+          abstract={abstract}
           publicationYear={bibliographic?.publication_year ?? null}
           documentType={investigation?.documentType}
           codingInstitution={codingInstitution}
@@ -115,7 +115,6 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
           hasInvestigation={hasLinkedData}
           vocabUnavailable={!!vocabUnavailable}
         />
-        <AbstractSection abstract={abstract} />
         {investigation && investigation.findings.length > 0 && (
           <>
             {vocabUnavailable && (

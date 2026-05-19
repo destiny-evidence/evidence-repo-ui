@@ -132,7 +132,7 @@ describe("RecordDetailPage", () => {
     mockUseReference.mockReturnValue({
       reference: makeReference({
         bibliographic: { title: "Ref with abstract" },
-        abstract: { text: "This is the rendered abstract body." },
+        abstract: "Abstract This is the rendered abstract body with &gt; sign.",
       }),
       loading: false,
       error: null,
@@ -142,7 +142,7 @@ describe("RecordDetailPage", () => {
       screen.getByRole("heading", { name: "Abstract" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("This is the rendered abstract body."),
+      screen.getByText("This is the rendered abstract body with > sign."),
     ).toBeInTheDocument();
   });
 
