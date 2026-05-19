@@ -2,6 +2,7 @@ import type {
   Reference,
   Enhancement,
   EnhancementContent,
+  AbstractContentEnhancement,
   BibliographicMetadataEnhancement,
   LinkedDataEnhancement,
   ExternalIdentifier,
@@ -69,6 +70,49 @@ export function extractLinkedData(
   reference: Reference,
 ): LinkedDataEnhancement | null {
   return extractLinkedDataEnhancement(reference)?.content ?? null;
+}
+
+// Selection rule: canonical-first, longest-wins, newest tie-break.
+//
+// Canonical-first matches extractLatestEnhancement above: only fall back
+// to the duplicate bucket (enhancements whose reference_id doesn't match
+// the host reference id, carried over from dedup) when the canonical
+// bucket has no abstract. Prevents a duplicate's longer abstract from
+// masking the canonical record's curated body.
+//
+// Longest-wins within the chosen bucket diverges from the shared
+// newest-wins rule: at least one production ref (W4411634320) carries a
+// newer OpenAlex re-ingest that truncated the abstract to ~298 chars
+// while an older 1896-char ingest holds the full body. Length tie-breaks
+// to newest created_at.
+//
+// Source/process is intentionally ignored: EEF uses
+// `source: "eef-eppi-review"` / `process: "other"`, OpenAlex uses
+// `source: "openalex"` / `process: "uninverted"`, and future synthetic-
+// abstract robots will add more. `enhancement_type === "abstract"` covers
+// all of them.
+export function extractAbstract(
+  reference: Reference,
+): AbstractContentEnhancement | null {
+  type AbstractEnh = Enhancement & { content: AbstractContentEnhancement };
+  const canonical: AbstractEnh[] = [];
+  const duplicate: AbstractEnh[] = [];
+  for (const e of reference.enhancements ?? []) {
+    if (e.content.enhancement_type !== "abstract") continue;
+    const narrowed = e as AbstractEnh;
+    if (e.reference_id === reference.id) canonical.push(narrowed);
+    else duplicate.push(narrowed);
+  }
+  const bucket = canonical.length ? canonical : duplicate;
+  if (bucket.length === 0) return null;
+  // Non-mutating fold (matches extractLatestEnhancement's style): walk once,
+  // keep the running winner. Length wins; ties break to newest created_at.
+  return bucket.reduce((best, e) => {
+    const lenDiff = e.content.abstract.length - best.content.abstract.length;
+    if (lenDiff > 0) return e;
+    if (lenDiff < 0) return best;
+    return (e.created_at ?? "") > (best.created_at ?? "") ? e : best;
+  }).content;
 }
 
 // Counts are read straight from raw JSON-LD so badges render on first paint
