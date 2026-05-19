@@ -1,14 +1,19 @@
 import { useEffect } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import type { Community } from "@/types/models";
-import { parseSearchParams, toQueryString, buildSearchUrl, type SortOption } from "@/services/searchParams";
+import {
+  parseSearchParams,
+  toQueryString,
+  buildSearchUrl,
+  toExportSearchQuery,
+  type SortOption,
+} from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
 import { useSearchExport, type ExportStatus } from "@/hooks/useSearchExport";
-import { SORT_BACKEND, type SearchFilters } from "@/services/apiClient";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
 import { ExportButton } from "@/components/search/ExportButton";
@@ -172,16 +177,8 @@ function SearchPageInner({ community }: { community: Community }) {
   const exportAnnouncement = exportAnnouncementFor(exportJob.status);
 
   function handleExport() {
-    const filters: Omit<SearchFilters, "page"> = {
-      startYear: params.startYear,
-      endYear: params.endYear,
-      annotation: community.defaultAnnotations,
-    };
-    if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
-    // Backend requires q with min_length=1; substitute "*" for year-only
-    // searches so the year filter is the user-supplied intent.
-    const exportQuery = queryEmpty ? "*" : params.q;
-    exportJob.start(exportQuery, filters, formatExportFilename(community.slug));
+    const { query, filters } = toExportSearchQuery(params, community.defaultAnnotations);
+    exportJob.start(query, filters, formatExportFilename(community.slug));
   }
 
   // Page size comes from the API response (page.count) so the UI stays in
