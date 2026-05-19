@@ -45,4 +45,30 @@ describe("AbstractSection", () => {
       screen.getByText("Adjusted OR=2.07 for >8 hours of screen time."),
     ).toBeInTheDocument();
   });
+
+  test("strips leading 'Abstract' section label from body (EEF EPPI ingestor artefact, ~1.5% of corpus)", () => {
+    render(
+      <AbstractSection
+        abstract={makeAbstract("Abstract This paper aims to investigate.")}
+      />,
+    );
+    expect(
+      screen.getByText("This paper aims to investigate."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/^Abstract This/)).toBeNull();
+  });
+
+  test("does not strip 'Abstract' when used as a real English word at the start of the body", () => {
+    // Case-sensitive guard: only the literal capitalised label "Abstract\s+"
+    // is stripped, so abstracts that happen to start with the word as a
+    // noun/adjective ("abstract algebra", "ABSTRACT") pass through unaltered.
+    render(
+      <AbstractSection
+        abstract={makeAbstract("abstract reasoning improves problem-solving.")}
+      />,
+    );
+    expect(
+      screen.getByText("abstract reasoning improves problem-solving."),
+    ).toBeInTheDocument();
+  });
 });

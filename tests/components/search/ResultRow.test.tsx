@@ -284,6 +284,17 @@ describe("ResultRow", () => {
     expect(rowLink).toHaveAttribute("href", `/esea/references/${REF_ID}`);
   });
 
+  test("strips leading 'Abstract' section label from the row snippet (EEF ingestor artefact)", () => {
+    const ref = makeRef({
+      abstract: { text: "Abstract This paper aims to investigate." },
+    });
+    render(<ResultRow communitySlug="esea" reference={ref} />);
+    expect(
+      screen.getByText("This paper aims to investigate."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/^Abstract This/)).toBeNull();
+  });
+
   test("selects the longer abstract when two abstract enhancements differ in length (longest-wins via extractAbstract)", () => {
     const ref: Reference = {
       id: "ref-1",

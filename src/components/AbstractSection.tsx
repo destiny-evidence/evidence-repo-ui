@@ -1,5 +1,8 @@
 import type { AbstractContentEnhancement } from "@/types/models";
-import { decodeHtmlEntities } from "@/services/textUtils";
+import {
+  decodeHtmlEntities,
+  stripAbstractLabelPrefix,
+} from "@/services/textUtils";
 import "./AbstractSection.css";
 
 interface AbstractSectionProps {
@@ -16,7 +19,9 @@ export function AbstractSection({ abstract }: AbstractSectionProps) {
   // Entity decoding only. Mojibake (double-encoded UTF-8 leaking from the
   // EEF EPPI parser) renders as-is — the fix belongs upstream in the
   // parser, not as silent client-side repair.
-  const body = decodeHtmlEntities(abstract.abstract).trim();
+  const body = stripAbstractLabelPrefix(
+    decodeHtmlEntities(abstract.abstract),
+  ).trim();
   if (!body || body === OPENALEX_UNAVAILABLE_SENTINEL) return null;
   return (
     <section class="abstract-section">

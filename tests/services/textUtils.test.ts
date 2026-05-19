@@ -1,5 +1,8 @@
 import { describe, test, expect } from "vitest";
-import { decodeHtmlEntities } from "@/services/textUtils";
+import {
+  decodeHtmlEntities,
+  stripAbstractLabelPrefix,
+} from "@/services/textUtils";
 
 describe("decodeHtmlEntities", () => {
   test.each([
@@ -34,5 +37,19 @@ describe("decodeHtmlEntities", () => {
     // and strip the tags silently; textarea's escapable-raw-text content
     // model leaves tags as literal characters.
     expect(decodeHtmlEntities("<p>a &gt; b</p>")).toBe("<p>a > b</p>");
+  });
+});
+
+describe("stripAbstractLabelPrefix", () => {
+  test.each([
+    ["Abstract This paper aims to investigate.", "This paper aims to investigate."],
+    ["Abstract   The leading whitespace is normalised.", "The leading whitespace is normalised."],
+    // Pass-through when the prefix is absent or differently cased.
+    ["The paper presents results.", "The paper presents results."],
+    ["abstract reasoning improves problem-solving.", "abstract reasoning improves problem-solving."],
+    ["ABSTRACT in caps is not stripped.", "ABSTRACT in caps is not stripped."],
+    ["", ""],
+  ])("normalises %j", (input, expected) => {
+    expect(stripAbstractLabelPrefix(input)).toBe(expected);
   });
 });
