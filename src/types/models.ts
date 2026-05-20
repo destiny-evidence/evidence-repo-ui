@@ -123,3 +123,14 @@ export interface Reference {
   identifiers: ExternalIdentifier[] | null;
   enhancements: Enhancement[] | null;
 }
+
+export type SearchExportStatus = "pending" | "running" | "completed" | "failed";
+
+export interface SearchExportRead {
+  id: string;
+  status: SearchExportStatus;
+  result_url?: string | null;
+  n_references?: number | null;
+  truncated: boolean;
+  error?: string | null;
+}

@@ -8,6 +8,7 @@ import type {
 } from "@/types/investigation";
 import type { SharedContext } from "@/services/findingGroups";
 import type {
+  AbstractContentEnhancement,
   BibliographicMetadataEnhancement,
   Enhancement,
   LinkedDataEnhancement,
@@ -161,21 +162,35 @@ export function bibliographicEnh(
   };
 }
 
-/** Build an abstract Enhancement. */
-export function abstractEnh(refId: string, abstract: string): Enhancement {
+interface AbstractOpts {
+  id?: string;
+  text?: string;
+  process?: string;
+  /** Mirrors Enhancement.created_at (string | null). Defaults to null when omitted. */
+  createdAt?: string | null;
+  /** Override the source field. Defaults to "openalex". */
+  source?: string;
+}
+
+/** Build an abstract Enhancement with sensible defaults. */
+export function abstractEnh(
+  refId: string,
+  opts: AbstractOpts = {},
+): Enhancement {
+  const content: AbstractContentEnhancement = {
+    enhancement_type: "abstract",
+    process: opts.process ?? "uninverted",
+    abstract: opts.text ?? "Default abstract body for fixture.",
+  };
   return {
-    id: `${refId}-abs`,
+    id: opts.id ?? `${refId}-abs`,
     reference_id: refId,
-    source: "openalex",
+    source: opts.source ?? "openalex",
     visibility: "public",
     robot_version: null,
     derived_from: null,
-    created_at: null,
-    content: {
-      enhancement_type: "abstract",
-      process: "openalex",
-      abstract,
-    },
+    created_at: opts.createdAt ?? null,
+    content,
   };
 }
 
@@ -238,7 +253,8 @@ interface ReferenceOpts {
   id?: string;
   doi?: string;
   bibliographic?: BibOpts;
-  abstract?: string;
+  /** Abstract text + options. When provided, an abstractEnh is appended. */
+  abstract?: string | AbstractOpts;
   /** Investigation dict to wrap in a linked_data enhancement, if any. */
   investigation?: Record<string, unknown>;
   /** Override enhancements entirely (skips bibliographic/abstract/investigation). */
@@ -248,11 +264,14 @@ interface ReferenceOpts {
 /** Build a Reference with optional bibliographic, abstract, and linked-data enhancements. */
 export function makeReference(opts: ReferenceOpts = {}): Reference {
   const id = opts.id ?? "abc-123";
+  const abstractOpts = typeof opts.abstract === "string"
+    ? { text: opts.abstract }
+    : opts.abstract;
   const enhancements =
     opts.enhancements ??
     [
       bibliographicEnh(id, opts.bibliographic),
-      opts.abstract ? abstractEnh(id, opts.abstract) : null,
+      abstractOpts !== undefined ? abstractEnh(id, abstractOpts) : null,
       opts.investigation
         ? linkedDataEnh(id, { investigation: opts.investigation })
         : null,

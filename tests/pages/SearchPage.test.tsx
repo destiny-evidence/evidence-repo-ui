@@ -14,11 +14,35 @@ function renderSearchPage() {
 
 vi.mock("@/services/apiClient", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/apiClient")>();
-  return { ...actual, searchReferences: vi.fn() };
+  return {
+    ...actual,
+    searchReferences: vi.fn(),
+    requestSearchExport: vi.fn(),
+    getSearchExport: vi.fn(),
+  };
 });
 
-import { searchReferences } from "@/services/apiClient";
+vi.mock("@/services/export/export", () => ({
+  exportReferencesToExcel: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/config", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/config")>();
+  return {
+    ...actual,
+    EXPORT_VOCABULARY_URL: "https://test.example/vocab",
+    EXPORT_CONTEXT_URL: "https://test.example/context",
+  };
+});
+
+import {
+  searchReferences,
+  requestSearchExport,
+  getSearchExport,
+} from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
+const mockRequestExport = vi.mocked(requestSearchExport);
+const mockGetExport = vi.mocked(getSearchExport);
 
 function makeResult(count: number, ids: string[] = [], isLowerBound = false): SearchResult {
   return {
@@ -65,6 +89,8 @@ function mockBoth(opts: {
 
 beforeEach(() => {
   mockSearch.mockReset();
+  mockRequestExport.mockReset();
+  mockGetExport.mockReset();
   history.replaceState(null, "", "/esea");
 });
 
@@ -320,5 +346,171 @@ describe("SearchPage", () => {
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(pushSpy).not.toHaveBeenCalled();
     pushSpy.mockRestore();
+  });
+
+  describe("export button", () => {
+    test("enabled in browse mode; click POSTs with q=* and the community annotation", async () => {
+      mockBoth({ results: makeResult(5721, ["r1"]) });
+      mockRequestExport.mockResolvedValue({
+        id: "job-browse",
+        status: "pending",
+        truncated: false,
+      });
+      mockGetExport.mockResolvedValue({
+        id: "job-browse",
+        status: "pending",
+        truncated: false,
+      });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).not.toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(btn);
+      await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
+      expect(mockRequestExport).toHaveBeenCalledWith("*", {
+        startYear: undefined,
+        endYear: undefined,
+        annotation: ["domain-inclusion/jacobs-education"],
+      });
+    });
+
+    test("enabled in year-only URL; click POSTs with q=* and the year filter", async () => {
+      history.replaceState(null, "", "/esea?start_year=2020");
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      mockRequestExport.mockResolvedValue({
+        id: "job-yr",
+        status: "pending",
+        truncated: false,
+      });
+      mockGetExport.mockResolvedValue({
+        id: "job-yr",
+        status: "pending",
+        truncated: false,
+      });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).not.toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(btn);
+      await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
+      expect(mockRequestExport).toHaveBeenCalledWith("*", {
+        startYear: 2020,
+        endYear: undefined,
+        annotation: ["domain-inclusion/jacobs-education"],
+      });
+    });
+
+    test("disabled when result set is empty with explanatory tooltip", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: makeResult(0, []) });
+      renderSearchPage();
+      await waitFor(() =>
+        expect(screen.getByText(/no matches/i)).toBeInTheDocument(),
+      );
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).toHaveAttribute("aria-disabled", "true");
+      expect(btn.parentElement).toHaveAttribute(
+        "data-tooltip",
+        expect.stringMatching(/no results to export/i),
+      );
+    });
+
+    test("disabled while a follow-up search is in flight (stale results, gate before fresh data)", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      // Route by query so the test isn't sensitive to mock call order:
+      // corpus query → 5,721; phonics → 47 results immediately; literacy
+      // hangs until we explicitly resolve it, so loading=true while the
+      // phonics rows still render.
+      let resolveLiteracy: ((value: SearchResult) => void) | undefined;
+      mockSearch.mockImplementation((q) => {
+        if (q === undefined)
+          return Promise.resolve(makeResult(5721, ["corpus-ref"]));
+        if (q === "phonics")
+          return Promise.resolve(makeResult(47, ["phonics-ref"]));
+        if (q === "literacy") {
+          return new Promise<SearchResult>((r) => {
+            resolveLiteracy = r;
+          });
+        }
+        return Promise.reject(new Error(`unexpected query: ${q}`));
+      });
+      renderSearchPage();
+      await waitFor(() =>
+        expect(screen.getByText("Title phonics-ref")).toBeInTheDocument(),
+      );
+      // First settled state: 47 results → button enabled.
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).not.toHaveAttribute("aria-disabled", "true");
+
+      // Submit a new query — keeps phonics-ref visible (dim) while the
+      // literacy fetch hangs.
+      fireEvent.input(screen.getByRole("searchbox"), {
+        target: { value: "literacy" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /search/i }));
+
+      // Button is disabled while loading even though stale `results.results`
+      // would have said `hasResults && !overCap`.
+      await waitFor(() => expect(btn).toHaveAttribute("aria-disabled", "true"));
+      // Tooltip is suppressed during loading to avoid asserting a stale count.
+      expect(btn.parentElement).not.toHaveAttribute("data-tooltip");
+
+      // Resolve the literacy fetch; button re-enables.
+      resolveLiteracy?.(makeResult(12, ["literacy-ref"]));
+      await waitFor(() =>
+        expect(btn).not.toHaveAttribute("aria-disabled", "true"),
+      );
+    });
+
+    test("disabled past the 10k cap with tooltip", async () => {
+      history.replaceState(null, "", "/esea?q=education");
+      mockBoth({ results: makeResult(10000, ["r1"], true) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      expect(btn).toHaveAttribute("aria-disabled", "true");
+      expect(btn.parentElement).toHaveAttribute(
+        "data-tooltip",
+        expect.stringMatching(/limited to 10,000 results/i),
+      );
+    });
+
+    test("click POSTs with current filters and shows preparing status", async () => {
+      history.replaceState(null, "", "/esea?q=phonics&start_year=2015");
+      mockBoth({ results: makeResult(47, ["r1"]) });
+      mockRequestExport.mockResolvedValue({
+        id: "job-1",
+        status: "pending",
+        truncated: false,
+      });
+      // Keep polling pending forever so the test settles on "Preparing…".
+      mockGetExport.mockResolvedValue({
+        id: "job-1",
+        status: "pending",
+        truncated: false,
+      });
+
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const btn = screen.getByRole("button", { name: /export to excel/i });
+      fireEvent.click(btn);
+
+      await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
+      expect(mockRequestExport).toHaveBeenCalledWith("phonics", {
+        startYear: 2015,
+        endYear: undefined,
+        annotation: ["domain-inclusion/jacobs-education"],
+      });
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: /preparing/i }),
+        ).toBeInTheDocument(),
+      );
+    });
   });
 });

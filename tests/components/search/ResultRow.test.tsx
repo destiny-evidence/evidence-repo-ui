@@ -1,7 +1,11 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { PILL_CAP, ResultRow } from "@/components/search/ResultRow";
-import { makeReference } from "../../fixtures";
+import {
+  abstractEnh,
+  bibliographicEnh,
+  makeReference,
+} from "../../fixtures";
 
 const vocabState = {
   labels: null as Map<string, string> | null,
@@ -281,5 +285,39 @@ describe("ResultRow", () => {
     render(<ResultRow communitySlug="esea" reference={ref} />);
     const rowLink = screen.getByRole("link", { name: new RegExp(REF_ID, "i") });
     expect(rowLink).toHaveAttribute("href", `/esea/references/${REF_ID}`);
+  });
+
+  test("strips leading 'Abstract' section label from the row snippet (EEF ingestor artefact)", () => {
+    const ref = makeRef({
+      abstract: "Abstract This paper aims to investigate &gt;8 hours.",
+    });
+    render(<ResultRow communitySlug="esea" reference={ref} />);
+    expect(
+      screen.getByText("This paper aims to investigate >8 hours."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/^Abstract This/)).toBeNull();
+  });
+
+  test("selects the longer abstract when two abstract enhancements differ in length (longest-wins via extractAbstract)", () => {
+    const ref = makeReference({
+      id: REF_ID,
+      doi: "10.1000/abc",
+      enhancements: [
+        bibliographicEnh(REF_ID, { title: "Two-abstract ref", year: 2020 }),
+        abstractEnh(REF_ID, {
+          id: "abs-newer-shorter",
+          text: "TRUNCATED TAIL",
+          createdAt: "2026-05-01T00:00:00Z",
+        }),
+        abstractEnh(REF_ID, {
+          id: "abs-older-longer",
+          text: "FULL INTACT ABSTRACT BODY".padEnd(800, "."),
+          createdAt: "2024-01-02T00:00:00Z",
+        }),
+      ],
+    });
+    render(<ResultRow communitySlug="esea" reference={ref} />);
+    expect(screen.getByText(/FULL INTACT ABSTRACT BODY/)).toBeInTheDocument();
+    expect(screen.queryByText("TRUNCATED TAIL")).toBeNull();
   });
 });

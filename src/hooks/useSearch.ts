@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
-import { searchReferences, SORT_BACKEND, type SearchFilters } from "@/services/apiClient";
+import { searchReferences, type SearchFilters } from "@/services/apiClient";
+import { SORT_BACKEND } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";

@@ -1,0 +1,15 @@
+.abstract-section {
+  margin: var(--spacing-lg) 0 0;
+}
+
+.abstract-section__heading {
+  margin-top: 0;
+}
+
+.abstract-section__body {
+  font-size: var(--font-size-body);
+  line-height: 1.55;
+  color: var(--color-text-primary);
+  white-space: pre-line;
+  unicode-bidi: plaintext;
+}
