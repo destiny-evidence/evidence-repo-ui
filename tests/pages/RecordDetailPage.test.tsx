@@ -128,6 +128,37 @@ describe("RecordDetailPage", () => {
     expect(screen.getByText("Journal Article")).toBeDefined();
   });
 
+  test("renders AbstractSection when an abstract enhancement is present", () => {
+    mockUseReference.mockReturnValue({
+      reference: makeReference({
+        bibliographic: { title: "Ref with abstract" },
+        abstract: "Abstract This is the rendered abstract body with &gt; sign.",
+      }),
+      loading: false,
+      error: null,
+    });
+    renderRecordDetail("abc");
+    expect(
+      screen.getByRole("heading", { name: "Abstract" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("This is the rendered abstract body with > sign."),
+    ).toBeInTheDocument();
+  });
+
+  test("does not render an Abstract heading when no abstract enhancement is present", () => {
+    mockUseReference.mockReturnValue({
+      reference: makeReference({
+        bibliographic: { title: "Ref without abstract" },
+      }),
+      loading: false,
+      error: null,
+    });
+    renderRecordDetail("abc");
+    expect(screen.getByText("Ref without abstract")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Abstract" })).toBeNull();
+  });
+
   test("renders findings with raw URIs and a banner when vocab fetch fails", () => {
     mockUseReference.mockReturnValue({
       reference: makeReference({

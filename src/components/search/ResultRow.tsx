@@ -6,6 +6,7 @@ import type {
   ResolvedConcept,
 } from "@/types/investigation";
 import {
+  extractAbstract,
   extractBibliographic,
   extractDoi,
   extractFindingsAndEstimatesCount,
@@ -35,13 +36,6 @@ function formatAuthors(authors: { display_name: string }[]): string {
   }
   const head = authors.slice(0, MAX_AUTHORS_SHOWN).map((a) => a.display_name).join(", ");
   return `${head}, +${authors.length - MAX_AUTHORS_SHOWN} more`;
-}
-
-function findAbstract(reference: Reference): string | null {
-  const abs = reference.enhancements?.find(
-    (e) => e.content.enhancement_type === "abstract",
-  );
-  return abs && abs.content.enhancement_type === "abstract" ? abs.content.abstract : null;
 }
 
 // Document type first, then per-finding context/intervention/outcome concepts
@@ -75,7 +69,7 @@ function aggregatePillConcepts(
 export function ResultRow({ communitySlug, reference }: ResultRowProps) {
   const bib = extractBibliographic(reference);
   const doi = extractDoi(reference.identifiers);
-  const abstract = findAbstract(reference);
+  const abstract = extractAbstract(reference)?.abstract ?? null;
   const counts = extractFindingsAndEstimatesCount(reference);
 
   const linkedData = extractLinkedData(reference);

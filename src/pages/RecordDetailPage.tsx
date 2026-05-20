@@ -1,6 +1,7 @@
 import { useMemo } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import {
+  extractAbstract,
   extractBibliographic,
   extractLinkedData,
   extractLinkedDataEnhancement,
@@ -95,6 +96,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
   const codingInstitution = lde
     ? extractLinkedDataCodingInstitution(reference, lde)
     : null;
+  const abstract = extractAbstract(reference);
 
   return (
     <div class="record-detail-page">
@@ -105,6 +107,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
           venue={bibliographic?.publication_venue ?? null}
           pagination={bibliographic?.pagination ?? null}
           doi={doi}
+          abstract={abstract}
           publicationYear={bibliographic?.publication_year ?? null}
           documentType={investigation?.documentType}
           codingInstitution={codingInstitution}

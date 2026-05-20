@@ -1,5 +1,6 @@
 import { describe, test, expect } from "vitest";
 import {
+  extractAbstract,
   extractBibliographic,
   extractLatestEnhancement,
   extractLinkedData,
@@ -11,6 +12,7 @@ import {
 import type {
   Reference,
   Enhancement,
+  AbstractContentEnhancement,
   BibliographicMetadataEnhancement,
   LinkedDataEnhancement,
 } from "@/types/models";
@@ -256,5 +258,122 @@ describe("formatPagination", () => {
     expect(formatPagination({
       volume: null, issue: null, first_page: null, last_page: "130",
     })).toBe("130");
+  });
+});
+
+describe("extractAbstract", () => {
+  test("returns null when enhancements is null", () => {
+    expect(extractAbstract(makeRef(null))).toBeNull();
+  });
+
+  test("returns null when no abstract enhancement exists", () => {
+    const ref = makeRef([bibEnh()]);
+    expect(extractAbstract(ref)).toBeNull();
+  });
+
+  test("returns the abstract content when a single one is present", () => {
+    const abs: AbstractContentEnhancement = {
+      enhancement_type: "abstract",
+      process: "uninverted",
+      abstract: "Body text.",
+    };
+    const ref = makeRef([makeEnhancement(abs)]);
+    expect(extractAbstract(ref)).toBe(abs);
+  });
+
+  test("normalizes abstract text before returning it", () => {
+    const abs: AbstractContentEnhancement = {
+      enhancement_type: "abstract",
+      process: "other",
+      abstract: "Abstract A &gt; B",
+    };
+    const ref = makeRef([makeEnhancement(abs)]);
+    expect(extractAbstract(ref)?.abstract).toBe("A > B");
+  });
+
+  test("longest wins within canonical bucket (W4411634320 truncation regression)", () => {
+    const newerShorter: AbstractContentEnhancement = {
+      enhancement_type: "abstract",
+      process: "uninverted",
+      abstract: "Short closing fragment, 100 chars at most.".padEnd(100, "."),
+    };
+    const olderLonger: AbstractContentEnhancement = {
+      enhancement_type: "abstract",
+      process: "uninverted",
+      abstract: "Full intact abstract, much longer body text.".padEnd(1500, "."),
+    };
+    const ref = makeRef([
+      makeEnhancement(newerShorter, "2026-05-01T00:00:00Z"),
+      makeEnhancement(olderLonger, "2024-01-01T00:00:00Z"),
+    ]);
+    expect(extractAbstract(ref)).toBe(olderLonger);
+  });
+
+  test("ties broken by newest created_at when lengths are equal", () => {
+    const body = "Same length abstract.".padEnd(500, ".");
+    const older: AbstractContentEnhancement = {
+      enhancement_type: "abstract",
+      process: "uninverted",
+      abstract: body,
+    };
+    const newer: AbstractContentEnhancement = {
+      enhancement_type: "abstract",
+      process: "other",
+      abstract: body,
+    };
+    const ref = makeRef([
+      makeEnhancement(older, "2024-01-01T00:00:00Z"),
+      makeEnhancement(newer, "2026-05-01T00:00:00Z"),
+    ]);
+    expect(extractAbstract(ref)).toBe(newer);
+  });
+
+  test("canonical bucket beats duplicate bucket even when duplicate is longer or newer", () => {
+    const canonicalShorterOlder: AbstractContentEnhancement = {
+      enhancement_type: "abstract",
+      process: "uninverted",
+      abstract: "Canonical short body.",
+    };
+    const duplicateLongerNewer: AbstractContentEnhancement = {
+      enhancement_type: "abstract",
+      process: "uninverted",
+      abstract: "Duplicate much longer body.".padEnd(3000, "."),
+    };
+    const ref: Reference = {
+      id: "ref-1",
+      visibility: "public",
+      identifiers: null,
+      enhancements: [
+        {
+          ...makeEnhancement(canonicalShorterOlder, "2024-01-01T00:00:00Z"),
+          reference_id: "ref-1",
+        },
+        {
+          ...makeEnhancement(duplicateLongerNewer, "2026-05-01T00:00:00Z"),
+          reference_id: "dup-2",
+        },
+      ],
+    };
+    expect(extractAbstract(ref)).toBe(canonicalShorterOlder);
+  });
+
+  test("falls back to duplicate bucket when canonical bucket has no abstract", () => {
+    const duplicateOnly: AbstractContentEnhancement = {
+      enhancement_type: "abstract",
+      process: "uninverted",
+      abstract: "Duplicate abstract.",
+    };
+    const ref: Reference = {
+      id: "ref-1",
+      visibility: "public",
+      identifiers: null,
+      enhancements: [
+        {
+          ...makeEnhancement(duplicateOnly),
+          reference_id: "dup-2",
+        },
+      ],
+    };
+    expect(extractAbstract(ref)).toBe(duplicateOnly);
   });
 });

@@ -16,6 +16,7 @@ const DEFAULT_PROPS = {
     last_page: "115",
   },
   doi: "10.1234/test.2024",
+  abstract: null,
   publicationYear: 2024,
   documentType: {
     value: {
@@ -59,6 +60,34 @@ describe("InvestigationCard", () => {
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
     expect(link).toHaveTextContent(/doi:/);
+  });
+
+  test("renders abstract inside the card after the DOI", () => {
+    const { container } = render(
+      <InvestigationCard
+        {...DEFAULT_PROPS}
+        abstract={{
+          enhancement_type: "abstract",
+          process: "uninverted",
+          abstract: "This abstract belongs in the card.",
+        }}
+      />,
+    );
+
+    const card = container.querySelector(".investigation-card");
+    const doi = card?.querySelector(".investigation-card__doi");
+    const abstract = card?.querySelector(".abstract-section");
+    const divider = card?.querySelector(".investigation-card__divider");
+    expect(card).toContainElement(abstract as HTMLElement);
+    expect(
+      doi!.compareDocumentPosition(abstract as Node) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      abstract!.compareDocumentPosition(divider as Node) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getByText("This abstract belongs in the card.")).toBeDefined();
   });
 
   test("renders document type tag", () => {

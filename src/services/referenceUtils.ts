@@ -2,11 +2,17 @@ import type {
   Reference,
   Enhancement,
   EnhancementContent,
+  AbstractContentEnhancement,
   BibliographicMetadataEnhancement,
   LinkedDataEnhancement,
   ExternalIdentifier,
   Pagination,
 } from "@/types/models";
+import {
+  decodeHtmlEntities,
+  stripAbstractLabelPrefix,
+} from "@/services/textUtils";
+
 export function isDict(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
@@ -69,6 +75,46 @@ export function extractLinkedData(
   reference: Reference,
 ): LinkedDataEnhancement | null {
   return extractLinkedDataEnhancement(reference)?.content ?? null;
+}
+
+// Entity decoding + label-prefix strip only. Mojibake from upstream parsers
+// (e.g. UTF-8 double-encoded as Latin-1 leaking through the EEF EPPI parser,
+// rendering "3–6" as "3â€" 6") renders as-is — the fix belongs upstream in
+// the parser, not as silent client-side repair.
+function normalizeAbstractContent(
+  content: AbstractContentEnhancement,
+): AbstractContentEnhancement {
+  const abstract = stripAbstractLabelPrefix(
+    decodeHtmlEntities(content.abstract),
+  );
+  return abstract === content.abstract ? content : { ...content, abstract };
+}
+
+// Canonical bucket wins first. Within that bucket, longest body wins; equal
+// lengths use latest created_at. This avoids the W4411634320 truncated re-ingest.
+// Source/process are deliberately ignored so EEF, OpenAlex, and future abstract
+// robots all participate by enhancement_type.
+export function extractAbstract(
+  reference: Reference,
+): AbstractContentEnhancement | null {
+  type AbstractEnh = Enhancement & { content: AbstractContentEnhancement };
+  const canonical: AbstractEnh[] = [];
+  const duplicate: AbstractEnh[] = [];
+  for (const e of reference.enhancements ?? []) {
+    if (e.content.enhancement_type !== "abstract") continue;
+    const narrowed = e as AbstractEnh;
+    if (e.reference_id === reference.id) canonical.push(narrowed);
+    else duplicate.push(narrowed);
+  }
+  const bucket = canonical.length ? canonical : duplicate;
+  if (bucket.length === 0) return null;
+  const winner = bucket.reduce((best, e) => {
+    const lenDiff = e.content.abstract.length - best.content.abstract.length;
+    if (lenDiff > 0) return e;
+    if (lenDiff < 0) return best;
+    return (e.created_at ?? "") > (best.created_at ?? "") ? e : best;
+  });
+  return normalizeAbstractContent(winner.content);
 }
 
 // Counts are read straight from raw JSON-LD so badges render on first paint

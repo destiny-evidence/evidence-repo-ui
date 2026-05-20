@@ -1,7 +1,13 @@
 import "./InvestigationCard.css";
+import { AbstractSection } from "./AbstractSection";
 import { TagGroup } from "./TagGroup";
 import { WarningIcon, ExternalLinkIcon } from "./icons";
-import type { Authorship, Pagination, PublicationVenue } from "@/types/models";
+import type {
+  AbstractContentEnhancement,
+  Authorship,
+  Pagination,
+  PublicationVenue,
+} from "@/types/models";
 import type { CodedAnnotation, ResolvedConcept } from "@/types/investigation";
 
 interface InvestigationCardProps {
@@ -10,6 +16,7 @@ interface InvestigationCardProps {
   venue: PublicationVenue | null;
   pagination: Pagination | null;
   doi: string | null;
+  abstract?: AbstractContentEnhancement | null;
   publicationYear: number | null;
   documentType?: CodedAnnotation<ResolvedConcept>;
   codingInstitution?: string | null;
@@ -56,6 +63,7 @@ export function InvestigationCard({
   venue,
   pagination,
   doi,
+  abstract = null,
   publicationYear,
   documentType,
   codingInstitution,
@@ -106,6 +114,7 @@ export function InvestigationCard({
             </span>
           </a>
         )}
+        <AbstractSection abstract={abstract} />
         {hasInvestigationContent && (
           <>
             <hr class="investigation-card__divider lg-divider" />
