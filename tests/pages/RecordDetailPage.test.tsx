@@ -40,6 +40,7 @@ beforeEach(() => {
     labels: null,
     broader: null,
     definitions: null,
+    schemes: null,
     loading: false,
     error: null,
   });
@@ -110,6 +111,7 @@ describe("RecordDetailPage", () => {
       labels: mockLabels,
       broader: new Map(),
       definitions: new Map(),
+      schemes: new Map(),
       loading: false,
       error: null,
     });
@@ -182,6 +184,7 @@ describe("RecordDetailPage", () => {
       labels: null,
       broader: null,
       definitions: null,
+      schemes: null,
       loading: false,
       error: new Error("Network failure"),
     });

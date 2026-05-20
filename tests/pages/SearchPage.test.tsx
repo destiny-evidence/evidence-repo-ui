@@ -31,6 +31,7 @@ vi.mock("@/hooks/useVocabulary", () => ({
     labels: null,
     broader: null,
     definitions: null,
+    schemes: null,
     loading: false,
     error: null,
   }),

@@ -91,6 +91,44 @@ describe("buildVocabularyData", () => {
     expect(broader.get("u:child")).toBe("u:parent");
   });
 
+  it("maps each concept to its scheme title (dct:title preferred, rdfs:label as fallback)", () => {
+    const { schemes } = buildVocabularyData({
+      "@graph": [
+        {
+          "@id": "u:scheme-a",
+          "@type": "skos:ConceptScheme",
+          "dct:title": "Scheme A",
+        },
+        {
+          "@id": "u:scheme-b",
+          "@type": "skos:ConceptScheme",
+          "rdfs:label": "Scheme B",
+        },
+        {
+          "@id": "u:c1",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Digital Technology",
+          "skos:inScheme": { "@id": "u:scheme-a" },
+        },
+        {
+          "@id": "u:c2",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Digital Technology",
+          "skos:inScheme": "u:scheme-b",
+        },
+        {
+          "@id": "u:c3",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Unrelated",
+        },
+      ],
+    });
+    expect(schemes.get("u:c1")).toBe("Scheme A");
+    expect(schemes.get("u:c2")).toBe("Scheme B");
+    // Concepts without skos:inScheme are absent.
+    expect(schemes.has("u:c3")).toBe(false);
+  });
+
   it("extracts skos:definition for concepts that have it", () => {
     const { definitions } = buildVocabularyData({
       "@graph": [

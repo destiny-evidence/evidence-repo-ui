@@ -6,6 +6,7 @@ export function useVocabulary(vocabularyUrl: string | undefined): {
   labels: Map<string, string> | null;
   broader: Map<string, string> | null;
   definitions: Map<string, string> | null;
+  schemes: Map<string, string> | null;
   loading: boolean;
   error: Error | null;
 } {
@@ -38,6 +39,7 @@ export function useVocabulary(vocabularyUrl: string | undefined): {
     labels: data?.labels ?? null,
     broader: data?.broader ?? null,
     definitions: data?.definitions ?? null,
+    schemes: data?.schemes ?? null,
     loading,
     error,
   };

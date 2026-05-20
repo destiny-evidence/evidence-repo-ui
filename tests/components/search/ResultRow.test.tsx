@@ -11,6 +11,7 @@ const vocabState = {
   labels: null as Map<string, string> | null,
   broader: null as Map<string, string> | null,
   definitions: null as Map<string, string> | null,
+  schemes: null as Map<string, string> | null,
 };
 const contextState = {
   context: null as { prefixes: Map<string, string> } | null,
@@ -21,6 +22,7 @@ vi.mock("@/hooks/useVocabulary", () => ({
     labels: vocabState.labels,
     broader: vocabState.broader,
     definitions: vocabState.definitions,
+    schemes: vocabState.schemes,
     loading: false,
     error: null,
   }),

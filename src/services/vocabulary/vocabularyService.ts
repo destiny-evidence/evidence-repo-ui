@@ -6,6 +6,9 @@ interface JsonLdGraphEntry {
   "skos:prefLabel"?: string;
   "skos:definition"?: string;
   "skos:broader"?: string | { "@id": string } | Array<string | { "@id": string }>;
+  "skos:inScheme"?: string | { "@id": string };
+  "dct:title"?: string;
+  "rdfs:label"?: string;
   [key: string]: unknown;
 }
 
@@ -17,9 +20,14 @@ export interface VocabularyData {
   labels: Map<string, string>;
   broader: Map<string, string>;
   definitions: Map<string, string>;
+  // Concept URI → human-readable title of its skos:ConceptScheme. Empty for
+  // concepts that have no skos:inScheme or whose scheme has no title/label.
+  // Consumers use this to disambiguate prefLabels that recur across schemes.
+  schemes: Map<string, string>;
 }
 
 const SKOS_CONCEPT = "skos:Concept";
+const SKOS_CONCEPT_SCHEME = "skos:ConceptScheme";
 
 /** Normalize a vocabulary URL to its .jsonld form. */
 function toJsonLdUrl(vocabularyUrl: string): string {
@@ -39,9 +47,19 @@ function extractBroaderUri(
   return undefined;
 }
 
+function extractSchemeId(
+  value: JsonLdGraphEntry["skos:inScheme"],
+): string | undefined {
+  if (!value) return undefined;
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && "@id" in value) return value["@id"];
+  return undefined;
+}
+
 /**
  * Build concept URI → prefLabel and child URI → parent URI maps from the
- * vocabulary @graph.
+ * vocabulary @graph. Also collects each concept's owning skos:ConceptScheme
+ * title so callers can disambiguate prefLabels that recur across schemes.
  *
  * Filters for entries that are skos:Concept (by checking @type). The @id values
  * in the published vocabulary are already full URIs, so no expansion is needed.
@@ -50,11 +68,22 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
   const labels = new Map<string, string>();
   const broader = new Map<string, string>();
   const definitions = new Map<string, string>();
+  // Concept @id → its inScheme @id, captured in the same pass.
+  const conceptToSchemeId = new Map<string, string>();
+  // Scheme @id → human-readable title. The ESEA vocabulary uses dct:title;
+  // older fixtures use rdfs:label — accept either so neither side is brittle.
+  const schemeIdToTitle = new Map<string, string>();
+
   for (const entry of doc["@graph"] ?? []) {
     if (!entry["@id"]) continue;
     const types = Array.isArray(entry["@type"])
       ? entry["@type"]
       : [entry["@type"]];
+    if (types.includes(SKOS_CONCEPT_SCHEME)) {
+      const title = entry["dct:title"] ?? entry["rdfs:label"];
+      if (typeof title === "string") schemeIdToTitle.set(entry["@id"], title);
+      continue;
+    }
     if (!types.includes(SKOS_CONCEPT)) continue;
     if (entry["skos:prefLabel"]) {
       labels.set(entry["@id"], entry["skos:prefLabel"]);
@@ -66,8 +95,17 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
     if (broaderUri) {
       broader.set(entry["@id"], broaderUri);
     }
+    const schemeId = extractSchemeId(entry["skos:inScheme"]);
+    if (schemeId) conceptToSchemeId.set(entry["@id"], schemeId);
   }
-  return { labels, broader, definitions };
+
+  const schemes = new Map<string, string>();
+  for (const [conceptUri, schemeId] of conceptToSchemeId) {
+    const title = schemeIdToTitle.get(schemeId);
+    if (title) schemes.set(conceptUri, title);
+  }
+
+  return { labels, broader, definitions, schemes };
 }
 
 /**

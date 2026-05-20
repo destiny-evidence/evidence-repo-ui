@@ -17,7 +17,7 @@ import { useSearch } from "@/hooks/useSearch";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
 import { useSearchExport, type ExportStatus } from "@/hooks/useSearchExport";
 import { useVocabulary } from "@/hooks/useVocabulary";
-import { EXPORT_VOCABULARY_URL } from "@/config";
+import { ESEA_VOCABULARY_URL } from "@/config";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
 import { ExportButton } from "@/components/search/ExportButton";
@@ -119,18 +119,39 @@ function SearchPageInner({ community }: { community: Community }) {
   // indexes that field as keyword (URIs only), so the resolution has to happen
   // here. Unknown labels pass through verbatim so the user sees zero results
   // (which is the signal that the label doesn't exist in the vocabulary).
-  const vocab = useVocabulary(EXPORT_VOCABULARY_URL);
-  const uriByLabel = useMemo(() => {
-    if (!vocab.labels) return null;
+  const vocab = useVocabulary(ESEA_VOCABULARY_URL);
+
+  // Concept URI → display string for the picker. When a prefLabel is shared by
+  // more than one concept (the ESEA vocab has 3 such collisions across schemes
+  // — e.g. "Digital Technology" exists in both EducationTheme and
+  // ImplementationDescription), we suffix the scheme title in parentheses so
+  // each option is unambiguous. Unique labels are passed through unchanged.
+  const displayByUri = useMemo(() => {
     const m = new Map<string, string>();
-    for (const [uri, label] of vocab.labels) m.set(label, uri);
+    if (!vocab.labels) return m;
+    const labelCounts = new Map<string, number>();
+    for (const label of vocab.labels.values()) {
+      labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1);
+    }
+    for (const [uri, label] of vocab.labels) {
+      const ambiguous = (labelCounts.get(label) ?? 0) > 1;
+      const scheme = vocab.schemes?.get(uri);
+      m.set(uri, ambiguous && scheme ? `${label} (${scheme})` : label);
+    }
     return m;
-  }, [vocab.labels]);
+  }, [vocab.labels, vocab.schemes]);
+
+  // Reverse map for resolving a user-entered display string back to its URI.
+  const uriByDisplay = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const [uri, display] of displayByUri) m.set(display, uri);
+    return m;
+  }, [displayByUri]);
 
   function fragmentToBoxValue(fragment: string): string {
     const uris = facetToValues(fragment);
     if (uris.length === 0) return fragment;
-    return uris.map((u) => vocab.labels?.get(u) ?? u).join(" OR ");
+    return uris.map((u) => displayByUri.get(u) ?? u).join(" OR ");
   }
 
   function boxValueToFragment(input: string): string {
@@ -139,7 +160,7 @@ function SearchPageInner({ community }: { community: Community }) {
       .map((s) => s.trim())
       .filter((s) => s !== "");
     if (tokens.length === 0) return "";
-    const uris = tokens.map((t) => uriByLabel?.get(t) ?? t);
+    const uris = tokens.map((t) => uriByDisplay.get(t) ?? t);
     return valuesToFacet(uris);
   }
 
@@ -150,12 +171,12 @@ function SearchPageInner({ community }: { community: Community }) {
   useEffect(
     () => { setFacet1(fragmentToBoxValue(params.searchFacets[0] ?? "")); },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [params.searchFacets[0], vocab.labels],
+    [params.searchFacets[0], displayByUri],
   );
   useEffect(
     () => { setFacet2(fragmentToBoxValue(params.searchFacets[1] ?? "")); },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [params.searchFacets[1], vocab.labels],
+    [params.searchFacets[1], displayByUri],
   );
 
   function applyFacets() {
@@ -171,12 +192,12 @@ function SearchPageInner({ community }: { community: Community }) {
     navigate(buildSearchUrl(community.slug, { ...params, searchFacets: next, page: 1 }));
   }
 
-  // Sorted list of every prefLabel in the vocabulary — fed to both
-  // FacetComboboxes so the user can browse/filter without retyping URIs.
-  const vocabOptions = useMemo(() => {
-    if (!vocab.labels) return [];
-    return Array.from(vocab.labels.values()).sort();
-  }, [vocab.labels]);
+  // Sorted display strings — one per concept URI. displayByUri already
+  // disambiguates collisions, so .values() is guaranteed unique.
+  const vocabOptions = useMemo(
+    () => Array.from(displayByUri.values()).sort(),
+    [displayByUri],
+  );
 
   const corpus = useCorpusTotal();
   const results = useSearch(params);
