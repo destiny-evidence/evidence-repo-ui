@@ -14,7 +14,7 @@ vi.mock("@/services/apiClient", async (importOriginal) => {
 import { searchReferences } from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
 
-const baseParams: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+const baseParams: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
 
 // Drive the real CommunityProvider through the URL the way the runtime does.
 function withCommunityPath(path: string) {
@@ -217,6 +217,39 @@ describe("useSearch", () => {
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
     const [, filters] = mockSearch.mock.calls[0];
     expect(filters).not.toHaveProperty("sort");
+  });
+
+  test("forwards searchFacets to apiClient filters and refetches when they change", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const { rerender } = renderHook(
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: { ...baseParams, searchFacets: [`linked_data_concepts:"A"`] } },
+      },
+    );
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    expect(mockSearch).toHaveBeenLastCalledWith(
+      "phonics",
+      expect.objectContaining({ searchFacets: [`linked_data_concepts:"A"`] }),
+    );
+
+    rerender({ p: { ...baseParams, searchFacets: [`linked_data_concepts:"B"`] } });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
+    expect(mockSearch).toHaveBeenLastCalledWith(
+      "phonics",
+      expect.objectContaining({ searchFacets: [`linked_data_concepts:"B"`] }),
+    );
+  });
+
+  test("omits searchFacets from filters when params.searchFacets is empty", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    renderHook(() => useSearch(baseParams), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    const [, filters] = mockSearch.mock.calls[0];
+    expect(filters).not.toHaveProperty("searchFacets");
   });
 
   test("refetches when sort changes (cache key includes sort)", async () => {

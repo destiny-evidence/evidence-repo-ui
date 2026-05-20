@@ -26,6 +26,16 @@ vi.mock("@/services/export/export", () => ({
   exportReferencesToExcel: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("@/hooks/useVocabulary", () => ({
+  useVocabulary: () => ({
+    labels: null,
+    broader: null,
+    definitions: null,
+    loading: false,
+    error: null,
+  }),
+}));
+
 vi.mock("@/config", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/config")>();
   return {

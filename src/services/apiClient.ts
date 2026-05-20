@@ -1,4 +1,5 @@
 import { api } from "@/api/client";
+import { joinQueryAndFacets } from "@/services/searchParams";
 import type { Reference, SearchExportRead, SearchResult } from "@/types/models";
 
 export interface SearchFilters {
@@ -7,6 +8,9 @@ export interface SearchFilters {
   endYear?: number;
   annotation?: string[];
   sort?: string[];
+  // Lucene fragments AND-joined onto q before the request is built.
+  // See joinQueryAndFacets for the wrapping convention.
+  searchFacets?: string[];
 }
 
 // Mirrors parseSearchParams: page must be >= 1, years > 0, all safe integers.
@@ -19,11 +23,13 @@ export async function searchReferences(
   query: string | undefined,
   filters: SearchFilters = {},
 ): Promise<SearchResult> {
-  const normalizedQuery = query?.trim();
+  const normalizedQuery = query?.trim() ?? "";
   // Browse-mode shim: empty q would produce "(q) AND ..." on the backend,
-  // which is an invalid Lucene query. "*" is match-anything.
+  // which is an invalid Lucene query. "*" is match-anything. joinQueryAndFacets
+  // applies the same shim when facets are present without a user query.
   // See destiny-repository/app/domain/references/services/search_service.py:101-102
-  const effectiveQuery = normalizedQuery ? normalizedQuery : "*";
+  const effectiveQuery =
+    joinQueryAndFacets(normalizedQuery, filters.searchFacets ?? []) || "*";
 
   const params = new URLSearchParams();
   params.set("q", effectiveQuery);
@@ -35,15 +41,18 @@ export async function searchReferences(
   return api.get<SearchResult>(`/v1/references/search/?${params.toString()}`);
 }
 
-// Unlike searchReferences, no empty-q → "*" shim: the export endpoint is
-// gated at the search page (button disabled when q is empty), and an
-// explicit "*" from the user is forwarded as-is.
+// Same q + facet joining as searchReferences. The search page still gates
+// the button when both q and searchFacets are empty, but the * shim here
+// covers programmatic callers and facet-only exports.
 export async function requestSearchExport(
   query: string,
   filters: Omit<SearchFilters, "page"> = {},
 ): Promise<SearchExportRead> {
+  const effectiveQuery =
+    joinQueryAndFacets(query.trim(), filters.searchFacets ?? []) || "*";
+
   const params = new URLSearchParams();
-  params.set("q", query.trim());
+  params.set("q", effectiveQuery);
   if (isPositiveSafeInt(filters.startYear)) params.set("start_year", String(filters.startYear));
   if (isPositiveSafeInt(filters.endYear)) params.set("end_year", String(filters.endYear));
   for (const a of filters.annotation ?? []) params.append("annotation", a);

@@ -3,6 +3,8 @@ import {
   parseSearchParams,
   toQueryString,
   buildSearchUrl,
+  valuesToFacet,
+  facetToValues,
   type SearchParams,
 } from "@/services/searchParams";
 
@@ -14,6 +16,7 @@ describe("parseSearchParams", () => {
       startYear: undefined,
       endYear: undefined,
       sort: undefined,
+      searchFacets: [],
     });
   });
 
@@ -25,6 +28,7 @@ describe("parseSearchParams", () => {
       startYear: 2010,
       endYear: 2024,
       sort: "newest",
+      searchFacets: [],
     });
   });
 
@@ -107,27 +111,27 @@ describe("parseSearchParams", () => {
 
 describe("toQueryString", () => {
   test("omits defaults", () => {
-    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(toQueryString(p)).toBe("");
   });
 
   test("fixed key order: q, start_year, end_year, sort, page", () => {
-    const p: SearchParams = { q: "phonics", page: 3, startYear: 2010, endYear: 2024, sort: "newest" };
+    const p: SearchParams = { q: "phonics", page: 3, startYear: 2010, endYear: 2024, sort: "newest", searchFacets: [] };
     expect(toQueryString(p)).toBe("q=phonics&start_year=2010&end_year=2024&sort=newest&page=3");
   });
 
   test("page=1 (default) is dropped from output, q is kept", () => {
-    const p: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(toQueryString(p)).toBe("q=phonics");
   });
 
   test("URL-encodes q", () => {
-    const p: SearchParams = { q: "a b&c", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "a b&c", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(toQueryString(p)).toBe("q=a+b%26c");
   });
 
   test("sort omitted when undefined (relevance default)", () => {
-    const p: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(toQueryString(p)).toBe("q=phonics");
   });
 
@@ -135,7 +139,7 @@ describe("toQueryString", () => {
     { sort: "newest" as const },
     { sort: "oldest" as const },
   ])("sort=$sort is emitted", ({ sort }) => {
-    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort };
+    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort, searchFacets: [] };
     expect(toQueryString(p)).toBe(`sort=${sort}`);
   });
 
@@ -146,14 +150,139 @@ describe("toQueryString", () => {
   });
 });
 
+describe("searchFacets", () => {
+  test("parse: URL with trailing single facet splits q and facet", () => {
+    const raw = `?q=cancer AND (linked_data_concepts:"http://A")`;
+    const p = parseSearchParams(raw);
+    expect(p.q).toBe("cancer");
+    expect(p.searchFacets).toEqual([`linked_data_concepts:"http://A"`]);
+  });
+
+  test("parse: multiple trailing facets preserve original left-to-right order", () => {
+    const raw = `?q=cancer AND (linked_data_concepts:"A") AND (linked_data_concepts:"B")`;
+    const p = parseSearchParams(raw);
+    expect(p.q).toBe("cancer");
+    expect(p.searchFacets).toEqual([
+      `linked_data_concepts:"A"`,
+      `linked_data_concepts:"B"`,
+    ]);
+  });
+
+  test("parse: facet may itself contain OR", () => {
+    const raw = `?q=cancer AND (linked_data_concepts:"A" OR linked_data_concepts:"B")`;
+    const p = parseSearchParams(raw);
+    expect(p.q).toBe("cancer");
+    expect(p.searchFacets).toEqual([
+      `linked_data_concepts:"A" OR linked_data_concepts:"B"`,
+    ]);
+  });
+
+  test("parse: `* AND (facet)` collapses back to empty q + facet (canonical * shim)", () => {
+    const raw = `?q=* AND (linked_data_concepts:"A")`;
+    const p = parseSearchParams(raw);
+    expect(p.q).toBe("");
+    expect(p.searchFacets).toEqual([`linked_data_concepts:"A"`]);
+  });
+
+  test("parse: user-typed trailing parens that aren't a facet are left in q", () => {
+    const raw = `?q=cancer AND (something_else:"X")`;
+    const p = parseSearchParams(raw);
+    expect(p.q).toBe(`cancer AND (something_else:"X")`);
+    expect(p.searchFacets).toEqual([]);
+  });
+
+  test("serialize: empty q + single facet emits `q=* AND (facet)`", () => {
+    const p: SearchParams = {
+      q: "",
+      page: 1,
+      startYear: undefined,
+      endYear: undefined,
+      sort: undefined,
+      searchFacets: [`linked_data_concepts:"http://A"`],
+    };
+    const qs = toQueryString(p);
+    const got = new URLSearchParams(qs).get("q");
+    expect(got).toBe(`* AND (linked_data_concepts:"http://A")`);
+  });
+
+  test("serialize: non-empty q + multiple facets ANDs each wrapped in parens", () => {
+    const p: SearchParams = {
+      q: "cancer",
+      page: 1,
+      startYear: undefined,
+      endYear: undefined,
+      sort: undefined,
+      searchFacets: [`linked_data_concepts:"A"`, `linked_data_concepts:"B"`],
+    };
+    const got = new URLSearchParams(toQueryString(p)).get("q");
+    expect(got).toBe(`cancer AND (linked_data_concepts:"A") AND (linked_data_concepts:"B")`);
+  });
+
+  test("round-trip: parse → serialize → parse preserves q and facets", () => {
+    const raw = `?q=cancer AND (linked_data_concepts:"A") AND (linked_data_concepts:"B")`;
+    const once = parseSearchParams(raw);
+    const twice = parseSearchParams("?" + toQueryString(once));
+    expect(twice).toEqual(once);
+  });
+
+  test("empty searchFacets array is omitted from URL output", () => {
+    const p: SearchParams = {
+      q: "",
+      page: 1,
+      startYear: undefined,
+      endYear: undefined,
+      sort: undefined,
+      searchFacets: [],
+    };
+    expect(toQueryString(p)).toBe("");
+  });
+});
+
+describe("valuesToFacet / facetToValues", () => {
+  test("valuesToFacet: single value → one linked_data_concepts clause", () => {
+    expect(valuesToFacet(["http://A"])).toBe(`linked_data_concepts:"http://A"`);
+  });
+
+  test("valuesToFacet: multiple values are wrapped and ORed", () => {
+    expect(valuesToFacet(["http://A", "http://B"])).toBe(
+      `linked_data_concepts:"http://A" OR linked_data_concepts:"http://B"`,
+    );
+  });
+
+  test("valuesToFacet: trims and drops empty entries", () => {
+    expect(valuesToFacet(["  http://A  ", "", "http://B"])).toBe(
+      `linked_data_concepts:"http://A" OR linked_data_concepts:"http://B"`,
+    );
+    expect(valuesToFacet([])).toBe("");
+    expect(valuesToFacet(["", "   "])).toBe("");
+  });
+
+  test("facetToValues: extracts values from a Lucene fragment", () => {
+    expect(
+      facetToValues(
+        `linked_data_concepts:"http://A" OR linked_data_concepts:"http://B"`,
+      ),
+    ).toEqual(["http://A", "http://B"]);
+  });
+
+  test("facetToValues: returns [] for an unrecognized fragment", () => {
+    expect(facetToValues(`some_other_field:"X"`)).toEqual([]);
+  });
+
+  test("round-trip: values → fragment → values is stable", () => {
+    const values = ["http://A", "http://B"];
+    expect(facetToValues(valuesToFacet(values))).toEqual(values);
+  });
+});
+
 describe("buildSearchUrl", () => {
   test("empty params → bare slug path", () => {
-    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(buildSearchUrl("esea", p)).toBe("/esea");
   });
 
   test("with params → slug + querystring", () => {
-    const p: SearchParams = { q: "phonics", page: 2, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "phonics", page: 2, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(buildSearchUrl("esea", p)).toBe("/esea?q=phonics&page=2");
   });
 });

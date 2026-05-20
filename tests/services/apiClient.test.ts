@@ -135,6 +135,22 @@ describe("searchReferences", () => {
       "-year",
     ]);
   });
+
+  test("AND-joins searchFacets onto q (each wrapped in parens)", async () => {
+    mockedGet.mockResolvedValue(result);
+    await searchReferences("cancer", {
+      searchFacets: [`linked_data_concepts:"A"`, `linked_data_concepts:"B"`],
+    });
+    const q = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]).get("q");
+    expect(q).toBe(`cancer AND (linked_data_concepts:"A") AND (linked_data_concepts:"B")`);
+  });
+
+  test("empty q + searchFacets → q=* AND (facet)", async () => {
+    mockedGet.mockResolvedValue(result);
+    await searchReferences("", { searchFacets: [`linked_data_concepts:"A"`] });
+    const q = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]).get("q");
+    expect(q).toBe(`* AND (linked_data_concepts:"A")`);
+  });
 });
 
 describe("getReference", () => {

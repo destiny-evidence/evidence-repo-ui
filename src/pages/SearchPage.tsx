@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import type { Community } from "@/types/models";
 import {
@@ -6,6 +6,8 @@ import {
   toQueryString,
   buildSearchUrl,
   toExportSearchQuery,
+  valuesToFacet,
+  facetToValues,
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
@@ -14,9 +16,12 @@ import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
 import { useSearchExport, type ExportStatus } from "@/hooks/useSearchExport";
+import { useVocabulary } from "@/hooks/useVocabulary";
+import { EXPORT_VOCABULARY_URL } from "@/config";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
 import { ExportButton } from "@/components/search/ExportButton";
+import { FacetCombobox } from "@/components/search/FacetCombobox";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/Pagination";
 import { NotFoundPage } from "./NotFoundPage";
@@ -107,6 +112,72 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const draft = useSearchDraft(params);
 
+  // Very basic facet picker: two free-text slots that map to params.searchFacets.
+  // User types SKOS prefLabels separated by " OR " (e.g. `Journal Article OR
+  // Technical Report`). We resolve labels to concept URIs via the loaded
+  // vocabulary, then wrap each URI as `linked_data_concepts:"<URI>"` — ES
+  // indexes that field as keyword (URIs only), so the resolution has to happen
+  // here. Unknown labels pass through verbatim so the user sees zero results
+  // (which is the signal that the label doesn't exist in the vocabulary).
+  const vocab = useVocabulary(EXPORT_VOCABULARY_URL);
+  const uriByLabel = useMemo(() => {
+    if (!vocab.labels) return null;
+    const m = new Map<string, string>();
+    for (const [uri, label] of vocab.labels) m.set(label, uri);
+    return m;
+  }, [vocab.labels]);
+
+  function fragmentToBoxValue(fragment: string): string {
+    const uris = facetToValues(fragment);
+    if (uris.length === 0) return fragment;
+    return uris.map((u) => vocab.labels?.get(u) ?? u).join(" OR ");
+  }
+
+  function boxValueToFragment(input: string): string {
+    const tokens = input
+      .split(/\s+OR\s+/i)
+      .map((s) => s.trim())
+      .filter((s) => s !== "");
+    if (tokens.length === 0) return "";
+    const uris = tokens.map((t) => uriByLabel?.get(t) ?? t);
+    return valuesToFacet(uris);
+  }
+
+  const [facet1, setFacet1] = useState(() => fragmentToBoxValue(params.searchFacets[0] ?? ""));
+  const [facet2, setFacet2] = useState(() => fragmentToBoxValue(params.searchFacets[1] ?? ""));
+  // Resync on URL change or when the vocabulary finishes loading (so URIs in
+  // the URL can be rendered as friendlier labels once the map is available).
+  useEffect(
+    () => { setFacet1(fragmentToBoxValue(params.searchFacets[0] ?? "")); },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [params.searchFacets[0], vocab.labels],
+  );
+  useEffect(
+    () => { setFacet2(fragmentToBoxValue(params.searchFacets[1] ?? "")); },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [params.searchFacets[1], vocab.labels],
+  );
+
+  function applyFacets() {
+    const next = [facet1, facet2]
+      .map(boxValueToFragment)
+      .filter((s) => s !== "");
+    // Skip if nothing changed so blur/Enter/Apply don't push redundant
+    // history entries when the boxes already match the URL.
+    const unchanged =
+      next.length === params.searchFacets.length
+      && next.every((v, i) => v === params.searchFacets[i]);
+    if (unchanged) return;
+    navigate(buildSearchUrl(community.slug, { ...params, searchFacets: next, page: 1 }));
+  }
+
+  // Sorted list of every prefLabel in the vocabulary — fed to both
+  // FacetComboboxes so the user can browse/filter without retyping URIs.
+  const vocabOptions = useMemo(() => {
+    if (!vocab.labels) return [];
+    return Array.from(vocab.labels.values()).sort();
+  }, [vocab.labels]);
+
   const corpus = useCorpusTotal();
   const results = useSearch(params);
   const exportJob = useSearchExport();
@@ -118,13 +189,16 @@ function SearchPageInner({ community }: { community: Community }) {
     results.error !== null ||
     params.q !== "" ||
     params.startYear !== undefined ||
-    params.endYear !== undefined;
+    params.endYear !== undefined ||
+    params.searchFacets.length > 0;
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
+  // Facet-only searches still count as a filter — show the result count.
   const showSummary =
     params.q !== "" ||
     params.startYear !== undefined ||
     params.endYear !== undefined ||
+    params.searchFacets.length > 0 ||
     results.error !== null;
 
   function handleSubmit() {
@@ -205,6 +279,36 @@ function SearchPageInner({ community }: { community: Community }) {
           onSubmit={handleSubmit}
           disabled={results.loading && results.results !== null}
         />
+        <div
+          role="group"
+          aria-label="Search facets"
+          style={{
+            marginTop: "0.75rem",
+            display: "flex",
+            gap: "0.5rem",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontSize: "0.85rem" }}>Facets:</span>
+          <FacetCombobox
+            value={facet1}
+            onChange={setFacet1}
+            onCommit={applyFacets}
+            options={vocabOptions}
+            ariaLabel="Facet 1"
+            placeholder="Journal Article OR Technical Report"
+          />
+          <FacetCombobox
+            value={facet2}
+            onChange={setFacet2}
+            onCommit={applyFacets}
+            options={vocabOptions}
+            ariaLabel="Facet 2"
+            placeholder="Randomised Controlled Trial OR Systematic Review"
+          />
+          <button type="button" onClick={applyFacets}>Apply facets</button>
+        </div>
       </section>
 
       <section class="search-results">

@@ -18,6 +18,7 @@ function paramsKey(params: SearchParams, slug: string, annotations: string[]): s
     `sort=${params.sort ?? ""}`,
     `slug=${slug}`,
     `ann=${JSON.stringify(annotations)}`,
+    `facets=${JSON.stringify(params.searchFacets)}`,
   ].join("&");
 }
 
@@ -54,6 +55,7 @@ export function useSearch(params: SearchParams): {
       annotation: community.defaultAnnotations,
     };
     if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
+    if (params.searchFacets.length > 0) filters.searchFacets = params.searchFacets;
 
     searchReferences(params.q || undefined, filters)
       .then((r) => { if (!cancelled) setResults(r); })
