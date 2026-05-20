@@ -50,7 +50,7 @@ describe("TagGroup", () => {
     expect(container.querySelector(".tag-group__tag-parent")).toBeNull();
   });
 
-  test("attaches data-def and tabIndex when a definition is present", () => {
+  test("wraps tag in a Tooltip and marks it focusable when a definition is present", () => {
     const { container } = render(
       <TagGroup
         tags={[
@@ -62,19 +62,23 @@ describe("TagGroup", () => {
         ]}
       />,
     );
-    const tag = container.querySelector(".tag-group__tag");
-    expect(tag?.getAttribute("data-def")).toBe(
+    const wrap = container.querySelector(".tooltip");
+    expect(wrap?.getAttribute("data-tooltip")).toBe(
       "Peer-reviewed publication presenting original research or reviews.",
     );
+    const tag = wrap?.querySelector(".tag-group__tag");
+    expect(tag).not.toBeNull();
+    expect(tag?.classList.contains("tag-group__tag--has-tooltip")).toBe(true);
     expect(tag?.getAttribute("tabindex")).toBe("0");
   });
 
-  test("does not add data-def or tabIndex when definition is absent", () => {
+  test("does not wrap tag in a Tooltip when definition is absent", () => {
     const { container } = render(
       <TagGroup tags={[{ label: "Plain tag" }]} />,
     );
+    expect(container.querySelector(".tooltip")).toBeNull();
     const tag = container.querySelector(".tag-group__tag");
-    expect(tag?.hasAttribute("data-def")).toBe(false);
+    expect(tag?.classList.contains("tag-group__tag--has-tooltip")).toBe(false);
     expect(tag?.hasAttribute("tabindex")).toBe(false);
   });
 });

@@ -1,6 +1,13 @@
 import { parseYear } from "@/utils/year";
+import type { SearchFilters } from "@/services/apiClient";
 
 export type SortOption = "newest" | "oldest";
+
+// URL alias → backend ES-style `[-]field_name` wire format.
+export const SORT_BACKEND: Record<SortOption, string> = {
+  newest: "-publication_year",
+  oldest: "publication_year",
+};
 
 export interface SearchParams {
   q: string;
@@ -58,4 +65,22 @@ export function toQueryString(params: SearchParams): string {
 export function buildSearchUrl(communitySlug: string, params: SearchParams): string {
   const qs = toQueryString(params);
   return qs ? `/${communitySlug}?${qs}` : `/${communitySlug}`;
+}
+
+// Maps a SearchParams + community annotations to the query/filters shape the
+// export endpoint expects. Substitutes "*" for an empty `q` so the backend's
+// `min_length=1` constraint is satisfied for browse-mode and year-only
+// exports.
+export function toExportSearchQuery(
+  params: SearchParams,
+  annotations: string[] | undefined,
+): { query: string; filters: Omit<SearchFilters, "page"> } {
+  const filters: Omit<SearchFilters, "page"> = {
+    startYear: params.startYear,
+    endYear: params.endYear,
+    annotation: annotations,
+  };
+  if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
+  const query = params.q.trim() === "" ? "*" : params.q;
+  return { query, filters };
 }

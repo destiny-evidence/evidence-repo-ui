@@ -1,14 +1,22 @@
 import { useEffect } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import type { Community } from "@/types/models";
-import { parseSearchParams, toQueryString, buildSearchUrl, type SortOption } from "@/services/searchParams";
+import {
+  parseSearchParams,
+  toQueryString,
+  buildSearchUrl,
+  toExportSearchQuery,
+  type SortOption,
+} from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
+import { useSearchExport, type ExportStatus } from "@/hooks/useSearchExport";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
+import { ExportButton } from "@/components/search/ExportButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/Pagination";
 import { NotFoundPage } from "./NotFoundPage";
@@ -30,6 +38,33 @@ function formatYearClause(start: number | undefined, end: number | undefined): s
   if (start !== undefined) return ` from ${start}`;
   if (end !== undefined) return ` to ${end}`;
   return "";
+}
+
+// 10k is destiny-repository's max_result_window; deep pagination + exports
+// past that are explicitly out of scope. Mirrors the search backend cap.
+const EXPORT_MAX_RESULTS = 10000;
+
+function formatExportFilename(slug: string, now: Date = new Date()): string {
+  // UTC so the same wall-clock click in different timezones produces the
+  // same filename — easier to diff/dedupe across users.
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(now.getUTCDate()).padStart(2, "0");
+  return `destiny-evidence-${slug}-${y}${m}${d}.xlsx`;
+}
+
+function exportAnnouncementFor(status: ExportStatus): string {
+  switch (status) {
+    case "requesting":
+    case "polling":
+      return "Preparing export…";
+    case "downloading":
+      return "Downloading export…";
+    case "done":
+      return "Export downloaded.";
+    default:
+      return "";
+  }
 }
 
 function formatResultsSummary(
@@ -74,6 +109,7 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const corpus = useCorpusTotal();
   const results = useSearch(params);
+  const exportJob = useSearchExport();
 
   // Hide the bar on the initial browse-mode load so the skeleton owns the
   // full vertical space; show it as soon as there's anything to put in it.
@@ -105,6 +141,36 @@ function SearchPageInner({ community }: { community: Community }) {
     const committed = draft.commitDraft();
     if (!committed) return;
     navigate(buildSearchUrl(community.slug, { ...params, ...committed, sort, page: 1 }));
+  }
+
+  const hasResults = results.results !== null && results.results.references.length > 0;
+  const overCap =
+    results.results !== null
+    && results.results.total.is_lower_bound
+    && results.results.total.count >= EXPORT_MAX_RESULTS;
+  const exportBusy =
+    exportJob.status === "requesting"
+    || exportJob.status === "polling"
+    || exportJob.status === "downloading";
+  // Gate on results.loading too: useSearch keeps prior results visible while
+  // a new fetch is in flight, so `hasResults` / `overCap` would otherwise
+  // reflect the previous search and let an export through against stale state.
+  const exportDisabled =
+    !hasResults || overCap || exportBusy || results.loading;
+  const exportTooltip = ((): string | undefined => {
+    // Suppress while refetching: would otherwise assert a stale count.
+    if (results.loading) return undefined;
+    if (overCap) {
+      return `Refine your search — exports are limited to ${EXPORT_MAX_RESULTS.toLocaleString()} results.`;
+    }
+    if (!hasResults) return "No results to export.";
+    return undefined;
+  })();
+  const exportAnnouncement = exportAnnouncementFor(exportJob.status);
+
+  function handleExport() {
+    const { query, filters } = toExportSearchQuery(params, community.defaultAnnotations);
+    exportJob.start(query, filters, formatExportFilename(community.slug));
   }
 
   // Page size comes from the API response (page.count) so the UI stays in
@@ -169,11 +235,34 @@ function SearchPageInner({ community }: { community: Community }) {
                 : null}
             </span>
             {results.results && (
-              <SortDropdown
-                value={params.sort}
-                onChange={handleSortChange}
-                disabled={results.loading}
-              />
+              <span class="search-results__meta-right">
+                {exportJob.status === "error" && (
+                  <span
+                    class="search-results__export-status"
+                    role="alert"
+                  >
+                    {exportJob.errorMessage ?? "Export failed."}
+                  </span>
+                )}
+                <span
+                  class="visually-hidden"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {exportAnnouncement}
+                </span>
+                <ExportButton
+                  disabled={exportDisabled}
+                  status={exportJob.status}
+                  onClick={handleExport}
+                  tooltip={exportTooltip}
+                />
+                <SortDropdown
+                  value={params.sort}
+                  onChange={handleSortChange}
+                  disabled={results.loading}
+                />
+              </span>
             )}
           </div>
         )}

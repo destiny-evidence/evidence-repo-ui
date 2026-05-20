@@ -1,3 +1,4 @@
+import { Tooltip } from "./Tooltip";
 import "./TagGroup.css";
 
 export interface HierarchicalTag {
@@ -29,21 +30,26 @@ export function TagGroup({ label, tags }: TagGroupProps) {
       {label && <span class="tag-group__label lg-label">{label}</span>}
       {validTags.map((tag, i) => {
         if (isHierarchical(tag)) {
+          const hasDefinition = !!tag.definition;
           return (
-            <span
-              key={`${tag.label}-${i}`}
-              class="tag-group__tag"
-              data-def={tag.definition || undefined}
-              tabIndex={tag.definition ? 0 : undefined}
-            >
-              {tag.parent && (
-                <>
-                  <span class="tag-group__tag-parent">{tag.parent}</span>
-                  <span class="tag-group__tag-sep"> › </span>
-                </>
-              )}
-              <span class="tag-group__tag-child">{tag.label}</span>
-            </span>
+            <Tooltip key={`${tag.label}-${i}`} text={tag.definition}>
+              <span
+                class={
+                  hasDefinition
+                    ? "tag-group__tag tag-group__tag--has-tooltip"
+                    : "tag-group__tag"
+                }
+                tabIndex={hasDefinition ? 0 : undefined}
+              >
+                {tag.parent && (
+                  <>
+                    <span class="tag-group__tag-parent">{tag.parent}</span>
+                    <span class="tag-group__tag-sep"> › </span>
+                  </>
+                )}
+                <span class="tag-group__tag-child">{tag.label}</span>
+              </span>
+            </Tooltip>
           );
         }
         return (

@@ -64,6 +64,17 @@
   gap: var(--spacing-sm);
 }
 
+.search-results__meta-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.search-results__export-status {
+  font-size: var(--font-size-small);
+  color: var(--color-danger);
+}
+
 .search-results__meta-count {
   font-family: var(--font-mono);
   font-size: 15px;
