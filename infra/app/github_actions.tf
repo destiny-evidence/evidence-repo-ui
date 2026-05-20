@@ -116,6 +116,13 @@ resource "github_actions_environment_variable" "vite_matomo_container_url" {
   value         = var.matomo_container_url
 }
 
+resource "github_actions_environment_variable" "vite_feedback_form_url" {
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_FEEDBACK_FORM_URL"
+  value         = var.feedback_form_url
+}
+
 resource "github_actions_environment_variable" "frontdoor_resource_group" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment

@@ -2,6 +2,7 @@ import { FEEDBACK_FORM_URL } from "@/config";
 import "./FeedbackFAB.css";
 
 export function FeedbackFAB() {
+  if (!FEEDBACK_FORM_URL) return null;
   return (
     <a
       class="feedback-fab"

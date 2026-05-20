@@ -6,9 +6,8 @@ export const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID;
 
 export const MATOMO_CONTAINER_URL = import.meta.env.VITE_MATOMO_CONTAINER_URL;
 
-export const FEEDBACK_FORM_URL =
-  import.meta.env.VITE_FEEDBACK_FORM_URL ||
-  "https://forms.gle/zH9fsNZk8BApTaVj9";
+export const FEEDBACK_FORM_URL: string | undefined =
+  import.meta.env.VITE_FEEDBACK_FORM_URL;
 
 const VOCAB_PROXY_TARGET = import.meta.env.VITE_VOCAB_PROXY_TARGET;
 
