@@ -52,6 +52,9 @@ jobs:
           VITE_KEYCLOAK_REALM: ${{ vars.VITE_KEYCLOAK_REALM }}
           VITE_KEYCLOAK_CLIENT_ID: ${{ vars.VITE_KEYCLOAK_CLIENT_ID }}
           VITE_MATOMO_CONTAINER_URL: ${{ vars.VITE_MATOMO_CONTAINER_URL }}
+          VITE_FEEDBACK_FORM_URL: ${{ vars.VITE_FEEDBACK_FORM_URL }}
+          VITE_ESEA_VOCABULARY_URL: ${{ vars.VITE_ESEA_VOCABULARY_URL }}
+          VITE_ESEA_CONTEXT_URL: ${{ vars.VITE_ESEA_CONTEXT_URL }}
         run: npm run build
 
       - name: Upload build artifacts
