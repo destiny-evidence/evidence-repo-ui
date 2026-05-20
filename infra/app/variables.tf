@@ -100,3 +100,9 @@ variable "matomo_container_url" {
   default     = ""
 }
 
+variable "feedback_form_url" {
+  description = "URL of the user feedback form linked from the FAB"
+  type        = string
+  default     = "https://forms.gle/zH9fsNZk8BApTaVj9"
+}
+

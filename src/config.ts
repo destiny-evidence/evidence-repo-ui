@@ -6,6 +6,9 @@ export const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID;
 
 export const MATOMO_CONTAINER_URL = import.meta.env.VITE_MATOMO_CONTAINER_URL;
 
+export const FEEDBACK_FORM_URL: string | undefined =
+  import.meta.env.VITE_FEEDBACK_FORM_URL;
+
 export const EXPORT_VOCABULARY_URL = import.meta.env.VITE_EXPORT_VOCABULARY_URL;
 export const EXPORT_CONTEXT_URL = import.meta.env.VITE_EXPORT_CONTEXT_URL;
 
