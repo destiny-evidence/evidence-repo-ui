@@ -123,6 +123,20 @@ resource "github_actions_environment_variable" "vite_feedback_form_url" {
   value         = var.feedback_form_url
 }
 
+resource "github_actions_environment_variable" "vite_esea_vocabulary_url" {
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_ESEA_VOCABULARY_URL"
+  value         = var.esea_vocabulary_url
+}
+
+resource "github_actions_environment_variable" "vite_esea_context_url" {
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_ESEA_CONTEXT_URL"
+  value         = var.esea_context_url
+}
+
 resource "github_actions_environment_variable" "frontdoor_resource_group" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment
