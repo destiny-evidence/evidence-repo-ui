@@ -109,10 +109,12 @@ variable "feedback_form_url" {
 variable "esea_vocabulary_url" {
   description = "URL of the ESEA community's published SKOS vocabulary (.jsonld) — used to resolve concept labels in exports and other vocabulary-driven features"
   type        = string
+  default     = "https://vocab.evidence-repository.org/published/019d9463-2780-7243-b4de-e547386f2a90/1.1/vocabulary.jsonld"
 }
 
 variable "esea_context_url" {
   description = "URL of the ESEA community's JSON-LD @context (.jsonld) — used to expand CURIE prefixes in exports and other vocabulary-driven features"
   type        = string
+  default     = "https://vocab.evidence-repository.org/published/019d9463-2780-7243-b4de-e547386f2a90/1.1/context.jsonld"
 }
 
