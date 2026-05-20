@@ -349,23 +349,30 @@ describe("SearchPage", () => {
   });
 
   describe("export button", () => {
-    test("disabled in browse mode (no q, no years) with explanatory tooltip", async () => {
+    test("enabled in browse mode; click POSTs with q=* and the community annotation", async () => {
       mockBoth({ results: makeResult(5721, ["r1"]) });
+      mockRequestExport.mockResolvedValue({
+        id: "job-browse",
+        status: "pending",
+        truncated: false,
+      });
+      mockGetExport.mockResolvedValue({
+        id: "job-browse",
+        status: "pending",
+        truncated: false,
+      });
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
       const btn = screen.getByRole("button", { name: /export to excel/i });
-      expect(btn).toHaveAttribute("aria-disabled", "true");
-      expect(btn.parentElement).toHaveAttribute(
-        "data-tooltip",
-        expect.stringMatching(/submit a search query/i),
-      );
-      // Tooltip text is also exposed to AT via aria-describedby + a hidden node,
-      // since data-tooltip is purely a CSS hook.
-      const describedById = btn.getAttribute("aria-describedby");
-      expect(describedById).toBeTruthy();
-      const describedBy = document.getElementById(describedById!);
-      expect(describedBy?.textContent).toMatch(/submit a search query/i);
+      expect(btn).not.toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(btn);
+      await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
+      expect(mockRequestExport).toHaveBeenCalledWith("*", {
+        startYear: undefined,
+        endYear: undefined,
+        annotation: ["domain-inclusion/jacobs-education"],
+      });
     });
 
     test("enabled in year-only URL; click POSTs with q=* and the year filter", async () => {
@@ -393,16 +400,6 @@ describe("SearchPage", () => {
         endYear: undefined,
         annotation: ["domain-inclusion/jacobs-education"],
       });
-    });
-
-    test("explicit q=* is allowed (passes the empty-q gate)", async () => {
-      history.replaceState(null, "", "/esea?q=*");
-      mockBoth({ results: makeResult(50, ["r1"]) });
-      renderSearchPage();
-      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-
-      const btn = screen.getByRole("button", { name: /export to excel/i });
-      expect(btn).not.toHaveAttribute("aria-disabled", "true");
     });
 
     test("disabled when result set is empty with explanatory tooltip", async () => {

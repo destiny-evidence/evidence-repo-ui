@@ -69,8 +69,8 @@ export function buildSearchUrl(communitySlug: string, params: SearchParams): str
 
 // Maps a SearchParams + community annotations to the query/filters shape the
 // export endpoint expects. Substitutes "*" for an empty `q` so the backend's
-// `min_length=1` constraint is satisfied for year-only searches; the SearchPage
-// gate ensures we never reach here without either a query or a year filter.
+// `min_length=1` constraint is satisfied for browse-mode and year-only
+// exports.
 export function toExportSearchQuery(
   params: SearchParams,
   annotations: string[] | undefined,

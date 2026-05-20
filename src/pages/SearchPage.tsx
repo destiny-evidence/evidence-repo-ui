@@ -143,9 +143,6 @@ function SearchPageInner({ community }: { community: Community }) {
     navigate(buildSearchUrl(community.slug, { ...params, ...committed, sort, page: 1 }));
   }
 
-  const queryEmpty = params.q.trim() === "";
-  const hasYearFilter = params.startYear !== undefined || params.endYear !== undefined;
-  const noFilters = queryEmpty && !hasYearFilter;
   const hasResults = results.results !== null && results.results.references.length > 0;
   const overCap =
     results.results !== null
@@ -159,13 +156,8 @@ function SearchPageInner({ community }: { community: Community }) {
   // a new fetch is in flight, so `hasResults` / `overCap` would otherwise
   // reflect the previous search and let an export through against stale state.
   const exportDisabled =
-    noFilters
-    || !hasResults
-    || overCap
-    || exportBusy
-    || results.loading;
+    !hasResults || overCap || exportBusy || results.loading;
   const exportTooltip = ((): string | undefined => {
-    if (noFilters) return "Submit a search query to export.";
     // Suppress while refetching: would otherwise assert a stale count.
     if (results.loading) return undefined;
     if (overCap) {
