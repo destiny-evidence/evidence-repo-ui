@@ -348,6 +348,21 @@ describe("SearchPage", () => {
     pushSpy.mockRestore();
   });
 
+  test("renders summary line when only facets are set (no q, no years)", async () => {
+    // Issue #62 regression: a facet-only URL must trigger showSummary/showMetaBar,
+    // otherwise filtered results render under the browse-mode hero with no count.
+    // Asserts via class scope because the facet-only summary text has no q/year
+    // discriminator and the count + " results" text live in sibling elements.
+    history.replaceState(null, "", "/esea?q=%2A+AND+%28linked_data_concepts%3A%22EducationLevelScheme%2FC00002%22%29");
+    mockBoth({ results: makeResult(7, ["r1"]) });
+    const { container } = renderSearchPage();
+    await waitFor(() => {
+      const summary = container.querySelector(".search-results__meta-summary");
+      expect(summary).toBeInTheDocument();
+      expect(summary).toHaveTextContent(/7\s*results/);
+    });
+  });
+
   describe("export button", () => {
     test("enabled in browse mode; click POSTs with q=* and the community annotation", async () => {
       mockBoth({ results: makeResult(5721, ["r1"]) });
@@ -510,6 +525,33 @@ describe("SearchPage", () => {
         expect(
           screen.getByRole("button", { name: /preparing/i }),
         ).toBeInTheDocument(),
+      );
+    });
+
+    test("facet URL → Export sends fully-qualified URI to requestSearchExport", async () => {
+      // SearchPage-layer integration: catches misthreaded community.vocabBase
+      // or stale params at the call site, which the unit tests on
+      // toExportSearchQuery in isolation cannot.
+      history.replaceState(
+        null,
+        "",
+        "/esea?q=%28phonics%29+AND+%28linked_data_concepts%3A%22EducationLevelScheme%2FC00002%22%29",
+      );
+      mockBoth({ results: makeResult(7, ["r1"]) });
+      mockRequestExport.mockResolvedValue({ id: "job-facet", status: "pending", truncated: false });
+      mockGetExport.mockResolvedValue({ id: "job-facet", status: "pending", truncated: false });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("button", { name: /export to excel/i }));
+      await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
+      expect(mockRequestExport).toHaveBeenCalledWith(
+        '(phonics) AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")',
+        {
+          startYear: undefined,
+          endYear: undefined,
+          annotation: ["domain-inclusion/jacobs-education"],
+        },
       );
     });
   });

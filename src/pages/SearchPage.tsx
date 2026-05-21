@@ -118,13 +118,15 @@ function SearchPageInner({ community }: { community: Community }) {
     results.error !== null ||
     params.q !== "" ||
     params.startYear !== undefined ||
-    params.endYear !== undefined;
+    params.endYear !== undefined ||
+    params.searchFacets.length > 0;
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary =
     params.q !== "" ||
     params.startYear !== undefined ||
     params.endYear !== undefined ||
+    params.searchFacets.length > 0 ||
     results.error !== null;
 
   function handleSubmit() {
