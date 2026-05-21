@@ -3,6 +3,7 @@ import {
   parseSearchParams,
   toQueryString,
   buildSearchUrl,
+  buildFacetedQuery,
   type SearchParams,
 } from "@/services/searchParams";
 
@@ -155,5 +156,54 @@ describe("buildSearchUrl", () => {
   test("with params → slug + querystring", () => {
     const p: SearchParams = { q: "phonics", page: 2, startYear: undefined, endYear: undefined, sort: undefined };
     expect(buildSearchUrl("esea", p)).toBe("/esea?q=phonics&page=2");
+  });
+});
+
+describe("buildFacetedQuery", () => {
+  test.each([
+    {
+      label: "no facets trims q",
+      q: "  phonics  ", facets: [],
+      expected: "phonics",
+    },
+    {
+      label: "no facets, empty q → empty",
+      q: "", facets: [],
+      expected: "",
+    },
+    {
+      label: "no facets, whitespace q → empty",
+      q: "   ", facets: [],
+      expected: "",
+    },
+    {
+      label: "empty q + one facet → * AND (facet)",
+      q: "", facets: ['linked_data_concepts:"x"'],
+      expected: '* AND (linked_data_concepts:"x")',
+    },
+    {
+      label: "empty q + multiple facets",
+      q: "", facets: ['linked_data_concepts:"x"', 'linked_data_concepts:"y"'],
+      expected: '* AND (linked_data_concepts:"x") AND (linked_data_concepts:"y")',
+    },
+    {
+      label: "non-empty q wraps base",
+      q: "phonics", facets: ['linked_data_concepts:"x"'],
+      expected: '(phonics) AND (linked_data_concepts:"x")',
+    },
+    // Without the wrap, `phonics OR reading AND (f)` binds as
+    // `phonics OR (reading AND (f))` — wrong semantics.
+    {
+      label: "boolean base is wrapped (precedence)",
+      q: "phonics OR reading", facets: ['linked_data_concepts:"x"'],
+      expected: '(phonics OR reading) AND (linked_data_concepts:"x")',
+    },
+    {
+      label: "facet with OR clause passes through verbatim",
+      q: "phonics", facets: ['linked_data_concepts:"x" OR linked_data_concepts:"y"'],
+      expected: '(phonics) AND (linked_data_concepts:"x" OR linked_data_concepts:"y")',
+    },
+  ])("$label", ({ q, facets, expected }) => {
+    expect(buildFacetedQuery(q, facets)).toBe(expected);
   });
 });

@@ -84,3 +84,12 @@ export function toExportSearchQuery(
   const query = params.q.trim() === "" ? "*" : params.q;
   return { query, filters };
 }
+
+// Base is paren-wrapped because Lucene binds AND tighter than OR:
+// `a OR b AND (f)` would parse as `a OR (b AND (f))`. Empty base → `*`.
+export function buildFacetedQuery(q: string, facets: string[]): string {
+  const trimmed = q.trim();
+  if (facets.length === 0) return trimmed;
+  const base = trimmed === "" ? "*" : `(${trimmed})`;
+  return [base, ...facets.map((f) => `(${f})`)].join(" AND ");
+}
