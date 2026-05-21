@@ -18,25 +18,24 @@ interface VocabularyJsonLd {
   "@graph"?: JsonLdGraphEntry[];
 }
 
+export interface Concept {
+  uri: string;
+  label: string;
+  definition?: string;
+  narrower?: Concept[];
+}
+
 export interface ConceptScheme {
-  /** Human-readable scheme title (dct:title, falling back to rdfs:label). */
-  title: string;
-  /** Concept URIs that are direct children of this scheme (skos:hasTopConcept). */
-  topConcepts: string[];
+  uri: string;
+  label: string;
+  topConcepts: Concept[];
 }
 
 export interface VocabularyData {
   labels: Map<string, string>;
   broader: Map<string, string>;
   definitions: Map<string, string>;
-  /** Concept scheme URI → scheme metadata. Keyed by the @id as it appears in
-   *  the vocabulary, which is typically a compact URI (e.g. "esea:DocumentTypeScheme")
-   *  — matching how concept entries reference their scheme via skos:inScheme. */
-  schemes: Map<string, ConceptScheme>;
-  /** Parent concept URI → child concept URIs. Derived as the inverse of
-   *  skos:broader so it covers every non-top concept exactly once; top-level
-   *  children of a scheme are exposed via `schemes[uri].topConcepts`. */
-  narrower: Map<string, string[]>;
+  schemes: ConceptScheme[];
 }
 
 const SKOS_CONCEPT = "skos:Concept";
@@ -77,25 +76,23 @@ function extractAllRefIds(
     .filter((id): id is string => typeof id === "string");
 }
 
+interface RawScheme {
+  uri: string;
+  label: string;
+  topConceptUris: string[];
+}
+
 /**
- * Build concept and scheme lookup maps from the vocabulary @graph.
+ * Build concept lookup maps and the scheme tree from the vocabulary @graph.
  *
- * - Concept entries (skos:Concept) contribute to `labels`, `broader`, and
- *   `definitions`.
- * - ConceptScheme entries (skos:ConceptScheme) contribute to `schemes` with
- *   their title and top concepts.
- * - `narrower` is the inverse of `broader`, computed in a second pass once
- *   all concepts have been seen.
- *
- * SKOS allows polyhierarchy; `broader` keeps only the first parent (used for
- * breadcrumb display in the existing UI), so `narrower` follows the same single-
- * parent view to stay consistent.
+ * SKOS allows polyhierarchy; `broader` keeps only the first parent and the
+ * scheme tree mirrors that single-parent view.
  */
 export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
   const labels = new Map<string, string>();
   const broader = new Map<string, string>();
   const definitions = new Map<string, string>();
-  const schemes = new Map<string, ConceptScheme>();
+  const rawSchemes: RawScheme[] = [];
 
   for (const entry of doc["@graph"] ?? []) {
     if (!entry["@id"]) continue;
@@ -118,26 +115,50 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
     }
 
     if (types.includes(SKOS_CONCEPT_SCHEME)) {
-      const title = entry["dct:title"] ?? entry["rdfs:label"];
-      if (!title) continue;
-      schemes.set(entry["@id"], {
-        title,
-        topConcepts: extractAllRefIds(entry["skos:hasTopConcept"]),
+      const label = entry["dct:title"] ?? entry["rdfs:label"];
+      if (!label) continue;
+      rawSchemes.push({
+        uri: entry["@id"],
+        label,
+        topConceptUris: extractAllRefIds(entry["skos:hasTopConcept"]),
       });
     }
   }
 
-  const narrower = new Map<string, string[]>();
+  const childrenByUri = new Map<string, string[]>();
   for (const [child, parent] of broader) {
-    const siblings = narrower.get(parent);
-    if (siblings) {
-      siblings.push(child);
-    } else {
-      narrower.set(parent, [child]);
-    }
+    const siblings = childrenByUri.get(parent);
+    if (siblings) siblings.push(child);
+    else childrenByUri.set(parent, [child]);
   }
 
-  return { labels, broader, definitions, schemes, narrower };
+  function buildConcept(uri: string, visited: Set<string>): Concept | null {
+    if (visited.has(uri)) return null;
+    const label = labels.get(uri);
+    if (!label) return null;
+    visited.add(uri);
+
+    const concept: Concept = { uri, label };
+    const definition = definitions.get(uri);
+    if (definition) concept.definition = definition;
+
+    const narrower = (childrenByUri.get(uri) ?? [])
+      .map((childUri) => buildConcept(childUri, visited))
+      .filter((c): c is Concept => c !== null);
+    if (narrower.length > 0) concept.narrower = narrower;
+
+    return concept;
+  }
+
+  const schemes: ConceptScheme[] = rawSchemes.map((raw) => ({
+    uri: raw.uri,
+    label: raw.label,
+    topConcepts: raw.topConceptUris
+      .map((uri) => buildConcept(uri, new Set()))
+      .filter((c): c is Concept => c !== null),
+  }));
+
+  return { labels, broader, definitions, schemes };
 }
 
 /**

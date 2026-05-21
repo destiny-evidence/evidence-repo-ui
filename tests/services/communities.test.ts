@@ -1,16 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// communities.ts reads VITE_ESEA_VOCABULARY_URL and VITE_ESEA_CONTEXT_URL at
-// module load time so a misconfigured build fails fast rather than silently
-// degrading at export/filter time (issue #63). vi.resetModules is needed so
-// each import re-evaluates the module against the current env stubs.
+// Each test re-evaluates communities.ts against fresh env stubs, so the module
+// registry must be cleared before every dynamic import.
 
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.resetModules();
 });
 
-describe("communities module-load env validation", () => {
+describe("communities", () => {
   it("throws when VITE_ESEA_VOCABULARY_URL is missing", async () => {
     vi.resetModules();
     vi.stubEnv("VITE_ESEA_VOCABULARY_URL", "");

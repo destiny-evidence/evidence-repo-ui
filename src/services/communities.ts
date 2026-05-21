@@ -1,7 +1,5 @@
 import type { Community } from "@/types/models";
 
-// Read at module load so a misconfigured build fails fast (issue #63).
-// Static accesses let Vite inline values at build time.
 function requireEnv(name: string, value: string | undefined): string {
   if (typeof value !== "string" || value === "") {
     throw new Error(

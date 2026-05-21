@@ -135,18 +135,27 @@ describe("buildVocabularyData", () => {
     expect(definitions.has("u:book")).toBe(false);
   });
 
-  it("extracts concept schemes with title and top concepts", () => {
+  it("builds concept schemes with uri, label, and top concepts", () => {
     const { schemes } = buildVocabularyData(SAMPLE_VOCABULARY);
 
-    expect(schemes.get("esea:DocumentTypeScheme")).toEqual({
-      title: "Document Type",
-      topConcepts: ["https://vocab.esea.education/DocumentTypeScheme/C00008"],
+    const docType = schemes.find((s) => s.uri === "esea:DocumentTypeScheme");
+    expect(docType).toEqual({
+      uri: "esea:DocumentTypeScheme",
+      label: "Document Type",
+      topConcepts: [
+        {
+          uri: "https://vocab.esea.education/DocumentTypeScheme/C00008",
+          label: "Journal Article",
+        },
+      ],
     });
+
     // Accepts a single (non-array) skos:hasTopConcept and rdfs:label fallback.
-    expect(schemes.get("esea:EducationThemeScheme")).toEqual({
-      title: "Education Theme Scheme",
-      topConcepts: ["https://vocab.esea.education/EducationThemeScheme/C00022"],
-    });
+    const theme = schemes.find((s) => s.uri === "esea:EducationThemeScheme");
+    expect(theme?.label).toBe("Education Theme Scheme");
+    expect(theme?.topConcepts[0]?.uri).toBe(
+      "https://vocab.esea.education/EducationThemeScheme/C00022",
+    );
   });
 
   it("skips ConceptScheme entries with no title", () => {
@@ -158,22 +167,51 @@ describe("buildVocabularyData", () => {
         },
       ],
     });
-    expect(schemes.has("u:scheme")).toBe(false);
+    expect(schemes).toEqual([]);
   });
 
-  it("derives narrower as the inverse of broader", () => {
-    const { narrower } = buildVocabularyData(SAMPLE_VOCABULARY);
+  it("nests narrower concepts under their broader parent", () => {
+    const { schemes } = buildVocabularyData(SAMPLE_VOCABULARY);
+    const theme = schemes.find((s) => s.uri === "esea:EducationThemeScheme");
+    const top = theme?.topConcepts[0];
 
-    expect(
-      narrower.get("https://vocab.esea.education/EducationThemeScheme/C00022"),
-    ).toEqual([
-      "https://vocab.esea.education/EducationThemeScheme/C00074",
-      "https://vocab.esea.education/EducationThemeScheme/C00075",
+    expect(top?.uri).toBe(
+      "https://vocab.esea.education/EducationThemeScheme/C00022",
+    );
+    expect(top?.narrower).toEqual([
+      {
+        uri: "https://vocab.esea.education/EducationThemeScheme/C00074",
+        label: "Literacy and Reading Interventions",
+      },
+      {
+        uri: "https://vocab.esea.education/EducationThemeScheme/C00075",
+        label: "Class Size",
+      },
     ]);
-    // Leaf concepts have no narrower entry.
-    expect(
-      narrower.has("https://vocab.esea.education/EducationThemeScheme/C00074"),
-    ).toBe(false);
+  });
+
+  it("attaches skos:definition to concepts that have one", () => {
+    const { schemes } = buildVocabularyData({
+      "@graph": [
+        {
+          "@id": "u:scheme",
+          "@type": "skos:ConceptScheme",
+          "dct:title": "Scheme",
+          "skos:hasTopConcept": { "@id": "u:journal" },
+        },
+        {
+          "@id": "u:journal",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Journal Article",
+          "skos:definition": "Peer-reviewed publication.",
+        },
+      ],
+    });
+    expect(schemes[0]?.topConcepts[0]).toEqual({
+      uri: "u:journal",
+      label: "Journal Article",
+      definition: "Peer-reviewed publication.",
+    });
   });
 });
 
