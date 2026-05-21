@@ -30,6 +30,34 @@ const SCHEME: ConceptScheme = {
   ],
 };
 
+// Two-tier scheme shaped like ESEA's OutcomeScheme: top-level outcome
+// categories with narrower child outcomes underneath.
+const URI_ACADEMIC = "https://vocab.esea.education/OutcomeScheme/T00001";
+const URI_READING = "https://vocab.esea.education/OutcomeScheme/T00002";
+const URI_MATH = "https://vocab.esea.education/OutcomeScheme/T00003";
+const URI_SOCIAL = "https://vocab.esea.education/OutcomeScheme/T00004";
+const URI_BEHAVIOR = "https://vocab.esea.education/OutcomeScheme/T00005";
+
+const HIERARCHICAL_SCHEME: ConceptScheme = {
+  uri: "https://vocab.esea.education/OutcomeScheme",
+  label: "Outcome",
+  topConcepts: [
+    {
+      uri: URI_ACADEMIC,
+      label: "Academic",
+      narrower: [
+        { uri: URI_READING, label: "Reading" },
+        { uri: URI_MATH, label: "Math" },
+      ],
+    },
+    {
+      uri: URI_SOCIAL,
+      label: "Social/emotional",
+      narrower: [{ uri: URI_BEHAVIOR, label: "Behavior" }],
+    },
+  ],
+};
+
 describe("emptyConceptSchemeState", () => {
   test("starts empty", () => {
     const state = emptyConceptSchemeState();
@@ -169,5 +197,33 @@ describe("toLuceneFragment", () => {
     expect(fragment).toContain(URI_JOURNAL_ARTICLE);
     expect(fragment.startsWith('linked_data_concepts:"')).toBe(true);
     expect(fragment.endsWith('"')).toBe(true);
+  });
+
+  test("includes a selected narrower concept from a two-tier scheme", () => {
+    const state = conceptSchemeStateFromUris([URI_READING]);
+    expect(toLuceneFragment(state, HIERARCHICAL_SCHEME)).toBe(
+      `linked_data_concepts:"${URI_READING}"`,
+    );
+  });
+
+  test("walks the tree depth-first preorder when ordering clauses", () => {
+    const state = conceptSchemeStateFromUris([
+      URI_BEHAVIOR,
+      URI_READING,
+      URI_ACADEMIC,
+    ]);
+    expect(toLuceneFragment(state, HIERARCHICAL_SCHEME)).toBe(
+      `(linked_data_concepts:"${URI_ACADEMIC}"` +
+        ` OR linked_data_concepts:"${URI_READING}"` +
+        ` OR linked_data_concepts:"${URI_BEHAVIOR}")`,
+    );
+  });
+
+  test("emits both parent and child clauses when both are selected", () => {
+    const state = conceptSchemeStateFromUris([URI_ACADEMIC, URI_READING]);
+    expect(toLuceneFragment(state, HIERARCHICAL_SCHEME)).toBe(
+      `(linked_data_concepts:"${URI_ACADEMIC}"` +
+        ` OR linked_data_concepts:"${URI_READING}")`,
+    );
   });
 });

@@ -2,6 +2,7 @@ export interface Concept {
   uri: string;
   label: string;
   definition?: string;
+  narrower?: Concept[];
 }
 
 export interface ConceptScheme {
@@ -64,12 +65,21 @@ export function toggleConcept(
   return brand(next);
 }
 
+function walkConcepts(concepts: Concept[]): Concept[] {
+  const all: Concept[] = [];
+  for (const concept of concepts) {
+    all.push(concept);
+    if (concept.narrower) all.push(...walkConcepts(concept.narrower));
+  }
+  return all;
+}
+
 export function toLuceneFragment(
   state: ConceptSchemeFilterState,
   scheme: ConceptScheme,
 ): string {
   const clauses: string[] = [];
-  for (const concept of scheme.topConcepts) {
+  for (const concept of walkConcepts(scheme.topConcepts)) {
     if (state.has(concept.uri)) {
       clauses.push(`linked_data_concepts:"${concept.uri}"`);
     }
