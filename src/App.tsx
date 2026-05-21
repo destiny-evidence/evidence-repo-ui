@@ -5,6 +5,7 @@ import { AppShell } from "./components/layout/AppShell";
 import { SearchPage } from "./pages/SearchPage";
 import { RecordDetailPage } from "./pages/RecordDetailPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { DevFiltersPage } from "./pages/DevFiltersPage";
 import { URL_CHANGE_EVENT } from "./services/navigation";
 
 // preact-router intercepts internal <a href="/..."> clicks and updates the
@@ -21,6 +22,7 @@ export function App() {
       <CommunityProvider>
         <AppShell>
           <Router onChange={emitUrlChange}>
+            {import.meta.env.DEV && <DevFiltersPage path="/dev/filters" />}
             <RecordDetailPage path="/:community/references/:id" />
             <SearchPage path="/:community" />
             <NotFoundPage default />
