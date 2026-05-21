@@ -11,6 +11,7 @@ import {
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,
   URI_EDUCATION_FINANCE,
+  URI_ENROLMENT,
 } from "./fixtures";
 
 const URI_JOURNAL_ARTICLE =
@@ -219,5 +220,40 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
         `.tooltip[data-tooltip="${EDUCATION_FINANCE_DEFINITION}"]`,
       ),
     ).not.toBeNull();
+  });
+
+  test("clicking an unselected parent selects the parent and all descendants", () => {
+    const onChange = vi.fn();
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText("Access to Education"));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(selectedUris(onChange.mock.calls[0][0])).toEqual([
+      URI_ACCESS,
+      URI_EDUCATION_FINANCE,
+      URI_ENROLMENT,
+    ]);
+  });
+
+  test("clicking a selected parent clears the parent and all descendants", () => {
+    const onChange = vi.fn();
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={conceptSchemeStateFromUris([
+          URI_ACCESS,
+          URI_EDUCATION_FINANCE,
+          URI_ENROLMENT,
+        ])}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText("Access to Education"));
+    expect(selectedUris(onChange.mock.calls[0][0])).toEqual([]);
   });
 });

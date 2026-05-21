@@ -13,6 +13,7 @@ import {
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,
   URI_EDUCATION_FINANCE,
+  URI_ENROLMENT,
 } from "./fixtures";
 
 function Harness() {
@@ -36,7 +37,7 @@ function Harness() {
 }
 
 describe("FilterCard + ConceptSchemeFilter integration", () => {
-  test("selecting a parent and a nested child reports the expected summary and Lucene fragment", () => {
+  test("clicking a parent selects its subtree and surfaces the combined summary and Lucene fragment", () => {
     render(<Harness />);
 
     const header = screen.getByRole("button", { name: /Outcome/ });
@@ -46,14 +47,14 @@ describe("FilterCard + ConceptSchemeFilter integration", () => {
 
     fireEvent.click(header);
     fireEvent.click(screen.getByLabelText("Access to Education"));
-    fireEvent.click(screen.getByLabelText("Education Finance"));
     fireEvent.click(header);
 
     expect(header.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.getByText("2 selected")).toBeDefined();
+    expect(screen.getByText("3 selected")).toBeDefined();
     expect(screen.getByTestId("fragment").textContent).toBe(
       `(linked_data_concepts:"${URI_ACCESS}"` +
-        ` OR linked_data_concepts:"${URI_EDUCATION_FINANCE}")`,
+        ` OR linked_data_concepts:"${URI_EDUCATION_FINANCE}"` +
+        ` OR linked_data_concepts:"${URI_ENROLMENT}")`,
     );
   });
 });

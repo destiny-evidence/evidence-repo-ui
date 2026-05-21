@@ -8,7 +8,9 @@ import {
   selectedUris,
   summary,
   toggleConcept,
+  toggleConceptSubtree,
   toLuceneFragment,
+  type Concept,
   type ConceptScheme,
 } from "@/components/filters/conceptSchemeFilterState";
 import {
@@ -128,6 +130,88 @@ describe("toggleConcept", () => {
       URI_JOURNAL_ARTICLE,
     );
     expect(isEmpty(roundTrip)).toBe(true);
+  });
+});
+
+describe("toggleConceptSubtree", () => {
+  const LEAF: Concept = { uri: URI_JOURNAL_ARTICLE, label: "Journal Article" };
+
+  const ACCESS_SUBTREE = OUTCOME_SCHEME_FIXTURE.topConcepts[0];
+
+  test("on a leaf behaves identically to toggleConcept", () => {
+    const empty = emptyConceptSchemeState();
+    expect(selectedUris(toggleConceptSubtree(empty, LEAF))).toEqual(
+      selectedUris(toggleConcept(empty, LEAF.uri)),
+    );
+    const oneSelected = conceptSchemeStateFromUris([LEAF.uri]);
+    expect(selectedUris(toggleConceptSubtree(oneSelected, LEAF))).toEqual(
+      selectedUris(toggleConcept(oneSelected, LEAF.uri)),
+    );
+  });
+
+  test("on an unselected parent adds the parent and every descendant", () => {
+    const result = toggleConceptSubtree(
+      emptyConceptSchemeState(),
+      ACCESS_SUBTREE,
+    );
+    expect(isSelected(result, URI_ACCESS)).toBe(true);
+    expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(true);
+    expect(isSelected(result, URI_ENROLMENT)).toBe(true);
+    expect(selectedCount(result)).toBe(3);
+  });
+
+  test("on a fully selected parent removes the parent and every descendant", () => {
+    const before = conceptSchemeStateFromUris([
+      URI_ACCESS,
+      URI_EDUCATION_FINANCE,
+      URI_ENROLMENT,
+    ]);
+    const result = toggleConceptSubtree(before, ACCESS_SUBTREE);
+    expect(isEmpty(result)).toBe(true);
+  });
+
+  test("clicking an unselected parent overrides partial child selections", () => {
+    const before = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
+    const result = toggleConceptSubtree(before, ACCESS_SUBTREE);
+    expect(selectedCount(result)).toBe(3);
+    expect(isSelected(result, URI_ACCESS)).toBe(true);
+    expect(isSelected(result, URI_ENROLMENT)).toBe(true);
+  });
+
+  test("clicking a selected parent clears the whole subtree, including children selected independently", () => {
+    const before = conceptSchemeStateFromUris([URI_ACCESS, URI_ENROLMENT]);
+    const result = toggleConceptSubtree(before, ACCESS_SUBTREE);
+    expect(isEmpty(result)).toBe(true);
+  });
+
+  test("does not mutate the input state", () => {
+    const before = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
+    const beforeSnapshot = selectedUris(before);
+    toggleConceptSubtree(before, ACCESS_SUBTREE);
+    expect(selectedUris(before)).toEqual(beforeSnapshot);
+  });
+
+  test("walks more than two levels deep", () => {
+    const deep: Concept = {
+      uri: "u:root",
+      label: "Root",
+      narrower: [
+        {
+          uri: "u:child",
+          label: "Child",
+          narrower: [{ uri: "u:grandchild", label: "Grandchild" }],
+        },
+      ],
+    };
+    const result = toggleConceptSubtree(emptyConceptSchemeState(), deep);
+    expect(selectedUris(result)).toEqual(["u:root", "u:child", "u:grandchild"]);
+  });
+
+  test("leaves URIs from outside the subtree untouched", () => {
+    const before = conceptSchemeStateFromUris([URI_LEARNING]);
+    const result = toggleConceptSubtree(before, ACCESS_SUBTREE);
+    expect(isSelected(result, URI_LEARNING)).toBe(true);
+    expect(isSelected(result, URI_ACCESS)).toBe(true);
   });
 });
 

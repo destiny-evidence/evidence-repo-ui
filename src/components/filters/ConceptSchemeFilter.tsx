@@ -1,7 +1,7 @@
 import { Tooltip } from "../Tooltip";
 import {
   isSelected,
-  toggleConcept,
+  toggleConceptSubtree,
   type Concept,
   type ConceptScheme,
   type ConceptSchemeFilterState,
@@ -38,7 +38,7 @@ function ConceptItem({ concept, state, onChange }: ConceptItemProps) {
           class="concept-scheme-filter__checkbox"
           type="checkbox"
           checked={isSelected(state, concept.uri)}
-          onChange={() => onChange(toggleConcept(state, concept.uri))}
+          onChange={() => onChange(toggleConceptSubtree(state, concept))}
         />
         {hasDefinition ? (
           <Tooltip text={concept.definition}>{labelNode}</Tooltip>

@@ -65,6 +65,25 @@ export function toggleConcept(
   return brand(next);
 }
 
+// Toggles the clicked concept plus all of its narrower descendants together.
+// Direction is set by the clicked concept's current state: if it is selected,
+// the whole subtree is cleared; otherwise the whole subtree is added. This
+// loses any independent child selections on deselect — a deliberate tradeoff
+// for predictable subtree semantics.
+export function toggleConceptSubtree(
+  state: ConceptSchemeFilterState,
+  concept: Concept,
+): ConceptSchemeFilterState {
+  const subtree = walkConcepts([concept]);
+  const next = new Set(state);
+  if (next.has(concept.uri)) {
+    for (const c of subtree) next.delete(c.uri);
+  } else {
+    for (const c of subtree) next.add(c.uri);
+  }
+  return brand(next);
+}
+
 function walkConcepts(concepts: Concept[]): Concept[] {
   const all: Concept[] = [];
   for (const concept of concepts) {
