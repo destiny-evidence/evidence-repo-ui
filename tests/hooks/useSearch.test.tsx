@@ -246,4 +246,76 @@ describe("useSearch", () => {
     expect(typeof result.current.retry).toBe("function");
     expect(mockSearch).not.toHaveBeenCalled();
   });
+
+  test("expands compact URIs and passes joined wire query when facets present", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const params: SearchParams = {
+      ...baseParams,
+      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    };
+    renderHook(() => useSearch(params), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    expect(mockSearch).toHaveBeenCalledWith(
+      '(phonics) AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")',
+      expect.objectContaining({
+        annotation: ["domain-inclusion/jacobs-education"],
+      }),
+    );
+  });
+
+  test("passes '* AND (expanded facet)' when q is empty and facets present", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const params: SearchParams = {
+      ...baseParams, q: "",
+      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    };
+    renderHook(() => useSearch(params), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    expect(mockSearch).toHaveBeenCalledWith(
+      '* AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")',
+      expect.anything(),
+    );
+  });
+
+  test("refetches when searchFacets change (cache key includes facets)", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const { rerender } = renderHook(
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: baseParams },
+      },
+    );
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+
+    rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'] } });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
+
+    rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00003"'] } });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(3));
+
+    // No refetch when facets array is structurally identical.
+    rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00003"'] } });
+    expect(mockSearch).toHaveBeenCalledTimes(3);
+  });
+
+  test("cache key is order-sensitive for facets", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const facetsA = ['linked_data_concepts:"x"', 'linked_data_concepts:"y"'];
+    const facetsB = ['linked_data_concepts:"y"', 'linked_data_concepts:"x"'];
+    const { rerender } = renderHook(
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: { ...baseParams, searchFacets: facetsA } },
+      },
+    );
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    rerender({ p: { ...baseParams, searchFacets: facetsB } });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
+  });
 });

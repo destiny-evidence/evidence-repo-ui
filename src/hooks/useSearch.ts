@@ -1,15 +1,24 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
 import { searchReferences, type SearchFilters } from "@/services/apiClient";
-import { SORT_BACKEND } from "@/services/searchParams";
+import { SORT_BACKEND, buildFacetedQuery, expandFacets } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
 
-function paramsKey(params: SearchParams, slug: string, annotations: string[]): string {
+function paramsKey(
+  params: SearchParams,
+  slug: string,
+  annotations: string[],
+  vocabBase: string,
+): string {
   // JSON.stringify is unambiguous for arbitrary string arrays — two distinct
   // inputs can never collapse to the same key even if annotations contain commas,
   // quotes, or other delimiters. Ad hoc joins are brittle here.
   // Intentionally order-sensitive: ["a","b"] and ["b","a"] are different keys.
+  // Facets keyed in compact form (typed state) — order-sensitive.
+  // vocabBase mirrors the value the effect uses via expandFacets; today it's
+  // determined by slug, but keying on it directly avoids a stale cache if a
+  // community ever decouples slug from vocab base.
   return [
     `q=${params.q}`,
     `page=${params.page}`,
@@ -18,6 +27,8 @@ function paramsKey(params: SearchParams, slug: string, annotations: string[]): s
     `sort=${params.sort ?? ""}`,
     `slug=${slug}`,
     `ann=${JSON.stringify(annotations)}`,
+    `facets=${JSON.stringify(params.searchFacets)}`,
+    `vocab=${vocabBase}`,
   ].join("&");
 }
 
@@ -28,7 +39,12 @@ export function useSearch(params: SearchParams): {
   retry: () => void;
 } {
   const community = useCommunity();
-  const key = paramsKey(params, community?.slug ?? "", community?.defaultAnnotations ?? []);
+  const key = paramsKey(
+    params,
+    community?.slug ?? "",
+    community?.defaultAnnotations ?? [],
+    community?.vocabBase ?? "",
+  );
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -55,7 +71,9 @@ export function useSearch(params: SearchParams): {
     };
     if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
 
-    searchReferences(params.q || undefined, filters)
+    const expanded = expandFacets(params.searchFacets, community.vocabBase);
+    const wireQuery = buildFacetedQuery(params.q, expanded);
+    searchReferences(wireQuery || undefined, filters)
       .then((r) => { if (!cancelled) setResults(r); })
       .catch((e) => {
         if (cancelled) return;
