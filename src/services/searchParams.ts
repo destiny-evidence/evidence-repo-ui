@@ -46,7 +46,7 @@ function stripOuterWrap(s: string): string {
   return depth === 0 ? s.slice(1, -1) : s;
 }
 
-export function parseSearchParams(search: string, vocabBase?: string): SearchParams {
+export function parseSearchParams(search: string): SearchParams {
   const params = new URLSearchParams(
     search.startsWith("?") ? search.slice(1) : search,
   );
@@ -54,7 +54,7 @@ export function parseSearchParams(search: string, vocabBase?: string): SearchPar
   let q = (params.get("q") ?? "").trim();
 
   const facetTail = /\s+AND\s+\(\s*(linked_data_concepts:[^)]+?)\s*\)\s*$/;
-  let searchFacets: string[] = [];
+  const searchFacets: string[] = [];
   while (true) {
     const m = q.match(facetTail);
     if (!m) break;
@@ -65,7 +65,6 @@ export function parseSearchParams(search: string, vocabBase?: string): SearchPar
   if (searchFacets.length > 0) {
     if (q === "*") q = "";
     else q = stripOuterWrap(q);
-    if (vocabBase !== undefined) searchFacets = compactFacets(searchFacets, vocabBase);
   }
 
   const pageRaw = parseDecimalInt(params.get("page"));
@@ -102,14 +101,11 @@ export function buildSearchUrl(communitySlug: string, params: SearchParams): str
 }
 
 // Maps a SearchParams + community annotations to the query/filters shape the
-// export endpoint expects. Facets expand to fully-qualified URIs at this
-// boundary so live search and export share one wire-format path. Substitutes
-// "*" for an empty browse-mode query (no q, no facets) so the backend's
-// `min_length=1` constraint is satisfied.
+// export endpoint expects. Substitutes "*" for an empty browse-mode query
+// (no q, no facets) so the backend's `min_length=1` constraint is satisfied.
 export function toExportSearchQuery(
   params: SearchParams,
   annotations: string[] | undefined,
-  vocabBase: string,
 ): { query: string; filters: Omit<SearchFilters, "page"> } {
   const filters: Omit<SearchFilters, "page"> = {
     startYear: params.startYear,
@@ -117,8 +113,7 @@ export function toExportSearchQuery(
     annotation: annotations,
   };
   if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
-  const expanded = expandFacets(params.searchFacets, vocabBase);
-  const query = buildFacetedQuery(params.q, expanded) || "*";
+  const query = buildFacetedQuery(params.q, params.searchFacets) || "*";
   return { query, filters };
 }
 
@@ -129,22 +124,4 @@ export function buildFacetedQuery(q: string, facets: string[]): string {
   if (facets.length === 0) return trimmed;
   const base = trimmed === "" ? "*" : `(${trimmed})`;
   return [base, ...facets.map((f) => `(${f})`)].join(" AND ");
-}
-
-const LDC_URI = /(linked_data_concepts:")([^"]+)(")/g;
-
-export function expandFacets(facets: string[], vocabBase: string): string[] {
-  return facets.map((f) =>
-    f.replace(LDC_URI, (_, prefix, uri, suffix) =>
-      uri.startsWith("http") ? `${prefix}${uri}${suffix}` : `${prefix}${vocabBase}${uri}${suffix}`,
-    ),
-  );
-}
-
-export function compactFacets(facets: string[], vocabBase: string): string[] {
-  return facets.map((f) =>
-    f.replace(LDC_URI, (_, prefix, uri, suffix) =>
-      uri.startsWith(vocabBase) ? `${prefix}${uri.slice(vocabBase.length)}${suffix}` : `${prefix}${uri}${suffix}`,
-    ),
-  );
 }

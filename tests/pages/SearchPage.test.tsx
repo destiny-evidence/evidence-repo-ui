@@ -537,14 +537,13 @@ describe("SearchPage", () => {
       );
     });
 
-    test("facet URL → Export sends fully-qualified URI to requestSearchExport", async () => {
-      // SearchPage-layer integration: catches misthreaded community.vocabBase
-      // or stale params at the call site, which the unit tests on
-      // toExportSearchQuery in isolation cannot.
+    test("facet URL → Export passes facet through to requestSearchExport", async () => {
+      // SearchPage-layer integration: catches stale params at the call site,
+      // which the unit tests on toExportSearchQuery in isolation cannot.
       history.replaceState(
         null,
         "",
-        "/esea?q=%28phonics%29+AND+%28linked_data_concepts%3A%22EducationLevelScheme%2FC00002%22%29",
+        "/esea?q=%28phonics%29+AND+%28linked_data_concepts%3A%22https%3A%2F%2Fvocab.esea.education%2FEducationLevelScheme%2FC00002%22%29",
       );
       mockBoth({ results: makeResult(7, ["r1"]) });
       mockRequestExport.mockResolvedValue({ id: "job-facet", status: "pending", truncated: false });
@@ -554,7 +553,6 @@ describe("SearchPage", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /export to excel/i }));
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
-      // Page-layer integration witness: community.vocabBase reaches the call site.
       // Exact join/precedence is owned by toExportSearchQuery unit tests.
       expect(mockRequestExport).toHaveBeenCalledWith(
         expect.stringContaining("https://vocab.esea.education/EducationLevelScheme/C00002"),

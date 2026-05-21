@@ -23,7 +23,6 @@ const COMMUNITIES: Community[] = [
       "VITE_ESEA_CONTEXT_URL",
       import.meta.env.VITE_ESEA_CONTEXT_URL,
     ),
-    vocabBase: "https://vocab.esea.education/",
   },
 ];
 
