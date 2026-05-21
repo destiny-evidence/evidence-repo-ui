@@ -4,7 +4,7 @@ import type { ComponentChildren } from "preact";
 import { useSearch } from "@/hooks/useSearch";
 import { CommunityProvider } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
-import type { SearchParams } from "@/services/searchParams";
+import { makeSearchParams } from "../fixtures";
 
 vi.mock("@/services/apiClient", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/apiClient")>();
@@ -14,7 +14,7 @@ vi.mock("@/services/apiClient", async (importOriginal) => {
 import { searchReferences } from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
 
-const baseParams: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
+const baseParams = makeSearchParams({ q: "phonics" });
 
 // Drive the real CommunityProvider through the URL the way the runtime does.
 function withCommunityPath(path: string) {
@@ -251,10 +251,10 @@ describe("useSearch", () => {
   // the wire query — exact join/precedence format owned by searchParams unit tests.
   test("expands compact facet URIs via community.vocabBase when calling searchReferences", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
-    const params: SearchParams = {
-      ...baseParams,
+    const params = makeSearchParams({
+      q: "phonics",
       searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-    };
+    });
     renderHook(() => useSearch(params), {
       wrapper: withCommunityPath("/esea"),
     });
@@ -264,6 +264,24 @@ describe("useSearch", () => {
       expect.objectContaining({
         annotation: ["domain-inclusion/jacobs-education"],
       }),
+    );
+  });
+
+  // Pins the composition for empty q + facets: useSearch must pass the
+  // faceted wire query (not undefined) so the backend receives the filter
+  // instead of dropping to browse mode.
+  test("empty q + facets calls searchReferences with the faceted wire query (not undefined)", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const params = makeSearchParams({
+      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    });
+    renderHook(() => useSearch(params), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    expect(mockSearch).toHaveBeenCalledWith(
+      expect.stringContaining("https://vocab.esea.education/EducationLevelScheme/C00002"),
+      expect.anything(),
     );
   });
 

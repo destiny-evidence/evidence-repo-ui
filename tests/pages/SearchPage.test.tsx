@@ -363,6 +363,24 @@ describe("SearchPage", () => {
     });
   });
 
+  test("renders meta bar in loading state when only facets are set", async () => {
+    // The summary-line test mocks resolved results, which satisfies showMetaBar
+    // via results.results !== null regardless of the facets gate. This test
+    // pins the harder case: the facets gate alone must fire showMetaBar while
+    // the fetch is still in flight, otherwise a facet URL loads under the
+    // browse-mode hero with no indication that a filter is active.
+    history.replaceState(null, "", "/esea?q=%2A+AND+%28linked_data_concepts%3A%22EducationLevelScheme%2FC00002%22%29");
+    mockSearch.mockImplementation((q) => {
+      if (q === undefined) return Promise.resolve(makeResult(5721, ["corpus-ref"]));
+      return new Promise(() => {}); // never resolves
+    });
+    const { container } = renderSearchPage();
+    await waitFor(() => {
+      expect(container.querySelector(".search-results__meta")).toBeInTheDocument();
+    });
+    expect(screen.getByText(/searching/i)).toBeInTheDocument();
+  });
+
   describe("export button", () => {
     test("enabled in browse mode; click POSTs with q=* and the community annotation", async () => {
       mockBoth({ results: makeResult(5721, ["r1"]) });

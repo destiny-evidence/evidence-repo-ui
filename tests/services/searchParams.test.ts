@@ -8,8 +8,8 @@ import {
   expandFacets,
   compactFacets,
   toExportSearchQuery,
-  type SearchParams,
 } from "@/services/searchParams";
+import { makeSearchParams } from "../fixtures";
 
 describe("parseSearchParams", () => {
   test("empty search → defaults", () => {
@@ -221,36 +221,31 @@ describe("parseSearchParams URI compaction", () => {
 
 describe("toQueryString", () => {
   test("omits defaults", () => {
-    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
-    expect(toQueryString(p)).toBe("");
+    expect(toQueryString(makeSearchParams())).toBe("");
   });
 
   test("fixed key order: q, start_year, end_year, sort, page", () => {
-    const p: SearchParams = { q: "phonics", page: 3, startYear: 2010, endYear: 2024, sort: "newest", searchFacets: [] };
+    const p = makeSearchParams({ q: "phonics", page: 3, startYear: 2010, endYear: 2024, sort: "newest" });
     expect(toQueryString(p)).toBe("q=phonics&start_year=2010&end_year=2024&sort=newest&page=3");
   });
 
   test("page=1 (default) is dropped from output, q is kept", () => {
-    const p: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
-    expect(toQueryString(p)).toBe("q=phonics");
+    expect(toQueryString(makeSearchParams({ q: "phonics" }))).toBe("q=phonics");
   });
 
   test("URL-encodes q", () => {
-    const p: SearchParams = { q: "a b&c", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
-    expect(toQueryString(p)).toBe("q=a+b%26c");
+    expect(toQueryString(makeSearchParams({ q: "a b&c" }))).toBe("q=a+b%26c");
   });
 
   test("sort omitted when undefined (relevance default)", () => {
-    const p: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
-    expect(toQueryString(p)).toBe("q=phonics");
+    expect(toQueryString(makeSearchParams({ q: "phonics" }))).toBe("q=phonics");
   });
 
   test.each([
     { sort: "newest" as const },
     { sort: "oldest" as const },
   ])("sort=$sort is emitted", ({ sort }) => {
-    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort, searchFacets: [] };
-    expect(toQueryString(p)).toBe(`sort=${sort}`);
+    expect(toQueryString(makeSearchParams({ sort }))).toBe(`sort=${sort}`);
   });
 
   test("round-trip normalization", () => {
@@ -260,27 +255,21 @@ describe("toQueryString", () => {
   });
 
   test("empty q + one facet → decoded q is '* AND (facet)'", () => {
-    const p: SearchParams = {
-      q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined,
-      searchFacets: ['linked_data_concepts:"x"'],
-    };
+    const p = makeSearchParams({ searchFacets: ['linked_data_concepts:"x"'] });
     const q = new URLSearchParams(toQueryString(p)).get("q");
     expect(q).toBe('* AND (linked_data_concepts:"x")');
   });
 
   test("non-empty q + facets → '(base) AND (f1) AND (f2)'", () => {
-    const p: SearchParams = {
-      q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined,
-      searchFacets: [
-        'linked_data_concepts:"x"',
-        'linked_data_concepts:"y"',
-      ],
-    };
-    const decoded = decodeURIComponent(toQueryString(p).replace(/\+/g, " "));
-    expect(decoded).toBe('q=(phonics) AND (linked_data_concepts:"x") AND (linked_data_concepts:"y")');
+    const p = makeSearchParams({
+      q: "phonics",
+      searchFacets: ['linked_data_concepts:"x"', 'linked_data_concepts:"y"'],
+    });
+    const q = new URLSearchParams(toQueryString(p)).get("q");
+    expect(q).toBe('(phonics) AND (linked_data_concepts:"x") AND (linked_data_concepts:"y")');
   });
 
-  test("round-trip is idempotent: parse → serialise → parse", () => {
+  test("compact-form facet URL round-trips through parse → serialise → parse", () => {
     const url = '?q=(phonics OR reading) AND (linked_data_concepts:"EducationLevelScheme/C00002") AND (linked_data_concepts:"OutcomeScheme/C00123")&page=2';
     const first = parseSearchParams(url);
     const serialised = toQueryString(first);
@@ -289,25 +278,50 @@ describe("toQueryString", () => {
   });
 
   test("round-trip from typed state with empty q + facets", () => {
-    const input: SearchParams = {
-      q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined,
+    const input = makeSearchParams({
       searchFacets: ['linked_data_concepts:"x"'],
-    };
+    });
     const serialised = toQueryString(input);
     const parsed = parseSearchParams("?" + serialised);
     expect(parsed).toEqual(input);
+  });
+
+  // Closes the canonicalization path actually used in production: SearchPage
+  // hands parseSearchParams its vocabBase, so a hand-crafted URL with a full
+  // ESEA URI must collapse to compact state, and the next toQueryString must
+  // emit the compact form (full URI must not appear in the URL).
+  test("full ESEA URI in facet URL canonicalizes to compact via vocabBase", () => {
+    const vocabBase = findCommunity("esea")!.vocabBase;
+    const rawFullUriUrl = '?q=phonics AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")';
+    const parsed = parseSearchParams(rawFullUriUrl, vocabBase);
+    expect(parsed.searchFacets).toEqual([
+      'linked_data_concepts:"EducationLevelScheme/C00002"',
+    ]);
+    const serialisedQ = new URLSearchParams(toQueryString(parsed)).get("q");
+    expect(serialisedQ).not.toContain("https://");
+    expect(serialisedQ).toContain("EducationLevelScheme/C00002");
+  });
+
+  test("q stays first when facets are combined with start_year/sort/page", () => {
+    const p = makeSearchParams({
+      q: "phonics",
+      page: 3,
+      startYear: 2010,
+      sort: "newest",
+      searchFacets: ['linked_data_concepts:"x"'],
+    });
+    const keyOrder = Array.from(new URLSearchParams(toQueryString(p)).keys());
+    expect(keyOrder).toEqual(["q", "start_year", "sort", "page"]);
   });
 });
 
 describe("buildSearchUrl", () => {
   test("empty params → bare slug path", () => {
-    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
-    expect(buildSearchUrl("esea", p)).toBe("/esea");
+    expect(buildSearchUrl("esea", makeSearchParams())).toBe("/esea");
   });
 
   test("with params → slug + querystring", () => {
-    const p: SearchParams = { q: "phonics", page: 2, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
-    expect(buildSearchUrl("esea", p)).toBe("/esea?q=phonics&page=2");
+    expect(buildSearchUrl("esea", makeSearchParams({ q: "phonics", page: 2 }))).toBe("/esea?q=phonics&page=2");
   });
 });
 
@@ -436,42 +450,42 @@ describe("expandFacets / compactFacets (inverse boundary transforms)", () => {
 });
 
 describe("toExportSearchQuery with facets", () => {
-  const base = { page: 1, startYear: undefined, endYear: undefined, sort: undefined };
   const vocabBase = findCommunity("esea")!.vocabBase;
 
   test("no facets, non-empty q → existing behaviour preserved", () => {
-    const p: SearchParams = { ...base, q: "phonics", searchFacets: [] };
+    const p = makeSearchParams({ q: "phonics" });
     expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query).toBe("phonics");
   });
 
   test("no facets, empty q → '*' substitution preserved", () => {
-    const p: SearchParams = { ...base, q: "", searchFacets: [] };
-    expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query).toBe("*");
+    expect(toExportSearchQuery(makeSearchParams(), ["dom-x"], vocabBase).query).toBe("*");
   });
 
   test("facets present, non-empty q → compact URIs expanded to full in wire form", () => {
-    const p: SearchParams = {
-      ...base, q: "phonics",
+    const p = makeSearchParams({
+      q: "phonics",
       searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-    };
+    });
     expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query)
       .toBe('(phonics) AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")');
   });
 
   test("facets present, empty q → '* AND (expanded facet)'", () => {
-    const p: SearchParams = {
-      ...base, q: "",
+    const p = makeSearchParams({
       searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-    };
+    });
     expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query)
       .toBe('* AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")');
   });
 
   test("filters (annotation, years, sort) unaffected by facets", () => {
-    const p: SearchParams = {
-      q: "phonics", page: 1, startYear: 2010, endYear: 2024, sort: "newest",
+    const p = makeSearchParams({
+      q: "phonics",
+      startYear: 2010,
+      endYear: 2024,
+      sort: "newest",
       searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-    };
+    });
     expect(toExportSearchQuery(p, ["dom-x"], vocabBase).filters).toEqual({
       startYear: 2010,
       endYear: 2024,
