@@ -9,6 +9,7 @@ import {
   buildFacetedQuery,
   expandFacets,
   compactFacets,
+  toExportSearchQuery,
   type SearchParams,
 } from "@/services/searchParams";
 
@@ -467,5 +468,51 @@ describe("expandFacets / compactFacets (inverse boundary transforms)", () => {
   test("round-trip: compact(expand(x)) = x", () => {
     const compact = ['linked_data_concepts:"EducationLevelScheme/C00002"'];
     expect(compactFacets(expandFacets(compact, base), base)).toEqual(compact);
+  });
+});
+
+describe("toExportSearchQuery with facets", () => {
+  const base = { page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+  const vocabBase = findCommunity("esea")!.vocabBase;
+
+  test("no facets, non-empty q → existing behaviour preserved", () => {
+    const p: SearchParams = { ...base, q: "phonics", searchFacets: [] };
+    expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query).toBe("phonics");
+  });
+
+  test("no facets, empty q → '*' substitution preserved", () => {
+    const p: SearchParams = { ...base, q: "", searchFacets: [] };
+    expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query).toBe("*");
+  });
+
+  test("facets present, non-empty q → compact URIs expanded to full in wire form", () => {
+    const p: SearchParams = {
+      ...base, q: "phonics",
+      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    };
+    expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query)
+      .toBe('(phonics) AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")');
+  });
+
+  test("facets present, empty q → '* AND (expanded facet)'", () => {
+    const p: SearchParams = {
+      ...base, q: "",
+      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    };
+    expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query)
+      .toBe('* AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")');
+  });
+
+  test("filters (annotation, years, sort) unaffected by facets", () => {
+    const p: SearchParams = {
+      q: "phonics", page: 1, startYear: 2010, endYear: 2024, sort: "newest",
+      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    };
+    expect(toExportSearchQuery(p, ["dom-x"], vocabBase).filters).toEqual({
+      startYear: 2010,
+      endYear: 2024,
+      annotation: ["dom-x"],
+      sort: ["-publication_year"],
+    });
   });
 });

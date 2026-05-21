@@ -169,7 +169,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const exportAnnouncement = exportAnnouncementFor(exportJob.status);
 
   function handleExport() {
-    const { query, filters } = toExportSearchQuery(params, community.defaultAnnotations);
+    const { query, filters } = toExportSearchQuery(params, community.defaultAnnotations, community.vocabBase);
     exportJob.start(query, filters, formatExportFilename(community.slug));
   }
 

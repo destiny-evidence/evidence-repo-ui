@@ -102,12 +102,14 @@ export function buildSearchUrl(communitySlug: string, params: SearchParams): str
 }
 
 // Maps a SearchParams + community annotations to the query/filters shape the
-// export endpoint expects. Substitutes "*" for an empty `q` so the backend's
-// `min_length=1` constraint is satisfied for browse-mode and year-only
-// exports.
+// export endpoint expects. Facets expand to fully-qualified URIs at this
+// boundary so live search and export share one wire-format path. Substitutes
+// "*" for an empty browse-mode query (no q, no facets) so the backend's
+// `min_length=1` constraint is satisfied.
 export function toExportSearchQuery(
   params: SearchParams,
   annotations: string[] | undefined,
+  vocabBase: string,
 ): { query: string; filters: Omit<SearchFilters, "page"> } {
   const filters: Omit<SearchFilters, "page"> = {
     startYear: params.startYear,
@@ -115,7 +117,8 @@ export function toExportSearchQuery(
     annotation: annotations,
   };
   if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
-  const query = params.q.trim() === "" ? "*" : params.q;
+  const expanded = expandFacets(params.searchFacets, vocabBase);
+  const query = buildFacetedQuery(params.q, expanded) || "*";
   return { query, filters };
 }
 
