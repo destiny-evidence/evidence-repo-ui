@@ -25,6 +25,7 @@ describe("parseSearchParams", () => {
       startYear: undefined,
       endYear: undefined,
       sort: undefined,
+      searchFacets: [],
     });
   });
 
@@ -36,6 +37,7 @@ describe("parseSearchParams", () => {
       startYear: 2010,
       endYear: 2024,
       sort: "newest",
+      searchFacets: [],
     });
   });
 
@@ -118,27 +120,27 @@ describe("parseSearchParams", () => {
 
 describe("toQueryString", () => {
   test("omits defaults", () => {
-    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(toQueryString(p)).toBe("");
   });
 
   test("fixed key order: q, start_year, end_year, sort, page", () => {
-    const p: SearchParams = { q: "phonics", page: 3, startYear: 2010, endYear: 2024, sort: "newest" };
+    const p: SearchParams = { q: "phonics", page: 3, startYear: 2010, endYear: 2024, sort: "newest", searchFacets: [] };
     expect(toQueryString(p)).toBe("q=phonics&start_year=2010&end_year=2024&sort=newest&page=3");
   });
 
   test("page=1 (default) is dropped from output, q is kept", () => {
-    const p: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(toQueryString(p)).toBe("q=phonics");
   });
 
   test("URL-encodes q", () => {
-    const p: SearchParams = { q: "a b&c", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "a b&c", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(toQueryString(p)).toBe("q=a+b%26c");
   });
 
   test("sort omitted when undefined (relevance default)", () => {
-    const p: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(toQueryString(p)).toBe("q=phonics");
   });
 
@@ -146,7 +148,7 @@ describe("toQueryString", () => {
     { sort: "newest" as const },
     { sort: "oldest" as const },
   ])("sort=$sort is emitted", ({ sort }) => {
-    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort };
+    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort, searchFacets: [] };
     expect(toQueryString(p)).toBe(`sort=${sort}`);
   });
 
@@ -159,12 +161,12 @@ describe("toQueryString", () => {
 
 describe("buildSearchUrl", () => {
   test("empty params → bare slug path", () => {
-    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(buildSearchUrl("esea", p)).toBe("/esea");
   });
 
   test("with params → slug + querystring", () => {
-    const p: SearchParams = { q: "phonics", page: 2, startYear: undefined, endYear: undefined, sort: undefined };
+    const p: SearchParams = { q: "phonics", page: 2, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
     expect(buildSearchUrl("esea", p)).toBe("/esea?q=phonics&page=2");
   });
 });

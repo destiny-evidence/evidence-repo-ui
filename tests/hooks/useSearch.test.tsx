@@ -14,7 +14,7 @@ vi.mock("@/services/apiClient", async (importOriginal) => {
 import { searchReferences } from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
 
-const baseParams: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+const baseParams: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
 
 // Drive the real CommunityProvider through the URL the way the runtime does.
 function withCommunityPath(path: string) {

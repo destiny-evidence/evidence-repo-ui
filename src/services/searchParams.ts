@@ -15,6 +15,7 @@ export interface SearchParams {
   startYear: number | undefined;
   endYear: number | undefined;
   sort: SortOption | undefined;
+  searchFacets: string[];
 }
 
 // Unknown values fall back to undefined (relevance).
@@ -49,7 +50,7 @@ export function parseSearchParams(search: string): SearchParams {
 
   const sort = parseSort(params.get("sort"));
 
-  return { q, page, startYear, endYear, sort };
+  return { q, page, startYear, endYear, sort, searchFacets: [] };
 }
 
 export function toQueryString(params: SearchParams): string {
