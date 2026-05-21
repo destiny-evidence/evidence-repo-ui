@@ -264,6 +264,52 @@ describe("toQueryString", () => {
     const canonical = toQueryString(parseSearchParams(raw));
     expect(canonical).toBe("q=hello");
   });
+
+  test("no facets → q is unchanged (back-compat)", () => {
+    const p: SearchParams = {
+      q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined,
+      searchFacets: [],
+    };
+    expect(toQueryString(p)).toBe("q=phonics");
+  });
+
+  test("empty q + one facet → '* AND (facet)' URL-encoded in q=", () => {
+    const p: SearchParams = {
+      q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined,
+      searchFacets: ['linked_data_concepts:"x"'],
+    };
+    expect(toQueryString(p)).toBe('q=*+AND+%28linked_data_concepts%3A%22x%22%29');
+  });
+
+  test("non-empty q + facets → '(base) AND (f1) AND (f2)'", () => {
+    const p: SearchParams = {
+      q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined,
+      searchFacets: [
+        'linked_data_concepts:"x"',
+        'linked_data_concepts:"y"',
+      ],
+    };
+    const decoded = decodeURIComponent(toQueryString(p).replace(/\+/g, " "));
+    expect(decoded).toBe('q=(phonics) AND (linked_data_concepts:"x") AND (linked_data_concepts:"y")');
+  });
+
+  test("round-trip is idempotent: parse → serialise → parse", () => {
+    const url = '?q=(phonics OR reading) AND (linked_data_concepts:"EducationLevelScheme/C00002") AND (linked_data_concepts:"OutcomeScheme/C00123")&page=2';
+    const first = parseSearchParams(url);
+    const serialised = toQueryString(first);
+    const second = parseSearchParams("?" + serialised);
+    expect(second).toEqual(first);
+  });
+
+  test("round-trip from typed state with empty q + facets", () => {
+    const input: SearchParams = {
+      q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined,
+      searchFacets: ['linked_data_concepts:"x"'],
+    };
+    const serialised = toQueryString(input);
+    const parsed = parseSearchParams("?" + serialised);
+    expect(parsed).toEqual(input);
+  });
 });
 
 describe("buildSearchUrl", () => {

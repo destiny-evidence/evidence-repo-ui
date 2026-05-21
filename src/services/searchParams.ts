@@ -85,7 +85,10 @@ export function parseSearchParams(search: string, vocabBase?: string): SearchPar
 
 export function toQueryString(params: SearchParams): string {
   const out = new URLSearchParams();
-  if (params.q) out.set("q", params.q);
+  const qSerialised = params.searchFacets.length > 0
+    ? buildFacetedQuery(params.q, params.searchFacets)
+    : params.q;
+  if (qSerialised) out.set("q", qSerialised);
   if (params.startYear !== undefined) out.set("start_year", String(params.startYear));
   if (params.endYear !== undefined) out.set("end_year", String(params.endYear));
   if (params.sort !== undefined) out.set("sort", params.sort);
