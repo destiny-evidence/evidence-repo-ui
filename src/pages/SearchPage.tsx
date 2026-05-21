@@ -92,7 +92,7 @@ export function SearchPage(_props: SearchPageProps) {
 
 function SearchPageInner({ community }: { community: Community }) {
   const search = useUrlParams();
-  const params = parseSearchParams(search);
+  const params = parseSearchParams(search, community.vocabBase);
   const canonicalQs = toQueryString(params);
 
   // Canonicalize once: if URL query string doesn't match the canonical form,
@@ -118,13 +118,15 @@ function SearchPageInner({ community }: { community: Community }) {
     results.error !== null ||
     params.q !== "" ||
     params.startYear !== undefined ||
-    params.endYear !== undefined;
+    params.endYear !== undefined ||
+    params.searchFacets.length > 0;
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary =
     params.q !== "" ||
     params.startYear !== undefined ||
     params.endYear !== undefined ||
+    params.searchFacets.length > 0 ||
     results.error !== null;
 
   function handleSubmit() {
@@ -169,7 +171,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const exportAnnouncement = exportAnnouncementFor(exportJob.status);
 
   function handleExport() {
-    const { query, filters } = toExportSearchQuery(params, community.defaultAnnotations);
+    const { query, filters } = toExportSearchQuery(params, community.defaultAnnotations, community.vocabBase);
     exportJob.start(query, filters, formatExportFilename(community.slug));
   }
 

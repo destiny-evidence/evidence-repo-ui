@@ -15,6 +15,7 @@ export interface SearchParams {
   startYear: number | undefined;
   endYear: number | undefined;
   sort: SortOption | undefined;
+  searchFacets: string[];
 }
 
 // Unknown values fall back to undefined (relevance).
@@ -30,12 +31,42 @@ function parseDecimalInt(raw: string | null): number | undefined {
   return Number.isSafeInteger(n) ? n : undefined;
 }
 
-export function parseSearchParams(search: string): SearchParams {
+// Strips an outer ( ... ) pair iff the first "(" balances at the last ")".
+// "(a) AND (b)" → unchanged (first "(" closes before the end).
+function stripOuterWrap(s: string): string {
+  if (!s.startsWith("(") || !s.endsWith(")")) return s;
+  let depth = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === "(") depth++;
+    else if (s[i] === ")") {
+      depth--;
+      if (depth === 0 && i < s.length - 1) return s;
+    }
+  }
+  return depth === 0 ? s.slice(1, -1) : s;
+}
+
+export function parseSearchParams(search: string, vocabBase?: string): SearchParams {
   const params = new URLSearchParams(
     search.startsWith("?") ? search.slice(1) : search,
   );
 
-  const q = (params.get("q") ?? "").trim();
+  let q = (params.get("q") ?? "").trim();
+
+  const facetTail = /\s+AND\s+\(\s*(linked_data_concepts:[^)]+?)\s*\)\s*$/;
+  let searchFacets: string[] = [];
+  while (true) {
+    const m = q.match(facetTail);
+    if (!m) break;
+    searchFacets.unshift(m[1]);
+    q = q.slice(0, q.length - m[0].length).trimEnd();
+  }
+
+  if (searchFacets.length > 0) {
+    if (q === "*") q = "";
+    else q = stripOuterWrap(q);
+    if (vocabBase !== undefined) searchFacets = compactFacets(searchFacets, vocabBase);
+  }
 
   const pageRaw = parseDecimalInt(params.get("page"));
   const page = pageRaw !== undefined && pageRaw >= 1 ? pageRaw : 1;
@@ -49,12 +80,15 @@ export function parseSearchParams(search: string): SearchParams {
 
   const sort = parseSort(params.get("sort"));
 
-  return { q, page, startYear, endYear, sort };
+  return { q, page, startYear, endYear, sort, searchFacets };
 }
 
 export function toQueryString(params: SearchParams): string {
   const out = new URLSearchParams();
-  if (params.q) out.set("q", params.q);
+  const qSerialised = params.searchFacets.length > 0
+    ? buildFacetedQuery(params.q, params.searchFacets)
+    : params.q;
+  if (qSerialised) out.set("q", qSerialised);
   if (params.startYear !== undefined) out.set("start_year", String(params.startYear));
   if (params.endYear !== undefined) out.set("end_year", String(params.endYear));
   if (params.sort !== undefined) out.set("sort", params.sort);
@@ -68,12 +102,14 @@ export function buildSearchUrl(communitySlug: string, params: SearchParams): str
 }
 
 // Maps a SearchParams + community annotations to the query/filters shape the
-// export endpoint expects. Substitutes "*" for an empty `q` so the backend's
-// `min_length=1` constraint is satisfied for browse-mode and year-only
-// exports.
+// export endpoint expects. Facets expand to fully-qualified URIs at this
+// boundary so live search and export share one wire-format path. Substitutes
+// "*" for an empty browse-mode query (no q, no facets) so the backend's
+// `min_length=1` constraint is satisfied.
 export function toExportSearchQuery(
   params: SearchParams,
   annotations: string[] | undefined,
+  vocabBase: string,
 ): { query: string; filters: Omit<SearchFilters, "page"> } {
   const filters: Omit<SearchFilters, "page"> = {
     startYear: params.startYear,
@@ -81,6 +117,34 @@ export function toExportSearchQuery(
     annotation: annotations,
   };
   if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
-  const query = params.q.trim() === "" ? "*" : params.q;
+  const expanded = expandFacets(params.searchFacets, vocabBase);
+  const query = buildFacetedQuery(params.q, expanded) || "*";
   return { query, filters };
+}
+
+// Base is paren-wrapped because Lucene binds AND tighter than OR:
+// `a OR b AND (f)` would parse as `a OR (b AND (f))`. Empty base → `*`.
+export function buildFacetedQuery(q: string, facets: string[]): string {
+  const trimmed = q.trim();
+  if (facets.length === 0) return trimmed;
+  const base = trimmed === "" ? "*" : `(${trimmed})`;
+  return [base, ...facets.map((f) => `(${f})`)].join(" AND ");
+}
+
+const LDC_URI = /(linked_data_concepts:")([^"]+)(")/g;
+
+export function expandFacets(facets: string[], vocabBase: string): string[] {
+  return facets.map((f) =>
+    f.replace(LDC_URI, (_, prefix, uri, suffix) =>
+      uri.startsWith("http") ? `${prefix}${uri}${suffix}` : `${prefix}${vocabBase}${uri}${suffix}`,
+    ),
+  );
+}
+
+export function compactFacets(facets: string[], vocabBase: string): string[] {
+  return facets.map((f) =>
+    f.replace(LDC_URI, (_, prefix, uri, suffix) =>
+      uri.startsWith(vocabBase) ? `${prefix}${uri.slice(vocabBase.length)}${suffix}` : `${prefix}${uri}${suffix}`,
+    ),
+  );
 }

@@ -5,6 +5,7 @@ const COMMUNITIES: Community[] = [
     slug: "esea",
     name: "Education",
     defaultAnnotations: ["domain-inclusion/jacobs-education"],
+    vocabBase: "https://vocab.esea.education/",
   },
 ];
 

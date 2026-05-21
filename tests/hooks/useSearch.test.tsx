@@ -4,7 +4,7 @@ import type { ComponentChildren } from "preact";
 import { useSearch } from "@/hooks/useSearch";
 import { CommunityProvider } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
-import type { SearchParams } from "@/services/searchParams";
+import { makeSearchParams } from "../fixtures";
 
 vi.mock("@/services/apiClient", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/apiClient")>();
@@ -14,7 +14,7 @@ vi.mock("@/services/apiClient", async (importOriginal) => {
 import { searchReferences } from "@/services/apiClient";
 const mockSearch = vi.mocked(searchReferences);
 
-const baseParams: SearchParams = { q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined };
+const baseParams = makeSearchParams({ q: "phonics" });
 
 // Drive the real CommunityProvider through the URL the way the runtime does.
 function withCommunityPath(path: string) {
@@ -245,5 +245,83 @@ describe("useSearch", () => {
     expect(result.current.error).toBeNull();
     expect(typeof result.current.retry).toBe("function");
     expect(mockSearch).not.toHaveBeenCalled();
+  });
+
+  // Witnesses that facets are expanded via community.vocabBase and threaded into
+  // the wire query — exact join/precedence format owned by searchParams unit tests.
+  test("expands compact facet URIs via community.vocabBase when calling searchReferences", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const params = makeSearchParams({
+      q: "phonics",
+      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    });
+    renderHook(() => useSearch(params), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    expect(mockSearch).toHaveBeenCalledWith(
+      expect.stringContaining("https://vocab.esea.education/EducationLevelScheme/C00002"),
+      expect.objectContaining({
+        annotation: ["domain-inclusion/jacobs-education"],
+      }),
+    );
+  });
+
+  // Pins the composition for empty q + facets: useSearch must pass the
+  // faceted wire query (not undefined) so the backend receives the filter
+  // instead of dropping to browse mode.
+  test("empty q + facets calls searchReferences with the faceted wire query (not undefined)", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const params = makeSearchParams({
+      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    });
+    renderHook(() => useSearch(params), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    expect(mockSearch).toHaveBeenCalledWith(
+      expect.stringContaining("https://vocab.esea.education/EducationLevelScheme/C00002"),
+      expect.anything(),
+    );
+  });
+
+  test("refetches on facet change; not on structurally-identical rerender", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const { rerender } = renderHook(
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: baseParams },
+      },
+    );
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+
+    rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'] } });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
+
+    rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00003"'] } });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(3));
+
+    // Flush a tick so any async effect a regression might schedule has a chance
+    // to fire before we assert no extra call.
+    rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00003"'] } });
+    await act(async () => {});
+    expect(mockSearch).toHaveBeenCalledTimes(3);
+  });
+
+  test("cache key is order-sensitive for facets", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    const facetsA = ['linked_data_concepts:"x"', 'linked_data_concepts:"y"'];
+    const facetsB = ['linked_data_concepts:"y"', 'linked_data_concepts:"x"'];
+    const { rerender } = renderHook(
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: { ...baseParams, searchFacets: facetsA } },
+      },
+    );
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    rerender({ p: { ...baseParams, searchFacets: facetsB } });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
   });
 });
