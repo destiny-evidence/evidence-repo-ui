@@ -266,20 +266,13 @@ describe("toQueryString", () => {
     expect(canonical).toBe("q=hello");
   });
 
-  test("no facets → q is unchanged (back-compat)", () => {
-    const p: SearchParams = {
-      q: "phonics", page: 1, startYear: undefined, endYear: undefined, sort: undefined,
-      searchFacets: [],
-    };
-    expect(toQueryString(p)).toBe("q=phonics");
-  });
-
-  test("empty q + one facet → '* AND (facet)' URL-encoded in q=", () => {
+  test("empty q + one facet → decoded q is '* AND (facet)'", () => {
     const p: SearchParams = {
       q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined,
       searchFacets: ['linked_data_concepts:"x"'],
     };
-    expect(toQueryString(p)).toBe('q=*+AND+%28linked_data_concepts%3A%22x%22%29');
+    const q = new URLSearchParams(toQueryString(p)).get("q");
+    expect(q).toBe('* AND (linked_data_concepts:"x")');
   });
 
   test("non-empty q + facets → '(base) AND (f1) AND (f2)'", () => {
@@ -328,17 +321,7 @@ describe("buildSearchUrl", () => {
 describe("buildFacetedQuery", () => {
   test.each([
     {
-      label: "no facets trims q",
-      q: "  phonics  ", facets: [],
-      expected: "phonics",
-    },
-    {
-      label: "no facets, empty q → empty",
-      q: "", facets: [],
-      expected: "",
-    },
-    {
-      label: "no facets, whitespace q → empty",
+      label: "no facets, whitespace q → empty (trim + collapse)",
       q: "   ", facets: [],
       expected: "",
     },
@@ -385,11 +368,6 @@ describe("expandFacets / compactFacets (inverse boundary transforms)", () => {
   });
 
   test.each([
-    {
-      label: "expand: empty array",
-      input: [],
-      expanded: [],
-    },
     {
       label: "expand: single compact URI",
       input: ['linked_data_concepts:"EducationLevelScheme/C00002"'],

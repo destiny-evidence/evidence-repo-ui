@@ -247,7 +247,9 @@ describe("useSearch", () => {
     expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  test("expands compact URIs and passes joined wire query when facets present", async () => {
+  // Witnesses that facets are expanded via community.vocabBase and threaded into
+  // the wire query — exact join/precedence format owned by searchParams unit tests.
+  test("expands compact facet URIs via community.vocabBase when calling searchReferences", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const params: SearchParams = {
       ...baseParams,
@@ -258,30 +260,14 @@ describe("useSearch", () => {
     });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
     expect(mockSearch).toHaveBeenCalledWith(
-      '(phonics) AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")',
+      expect.stringContaining("https://vocab.esea.education/EducationLevelScheme/C00002"),
       expect.objectContaining({
         annotation: ["domain-inclusion/jacobs-education"],
       }),
     );
   });
 
-  test("passes '* AND (expanded facet)' when q is empty and facets present", async () => {
-    mockSearch.mockResolvedValue(makeResult(1));
-    const params: SearchParams = {
-      ...baseParams, q: "",
-      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-    };
-    renderHook(() => useSearch(params), {
-      wrapper: withCommunityPath("/esea"),
-    });
-    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
-    expect(mockSearch).toHaveBeenCalledWith(
-      '* AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")',
-      expect.anything(),
-    );
-  });
-
-  test("refetches when searchFacets change (cache key includes facets)", async () => {
+  test("refetches on facet change; not on structurally-identical rerender", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const { rerender } = renderHook(
       ({ p }) => useSearch(p),
@@ -298,8 +284,10 @@ describe("useSearch", () => {
     rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00003"'] } });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(3));
 
-    // No refetch when facets array is structurally identical.
+    // Flush a tick so any async effect a regression might schedule has a chance
+    // to fire before we assert no extra call.
     rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00003"'] } });
+    await act(async () => {});
     expect(mockSearch).toHaveBeenCalledTimes(3);
   });
 

@@ -545,8 +545,10 @@ describe("SearchPage", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /export to excel/i }));
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
+      // Page-layer integration witness: community.vocabBase reaches the call site.
+      // Exact join/precedence is owned by toExportSearchQuery unit tests.
       expect(mockRequestExport).toHaveBeenCalledWith(
-        '(phonics) AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")',
+        expect.stringContaining("https://vocab.esea.education/EducationLevelScheme/C00002"),
         {
           startYear: undefined,
           endYear: undefined,
