@@ -1,11 +1,21 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, test, expect } from "vitest";
+import { findCommunity } from "@/services/communities";
 import {
   parseSearchParams,
   toQueryString,
   buildSearchUrl,
   buildFacetedQuery,
+  expandFacets,
+  compactFacets,
   type SearchParams,
 } from "@/services/searchParams";
+
+const CONTEXT_FIXTURE_PATH = resolve(
+  __dirname,
+  "../services/export/fixtures/context.jsonld",
+);
 
 describe("parseSearchParams", () => {
   test("empty search → defaults", () => {
@@ -205,5 +215,102 @@ describe("buildFacetedQuery", () => {
     },
   ])("$label", ({ q, facets, expected }) => {
     expect(buildFacetedQuery(q, facets)).toBe(expected);
+  });
+});
+
+describe("expandFacets / compactFacets (inverse boundary transforms)", () => {
+  const base = findCommunity("esea")!.vocabBase;
+
+  test("esea Community.vocabBase agrees with the JSON-LD context fixture's `esea` prefix", () => {
+    const ctx = JSON.parse(readFileSync(CONTEXT_FIXTURE_PATH, "utf-8")) as {
+      "@context": Record<string, string>;
+    };
+    expect(ctx["@context"].esea).toBe(base);
+  });
+
+  test.each([
+    {
+      label: "expand: empty array",
+      input: [],
+      expanded: [],
+    },
+    {
+      label: "expand: single compact URI",
+      input: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+      expanded: ['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"'],
+    },
+    {
+      label: "expand: OR-joined URIs in one facet",
+      input: [
+        'linked_data_concepts:"EducationLevelScheme/C00002" OR linked_data_concepts:"EducationLevelScheme/C00003"',
+      ],
+      expanded: [
+        'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002" OR linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00003"',
+      ],
+    },
+    {
+      label: "expand: multiple facets expand independently",
+      input: [
+        'linked_data_concepts:"EducationLevelScheme/C00002"',
+        'linked_data_concepts:"OutcomeScheme/C00123"',
+      ],
+      expanded: [
+        'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"',
+        'linked_data_concepts:"https://vocab.esea.education/OutcomeScheme/C00123"',
+      ],
+    },
+  ])("$label", ({ input, expanded }) => {
+    expect(expandFacets(input, base)).toEqual(expanded);
+  });
+
+  test.each([
+    {
+      label: "compact: single full URI",
+      input: ['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"'],
+      compact: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    },
+    {
+      label: "compact: OR-joined full URIs",
+      input: [
+        'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002" OR linked_data_concepts:"https://vocab.esea.education/OutcomeScheme/C00123"',
+      ],
+      compact: [
+        'linked_data_concepts:"EducationLevelScheme/C00002" OR linked_data_concepts:"OutcomeScheme/C00123"',
+      ],
+    },
+    {
+      label: "compact: already-compact passes through",
+      input: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+      compact: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    },
+    {
+      label: "compact: URI from foreign vocab is left alone",
+      input: ['linked_data_concepts:"https://other.example.org/Foo/Bar"'],
+      compact: ['linked_data_concepts:"https://other.example.org/Foo/Bar"'],
+    },
+  ])("$label", ({ input, compact }) => {
+    expect(compactFacets(input, base)).toEqual(compact);
+  });
+
+  test("expand is defensive: already-expanded URI passes through", () => {
+    expect(expandFacets(
+      ['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"'],
+      base,
+    )).toEqual([
+      'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"',
+    ]);
+  });
+
+  test("mixed compact + expanded in one facet → expand normalises all", () => {
+    expect(expandFacets([
+      'linked_data_concepts:"EducationLevelScheme/C00002" OR linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00003"',
+    ], base)).toEqual([
+      'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002" OR linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00003"',
+    ]);
+  });
+
+  test("round-trip: compact(expand(x)) = x", () => {
+    const compact = ['linked_data_concepts:"EducationLevelScheme/C00002"'];
+    expect(compactFacets(expandFacets(compact, base), base)).toEqual(compact);
   });
 });

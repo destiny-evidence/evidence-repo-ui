@@ -93,3 +93,21 @@ export function buildFacetedQuery(q: string, facets: string[]): string {
   const base = trimmed === "" ? "*" : `(${trimmed})`;
   return [base, ...facets.map((f) => `(${f})`)].join(" AND ");
 }
+
+const LDC_URI = /(linked_data_concepts:")([^"]+)(")/g;
+
+export function expandFacets(facets: string[], vocabBase: string): string[] {
+  return facets.map((f) =>
+    f.replace(LDC_URI, (_, prefix, uri, suffix) =>
+      uri.startsWith("http") ? `${prefix}${uri}${suffix}` : `${prefix}${vocabBase}${uri}${suffix}`,
+    ),
+  );
+}
+
+export function compactFacets(facets: string[], vocabBase: string): string[] {
+  return facets.map((f) =>
+    f.replace(LDC_URI, (_, prefix, uri, suffix) =>
+      uri.startsWith(vocabBase) ? `${prefix}${uri.slice(vocabBase.length)}${suffix}` : `${prefix}${uri}${suffix}`,
+    ),
+  );
+}
