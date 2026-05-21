@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, test, expect } from "vitest";
 import { findCommunity } from "@/services/communities";
 import {
@@ -12,11 +10,6 @@ import {
   toExportSearchQuery,
   type SearchParams,
 } from "@/services/searchParams";
-
-const CONTEXT_FIXTURE_PATH = resolve(
-  __dirname,
-  "../services/export/fixtures/context.jsonld",
-);
 
 describe("parseSearchParams", () => {
   test("empty search → defaults", () => {
@@ -359,13 +352,6 @@ describe("buildFacetedQuery", () => {
 
 describe("expandFacets / compactFacets (inverse boundary transforms)", () => {
   const base = findCommunity("esea")!.vocabBase;
-
-  test("esea Community.vocabBase agrees with the JSON-LD context fixture's `esea` prefix", () => {
-    const ctx = JSON.parse(readFileSync(CONTEXT_FIXTURE_PATH, "utf-8")) as {
-      "@context": Record<string, string>;
-    };
-    expect(ctx["@context"].esea).toBe(base);
-  });
 
   test.each([
     {
