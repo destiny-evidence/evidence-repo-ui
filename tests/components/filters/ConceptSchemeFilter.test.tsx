@@ -7,6 +7,7 @@ import {
   selectedUris,
   type ConceptScheme,
 } from "@/components/filters/conceptSchemeFilterState";
+import { OUTCOME_SCHEME_FIXTURE } from "./fixtures";
 
 const URI_JOURNAL_ARTICLE =
   "https://vocab.esea.education/DocumentTypeScheme/C00008";
@@ -130,45 +131,35 @@ describe("ConceptSchemeFilter", () => {
   });
 });
 
-const URI_ACADEMIC = "https://vocab.esea.education/OutcomeScheme/T00001";
-const URI_READING = "https://vocab.esea.education/OutcomeScheme/T00002";
-const URI_MATH = "https://vocab.esea.education/OutcomeScheme/T00003";
+const URI_ACCESS = "https://vocab.esea.education/OutcomeScheme/C00096";
+const URI_EDUCATION_FINANCE =
+  "https://vocab.esea.education/OutcomeScheme/C00097";
 
-const READING_DEFINITION = "Outcomes related to reading skills.";
-
-const HIERARCHICAL_SCHEME: ConceptScheme = {
-  uri: "https://vocab.esea.education/OutcomeScheme",
-  label: "Outcome",
-  topConcepts: [
-    {
-      uri: URI_ACADEMIC,
-      label: "Academic",
-      narrower: [
-        { uri: URI_READING, label: "Reading", definition: READING_DEFINITION },
-        { uri: URI_MATH, label: "Math" },
-      ],
-    },
-  ],
-};
+const EDUCATION_FINANCE_DEFINITION =
+  "Outcomes covering the funding mechanisms that determine access to education.";
 
 describe("ConceptSchemeFilter (hierarchical)", () => {
   test("renders a checkbox for every concept at every depth", () => {
     render(
       <ConceptSchemeFilter
-        scheme={HIERARCHICAL_SCHEME}
+        scheme={OUTCOME_SCHEME_FIXTURE}
         state={emptyConceptSchemeState()}
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByLabelText("Academic")).toBeDefined();
-    expect(screen.getByLabelText("Reading")).toBeDefined();
-    expect(screen.getByLabelText("Math")).toBeDefined();
+    expect(screen.getByLabelText("Access to Education")).toBeDefined();
+    expect(screen.getByLabelText("Education Finance")).toBeDefined();
+    expect(screen.getByLabelText("Enrolment and Attendance")).toBeDefined();
+    expect(
+      screen.getByLabelText("Educational Outcomes and Learning"),
+    ).toBeDefined();
+    expect(screen.getByLabelText("Returns to Education")).toBeDefined();
   });
 
   test("renders narrower concepts inside a nested ul under their parent", () => {
     const { container } = render(
       <ConceptSchemeFilter
-        scheme={HIERARCHICAL_SCHEME}
+        scheme={OUTCOME_SCHEME_FIXTURE}
         state={emptyConceptSchemeState()}
         onChange={vi.fn()}
       />,
@@ -184,43 +175,48 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     const onChange = vi.fn();
     render(
       <ConceptSchemeFilter
-        scheme={HIERARCHICAL_SCHEME}
+        scheme={OUTCOME_SCHEME_FIXTURE}
         state={emptyConceptSchemeState()}
         onChange={onChange}
       />,
     );
-    fireEvent.click(screen.getByLabelText("Reading"));
-    expect(selectedUris(onChange.mock.calls[0][0])).toEqual([URI_READING]);
+    fireEvent.click(screen.getByLabelText("Education Finance"));
+    expect(selectedUris(onChange.mock.calls[0][0])).toEqual([
+      URI_EDUCATION_FINANCE,
+    ]);
   });
 
   test("parent and child can both be independently checked", () => {
     render(
       <ConceptSchemeFilter
-        scheme={HIERARCHICAL_SCHEME}
-        state={conceptSchemeStateFromUris([URI_ACADEMIC, URI_READING])}
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={conceptSchemeStateFromUris([URI_ACCESS, URI_EDUCATION_FINANCE])}
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByLabelText<HTMLInputElement>("Academic").checked).toBe(
-      true,
-    );
-    expect(screen.getByLabelText<HTMLInputElement>("Reading").checked).toBe(
-      true,
-    );
-    expect(screen.getByLabelText<HTMLInputElement>("Math").checked).toBe(false);
+    expect(
+      screen.getByLabelText<HTMLInputElement>("Access to Education").checked,
+    ).toBe(true);
+    expect(
+      screen.getByLabelText<HTMLInputElement>("Education Finance").checked,
+    ).toBe(true);
+    expect(
+      screen.getByLabelText<HTMLInputElement>("Enrolment and Attendance")
+        .checked,
+    ).toBe(false);
   });
 
   test("a nested concept's definition is surfaced via its own Tooltip", () => {
     const { container } = render(
       <ConceptSchemeFilter
-        scheme={HIERARCHICAL_SCHEME}
+        scheme={OUTCOME_SCHEME_FIXTURE}
         state={emptyConceptSchemeState()}
         onChange={vi.fn()}
       />,
     );
     expect(
       container.querySelector(
-        `.tooltip[data-tooltip="${READING_DEFINITION}"]`,
+        `.tooltip[data-tooltip="${EDUCATION_FINANCE_DEFINITION}"]`,
       ),
     ).not.toBeNull();
   });

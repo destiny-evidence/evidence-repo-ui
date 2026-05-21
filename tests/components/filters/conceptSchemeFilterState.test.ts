@@ -11,6 +11,7 @@ import {
   toLuceneFragment,
   type ConceptScheme,
 } from "@/components/filters/conceptSchemeFilterState";
+import { OUTCOME_SCHEME_FIXTURE } from "./fixtures";
 
 // Real concept URIs from the ESEA DocumentTypeScheme vocabulary
 // (https://vocab.evidence-repository.org/published/.../1.1/vocabulary.jsonld).
@@ -30,33 +31,12 @@ const SCHEME: ConceptScheme = {
   ],
 };
 
-// Two-tier scheme shaped like ESEA's OutcomeScheme: top-level outcome
-// categories with narrower child outcomes underneath.
-const URI_ACADEMIC = "https://vocab.esea.education/OutcomeScheme/T00001";
-const URI_READING = "https://vocab.esea.education/OutcomeScheme/T00002";
-const URI_MATH = "https://vocab.esea.education/OutcomeScheme/T00003";
-const URI_SOCIAL = "https://vocab.esea.education/OutcomeScheme/T00004";
-const URI_BEHAVIOR = "https://vocab.esea.education/OutcomeScheme/T00005";
-
-const HIERARCHICAL_SCHEME: ConceptScheme = {
-  uri: "https://vocab.esea.education/OutcomeScheme",
-  label: "Outcome",
-  topConcepts: [
-    {
-      uri: URI_ACADEMIC,
-      label: "Academic",
-      narrower: [
-        { uri: URI_READING, label: "Reading" },
-        { uri: URI_MATH, label: "Math" },
-      ],
-    },
-    {
-      uri: URI_SOCIAL,
-      label: "Social/emotional",
-      narrower: [{ uri: URI_BEHAVIOR, label: "Behavior" }],
-    },
-  ],
-};
+const URI_ACCESS = "https://vocab.esea.education/OutcomeScheme/C00096";
+const URI_EDUCATION_FINANCE =
+  "https://vocab.esea.education/OutcomeScheme/C00097";
+const URI_ENROLMENT = "https://vocab.esea.education/OutcomeScheme/C00098";
+const URI_LEARNING = "https://vocab.esea.education/OutcomeScheme/C00122";
+const URI_RETURNS = "https://vocab.esea.education/OutcomeScheme/C00130";
 
 describe("emptyConceptSchemeState", () => {
   test("starts empty", () => {
@@ -200,30 +180,35 @@ describe("toLuceneFragment", () => {
   });
 
   test("includes a selected narrower concept from a two-tier scheme", () => {
-    const state = conceptSchemeStateFromUris([URI_READING]);
-    expect(toLuceneFragment(state, HIERARCHICAL_SCHEME)).toBe(
-      `linked_data_concepts:"${URI_READING}"`,
+    const state = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
+    expect(toLuceneFragment(state, OUTCOME_SCHEME_FIXTURE)).toBe(
+      `linked_data_concepts:"${URI_EDUCATION_FINANCE}"`,
     );
   });
 
   test("walks the tree depth-first preorder when ordering clauses", () => {
     const state = conceptSchemeStateFromUris([
-      URI_BEHAVIOR,
-      URI_READING,
-      URI_ACADEMIC,
+      URI_RETURNS,
+      URI_ENROLMENT,
+      URI_ACCESS,
+      URI_LEARNING,
     ]);
-    expect(toLuceneFragment(state, HIERARCHICAL_SCHEME)).toBe(
-      `(linked_data_concepts:"${URI_ACADEMIC}"` +
-        ` OR linked_data_concepts:"${URI_READING}"` +
-        ` OR linked_data_concepts:"${URI_BEHAVIOR}")`,
+    expect(toLuceneFragment(state, OUTCOME_SCHEME_FIXTURE)).toBe(
+      `(linked_data_concepts:"${URI_ACCESS}"` +
+        ` OR linked_data_concepts:"${URI_ENROLMENT}"` +
+        ` OR linked_data_concepts:"${URI_LEARNING}"` +
+        ` OR linked_data_concepts:"${URI_RETURNS}")`,
     );
   });
 
   test("emits both parent and child clauses when both are selected", () => {
-    const state = conceptSchemeStateFromUris([URI_ACADEMIC, URI_READING]);
-    expect(toLuceneFragment(state, HIERARCHICAL_SCHEME)).toBe(
-      `(linked_data_concepts:"${URI_ACADEMIC}"` +
-        ` OR linked_data_concepts:"${URI_READING}")`,
+    const state = conceptSchemeStateFromUris([
+      URI_ACCESS,
+      URI_EDUCATION_FINANCE,
+    ]);
+    expect(toLuceneFragment(state, OUTCOME_SCHEME_FIXTURE)).toBe(
+      `(linked_data_concepts:"${URI_ACCESS}"` +
+        ` OR linked_data_concepts:"${URI_EDUCATION_FINANCE}")`,
     );
   });
 });
