@@ -7,7 +7,11 @@ import {
   selectedUris,
   type ConceptScheme,
 } from "@/components/filters/conceptSchemeFilterState";
-import { OUTCOME_SCHEME_FIXTURE } from "./fixtures";
+import {
+  OUTCOME_SCHEME_FIXTURE,
+  URI_ACCESS,
+  URI_EDUCATION_FINANCE,
+} from "./fixtures";
 
 const URI_JOURNAL_ARTICLE =
   "https://vocab.esea.education/DocumentTypeScheme/C00008";
@@ -130,10 +134,6 @@ describe("ConceptSchemeFilter", () => {
     );
   });
 });
-
-const URI_ACCESS = "https://vocab.esea.education/OutcomeScheme/C00096";
-const URI_EDUCATION_FINANCE =
-  "https://vocab.esea.education/OutcomeScheme/C00097";
 
 const EDUCATION_FINANCE_DEFINITION =
   "Outcomes covering the funding mechanisms that determine access to education.";

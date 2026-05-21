@@ -9,7 +9,11 @@ import {
   toLuceneFragment,
   type ConceptSchemeFilterState,
 } from "@/components/filters/conceptSchemeFilterState";
-import { OUTCOME_SCHEME_FIXTURE } from "./fixtures";
+import {
+  OUTCOME_SCHEME_FIXTURE,
+  URI_ACCESS,
+  URI_EDUCATION_FINANCE,
+} from "./fixtures";
 
 function Harness() {
   const [state, setState] = useState<ConceptSchemeFilterState>(
@@ -30,10 +34,6 @@ function Harness() {
     </>
   );
 }
-
-const URI_ACCESS = "https://vocab.esea.education/OutcomeScheme/C00096";
-const URI_EDUCATION_FINANCE =
-  "https://vocab.esea.education/OutcomeScheme/C00097";
 
 describe("FilterCard + ConceptSchemeFilter integration", () => {
   test("selecting a parent and a nested child reports the expected summary and Lucene fragment", () => {

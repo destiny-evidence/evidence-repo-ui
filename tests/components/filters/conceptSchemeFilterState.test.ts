@@ -11,7 +11,14 @@ import {
   toLuceneFragment,
   type ConceptScheme,
 } from "@/components/filters/conceptSchemeFilterState";
-import { OUTCOME_SCHEME_FIXTURE } from "./fixtures";
+import {
+  OUTCOME_SCHEME_FIXTURE,
+  URI_ACCESS,
+  URI_EDUCATION_FINANCE,
+  URI_ENROLMENT,
+  URI_LEARNING,
+  URI_RETURNS,
+} from "./fixtures";
 
 // Real concept URIs from the ESEA DocumentTypeScheme vocabulary
 // (https://vocab.evidence-repository.org/published/.../1.1/vocabulary.jsonld).
@@ -30,13 +37,6 @@ const SCHEME: ConceptScheme = {
     { uri: URI_GOVERNMENT_REPORT, label: "Government Report/Document" },
   ],
 };
-
-const URI_ACCESS = "https://vocab.esea.education/OutcomeScheme/C00096";
-const URI_EDUCATION_FINANCE =
-  "https://vocab.esea.education/OutcomeScheme/C00097";
-const URI_ENROLMENT = "https://vocab.esea.education/OutcomeScheme/C00098";
-const URI_LEARNING = "https://vocab.esea.education/OutcomeScheme/C00122";
-const URI_RETURNS = "https://vocab.esea.education/OutcomeScheme/C00130";
 
 describe("emptyConceptSchemeState", () => {
   test("starts empty", () => {
