@@ -248,7 +248,7 @@ describe("buildFindingRows", () => {
     expect(rows[0]!.context_country).toBe("USA");
   });
 
-  test("flattens description arrays with blank-line separators", () => {
+  test("joins description arrays with ' | ' separators", () => {
     const findings: Finding[] = [
       {
         evaluates: {
@@ -259,7 +259,7 @@ describe("buildFindingRows", () => {
     ];
     const rows = buildFindingRows("ref-1", findings, [1], VOCAB);
     expect(rows[0]!.intervention_description).toBe(
-      "Paragraph one.\n\nParagraph two.",
+      "Paragraph one. | Paragraph two.",
     );
   });
 

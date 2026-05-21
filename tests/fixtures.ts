@@ -14,6 +14,22 @@ import type {
   LinkedDataEnhancement,
   Reference,
 } from "@/types/models";
+import type { SearchParams } from "@/services/searchParams";
+
+/** SearchParams with all-undefined filters and no facets — override per test. */
+export function makeSearchParams(
+  overrides: Partial<SearchParams> = {},
+): SearchParams {
+  return {
+    q: "",
+    page: 1,
+    startYear: undefined,
+    endYear: undefined,
+    sort: undefined,
+    searchFacets: [],
+    ...overrides,
+  };
+}
 
 /**
  * Minimal FindingData with all three slots populated and IDs that match.

@@ -197,15 +197,15 @@ function joinCodedValues(annotations: unknown): string {
 }
 
 /**
- * Concatenate the `supportingText` field of each annotation with a blank
- * line between entries.
+ * Concatenate the `supportingText` field of each annotation with ` | `
+ * between entries.
  */
 function joinSupportingTexts(annotations: unknown): string {
   const list = Array.isArray(annotations) ? annotations : [];
   return list
     .map((a) => supportingText(a))
     .filter((v): v is string => v != null && v !== "")
-    .join("\n\n");
+    .join(" | ");
 }
 
 /**
@@ -259,10 +259,10 @@ function makeResolver(lookup: Map<string, PlainRecord>): Resolver {
 
 /**
  * Flatten a description that may be either a list of paragraphs or a
- * single string, joining list entries with blank lines.
+ * single string, joining list entries with ` | `.
  */
 function flattenDescription(description: unknown): string | null {
-  if (Array.isArray(description)) return description.join("\n\n");
+  if (Array.isArray(description)) return description.join(" | ");
   if (typeof description === "string") return description;
   return null;
 }
