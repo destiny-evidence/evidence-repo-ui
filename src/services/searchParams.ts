@@ -31,12 +31,42 @@ function parseDecimalInt(raw: string | null): number | undefined {
   return Number.isSafeInteger(n) ? n : undefined;
 }
 
-export function parseSearchParams(search: string): SearchParams {
+// Strips an outer ( ... ) pair iff the first "(" balances at the last ")".
+// "(a) AND (b)" → unchanged (first "(" closes before the end).
+function stripOuterWrap(s: string): string {
+  if (!s.startsWith("(") || !s.endsWith(")")) return s;
+  let depth = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === "(") depth++;
+    else if (s[i] === ")") {
+      depth--;
+      if (depth === 0 && i < s.length - 1) return s;
+    }
+  }
+  return depth === 0 ? s.slice(1, -1) : s;
+}
+
+export function parseSearchParams(search: string, vocabBase?: string): SearchParams {
   const params = new URLSearchParams(
     search.startsWith("?") ? search.slice(1) : search,
   );
 
-  const q = (params.get("q") ?? "").trim();
+  let q = (params.get("q") ?? "").trim();
+
+  const facetTail = /\s+AND\s+\(\s*(linked_data_concepts:[^)]+?)\s*\)\s*$/;
+  let searchFacets: string[] = [];
+  while (true) {
+    const m = q.match(facetTail);
+    if (!m) break;
+    searchFacets.unshift(m[1]);
+    q = q.slice(0, q.length - m[0].length).trimEnd();
+  }
+
+  if (searchFacets.length > 0) {
+    if (q === "*") q = "";
+    else q = stripOuterWrap(q);
+    if (vocabBase !== undefined) searchFacets = compactFacets(searchFacets, vocabBase);
+  }
 
   const pageRaw = parseDecimalInt(params.get("page"));
   const page = pageRaw !== undefined && pageRaw >= 1 ? pageRaw : 1;
@@ -50,7 +80,7 @@ export function parseSearchParams(search: string): SearchParams {
 
   const sort = parseSort(params.get("sort"));
 
-  return { q, page, startYear, endYear, sort, searchFacets: [] };
+  return { q, page, startYear, endYear, sort, searchFacets };
 }
 
 export function toQueryString(params: SearchParams): string {

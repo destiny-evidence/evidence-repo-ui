@@ -118,6 +118,113 @@ describe("parseSearchParams", () => {
   });
 });
 
+describe("parseSearchParams facet peel + unwrap", () => {
+  const vocabBase = findCommunity("esea")!.vocabBase;
+
+  test.each([
+    {
+      label: "peels single trailing facet",
+      raw: '?q=phonics AND (linked_data_concepts:"EducationLevelScheme/C00002")',
+      q: "phonics",
+      facets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+    },
+    {
+      label: "peels multiple trailing facets in order",
+      raw: '?q=phonics AND (linked_data_concepts:"x") AND (linked_data_concepts:"y")',
+      q: "phonics",
+      facets: ['linked_data_concepts:"x"', 'linked_data_concepts:"y"'],
+    },
+    {
+      label: "peels facet with internal OR",
+      raw: '?q=phonics AND (linked_data_concepts:"x" OR linked_data_concepts:"y")',
+      q: "phonics",
+      facets: ['linked_data_concepts:"x" OR linked_data_concepts:"y"'],
+    },
+    {
+      label: "non-facet trailing AND clause stays in q (no silent drop)",
+      raw: '?q=phonics AND (something_else:"x")',
+      q: 'phonics AND (something_else:"x")',
+      facets: [],
+    },
+    {
+      label: "non-trailing facet-shaped text stays in q",
+      raw: '?q=foo AND (linked_data_concepts:"x") bar',
+      q: 'foo AND (linked_data_concepts:"x") bar',
+      facets: [],
+    },
+    {
+      label: "unwraps lone-paren base after peel",
+      raw: '?q=(phonics) AND (linked_data_concepts:"x")',
+      q: "phonics",
+      facets: ['linked_data_concepts:"x"'],
+    },
+    {
+      label: "unwraps multi-token paren-wrapped base after peel",
+      raw: '?q=(phonics OR reading) AND (linked_data_concepts:"x")',
+      q: "phonics OR reading",
+      facets: ['linked_data_concepts:"x"'],
+    },
+    // Nested-paren base must still unwrap, or parse→serialise adds a layer each cycle.
+    {
+      label: "unwraps nested-paren base (balanced walker)",
+      raw: '?q=(phonics OR (reading)) AND (linked_data_concepts:"x")',
+      q: "phonics OR (reading)",
+      facets: ['linked_data_concepts:"x"'],
+    },
+    {
+      label: "unwraps base with field-scoped subquery",
+      raw: '?q=(title:(phonics OR reading)) AND (linked_data_concepts:"x")',
+      q: "title:(phonics OR reading)",
+      facets: ['linked_data_concepts:"x"'],
+    },
+    // Outer pair isn't balanced — first "(" closes mid-string. Leave untouched.
+    {
+      label: "does NOT unwrap when outer parens are not a balanced pair",
+      raw: '?q=(a) AND (b) AND (linked_data_concepts:"x")',
+      q: "(a) AND (b)",
+      facets: ['linked_data_concepts:"x"'],
+    },
+    {
+      label: "strips lone * sentinel after peel",
+      raw: '?q=* AND (linked_data_concepts:"x")',
+      q: "",
+      facets: ['linked_data_concepts:"x"'],
+    },
+    {
+      label: "literal * with no facets is preserved",
+      raw: "?q=*",
+      q: "*",
+      facets: [],
+    },
+  ])("$label", ({ raw, q, facets }) => {
+    const p = parseSearchParams(raw, vocabBase);
+    expect(p.q).toBe(q);
+    expect(p.searchFacets).toEqual(facets);
+  });
+});
+
+describe("parseSearchParams URI compaction", () => {
+  const vocabBase = findCommunity("esea")!.vocabBase;
+
+  test("hand-crafted full URI in facet tail is compacted on parse", () => {
+    const raw = '?q=phonics AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")';
+    const p = parseSearchParams(raw, vocabBase);
+    expect(p.searchFacets).toEqual(['linked_data_concepts:"EducationLevelScheme/C00002"']);
+  });
+
+  test("foreign-vocab full URI is left alone", () => {
+    const raw = '?q=phonics AND (linked_data_concepts:"https://other.example.org/Foo/Bar")';
+    const p = parseSearchParams(raw, vocabBase);
+    expect(p.searchFacets).toEqual(['linked_data_concepts:"https://other.example.org/Foo/Bar"']);
+  });
+
+  test("without vocabBase, full URIs are preserved (back-compat)", () => {
+    const raw = '?q=phonics AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")';
+    const p = parseSearchParams(raw);
+    expect(p.searchFacets).toEqual(['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"']);
+  });
+});
+
 describe("toQueryString", () => {
   test("omits defaults", () => {
     const p: SearchParams = { q: "", page: 1, startYear: undefined, endYear: undefined, sort: undefined, searchFacets: [] };
