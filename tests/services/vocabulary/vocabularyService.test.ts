@@ -36,9 +36,30 @@ const SAMPLE_VOCABULARY = {
       "skos:broader": "https://vocab.esea.education/EducationThemeScheme/C00022",
     },
     {
+      "@id": "https://vocab.esea.education/EducationThemeScheme/C00075",
+      "@type": ["skos:Concept", "esea:EducationThemeConcept"],
+      "skos:prefLabel": "Class Size",
+      "skos:broader": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022",
+      },
+    },
+    {
       "@id": "esea:DocumentTypeScheme",
       "@type": "skos:ConceptScheme",
-      "rdfs:label": "Document Type Scheme",
+      "dct:title": "Document Type",
+      "skos:hasTopConcept": [
+        {
+          "@id": "https://vocab.esea.education/DocumentTypeScheme/C00008",
+        },
+      ],
+    },
+    {
+      "@id": "esea:EducationThemeScheme",
+      "@type": "skos:ConceptScheme",
+      "rdfs:label": "Education Theme Scheme",
+      "skos:hasTopConcept": {
+        "@id": "https://vocab.esea.education/EducationThemeScheme/C00022",
+      },
     },
     {
       "@id": "esea:EducationLevelCodingAnnotation",
@@ -112,6 +133,47 @@ describe("buildVocabularyData", () => {
       "Peer-reviewed publication presenting original research or reviews.",
     );
     expect(definitions.has("u:book")).toBe(false);
+  });
+
+  it("extracts concept schemes with title and top concepts", () => {
+    const { schemes } = buildVocabularyData(SAMPLE_VOCABULARY);
+
+    expect(schemes.get("esea:DocumentTypeScheme")).toEqual({
+      title: "Document Type",
+      topConcepts: ["https://vocab.esea.education/DocumentTypeScheme/C00008"],
+    });
+    // Accepts a single (non-array) skos:hasTopConcept and rdfs:label fallback.
+    expect(schemes.get("esea:EducationThemeScheme")).toEqual({
+      title: "Education Theme Scheme",
+      topConcepts: ["https://vocab.esea.education/EducationThemeScheme/C00022"],
+    });
+  });
+
+  it("skips ConceptScheme entries with no title", () => {
+    const { schemes } = buildVocabularyData({
+      "@graph": [
+        {
+          "@id": "u:scheme",
+          "@type": "skos:ConceptScheme",
+        },
+      ],
+    });
+    expect(schemes.has("u:scheme")).toBe(false);
+  });
+
+  it("derives narrower as the inverse of broader", () => {
+    const { narrower } = buildVocabularyData(SAMPLE_VOCABULARY);
+
+    expect(
+      narrower.get("https://vocab.esea.education/EducationThemeScheme/C00022"),
+    ).toEqual([
+      "https://vocab.esea.education/EducationThemeScheme/C00074",
+      "https://vocab.esea.education/EducationThemeScheme/C00075",
+    ]);
+    // Leaf concepts have no narrower entry.
+    expect(
+      narrower.has("https://vocab.esea.education/EducationThemeScheme/C00074"),
+    ).toBe(false);
   });
 });
 

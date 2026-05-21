@@ -170,7 +170,13 @@ function SearchPageInner({ community }: { community: Community }) {
 
   function handleExport() {
     const { query, filters } = toExportSearchQuery(params, community.defaultAnnotations);
-    exportJob.start(query, filters, formatExportFilename(community.slug));
+    exportJob.start({
+      query,
+      filters,
+      filename: formatExportFilename(community.slug),
+      vocabularyUrl: community.vocabularyUrl,
+      contextUrl: community.contextUrl,
+    });
   }
 
   // Page size comes from the API response (page.count) so the UI stays in

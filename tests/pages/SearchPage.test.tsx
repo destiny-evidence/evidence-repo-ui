@@ -26,15 +26,6 @@ vi.mock("@/services/export/export", () => ({
   exportReferencesToExcel: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@/config", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/config")>();
-  return {
-    ...actual,
-    ESEA_VOCABULARY_URL: "https://test.example/vocab",
-    ESEA_CONTEXT_URL: "https://test.example/context",
-  };
-});
-
 import {
   searchReferences,
   requestSearchExport,

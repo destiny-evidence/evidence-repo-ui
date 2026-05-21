@@ -40,25 +40,17 @@ function triggerDownload(data: ArrayBuffer, filename: string): void {
  * vocabulary at `vocabularyUrl` (URI-keyed prefLabels) and the JSON-LD
  * @context at `contextUrl` (prefix → namespace map), build the
  * three-tab workbook, and prompt the user to download it as `filename`.
- *
- * When `vocabularyUrl` or `contextUrl` is omitted, concept cells fall back
- * to raw CURIEs — same degradation as a reference with no
- * `linkedData.vocabulary_uri` in the UI.
  */
 export async function exportReferencesToExcel(
   jsonlUrl: string,
-  vocabularyUrl: string | undefined,
-  contextUrl: string | undefined,
+  vocabularyUrl: string,
+  contextUrl: string,
   filename: string,
 ): Promise<void> {
   const references = streamJsonlFromUrl(jsonlUrl);
   const [vocab, context] = await Promise.all([
-    vocabularyUrl
-      ? getCachedVocabulary(vocabularyUrl)
-      : Promise.resolve({ labels: new Map<string, string>() }),
-    contextUrl
-      ? getCachedContext(contextUrl)
-      : Promise.resolve({ prefixes: new Map<string, string>() }),
+    getCachedVocabulary(vocabularyUrl),
+    getCachedContext(contextUrl),
   ]);
   const wb = await generateWorkbook(references, {
     prefixes: context.prefixes,

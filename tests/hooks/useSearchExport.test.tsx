@@ -16,20 +16,33 @@ vi.mock("@/services/export/export", () => ({
   exportReferencesToExcel: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@/config", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/config")>();
-  return {
-    ...actual,
-    ESEA_VOCABULARY_URL: "https://test.example/vocab",
-    ESEA_CONTEXT_URL: "https://test.example/context",
-  };
-});
-
 import {
   requestSearchExport,
   getSearchExport,
 } from "@/services/apiClient";
 import { exportReferencesToExcel } from "@/services/export/export";
+
+const VOCAB_URL = "https://test.example/vocab";
+const CONTEXT_URL = "https://test.example/context";
+
+function startArgs(
+  overrides: Partial<{
+    query: string;
+    filters: Record<string, unknown>;
+    filename: string;
+    vocabularyUrl: string;
+    contextUrl: string;
+  }> = {},
+) {
+  return {
+    query: "phonics",
+    filters: {},
+    filename: "f.xlsx",
+    vocabularyUrl: VOCAB_URL,
+    contextUrl: CONTEXT_URL,
+    ...overrides,
+  };
+}
 
 const mockRequest = vi.mocked(requestSearchExport);
 const mockGet = vi.mocked(getSearchExport);
@@ -76,7 +89,9 @@ describe("useSearchExport", () => {
     const { result } = renderHook(() => useSearchExport());
 
     act(() => {
-      result.current.start("phonics", { annotation: ["x"] }, "file.xlsx");
+      result.current.start(
+        startArgs({ filters: { annotation: ["x"] }, filename: "file.xlsx" }),
+      );
     });
     expect(result.current.status).toBe("requesting");
     await vi.waitFor(() => expect(result.current.status).toBe("polling"));
@@ -88,8 +103,8 @@ describe("useSearchExport", () => {
     await vi.waitFor(() => expect(result.current.status).toBe("done"));
     expect(mockExport).toHaveBeenCalledWith(
       "https://blob/result.jsonl",
-      "https://test.example/vocab",
-      "https://test.example/context",
+      VOCAB_URL,
+      CONTEXT_URL,
       "file.xlsx",
     );
     expect(mockRequest).toHaveBeenCalledWith("phonics", { annotation: ["x"] });
@@ -101,7 +116,7 @@ describe("useSearchExport", () => {
 
     const { result } = renderHook(() => useSearchExport());
     act(() => {
-      result.current.start("phonics", {}, "f.xlsx");
+      result.current.start(startArgs());
     });
     await vi.waitFor(() => expect(result.current.status).toBe("polling"));
     await act(async () => {
@@ -117,7 +132,7 @@ describe("useSearchExport", () => {
     mockRequest.mockRejectedValue(new Error("network down"));
     const { result } = renderHook(() => useSearchExport());
     act(() => {
-      result.current.start("phonics", {}, "f.xlsx");
+      result.current.start(startArgs());
     });
     await vi.waitFor(() => expect(result.current.status).toBe("error"));
     expect(result.current.errorMessage).toBe("network down");
@@ -130,7 +145,7 @@ describe("useSearchExport", () => {
 
     const { result } = renderHook(() => useSearchExport());
     act(() => {
-      result.current.start("phonics", {}, "f.xlsx");
+      result.current.start(startArgs());
     });
     await vi.waitFor(() => expect(result.current.status).toBe("polling"));
 
@@ -152,7 +167,7 @@ describe("useSearchExport", () => {
 
     const { result, unmount } = renderHook(() => useSearchExport());
     act(() => {
-      result.current.start("phonics", {}, "f.xlsx");
+      result.current.start(startArgs());
     });
     await vi.waitFor(() => expect(result.current.status).toBe("polling"));
     unmount();
@@ -173,7 +188,7 @@ describe("useSearchExport", () => {
 
     const { result } = renderHook(() => useSearchExport());
     act(() => {
-      result.current.start("phonics", {}, "f.xlsx");
+      result.current.start(startArgs());
     });
     await vi.waitFor(() => expect(result.current.status).toBe("error"));
     expect(result.current.errorMessage).toMatch(/no download URL/i);

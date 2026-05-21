@@ -2,6 +2,12 @@ import { afterEach, beforeEach, vi } from "vitest";
 import { cleanup } from "@testing-library/preact";
 import "@testing-library/jest-dom/vitest";
 
+// communities.ts reads these at module load and throws on missing values
+// (issue #63 — app must fail fast on misconfiguration). Stub them here
+// before any module under test imports communities.ts transitively.
+vi.stubEnv("VITE_ESEA_VOCABULARY_URL", "https://test.example/vocab");
+vi.stubEnv("VITE_ESEA_CONTEXT_URL", "https://test.example/context");
+
 const defaultTokenParsed = () => ({
   name: "Test User",
   preferred_username: "testuser",
