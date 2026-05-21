@@ -6,7 +6,7 @@ import { ConceptSchemeFilter } from "@/components/filters/ConceptSchemeFilter";
 import {
   emptyConceptSchemeState,
   summary,
-  toLuceneFragment,
+  toSearchFacet,
   type ConceptSchemeFilterState,
 } from "@/components/filters/conceptSchemeFilterState";
 import {
@@ -29,21 +29,21 @@ function Harness() {
           onChange={setState}
         />
       </FilterCard>
-      <pre data-testid="fragment">
-        {toLuceneFragment(state, OUTCOME_SCHEME_FIXTURE)}
+      <pre data-testid="facet">
+        {toSearchFacet(state, OUTCOME_SCHEME_FIXTURE)}
       </pre>
     </>
   );
 }
 
 describe("FilterCard + ConceptSchemeFilter integration", () => {
-  test("clicking a parent selects its subtree and surfaces the combined summary and Lucene fragment", () => {
+  test("clicking a parent selects its subtree and surfaces the combined summary and searchFacets entry", () => {
     render(<Harness />);
 
     const header = screen.getByRole("button", { name: /Outcome/ });
     expect(header.getAttribute("aria-expanded")).toBe("false");
     expect(screen.queryByText(/selected/)).toBeNull();
-    expect(screen.getByTestId("fragment").textContent).toBe("");
+    expect(screen.getByTestId("facet").textContent).toBe("");
 
     fireEvent.click(header);
     fireEvent.click(screen.getByLabelText("Access to Education"));
@@ -51,10 +51,10 @@ describe("FilterCard + ConceptSchemeFilter integration", () => {
 
     expect(header.getAttribute("aria-expanded")).toBe("false");
     expect(screen.getByText("3 selected")).toBeDefined();
-    expect(screen.getByTestId("fragment").textContent).toBe(
-      `(linked_data_concepts:"${URI_ACCESS}"` +
+    expect(screen.getByTestId("facet").textContent).toBe(
+      `linked_data_concepts:"${URI_ACCESS}"` +
         ` OR linked_data_concepts:"${URI_EDUCATION_FINANCE}"` +
-        ` OR linked_data_concepts:"${URI_ENROLMENT}")`,
+        ` OR linked_data_concepts:"${URI_ENROLMENT}"`,
     );
   });
 });

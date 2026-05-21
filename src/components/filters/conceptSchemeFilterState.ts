@@ -93,7 +93,14 @@ function walkConcepts(concepts: Concept[]): Concept[] {
   return all;
 }
 
-export function toLuceneFragment(
+// Builds one SearchParams.searchFacets[] entry: an unwrapped, OR-joined
+// sequence of linked_data_concepts:"..." clauses for every selected
+// concept, with full concept URIs embedded verbatim. The caller
+// (FilterDrawer) drops this string into searchFacets; the searchParams
+// pipeline (buildFacetedQuery) wraps each facet in parens at URL
+// serialisation time. Omitting our own outer parens is intentional —
+// double-wrapping would break parseSearchParams's facet-peel regex.
+export function toSearchFacet(
   state: ConceptSchemeFilterState,
   scheme: ConceptScheme,
 ): string {
@@ -103,7 +110,5 @@ export function toLuceneFragment(
       clauses.push(`linked_data_concepts:"${concept.uri}"`);
     }
   }
-  if (clauses.length === 0) return "";
-  if (clauses.length === 1) return clauses[0];
-  return `(${clauses.join(" OR ")})`;
+  return clauses.join(" OR ");
 }

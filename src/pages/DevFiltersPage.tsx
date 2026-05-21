@@ -6,7 +6,7 @@ import {
   selectedCount,
   selectedUris,
   summary,
-  toLuceneFragment,
+  toSearchFacet,
   type ConceptScheme,
   type ConceptSchemeFilterState,
 } from "@/components/filters/conceptSchemeFilterState";
@@ -82,9 +82,11 @@ export function DevFiltersPage(_props: DevFiltersPageProps) {
           <dd>
             <pre>{JSON.stringify(selectedUris(state), null, 2)}</pre>
           </dd>
-          <dt>toLuceneFragment</dt>
+          <dt>toSearchFacet</dt>
           <dd>
-            <pre>{toLuceneFragment(state, OUTCOME_SCHEME) || "(empty)"}</pre>
+            <pre>
+              {toSearchFacet(state, OUTCOME_SCHEME) || "(empty)"}
+            </pre>
           </dd>
         </dl>
       </section>

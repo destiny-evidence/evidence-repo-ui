@@ -9,7 +9,7 @@ import {
   summary,
   toggleConcept,
   toggleConceptSubtree,
-  toLuceneFragment,
+  toSearchFacet,
   type Concept,
   type ConceptScheme,
 } from "@/components/filters/conceptSchemeFilterState";
@@ -215,25 +215,26 @@ describe("toggleConceptSubtree", () => {
   });
 });
 
-describe("toLuceneFragment", () => {
+describe("toSearchFacet", () => {
   test("returns empty string when state is empty", () => {
-    expect(toLuceneFragment(emptyConceptSchemeState(), SCHEME)).toBe("");
+    expect(toSearchFacet(emptyConceptSchemeState(), SCHEME)).toBe("");
   });
 
   test("returns a single clause without parentheses for one selection", () => {
     const state = conceptSchemeStateFromUris([URI_JOURNAL_ARTICLE]);
-    expect(toLuceneFragment(state, SCHEME)).toBe(
+    expect(toSearchFacet(state, SCHEME)).toBe(
       `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`,
     );
   });
 
-  test("wraps multiple selections in parentheses with OR", () => {
+  test("joins multiple selections with OR and no outer parens", () => {
     const state = conceptSchemeStateFromUris([
       URI_JOURNAL_ARTICLE,
       URI_THESIS,
     ]);
-    expect(toLuceneFragment(state, SCHEME)).toBe(
-      `(linked_data_concepts:"${URI_JOURNAL_ARTICLE}" OR linked_data_concepts:"${URI_THESIS}")`,
+    expect(toSearchFacet(state, SCHEME)).toBe(
+      `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"` +
+        ` OR linked_data_concepts:"${URI_THESIS}"`,
     );
   });
 
@@ -242,22 +243,23 @@ describe("toLuceneFragment", () => {
       URI_GOVERNMENT_REPORT,
       URI_JOURNAL_ARTICLE,
     ]);
-    expect(toLuceneFragment(state, SCHEME)).toBe(
-      `(linked_data_concepts:"${URI_JOURNAL_ARTICLE}" OR linked_data_concepts:"${URI_GOVERNMENT_REPORT}")`,
+    expect(toSearchFacet(state, SCHEME)).toBe(
+      `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"` +
+        ` OR linked_data_concepts:"${URI_GOVERNMENT_REPORT}"`,
     );
   });
 
   test("ignores selected URIs that are not in the scheme", () => {
     const stale = "https://vocab.esea.education/OtherScheme/C99999";
     const state = conceptSchemeStateFromUris([stale, URI_JOURNAL_ARTICLE]);
-    expect(toLuceneFragment(state, SCHEME)).toBe(
+    expect(toSearchFacet(state, SCHEME)).toBe(
       `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`,
     );
   });
 
-  test("passes a realistic concept URI through verbatim inside the quotes", () => {
+  test("embeds the full concept URI verbatim inside the quotes", () => {
     const state = conceptSchemeStateFromUris([URI_JOURNAL_ARTICLE]);
-    const fragment = toLuceneFragment(state, SCHEME);
+    const fragment = toSearchFacet(state, SCHEME);
     expect(fragment).toContain(URI_JOURNAL_ARTICLE);
     expect(fragment.startsWith('linked_data_concepts:"')).toBe(true);
     expect(fragment.endsWith('"')).toBe(true);
@@ -265,7 +267,7 @@ describe("toLuceneFragment", () => {
 
   test("includes a selected narrower concept from a two-tier scheme", () => {
     const state = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
-    expect(toLuceneFragment(state, OUTCOME_SCHEME_FIXTURE)).toBe(
+    expect(toSearchFacet(state, OUTCOME_SCHEME_FIXTURE)).toBe(
       `linked_data_concepts:"${URI_EDUCATION_FINANCE}"`,
     );
   });
@@ -277,11 +279,11 @@ describe("toLuceneFragment", () => {
       URI_ACCESS,
       URI_LEARNING,
     ]);
-    expect(toLuceneFragment(state, OUTCOME_SCHEME_FIXTURE)).toBe(
-      `(linked_data_concepts:"${URI_ACCESS}"` +
+    expect(toSearchFacet(state, OUTCOME_SCHEME_FIXTURE)).toBe(
+      `linked_data_concepts:"${URI_ACCESS}"` +
         ` OR linked_data_concepts:"${URI_ENROLMENT}"` +
         ` OR linked_data_concepts:"${URI_LEARNING}"` +
-        ` OR linked_data_concepts:"${URI_RETURNS}")`,
+        ` OR linked_data_concepts:"${URI_RETURNS}"`,
     );
   });
 
@@ -290,9 +292,9 @@ describe("toLuceneFragment", () => {
       URI_ACCESS,
       URI_EDUCATION_FINANCE,
     ]);
-    expect(toLuceneFragment(state, OUTCOME_SCHEME_FIXTURE)).toBe(
-      `(linked_data_concepts:"${URI_ACCESS}"` +
-        ` OR linked_data_concepts:"${URI_EDUCATION_FINANCE}")`,
+    expect(toSearchFacet(state, OUTCOME_SCHEME_FIXTURE)).toBe(
+      `linked_data_concepts:"${URI_ACCESS}"` +
+        ` OR linked_data_concepts:"${URI_EDUCATION_FINANCE}"`,
     );
   });
 });
