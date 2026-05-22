@@ -1,7 +1,9 @@
 .filter-drawer {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  /* Above AppShell header (100) and FeedbackFAB (200) — a modal must
+     cover everything else on the page. */
+  z-index: 1000;
 }
 
 .filter-drawer__backdrop {
