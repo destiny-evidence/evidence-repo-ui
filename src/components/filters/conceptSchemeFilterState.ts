@@ -47,16 +47,6 @@ export function summary(state: ConceptSchemeFilterState): string {
   return state.size === 0 ? "" : `${state.size} selected`;
 }
 
-export function toggleConcept(
-  state: ConceptSchemeFilterState,
-  uri: string,
-): ConceptSchemeFilterState {
-  const next = new Set(state);
-  if (next.has(uri)) next.delete(uri);
-  else next.add(uri);
-  return brand(next);
-}
-
 // Toggles the clicked concept plus all of its narrower descendants together.
 // Direction is set by the clicked concept's current state: if it is selected,
 // the whole subtree is cleared; otherwise the whole subtree is added. This

@@ -7,7 +7,6 @@ import {
   selectedCount,
   selectedUris,
   summary,
-  toggleConcept,
   toggleConceptSubtree,
   toSearchFacet,
 } from "@/components/filters/conceptSchemeFilterState";
@@ -97,58 +96,18 @@ describe("summary", () => {
   });
 });
 
-describe("toggleConcept", () => {
-  test("adds a URI when absent", () => {
-    const before = emptyConceptSchemeState();
-    const after = toggleConcept(before, URI_JOURNAL_ARTICLE);
-    expect(isSelected(after, URI_JOURNAL_ARTICLE)).toBe(true);
-    expect(selectedCount(after)).toBe(1);
-  });
-
-  test("removes a URI when present", () => {
-    const before = conceptSchemeStateFromUris([
-      URI_JOURNAL_ARTICLE,
-      URI_THESIS,
-    ]);
-    const after = toggleConcept(before, URI_JOURNAL_ARTICLE);
-    expect(isSelected(after, URI_JOURNAL_ARTICLE)).toBe(false);
-    expect(isSelected(after, URI_THESIS)).toBe(true);
-    expect(selectedCount(after)).toBe(1);
-  });
-
-  test("does not mutate the input state", () => {
-    const before = conceptSchemeStateFromUris([URI_JOURNAL_ARTICLE]);
-    const beforeSnapshot = selectedUris(before);
-    toggleConcept(before, URI_THESIS);
-    toggleConcept(before, URI_JOURNAL_ARTICLE);
-    expect(selectedUris(before)).toEqual(beforeSnapshot);
-    expect(selectedCount(before)).toBe(1);
-  });
-
-  test("is idempotent over add+remove", () => {
-    const start = emptyConceptSchemeState();
-    const roundTrip = toggleConcept(
-      toggleConcept(start, URI_JOURNAL_ARTICLE),
-      URI_JOURNAL_ARTICLE,
-    );
-    expect(isEmpty(roundTrip)).toBe(true);
-  });
-});
-
 describe("toggleConceptSubtree", () => {
   const LEAF: Concept = { uri: URI_JOURNAL_ARTICLE, label: "Journal Article" };
 
   const ACCESS_SUBTREE = OUTCOME_SCHEME_FIXTURE.topConcepts[0];
 
-  test("on a leaf behaves identically to toggleConcept", () => {
+  test("on a leaf adds the URI when absent and removes it when present", () => {
     const empty = emptyConceptSchemeState();
-    expect(selectedUris(toggleConceptSubtree(empty, LEAF))).toEqual(
-      selectedUris(toggleConcept(empty, LEAF.uri)),
-    );
-    const oneSelected = conceptSchemeStateFromUris([LEAF.uri]);
-    expect(selectedUris(toggleConceptSubtree(oneSelected, LEAF))).toEqual(
-      selectedUris(toggleConcept(oneSelected, LEAF.uri)),
-    );
+    const added = toggleConceptSubtree(empty, LEAF);
+    expect(selectedUris(added)).toEqual([LEAF.uri]);
+
+    const removed = toggleConceptSubtree(added, LEAF);
+    expect(isEmpty(removed)).toBe(true);
   });
 
   test("on an unselected parent adds the parent and every descendant", () => {
