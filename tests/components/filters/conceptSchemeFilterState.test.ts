@@ -10,9 +10,11 @@ import {
   toggleConcept,
   toggleConceptSubtree,
   toSearchFacet,
-  type Concept,
-  type ConceptScheme,
 } from "@/components/filters/conceptSchemeFilterState";
+import type {
+  Concept,
+  ConceptScheme,
+} from "@/services/vocabulary/vocabularyService";
 import {
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,

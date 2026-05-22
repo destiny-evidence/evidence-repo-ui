@@ -7,9 +7,9 @@ import {
   selectedUris,
   summary,
   toSearchFacet,
-  type ConceptScheme,
   type ConceptSchemeFilterState,
 } from "@/components/filters/conceptSchemeFilterState";
+import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import "./DevFiltersPage.css";
 
 interface DevFiltersPageProps {

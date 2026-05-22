@@ -1,4 +1,4 @@
-import type { ConceptScheme } from "@/components/filters/conceptSchemeFilterState";
+import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 
 // Real concept URIs from ESEA's OutcomeScheme. Exported so tests can
 // assert on URI identity without redefining these opaque values.

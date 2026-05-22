@@ -5,8 +5,8 @@ import {
   conceptSchemeStateFromUris,
   emptyConceptSchemeState,
   selectedUris,
-  type ConceptScheme,
 } from "@/components/filters/conceptSchemeFilterState";
+import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import {
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,

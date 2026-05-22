@@ -2,10 +2,12 @@ import { Tooltip } from "../Tooltip";
 import {
   isSelected,
   toggleConceptSubtree,
-  type Concept,
-  type ConceptScheme,
   type ConceptSchemeFilterState,
 } from "./conceptSchemeFilterState";
+import type {
+  Concept,
+  ConceptScheme,
+} from "@/services/vocabulary/vocabularyService";
 import "./ConceptSchemeFilter.css";
 
 interface ConceptSchemeFilterProps {

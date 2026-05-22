@@ -1,15 +1,7 @@
-export interface Concept {
-  uri: string;
-  label: string;
-  definition?: string;
-  narrower?: Concept[];
-}
-
-export interface ConceptScheme {
-  uri: string;
-  label: string;
-  topConcepts: Concept[];
-}
+import type {
+  Concept,
+  ConceptScheme,
+} from "@/services/vocabulary/vocabularyService";
 
 declare const conceptSchemeStateBrand: unique symbol;
 export type ConceptSchemeFilterState = ReadonlySet<string> & {
