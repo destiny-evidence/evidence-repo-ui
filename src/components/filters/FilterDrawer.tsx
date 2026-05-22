@@ -3,6 +3,7 @@ import { FilterCard } from "./FilterCard";
 import { ConceptSchemeFilter } from "./ConceptSchemeFilter";
 import {
   emptyConceptSchemeState,
+  parseFacets,
   summary,
   toSearchFacet,
   type ConceptSchemeFilterState,
@@ -19,10 +20,6 @@ interface FilterDrawerProps {
 }
 
 type Draft = Map<string, ConceptSchemeFilterState>;
-
-function emptyDraft(): Draft {
-  return new Map();
-}
 
 // Serialise the drawer's per-scheme draft back into the wire format expected
 // by SearchParams.searchFacets — one entry per scheme that has at least one
@@ -58,18 +55,21 @@ export function FilterDrawer({
   onApply,
   onCancel,
 }: FilterDrawerProps) {
-  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [draft, setDraft] = useState<Draft>(() =>
+    parseFacets(appliedFacets, schemes),
+  );
   const panelRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<Element | null>(null);
   const titleId = useId();
 
-  // Reset draft and capture pre-open focus each time the drawer opens.
-  // URL hydration is wired in commit 5; for now the seed is always empty.
+  // Reset draft from URL on each open, and capture pre-open focus. Re-runs
+  // when `appliedFacets` identity changes too so reopening after a sibling
+  // navigation (e.g. q changed via the search bar) picks up the new state.
   useEffect(() => {
     if (!open) return;
     previousFocusRef.current = document.activeElement;
-    setDraft(emptyDraft());
-  }, [open]);
+    setDraft(parseFacets(appliedFacets, schemes));
+  }, [open, appliedFacets, schemes]);
 
   // Lock body scroll while the modal is up; restore the prior overflow
   // value on close so we don't clobber an ancestor that was managing it.
@@ -124,7 +124,7 @@ export function FilterDrawer({
   }
 
   function handleReset() {
-    setDraft(emptyDraft());
+    setDraft(new Map());
   }
 
   function handleApply() {

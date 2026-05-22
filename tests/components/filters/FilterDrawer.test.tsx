@@ -283,10 +283,31 @@ describe("FilterDrawer", () => {
     expect(document.body.style.overflow).toBe("auto");
   });
 
-  test("with a non-empty draft matching appliedFacets, Update Results stays disabled", () => {
-    // appliedFacets carries the URI for "Educational Outcomes and Learning".
-    // After the user clicks that same concept, the draft now equals applied
-    // (one URI in one scheme) so the apply button should remain disabled.
+  test("hydrates the draft from appliedFacets on open", () => {
+    // appliedFacets carries the URI for "Educational Outcomes and Learning";
+    // the drawer should open with that concept already checked and Update
+    // Results disabled (draft == applied).
+    const appliedFacets = [`linked_data_concepts:"${URI_LEARNING}"`];
+    render(
+      <FilterDrawer
+        open={true}
+        schemes={[OUTCOME_SCHEME_FIXTURE]}
+        appliedFacets={appliedFacets}
+        onApply={noop}
+        onCancel={noop}
+      />,
+    );
+    expect(
+      (screen.getByLabelText("Educational Outcomes and Learning") as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("button", { name: "Update Results" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+  });
+
+  test("toggling away from a hydrated selection enables Update Results", () => {
     const appliedFacets = [`linked_data_concepts:"${URI_LEARNING}"`];
     render(
       <FilterDrawer
@@ -301,6 +322,53 @@ describe("FilterDrawer", () => {
     expect(
       (screen.getByRole("button", { name: "Update Results" }) as HTMLButtonElement)
         .disabled,
+    ).toBe(false);
+  });
+
+  test("re-hydrates when reopened after appliedFacets change", () => {
+    const initial = [`linked_data_concepts:"${URI_LEARNING}"`];
+    const { rerender } = render(
+      <FilterDrawer
+        open={true}
+        schemes={[OUTCOME_SCHEME_FIXTURE]}
+        appliedFacets={initial}
+        onApply={noop}
+        onCancel={noop}
+      />,
+    );
+    expect(
+      (screen.getByLabelText("Educational Outcomes and Learning") as HTMLInputElement)
+        .checked,
     ).toBe(true);
+
+    // Close → URL changes externally → reopen.
+    const next = [`linked_data_concepts:"${URI_ACCESS}"`];
+    rerender(
+      <FilterDrawer
+        open={false}
+        schemes={[OUTCOME_SCHEME_FIXTURE]}
+        appliedFacets={next}
+        onApply={noop}
+        onCancel={noop}
+      />,
+    );
+    rerender(
+      <FilterDrawer
+        open={true}
+        schemes={[OUTCOME_SCHEME_FIXTURE]}
+        appliedFacets={next}
+        onApply={noop}
+        onCancel={noop}
+      />,
+    );
+
+    // toggleConceptSubtree selects the whole subtree under "Access to Education".
+    expect(
+      (screen.getByLabelText("Access to Education") as HTMLInputElement).checked,
+    ).toBe(true);
+    expect(
+      (screen.getByLabelText("Educational Outcomes and Learning") as HTMLInputElement)
+        .checked,
+    ).toBe(false);
   });
 });
