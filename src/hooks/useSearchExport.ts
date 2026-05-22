@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { ESEA_CONTEXT_URL, ESEA_VOCABULARY_URL } from "@/config";
 import {
   getSearchExport,
   requestSearchExport,
@@ -17,14 +16,18 @@ export type ExportStatus =
   | "done"
   | "error";
 
+export interface StartExportOptions {
+  query: string;
+  filters: Omit<SearchFilters, "page">;
+  filename: string;
+  vocabularyUrl: string;
+  contextUrl: string;
+}
+
 export interface UseSearchExportResult {
   status: ExportStatus;
   errorMessage: string | null;
-  start: (
-    query: string,
-    filters: Omit<SearchFilters, "page">,
-    filename: string,
-  ) => void;
+  start: (options: StartExportOptions) => void;
   reset: () => void;
 }
 
@@ -66,20 +69,17 @@ export function useSearchExport(): UseSearchExportResult {
   useEffect(() => reset, [reset]);
 
   const start = useCallback(
-    (query: string, filters: Omit<SearchFilters, "page">, filename: string) => {
+    ({
+      query,
+      filters,
+      filename,
+      vocabularyUrl,
+      contextUrl,
+    }: StartExportOptions) => {
       runIdRef.current += 1;
       const runId = runIdRef.current;
       clearScheduledPoll();
       setErrorMessage(null);
-
-      // The workbook falls back to raw CURIEs when Vocab/context URLs are missing.
-      // Warn so misconfiguration is visible in devtools without surfacing a user-facing error.
-      if (!ESEA_VOCABULARY_URL || !ESEA_CONTEXT_URL) {
-        console.warn(
-          "Export vocab/context URLs not configured; concept cells will contain raw CURIEs.",
-          { ESEA_VOCABULARY_URL, ESEA_CONTEXT_URL },
-        );
-      }
 
       setStatus("requesting");
 
@@ -103,8 +103,8 @@ export function useSearchExport(): UseSearchExportResult {
         try {
           await exportReferencesToExcel(
             job.result_url,
-            ESEA_VOCABULARY_URL,
-            ESEA_CONTEXT_URL,
+            vocabularyUrl,
+            contextUrl,
             filename,
           );
         } catch (err) {

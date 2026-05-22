@@ -247,13 +247,13 @@ describe("useSearch", () => {
     expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  // Witnesses that facets are expanded via community.vocabBase and threaded into
-  // the wire query — exact join/precedence format owned by searchParams unit tests.
-  test("expands compact facet URIs via community.vocabBase when calling searchReferences", async () => {
+  // Witnesses that facets are threaded into the wire query — exact join/
+  // precedence format is owned by searchParams unit tests.
+  test("passes facet URIs through to the wire query when calling searchReferences", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const params = makeSearchParams({
       q: "phonics",
-      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+      searchFacets: ['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"'],
     });
     renderHook(() => useSearch(params), {
       wrapper: withCommunityPath("/esea"),
@@ -273,7 +273,7 @@ describe("useSearch", () => {
   test("empty q + facets calls searchReferences with the faceted wire query (not undefined)", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const params = makeSearchParams({
-      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+      searchFacets: ['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"'],
     });
     renderHook(() => useSearch(params), {
       wrapper: withCommunityPath("/esea"),

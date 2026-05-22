@@ -1,11 +1,16 @@
 import { proxyVocabUrl } from "@/config";
 
+type JsonLdRef = string | { "@id": string };
+
 interface JsonLdGraphEntry {
   "@id"?: string;
   "@type"?: string | string[];
   "skos:prefLabel"?: string;
   "skos:definition"?: string;
-  "skos:broader"?: string | { "@id": string } | Array<string | { "@id": string }>;
+  "skos:broader"?: JsonLdRef | JsonLdRef[];
+  "skos:hasTopConcept"?: JsonLdRef | JsonLdRef[];
+  "dct:title"?: string;
+  "rdfs:label"?: string;
   [key: string]: unknown;
 }
 
@@ -13,61 +18,147 @@ interface VocabularyJsonLd {
   "@graph"?: JsonLdGraphEntry[];
 }
 
+export interface Concept {
+  uri: string;
+  label: string;
+  definition?: string;
+  narrower?: Concept[];
+}
+
+export interface ConceptScheme {
+  uri: string;
+  label: string;
+  topConcepts: Concept[];
+}
+
 export interface VocabularyData {
   labels: Map<string, string>;
   broader: Map<string, string>;
   definitions: Map<string, string>;
+  schemes: ConceptScheme[];
 }
 
 const SKOS_CONCEPT = "skos:Concept";
+const SKOS_CONCEPT_SCHEME = "skos:ConceptScheme";
 
 /** Normalize a vocabulary URL to its .jsonld form. */
 function toJsonLdUrl(vocabularyUrl: string): string {
   const url = new URL(vocabularyUrl);
-  url.pathname = url.pathname.replace(/\/+$/, "").replace(/\.(jsonld|json|ttl|rdf|xml)$/, "") + ".jsonld";
+  url.pathname =
+    url.pathname
+      .replace(/\/+$/, "")
+      .replace(/\.(jsonld|json|ttl|rdf|xml)$/, "") + ".jsonld";
   return url.toString();
 }
 
-function extractBroaderUri(
-  value: JsonLdGraphEntry["skos:broader"],
-): string | undefined {
-  if (!value) return undefined;
-  // SKOS allows polyhierarchy; we surface only the first broader for breadcrumb display.
-  const first = Array.isArray(value) ? value[0] : value;
-  if (typeof first === "string") return first;
-  if (first && typeof first === "object" && "@id" in first) return first["@id"];
+function extractRefId(ref: JsonLdRef | undefined): string | undefined {
+  if (!ref) return undefined;
+  if (typeof ref === "string") return ref;
+  if (typeof ref === "object" && "@id" in ref) return ref["@id"];
   return undefined;
 }
 
+function extractFirstRefId(
+  value: JsonLdRef | JsonLdRef[] | undefined,
+): string | undefined {
+  if (!value) return undefined;
+  const first = Array.isArray(value) ? value[0] : value;
+  return extractRefId(first);
+}
+
+function extractAllRefIds(
+  value: JsonLdRef | JsonLdRef[] | undefined,
+): string[] {
+  if (!value) return [];
+  const items = Array.isArray(value) ? value : [value];
+  return items
+    .map(extractRefId)
+    .filter((id): id is string => typeof id === "string");
+}
+
+interface RawScheme {
+  uri: string;
+  label: string;
+  topConceptUris: string[];
+}
+
 /**
- * Build concept URI → prefLabel and child URI → parent URI maps from the
- * vocabulary @graph.
+ * Build concept lookup maps and the scheme tree from the vocabulary @graph.
  *
- * Filters for entries that are skos:Concept (by checking @type). The @id values
- * in the published vocabulary are already full URIs, so no expansion is needed.
+ * SKOS allows polyhierarchy; `broader` keeps only the first parent and the
+ * scheme tree mirrors that single-parent view.
  */
 export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
   const labels = new Map<string, string>();
   const broader = new Map<string, string>();
   const definitions = new Map<string, string>();
+  const rawSchemes: RawScheme[] = [];
+
   for (const entry of doc["@graph"] ?? []) {
     if (!entry["@id"]) continue;
     const types = Array.isArray(entry["@type"])
       ? entry["@type"]
       : [entry["@type"]];
-    if (!types.includes(SKOS_CONCEPT)) continue;
-    if (entry["skos:prefLabel"]) {
-      labels.set(entry["@id"], entry["skos:prefLabel"]);
+
+    if (types.includes(SKOS_CONCEPT)) {
+      if (entry["skos:prefLabel"]) {
+        labels.set(entry["@id"], entry["skos:prefLabel"]);
+      }
+      if (entry["skos:definition"]) {
+        definitions.set(entry["@id"], entry["skos:definition"]);
+      }
+      const broaderUri = extractFirstRefId(entry["skos:broader"]);
+      if (broaderUri) {
+        broader.set(entry["@id"], broaderUri);
+      }
+      continue;
     }
-    if (entry["skos:definition"]) {
-      definitions.set(entry["@id"], entry["skos:definition"]);
-    }
-    const broaderUri = extractBroaderUri(entry["skos:broader"]);
-    if (broaderUri) {
-      broader.set(entry["@id"], broaderUri);
+
+    if (types.includes(SKOS_CONCEPT_SCHEME)) {
+      const label = entry["dct:title"] ?? entry["rdfs:label"];
+      if (!label) continue;
+      rawSchemes.push({
+        uri: entry["@id"],
+        label,
+        topConceptUris: extractAllRefIds(entry["skos:hasTopConcept"]),
+      });
     }
   }
-  return { labels, broader, definitions };
+
+  const childrenByUri = new Map<string, string[]>();
+  for (const [child, parent] of broader) {
+    const siblings = childrenByUri.get(parent);
+    if (siblings) siblings.push(child);
+    else childrenByUri.set(parent, [child]);
+  }
+
+  function buildConcept(uri: string, visited: Set<string>): Concept | null {
+    if (visited.has(uri)) return null;
+    const label = labels.get(uri);
+    if (!label) return null;
+    visited.add(uri);
+
+    const concept: Concept = { uri, label };
+    const definition = definitions.get(uri);
+    if (definition) concept.definition = definition;
+
+    const narrower = (childrenByUri.get(uri) ?? [])
+      .map((childUri) => buildConcept(childUri, visited))
+      .filter((c): c is Concept => c !== null);
+    if (narrower.length > 0) concept.narrower = narrower;
+
+    return concept;
+  }
+
+  const schemes: ConceptScheme[] = rawSchemes.map((raw) => ({
+    uri: raw.uri,
+    label: raw.label,
+    topConcepts: raw.topConceptUris
+      .map((uri) => buildConcept(uri, new Set()))
+      .filter((c): c is Concept => c !== null),
+  }));
+
+  return { labels, broader, definitions, schemes };
 }
 
 /**

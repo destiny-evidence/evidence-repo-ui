@@ -92,7 +92,7 @@ export function SearchPage(_props: SearchPageProps) {
 
 function SearchPageInner({ community }: { community: Community }) {
   const search = useUrlParams();
-  const params = parseSearchParams(search, community.vocabBase);
+  const params = parseSearchParams(search);
   const canonicalQs = toQueryString(params);
 
   // Canonicalize once: if URL query string doesn't match the canonical form,
@@ -171,8 +171,17 @@ function SearchPageInner({ community }: { community: Community }) {
   const exportAnnouncement = exportAnnouncementFor(exportJob.status);
 
   function handleExport() {
-    const { query, filters } = toExportSearchQuery(params, community.defaultAnnotations, community.vocabBase);
-    exportJob.start(query, filters, formatExportFilename(community.slug));
+    const { query, filters } = toExportSearchQuery(
+      params,
+      community.defaultAnnotations,
+    );
+    exportJob.start({
+      query,
+      filters,
+      filename: formatExportFilename(community.slug),
+      vocabularyUrl: community.vocabularyUrl,
+      contextUrl: community.contextUrl,
+    });
   }
 
   // Page size comes from the API response (page.count) so the UI stays in

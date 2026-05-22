@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
 import { searchReferences, type SearchFilters } from "@/services/apiClient";
-import { SORT_BACKEND, buildFacetedQuery, expandFacets } from "@/services/searchParams";
+import { SORT_BACKEND, buildFacetedQuery } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
@@ -9,16 +9,11 @@ function paramsKey(
   params: SearchParams,
   slug: string,
   annotations: string[],
-  vocabBase: string,
 ): string {
   // JSON.stringify is unambiguous for arbitrary string arrays — two distinct
   // inputs can never collapse to the same key even if annotations contain commas,
   // quotes, or other delimiters. Ad hoc joins are brittle here.
   // Intentionally order-sensitive: ["a","b"] and ["b","a"] are different keys.
-  // Facets keyed in compact form (typed state) — order-sensitive.
-  // vocabBase mirrors the value the effect uses via expandFacets; today it's
-  // determined by slug, but keying on it directly avoids a stale cache if a
-  // community ever decouples slug from vocab base.
   return [
     `q=${params.q}`,
     `page=${params.page}`,
@@ -28,7 +23,6 @@ function paramsKey(
     `slug=${slug}`,
     `ann=${JSON.stringify(annotations)}`,
     `facets=${JSON.stringify(params.searchFacets)}`,
-    `vocab=${vocabBase}`,
   ].join("&");
 }
 
@@ -43,7 +37,6 @@ export function useSearch(params: SearchParams): {
     params,
     community?.slug ?? "",
     community?.defaultAnnotations ?? [],
-    community?.vocabBase ?? "",
   );
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,8 +64,7 @@ export function useSearch(params: SearchParams): {
     };
     if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
 
-    const expanded = expandFacets(params.searchFacets, community.vocabBase);
-    const wireQuery = buildFacetedQuery(params.q, expanded);
+    const wireQuery = buildFacetedQuery(params.q, params.searchFacets);
     searchReferences(wireQuery || undefined, filters)
       .then((r) => { if (!cancelled) setResults(r); })
       .catch((e) => {

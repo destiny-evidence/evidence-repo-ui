@@ -1,12 +1,9 @@
 import { describe, test, expect } from "vitest";
-import { findCommunity } from "@/services/communities";
 import {
   parseSearchParams,
   toQueryString,
   buildSearchUrl,
   buildFacetedQuery,
-  expandFacets,
-  compactFacets,
   toExportSearchQuery,
 } from "@/services/searchParams";
 import { makeSearchParams } from "../fixtures";
@@ -113,8 +110,6 @@ describe("parseSearchParams", () => {
 });
 
 describe("parseSearchParams facet peel + unwrap", () => {
-  const vocabBase = findCommunity("esea")!.vocabBase;
-
   test.each([
     {
       label: "peels single trailing facet",
@@ -191,31 +186,9 @@ describe("parseSearchParams facet peel + unwrap", () => {
       facets: [],
     },
   ])("$label", ({ raw, q, facets }) => {
-    const p = parseSearchParams(raw, vocabBase);
+    const p = parseSearchParams(raw);
     expect(p.q).toBe(q);
     expect(p.searchFacets).toEqual(facets);
-  });
-});
-
-describe("parseSearchParams URI compaction", () => {
-  const vocabBase = findCommunity("esea")!.vocabBase;
-
-  test("hand-crafted full URI in facet tail is compacted on parse", () => {
-    const raw = '?q=phonics AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")';
-    const p = parseSearchParams(raw, vocabBase);
-    expect(p.searchFacets).toEqual(['linked_data_concepts:"EducationLevelScheme/C00002"']);
-  });
-
-  test("foreign-vocab full URI is left alone", () => {
-    const raw = '?q=phonics AND (linked_data_concepts:"https://other.example.org/Foo/Bar")';
-    const p = parseSearchParams(raw, vocabBase);
-    expect(p.searchFacets).toEqual(['linked_data_concepts:"https://other.example.org/Foo/Bar"']);
-  });
-
-  test("without vocabBase, full URIs are preserved (back-compat)", () => {
-    const raw = '?q=phonics AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")';
-    const p = parseSearchParams(raw);
-    expect(p.searchFacets).toEqual(['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"']);
   });
 });
 
@@ -286,22 +259,6 @@ describe("toQueryString", () => {
     expect(parsed).toEqual(input);
   });
 
-  // Closes the canonicalization path actually used in production: SearchPage
-  // hands parseSearchParams its vocabBase, so a hand-crafted URL with a full
-  // ESEA URI must collapse to compact state, and the next toQueryString must
-  // emit the compact form (full URI must not appear in the URL).
-  test("full ESEA URI in facet URL canonicalizes to compact via vocabBase", () => {
-    const vocabBase = findCommunity("esea")!.vocabBase;
-    const rawFullUriUrl = '?q=phonics AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")';
-    const parsed = parseSearchParams(rawFullUriUrl, vocabBase);
-    expect(parsed.searchFacets).toEqual([
-      'linked_data_concepts:"EducationLevelScheme/C00002"',
-    ]);
-    const serialisedQ = new URLSearchParams(toQueryString(parsed)).get("q");
-    expect(serialisedQ).not.toContain("https://");
-    expect(serialisedQ).toContain("EducationLevelScheme/C00002");
-  });
-
   test("q stays first when facets are combined with start_year/sort/page", () => {
     const p = makeSearchParams({
       q: "phonics",
@@ -364,118 +321,26 @@ describe("buildFacetedQuery", () => {
   });
 });
 
-describe("expandFacets / compactFacets (inverse boundary transforms)", () => {
-  const base = findCommunity("esea")!.vocabBase;
-
-  test.each([
-    {
-      label: "expand: single compact URI",
-      input: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-      expanded: ['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"'],
-    },
-    {
-      label: "expand: OR-joined URIs in one facet",
-      input: [
-        'linked_data_concepts:"EducationLevelScheme/C00002" OR linked_data_concepts:"EducationLevelScheme/C00003"',
-      ],
-      expanded: [
-        'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002" OR linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00003"',
-      ],
-    },
-    {
-      label: "expand: multiple facets expand independently",
-      input: [
-        'linked_data_concepts:"EducationLevelScheme/C00002"',
-        'linked_data_concepts:"OutcomeScheme/C00123"',
-      ],
-      expanded: [
-        'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"',
-        'linked_data_concepts:"https://vocab.esea.education/OutcomeScheme/C00123"',
-      ],
-    },
-  ])("$label", ({ input, expanded }) => {
-    expect(expandFacets(input, base)).toEqual(expanded);
-  });
-
-  test.each([
-    {
-      label: "compact: single full URI",
-      input: ['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"'],
-      compact: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-    },
-    {
-      label: "compact: OR-joined full URIs",
-      input: [
-        'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002" OR linked_data_concepts:"https://vocab.esea.education/OutcomeScheme/C00123"',
-      ],
-      compact: [
-        'linked_data_concepts:"EducationLevelScheme/C00002" OR linked_data_concepts:"OutcomeScheme/C00123"',
-      ],
-    },
-    {
-      label: "compact: already-compact passes through",
-      input: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-      compact: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-    },
-    {
-      label: "compact: URI from foreign vocab is left alone",
-      input: ['linked_data_concepts:"https://other.example.org/Foo/Bar"'],
-      compact: ['linked_data_concepts:"https://other.example.org/Foo/Bar"'],
-    },
-  ])("$label", ({ input, compact }) => {
-    expect(compactFacets(input, base)).toEqual(compact);
-  });
-
-  test("expand is defensive: already-expanded URI passes through", () => {
-    expect(expandFacets(
-      ['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"'],
-      base,
-    )).toEqual([
-      'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"',
-    ]);
-  });
-
-  test("mixed compact + expanded in one facet → expand normalises all", () => {
-    expect(expandFacets([
-      'linked_data_concepts:"EducationLevelScheme/C00002" OR linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00003"',
-    ], base)).toEqual([
-      'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002" OR linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00003"',
-    ]);
-  });
-
-  test("round-trip: compact(expand(x)) = x", () => {
-    const compact = ['linked_data_concepts:"EducationLevelScheme/C00002"'];
-    expect(compactFacets(expandFacets(compact, base), base)).toEqual(compact);
-  });
-});
-
 describe("toExportSearchQuery with facets", () => {
-  const vocabBase = findCommunity("esea")!.vocabBase;
+  const FACET = 'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"';
 
   test("no facets, non-empty q → existing behaviour preserved", () => {
     const p = makeSearchParams({ q: "phonics" });
-    expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query).toBe("phonics");
+    expect(toExportSearchQuery(p, ["dom-x"]).query).toBe("phonics");
   });
 
   test("no facets, empty q → '*' substitution preserved", () => {
-    expect(toExportSearchQuery(makeSearchParams(), ["dom-x"], vocabBase).query).toBe("*");
+    expect(toExportSearchQuery(makeSearchParams(), ["dom-x"]).query).toBe("*");
   });
 
-  test("facets present, non-empty q → compact URIs expanded to full in wire form", () => {
-    const p = makeSearchParams({
-      q: "phonics",
-      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-    });
-    expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query)
-      .toBe('(phonics) AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")');
+  test("facets present, non-empty q → '(base) AND (facet)'", () => {
+    const p = makeSearchParams({ q: "phonics", searchFacets: [FACET] });
+    expect(toExportSearchQuery(p, ["dom-x"]).query).toBe(`(phonics) AND (${FACET})`);
   });
 
-  test("facets present, empty q → '* AND (expanded facet)'", () => {
-    const p = makeSearchParams({
-      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
-    });
-    expect(toExportSearchQuery(p, ["dom-x"], vocabBase).query)
-      .toBe('* AND (linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002")');
+  test("facets present, empty q → '* AND (facet)'", () => {
+    const p = makeSearchParams({ searchFacets: [FACET] });
+    expect(toExportSearchQuery(p, ["dom-x"]).query).toBe(`* AND (${FACET})`);
   });
 
   test("filters (annotation, years, sort) unaffected by facets", () => {
@@ -484,9 +349,9 @@ describe("toExportSearchQuery with facets", () => {
       startYear: 2010,
       endYear: 2024,
       sort: "newest",
-      searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'],
+      searchFacets: [FACET],
     });
-    expect(toExportSearchQuery(p, ["dom-x"], vocabBase).filters).toEqual({
+    expect(toExportSearchQuery(p, ["dom-x"]).filters).toEqual({
       startYear: 2010,
       endYear: 2024,
       annotation: ["dom-x"],

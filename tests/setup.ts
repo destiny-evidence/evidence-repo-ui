@@ -2,6 +2,9 @@ import { afterEach, beforeEach, vi } from "vitest";
 import { cleanup } from "@testing-library/preact";
 import "@testing-library/jest-dom/vitest";
 
+vi.stubEnv("VITE_ESEA_VOCABULARY_URL", "https://test.example/vocab");
+vi.stubEnv("VITE_ESEA_CONTEXT_URL", "https://test.example/context");
+
 const defaultTokenParsed = () => ({
   name: "Test User",
   preferred_username: "testuser",

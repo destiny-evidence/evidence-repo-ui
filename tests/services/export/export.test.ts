@@ -265,20 +265,6 @@ describe("exportReferencesToExcel", () => {
     expect(captured.blob!.size).toBeGreaterThan(0);
   });
 
-  test("skips vocab/context fetches when URLs are undefined", async () => {
-    // Without the ternary guard, getCachedVocabulary(undefined) ends up at
-    // new URL(undefined) and throws. Verify the empty-map branch runs.
-    const { captured, fetchSpy } = installSpies();
-    await exportReferencesToExcel(JSONL_URL, undefined, undefined, "no-vocab.xlsx");
-    const urls = fetchSpy.mock.calls.map((c) =>
-      typeof c[0] === "string" ? c[0] : c[0]!.toString(),
-    );
-    expect(urls).toContain(JSONL_URL);
-    expect(urls.some((u) => u.includes("vocab"))).toBe(false);
-    expect(urls.some((u) => u.includes("context"))).toBe(false);
-    expect(captured.filename).toBe("no-vocab.xlsx");
-    expect(captured.blob!.size).toBeGreaterThan(0);
-  });
 });
 
 type CellValue = string | number | boolean | null;
