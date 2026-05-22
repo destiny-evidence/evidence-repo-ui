@@ -5,6 +5,7 @@ import {
   emptyConceptSchemeState,
   isEmpty,
   isSelected,
+  parseFacets,
   selectedCount,
   selectedUris,
   summary,
@@ -416,6 +417,117 @@ describe("toSearchFacet", () => {
     expect(toSearchFacet(state, OUTCOME_SCHEME_FIXTURE)).toBe(
       `linked_data_concepts:"${URI_ACCESS}"` +
         ` OR linked_data_concepts:"${URI_EDUCATION_FINANCE}"`,
+    );
+  });
+});
+
+describe("parseFacets", () => {
+  const DOCUMENT_TYPE_SCHEME: ConceptScheme = SCHEME;
+
+  test("empty input → empty map", () => {
+    const result = parseFacets([], [OUTCOME_SCHEME_FIXTURE]);
+    expect(result.size).toBe(0);
+  });
+
+  test("empty schemes → empty map even if facets carry URIs", () => {
+    const result = parseFacets(
+      [`linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`],
+      [],
+    );
+    expect(result.size).toBe(0);
+  });
+
+  test("single fragment with one URI lands in the owning scheme bucket", () => {
+    const result = parseFacets(
+      [`linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`],
+      [DOCUMENT_TYPE_SCHEME],
+    );
+    expect(result.size).toBe(1);
+    const state = result.get(DOCUMENT_TYPE_SCHEME.uri);
+    expect(state).toBeDefined();
+    expect(selectedUris(state!)).toEqual([URI_JOURNAL_ARTICLE]);
+  });
+
+  test("multi-URI fragment splits into a single scheme bucket", () => {
+    const fragment =
+      `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"` +
+      ` OR linked_data_concepts:"${URI_THESIS}"`;
+    const result = parseFacets([fragment], [DOCUMENT_TYPE_SCHEME]);
+    const state = result.get(DOCUMENT_TYPE_SCHEME.uri)!;
+    expect(selectedCount(state)).toBe(2);
+    expect(isSelected(state, URI_JOURNAL_ARTICLE)).toBe(true);
+    expect(isSelected(state, URI_THESIS)).toBe(true);
+  });
+
+  test("URIs from two schemes split into two buckets", () => {
+    const result = parseFacets(
+      [
+        `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`,
+        `linked_data_concepts:"${URI_ACCESS}"`,
+      ],
+      [DOCUMENT_TYPE_SCHEME, OUTCOME_SCHEME_FIXTURE],
+    );
+    expect(result.size).toBe(2);
+    expect(
+      selectedUris(result.get(DOCUMENT_TYPE_SCHEME.uri)!),
+    ).toEqual([URI_JOURNAL_ARTICLE]);
+    expect(
+      selectedUris(result.get(OUTCOME_SCHEME_FIXTURE.uri)!),
+    ).toEqual([URI_ACCESS]);
+  });
+
+  test("URIs from the same scheme spread across fragments merge into one bucket", () => {
+    const result = parseFacets(
+      [
+        `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`,
+        `linked_data_concepts:"${URI_THESIS}"`,
+      ],
+      [DOCUMENT_TYPE_SCHEME],
+    );
+    expect(result.size).toBe(1);
+    expect(
+      selectedCount(result.get(DOCUMENT_TYPE_SCHEME.uri)!),
+    ).toBe(2);
+  });
+
+  test("URIs that don't belong to any scheme are silently dropped", () => {
+    const stale = "https://vocab.esea.education/RetiredScheme/X1";
+    const result = parseFacets(
+      [
+        `linked_data_concepts:"${stale}"` +
+          ` OR linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`,
+      ],
+      [DOCUMENT_TYPE_SCHEME],
+    );
+    const state = result.get(DOCUMENT_TYPE_SCHEME.uri)!;
+    expect(selectedUris(state)).toEqual([URI_JOURNAL_ARTICLE]);
+  });
+
+  test("ignores everything when no URI matches any scheme", () => {
+    const result = parseFacets(
+      [`linked_data_concepts:"u:does-not-exist"`],
+      [DOCUMENT_TYPE_SCHEME, OUTCOME_SCHEME_FIXTURE],
+    );
+    expect(result.size).toBe(0);
+  });
+
+  test("picks up narrower-tier concept URIs, not just top-level ones", () => {
+    const result = parseFacets(
+      [`linked_data_concepts:"${URI_EDUCATION_FINANCE}"`],
+      [OUTCOME_SCHEME_FIXTURE],
+    );
+    const state = result.get(OUTCOME_SCHEME_FIXTURE.uri)!;
+    expect(isSelected(state, URI_EDUCATION_FINANCE)).toBe(true);
+  });
+
+  test("round-trips through toSearchFacet", () => {
+    // Pick a selection that exercises both a parent and narrower concept.
+    const original = conceptSchemeStateFromUris([URI_ACCESS, URI_LEARNING]);
+    const fragment = toSearchFacet(original, OUTCOME_SCHEME_FIXTURE);
+    const parsed = parseFacets([fragment], [OUTCOME_SCHEME_FIXTURE]);
+    const state = parsed.get(OUTCOME_SCHEME_FIXTURE.uri)!;
+    expect([...selectedUris(state)].sort()).toEqual(
+      [URI_ACCESS, URI_LEARNING].sort(),
     );
   });
 });
