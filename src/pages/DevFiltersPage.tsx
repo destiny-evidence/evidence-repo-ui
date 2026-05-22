@@ -17,8 +17,8 @@ interface DevFiltersPageProps {
 }
 
 // Slice of ESEA's OutcomeScheme used purely to exercise the filter
-// components in isolation while the FilterDrawer is still under
-// construction. Lives here rather than in tests/ to keep src/ self-contained.
+// components in a demo.
+
 const OUTCOME_SCHEME: ConceptScheme = {
   uri: "https://vocab.esea.education/OutcomeScheme",
   label: "Outcome",

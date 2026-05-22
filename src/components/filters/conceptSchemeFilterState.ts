@@ -77,11 +77,7 @@ function walkConcepts(concepts: Concept[]): Concept[] {
 
 // Builds one SearchParams.searchFacets[] entry: an unwrapped, OR-joined
 // sequence of linked_data_concepts:"..." clauses for every selected
-// concept, with full concept URIs embedded verbatim. The caller
-// (FilterDrawer) drops this string into searchFacets; the searchParams
-// pipeline (buildFacetedQuery) wraps each facet in parens at URL
-// serialisation time. Omitting our own outer parens is intentional —
-// double-wrapping would break parseSearchParams's facet-peel regex.
+// concept, with full concept URIs embedded verbatim.
 export function toSearchFacet(
   state: ConceptSchemeFilterState,
   scheme: ConceptScheme,
