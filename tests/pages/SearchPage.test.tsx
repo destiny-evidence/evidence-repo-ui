@@ -3,6 +3,14 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/preact";
 import { SearchPage } from "@/pages/SearchPage";
 import { CommunityProvider } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
+import {
+  OUTCOME_SCHEME_FIXTURE,
+  URI_LEARNING,
+  URI_RETURNS,
+  URI_ACCESS,
+  URI_EDUCATION_FINANCE,
+  URI_ENROLMENT,
+} from "../components/filters/fixtures";
 
 function renderSearchPage() {
   return render(
@@ -26,14 +34,46 @@ vi.mock("@/services/export/export", () => ({
   exportReferencesToExcel: vi.fn().mockResolvedValue(undefined),
 }));
 
+// useVocabulary is mocked so we don't fire real fetches at the stubbed
+// VITE_ESEA_VOCABULARY_URL during tests. The default below silences the
+// hook (no schemes, not loading, no error) which makes the Refine button
+// disappear entirely; tests that exercise the drawer override this.
+vi.mock("@/hooks/useVocabulary", () => ({
+  useVocabulary: vi.fn(),
+}));
+
 import {
   searchReferences,
   requestSearchExport,
   getSearchExport,
 } from "@/services/apiClient";
+import { useVocabulary } from "@/hooks/useVocabulary";
 const mockSearch = vi.mocked(searchReferences);
 const mockRequestExport = vi.mocked(requestSearchExport);
 const mockGetExport = vi.mocked(getSearchExport);
+const mockVocab = vi.mocked(useVocabulary);
+
+function silentVocab(): ReturnType<typeof useVocabulary> {
+  return {
+    labels: null,
+    broader: null,
+    definitions: null,
+    schemes: null,
+    loading: false,
+    error: null,
+  };
+}
+
+function vocabWith(schemes: typeof OUTCOME_SCHEME_FIXTURE[]): ReturnType<typeof useVocabulary> {
+  return {
+    labels: null,
+    broader: null,
+    definitions: null,
+    schemes,
+    loading: false,
+    error: null,
+  };
+}
 
 function makeResult(count: number, ids: string[] = [], isLowerBound = false): SearchResult {
   return {
@@ -82,6 +122,7 @@ beforeEach(() => {
   mockSearch.mockReset();
   mockRequestExport.mockReset();
   mockGetExport.mockReset();
+  mockVocab.mockReset().mockReturnValue(silentVocab());
   history.replaceState(null, "", "/esea");
 });
 
@@ -370,6 +411,129 @@ describe("SearchPage", () => {
       expect(container.querySelector(".search-results__meta")).toBeInTheDocument();
     });
     expect(screen.getByText(/searching/i)).toBeInTheDocument();
+  });
+
+  describe("filter drawer", () => {
+    beforeEach(() => {
+      mockVocab.mockReturnValue(vocabWith([OUTCOME_SCHEME_FIXTURE]));
+    });
+
+    test("URL with one facet → Refine shows count 1 and drawer opens with concept pre-checked", async () => {
+      const startQ = `* AND (linked_data_concepts:"${URI_LEARNING}")`;
+      history.replaceState(null, "", `/esea?q=${encodeURIComponent(startQ)}`);
+      mockBoth({ results: makeResult(7, ["r1"]) });
+
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      // Refine label includes the count when > 0.
+      const refine = screen.getByRole("button", { name: /Refine\s*1/ });
+      fireEvent.click(refine);
+
+      expect(
+        (screen.getByLabelText("Educational Outcomes and Learning") as HTMLInputElement)
+          .checked,
+      ).toBe(true);
+      // Other top-level concepts in the same scheme stay unchecked.
+      expect(
+        (screen.getByLabelText("Returns to Education") as HTMLInputElement).checked,
+      ).toBe(false);
+    });
+
+    test("toggling a second concept and applying navigates with both URIs in q", async () => {
+      const startQ = `* AND (linked_data_concepts:"${URI_LEARNING}")`;
+      history.replaceState(null, "", `/esea?q=${encodeURIComponent(startQ)}`);
+      mockBoth({ results: makeResult(7, ["r1"]) });
+
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
+      fireEvent.click(screen.getByLabelText("Returns to Education"));
+      fireEvent.click(screen.getByRole("button", { name: "Update Results" }));
+
+      await waitFor(() => {
+        const q = new URLSearchParams(window.location.search).get("q") ?? "";
+        expect(q).toContain(URI_LEARNING);
+        expect(q).toContain(URI_RETURNS);
+      });
+    });
+
+    test("empty URL → adding a facet through the drawer navigates with the URI in q", async () => {
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      // Refine shows no badge.
+      const refine = screen.getByRole("button", { name: "Refine" });
+      fireEvent.click(refine);
+
+      fireEvent.click(screen.getByLabelText("Returns to Education"));
+      fireEvent.click(screen.getByRole("button", { name: "Update Results" }));
+
+      await waitFor(() => {
+        const q = new URLSearchParams(window.location.search).get("q") ?? "";
+        expect(q).toContain(URI_RETURNS);
+      });
+    });
+
+    test("selecting a parent concept applies the whole subtree (parent + descendants) to the URL", async () => {
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
+      fireEvent.click(screen.getByLabelText("Access to Education"));
+      fireEvent.click(screen.getByRole("button", { name: "Update Results" }));
+
+      await waitFor(() => {
+        const q = new URLSearchParams(window.location.search).get("q") ?? "";
+        expect(q).toContain(URI_ACCESS);
+        expect(q).toContain(URI_EDUCATION_FINANCE);
+        expect(q).toContain(URI_ENROLMENT);
+      });
+    });
+
+    test("Cancel closes the drawer without changing the URL", async () => {
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+      const before = window.location.search;
+
+      fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
+      fireEvent.click(screen.getByLabelText("Returns to Education"));
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(window.location.search).toBe(before);
+      // Drawer is gone — no Update Results / Cancel button left in the DOM.
+      expect(screen.queryByRole("button", { name: "Update Results" })).toBeNull();
+    });
+
+    test("Refine is hidden when vocabulary has no schemes", async () => {
+      mockVocab.mockReturnValue(vocabWith([]));
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      expect(screen.queryByRole("button", { name: /Refine/ })).toBeNull();
+    });
+
+    test("Refine is disabled while vocabulary is loading", async () => {
+      mockVocab.mockReturnValue({
+        labels: null,
+        broader: null,
+        definitions: null,
+        schemes: null,
+        loading: true,
+        error: null,
+      });
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const refine = screen.getByRole("button", { name: /Refine/ });
+      expect((refine as HTMLButtonElement).disabled).toBe(true);
+    });
   });
 
   describe("export button", () => {
