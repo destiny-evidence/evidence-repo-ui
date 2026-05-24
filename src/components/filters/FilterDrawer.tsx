@@ -62,17 +62,14 @@ export function FilterDrawer({
   const previousFocusRef = useRef<Element | null>(null);
   const titleId = useId();
 
-  // Reset draft from URL on each open, and capture pre-open focus. Re-runs
-  // when `appliedFacets` identity changes too so reopening after a sibling
-  // navigation (e.g. q changed via the search bar) picks up the new state.
+  // Reset draft from URL on each open, and capture pre-open focus.
   useEffect(() => {
     if (!open) return;
     previousFocusRef.current = document.activeElement;
     setDraft(parseFacets(appliedFacets, schemes));
   }, [open, appliedFacets, schemes]);
 
-  // Lock body scroll while the modal is up; restore the prior overflow
-  // value on close so we don't clobber an ancestor that was managing it.
+  // Lock body scroll while the modal is up;
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
@@ -82,9 +79,8 @@ export function FilterDrawer({
     };
   }, [open]);
 
-  // Focus the dialog panel itself on open (it carries tabindex=-1) so the
-  // first Tab lands on something inside the drawer rather than the page
-  // beneath. Restore focus to wherever it was on close.
+  // Focus the dialog panel itself on open (it carries tabindex=-1)
+  // Restore focus to wherever it was on close.
   useEffect(() => {
     if (!open) return;
     panelRef.current?.focus();
@@ -94,9 +90,7 @@ export function FilterDrawer({
     };
   }, [open]);
 
-  // Escape dismisses the drawer (treated as Cancel). The ticket says users
-  // must use a button, but that wording is mouse-shaped — keyboard users
-  // need a non-mouse exit, and Esc is the universal modal convention.
+  // Escape dismisses the drawer (treated as Cancel).
   useEffect(() => {
     if (!open) return;
     function handleKey(e: KeyboardEvent) {
