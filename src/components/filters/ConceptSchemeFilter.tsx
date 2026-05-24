@@ -1,7 +1,10 @@
+import { useMemo } from "preact/hooks";
 import { Tooltip } from "../Tooltip";
 import {
+  buildConceptIndex,
   isSelected,
-  toggleConceptSubtree,
+  toggleConcept,
+  type ConceptIndex,
   type ConceptSchemeFilterState,
 } from "./conceptSchemeFilterState";
 import type {
@@ -19,10 +22,11 @@ interface ConceptSchemeFilterProps {
 interface ConceptItemProps {
   concept: Concept;
   state: ConceptSchemeFilterState;
+  index: ConceptIndex;
   onChange: (next: ConceptSchemeFilterState) => void;
 }
 
-function ConceptItem({ concept, state, onChange }: ConceptItemProps) {
+function ConceptItem({ concept, state, index, onChange }: ConceptItemProps) {
   const hasDefinition = !!concept.definition;
   const labelClass = hasDefinition
     ? "concept-scheme-filter__label concept-scheme-filter__label--has-tooltip"
@@ -40,7 +44,7 @@ function ConceptItem({ concept, state, onChange }: ConceptItemProps) {
           class="concept-scheme-filter__checkbox"
           type="checkbox"
           checked={isSelected(state, concept.uri)}
-          onChange={() => onChange(toggleConceptSubtree(state, concept))}
+          onChange={() => onChange(toggleConcept(state, concept, index))}
         />
         {hasDefinition ? (
           <Tooltip text={concept.definition}>{labelNode}</Tooltip>
@@ -55,6 +59,7 @@ function ConceptItem({ concept, state, onChange }: ConceptItemProps) {
               key={child.uri}
               concept={child}
               state={state}
+              index={index}
               onChange={onChange}
             />
           ))}
@@ -69,6 +74,7 @@ export function ConceptSchemeFilter({
   state,
   onChange,
 }: ConceptSchemeFilterProps) {
+  const index = useMemo(() => buildConceptIndex(scheme), [scheme]);
   return (
     <ul class="concept-scheme-filter">
       {scheme.topConcepts.map((concept) => (
@@ -76,6 +82,7 @@ export function ConceptSchemeFilter({
           key={concept.uri}
           concept={concept}
           state={state}
+          index={index}
           onChange={onChange}
         />
       ))}

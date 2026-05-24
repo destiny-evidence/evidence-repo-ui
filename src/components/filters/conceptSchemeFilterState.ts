@@ -47,14 +47,42 @@ export function summary(state: ConceptSchemeFilterState): string {
   return state.size === 0 ? "" : `${state.size} selected`;
 }
 
-// Toggles the clicked concept plus all of its narrower descendants together.
-// Direction is set by the clicked concept's current state: if it is selected,
-// the whole subtree is cleared; otherwise the whole subtree is added. This
-// loses any independent child selections on deselect — a deliberate tradeoff
-// for predictable subtree semantics.
-export function toggleConceptSubtree(
+// Lookup maps for one scheme, derived from its tree. `byUri` resolves any
+// concept (so we can read a parent's `narrower` to check sibling state);
+// `broader` maps a concept URI to its parent's URI, terminating at top
+// concepts which have no entry.
+export interface ConceptIndex {
+  byUri: ReadonlyMap<string, Concept>;
+  broader: ReadonlyMap<string, string>;
+}
+
+export function buildConceptIndex(scheme: ConceptScheme): ConceptIndex {
+  const byUri = new Map<string, Concept>();
+  const broader = new Map<string, string>();
+  const walk = (concept: Concept, parentUri?: string) => {
+    byUri.set(concept.uri, concept);
+    if (parentUri) broader.set(concept.uri, parentUri);
+    if (concept.narrower) {
+      for (const child of concept.narrower) walk(child, concept.uri);
+    }
+  };
+  for (const top of scheme.topConcepts) walk(top);
+  return { byUri, broader };
+}
+
+// Toggles the clicked concept plus all of its narrower descendants together,
+// then reconciles ancestors upward via `index.broader`: at each level the
+// parent is selected iff every one of its `narrower` is selected. Recomputing
+// from sibling state handles both directions in one pass — selecting the last
+// missing sibling rolls a parent in, deselecting any sibling rolls it back out.
+// Direction of the initial subtree change is set by the clicked concept's
+// current state: if selected, the whole subtree is cleared; otherwise added.
+// This loses any independent child selections on deselect — a deliberate
+// tradeoff for predictable subtree semantics.
+export function toggleConcept(
   state: ConceptSchemeFilterState,
   concept: Concept,
+  index: ConceptIndex,
 ): ConceptSchemeFilterState {
   const subtree = walkConcepts([concept]);
   const next = new Set(state);
@@ -63,6 +91,20 @@ export function toggleConceptSubtree(
   } else {
     for (const c of subtree) next.add(c.uri);
   }
+
+  let cursor: string | undefined = concept.uri;
+  while (cursor) {
+    const parentUri = index.broader.get(cursor);
+    if (!parentUri) break;
+    const parent = index.byUri.get(parentUri);
+    const children = parent?.narrower;
+    if (!children || children.length === 0) break;
+    const allSelected = children.every((c) => next.has(c.uri));
+    if (allSelected) next.add(parentUri);
+    else next.delete(parentUri);
+    cursor = parentUri;
+  }
+
   return brand(next);
 }
 
