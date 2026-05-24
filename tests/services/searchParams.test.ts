@@ -259,6 +259,22 @@ describe("toQueryString", () => {
     expect(parsed).toEqual(input);
   });
 
+  // Locks the contract a multi-select ConceptSchemeFilter relies on: one
+  // facet entry containing an internal OR must survive parse → serialise →
+  // parse without being split into two separate facets or losing the OR.
+  test("round-trip from typed state with an OR-joined facet preserves the facet verbatim", () => {
+    const input = makeSearchParams({
+      q: "phonics",
+      searchFacets: [
+        'linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"' +
+          ' OR linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00003"',
+      ],
+    });
+    const serialised = toQueryString(input);
+    const parsed = parseSearchParams("?" + serialised);
+    expect(parsed).toEqual(input);
+  });
+
   test("q stays first when facets are combined with start_year/sort/page", () => {
     const p = makeSearchParams({
       q: "phonics",
