@@ -146,7 +146,12 @@ export function FilterDrawer({
         </header>
 
         <div class="filter-drawer__body">
-          {schemes.map((scheme) => {
+          {schemes
+            .filter(
+              (scheme) =>
+                scheme.uri !== "evrepo:EffectSizeMetricScheme",
+            )
+            .map((scheme) => {
             const state = draft.get(scheme.uri) ?? emptyConceptSchemeState();
             return (
               <FilterCard
