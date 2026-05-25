@@ -30,7 +30,6 @@
 }
 
 .filter-card__title {
-  flex: 1;
   font-weight: 600;
   font-size: var(--font-size-small);
   letter-spacing: 0.04em;
@@ -42,8 +41,13 @@
   color: var(--color-text-secondary);
 }
 
+.filter-card__summary::before {
+  content: "· ";
+}
+
 .filter-card__arrow {
   display: inline-block;
+  margin-left: auto;
   width: 1em;
   color: var(--color-text-tertiary);
 }

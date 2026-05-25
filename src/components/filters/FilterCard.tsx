@@ -11,7 +11,7 @@ interface FilterCardProps {
 export function FilterCard({ title, summary, children }: FilterCardProps) {
   const [expanded, setExpanded] = useState(false);
   const panelId = useId();
-  const showSummary = !expanded && !!summary;
+  const showSummary = !!summary;
 
   return (
     <div class="filter-card">

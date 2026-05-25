@@ -73,14 +73,14 @@ describe("FilterCard", () => {
     expect(screen.getByText("3 selected")).toBeDefined();
   });
 
-  test("hides the summary once expanded", () => {
+  test("keeps the summary visible when expanded", () => {
     render(
       <FilterCard title="Document type" summary="3 selected">
         <div>child</div>
       </FilterCard>,
     );
     fireEvent.click(screen.getByRole("button", { name: /Document type/ }));
-    expect(screen.queryByText("3 selected")).toBeNull();
+    expect(screen.queryByText("3 selected")).not.toBeNull();
   });
 
   test("renders no summary node when prop is omitted", () => {
