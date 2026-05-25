@@ -62,12 +62,13 @@ export function FilterDrawer({
   const previousFocusRef = useRef<Element | null>(null);
   const titleId = useId();
 
-  // Reset draft from URL on each open, and capture pre-open focus.
+  // Reset draft from URL on each FilterDrawer open and capture pre-open focus.
   useEffect(() => {
     if (!open) return;
     previousFocusRef.current = document.activeElement;
     setDraft(parseFacets(appliedFacets, schemes));
-  }, [open, appliedFacets, schemes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Lock body scroll while the modal is up;
   useEffect(() => {
