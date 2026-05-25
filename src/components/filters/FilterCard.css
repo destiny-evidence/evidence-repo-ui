@@ -46,9 +46,9 @@
 }
 
 .filter-card__arrow {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   margin-left: auto;
-  width: 1em;
   color: var(--color-text-tertiary);
 }
 

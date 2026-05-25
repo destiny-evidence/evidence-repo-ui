@@ -1,5 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { useId, useState } from "preact/hooks";
+import { ChevronDownIcon, ChevronRightIcon } from "@/components/icons";
 import "./FilterCard.css";
 
 interface FilterCardProps {
@@ -27,7 +28,7 @@ export function FilterCard({ title, summary, children }: FilterCardProps) {
           <span class="filter-card__summary">{summary}</span>
         )}
         <span class="filter-card__arrow" aria-hidden="true">
-          {expanded ? "▾" : "▸"}
+          {expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
         </span>
       </button>
       <div id={panelId} class="filter-card__panel" hidden={!expanded}>

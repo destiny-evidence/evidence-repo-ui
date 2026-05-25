@@ -64,6 +64,50 @@ export function FilterIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+/**
+ * Chevron pointing right — used to indicate a collapsed disclosure.
+ * Sizes to the surrounding text by default so it tracks the header.
+ */
+export function ChevronRightIcon({ size = "1em" }: { size?: number | string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.75"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      width={size}
+      height={size}
+      aria-hidden="true"
+    >
+      <path d="m7 4 6 6-6 6" />
+    </svg>
+  );
+}
+
+/**
+ * Chevron pointing down — used to indicate an expanded disclosure.
+ * Sizes to the surrounding text by default so it tracks the header.
+ */
+export function ChevronDownIcon({ size = "1em" }: { size?: number | string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.75"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      width={size}
+      height={size}
+      aria-hidden="true"
+    >
+      <path d="m4 7 6 6 6-6" />
+    </svg>
+  );
+}
+
 /** Arrow pointing to upper-right — indicates an external link. */
 export function ExternalLinkIcon({ size = 12 }: { size?: number }) {
   return (
