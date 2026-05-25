@@ -48,6 +48,14 @@ function facetsEqual(a: readonly string[], b: readonly string[]): boolean {
   return true;
 }
 
+// Scheme labels arrive from the vocabulary as e.g. "Document Type Scheme" —
+// the trailing word is implementation detail of the SKOS model and noise to
+// the reader. Strip it (case-insensitive, only as a trailing whole word) for
+// display in the drawer.
+function schemeDisplayLabel(label: string): string {
+  return label.replace(/\s+Scheme$/i, "");
+}
+
 export function FilterDrawer({
   open,
   schemes,
@@ -163,7 +171,7 @@ export function FilterDrawer({
             return (
               <FilterCard
                 key={scheme.uri}
-                title={scheme.label}
+                title={schemeDisplayLabel(scheme.label)}
                 summary={summary(state)}
               >
                 <ConceptSchemeFilter

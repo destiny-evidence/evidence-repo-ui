@@ -58,6 +58,29 @@ describe("FilterDrawer", () => {
     ).toBeDefined();
   });
 
+  test("strips a trailing ' Scheme' from the scheme label", () => {
+    const scheme: ConceptScheme = {
+      uri: "https://vocab.esea.education/EducationLevelScheme",
+      label: "Education Level Scheme",
+      topConcepts: [{ uri: "x", label: "Primary" }],
+    };
+    render(
+      <FilterDrawer
+        open={true}
+        schemes={[scheme]}
+        appliedFacets={[]}
+        onApply={noop}
+        onCancel={noop}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: /^Education Level/ }),
+    ).toBeDefined();
+    expect(
+      screen.queryByRole("button", { name: /Scheme/ }),
+    ).toBeNull();
+  });
+
   test("opens with Show results disabled when nothing is selected", () => {
     render(
       <FilterDrawer
