@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import type { Community } from "@/types/models";
 import {
@@ -14,11 +14,13 @@ import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
 import { useSearchExport, type ExportStatus } from "@/hooks/useSearchExport";
+import { useVocabulary } from "@/hooks/useVocabulary";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
 import { ExportButton } from "@/components/search/ExportButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/Pagination";
+import { FilterDrawer } from "@/components/filters/FilterDrawer";
 import { NotFoundPage } from "./NotFoundPage";
 import "./SearchPage.css";
 
@@ -43,6 +45,28 @@ function formatYearClause(start: number | undefined, end: number | undefined): s
 // 10k is destiny-repository's max_result_window; deep pagination + exports
 // past that are explicitly out of scope. Mirrors the search backend cap.
 const EXPORT_MAX_RESULTS = 10000;
+
+// Maps the useVocabulary() result to the SearchBar `refine` prop. Returns
+// undefined when there are no facets to offer (empty schemes) so the Refine
+// trigger isn't rendered at all.
+function buildRefineConfig(
+  vocab: ReturnType<typeof useVocabulary>,
+  count: number,
+  open: () => void,
+):
+  | { count: number; disabled: boolean; disabledReason?: string; onClick: () => void }
+  | undefined {
+  if (vocab.schemes && vocab.schemes.length > 0) {
+    return { count, disabled: false, onClick: open };
+  }
+  if (vocab.error) {
+    return { count: 0, disabled: true, disabledReason: "Filters unavailable", onClick: () => {} };
+  }
+  if (vocab.loading) {
+    return { count: 0, disabled: true, disabledReason: "Loading filters…", onClick: () => {} };
+  }
+  return undefined;
+}
 
 function formatExportFilename(slug: string, now: Date = new Date()): string {
   // UTC so the same wall-clock click in different timezones produces the
@@ -110,6 +134,33 @@ function SearchPageInner({ community }: { community: Community }) {
   const corpus = useCorpusTotal();
   const results = useSearch(params);
   const exportJob = useSearchExport();
+
+  // Kick off the vocabulary fetch on page mount (not on drawer open) via the
+  // shared cache, so the Refine button is almost always ready by the time
+  // the user reaches for it. The drawer itself never renders a loading
+  // state — the trigger is the gate.
+  const vocab = useVocabulary(community.vocabularyUrl);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const refine = buildRefineConfig(
+    vocab,
+    params.searchFacets.length,
+    () => setDrawerOpen(true),
+  );
+
+  function handleApplyFacets(nextFacets: string[]) {
+    const committed = draft.commitDraft();
+    if (!committed) return;
+    navigate(
+      buildSearchUrl(community.slug, {
+        ...params,
+        ...committed,
+        searchFacets: nextFacets,
+        page: 1,
+      }),
+    );
+    setDrawerOpen(false);
+  }
 
   // Hide the bar on the initial browse-mode load so the skeleton owns the
   // full vertical space; show it as soon as there's anything to put in it.
@@ -215,6 +266,7 @@ function SearchPageInner({ community }: { community: Community }) {
           validationError={draft.validationError}
           onSubmit={handleSubmit}
           disabled={results.loading && results.results !== null}
+          refine={refine}
         />
       </section>
 
@@ -311,6 +363,16 @@ function SearchPageInner({ community }: { community: Community }) {
           />
         )}
       </section>
+
+      {vocab.schemes && vocab.schemes.length > 0 && (
+        <FilterDrawer
+          open={drawerOpen}
+          schemes={vocab.schemes}
+          appliedFacets={params.searchFacets}
+          onApply={handleApplyFacets}
+          onCancel={() => setDrawerOpen(false)}
+        />
+      )}
     </div>
   );
 }

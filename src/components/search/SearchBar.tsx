@@ -1,5 +1,13 @@
 import { MagnifierIcon } from "@/components/icons";
+import { RefineButton } from "./RefineButton";
 import "./SearchBar.css";
+
+interface RefineConfig {
+  count: number;
+  disabled: boolean;
+  disabledReason?: string;
+  onClick: () => void;
+}
 
 interface SearchBarProps {
   draftQ: string;
@@ -11,6 +19,8 @@ interface SearchBarProps {
   validationError: string | null;
   onSubmit: () => void;
   disabled?: boolean;
+  /** Optional Refine trigger; omit to hide the filter drawer entry point. */
+  refine?: RefineConfig;
 }
 
 export function SearchBar({
@@ -23,6 +33,7 @@ export function SearchBar({
   validationError,
   onSubmit,
   disabled = false,
+  refine,
 }: SearchBarProps) {
   function handleSubmit(e?: Event) {
     e?.preventDefault();
@@ -79,6 +90,14 @@ export function SearchBar({
           onInput={(e) => onDraftEndChange((e.target as HTMLInputElement).value)}
           disabled={disabled}
         />
+        {refine && (
+          <RefineButton
+            count={refine.count}
+            disabled={refine.disabled}
+            disabledReason={refine.disabledReason}
+            onClick={refine.onClick}
+          />
+        )}
       </div>
 
       {validationError && (

@@ -132,3 +132,48 @@ export function toSearchFacet(
   }
   return clauses.join(" OR ");
 }
+
+const FACET_URI_RE = /linked_data_concepts:"([^"]+)"/g;
+
+function indexConceptUrisByScheme(
+  schemes: ConceptScheme[],
+): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const scheme of schemes) {
+    for (const concept of walkConcepts(scheme.topConcepts)) {
+      index.set(concept.uri, scheme.uri);
+    }
+  }
+  return index;
+}
+
+// Reverse of `toSearchFacet`, lifted to operate over the full
+// `SearchParams.searchFacets` array: extract every concept URI from each
+// fragment and bucket the URIs by the scheme that contains them. URIs that
+// don't belong to any of the supplied schemes are silently dropped —
+// defensive for stale URLs pointing at a vocabulary that has since changed.
+export function parseFacets(
+  searchFacets: readonly string[],
+  schemes: ConceptScheme[],
+): Map<string, ConceptSchemeFilterState> {
+  const uriToScheme = indexConceptUrisByScheme(schemes);
+  const buckets = new Map<string, Set<string>>();
+  for (const fragment of searchFacets) {
+    for (const match of fragment.matchAll(FACET_URI_RE)) {
+      const uri = match[1];
+      const schemeUri = uriToScheme.get(uri);
+      if (schemeUri === undefined) continue;
+      let bucket = buckets.get(schemeUri);
+      if (!bucket) {
+        bucket = new Set();
+        buckets.set(schemeUri, bucket);
+      }
+      bucket.add(uri);
+    }
+  }
+  const result = new Map<string, ConceptSchemeFilterState>();
+  for (const [schemeUri, uris] of buckets) {
+    result.set(schemeUri, conceptSchemeStateFromUris(uris));
+  }
+  return result;
+}
