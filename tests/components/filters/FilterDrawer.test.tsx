@@ -58,7 +58,7 @@ describe("FilterDrawer", () => {
     ).toBeDefined();
   });
 
-  test("opens with Update Results disabled when nothing is selected", () => {
+  test("opens with Show results disabled when nothing is selected", () => {
     render(
       <FilterDrawer
         open={true}
@@ -68,11 +68,11 @@ describe("FilterDrawer", () => {
         onCancel={noop}
       />,
     );
-    const apply = screen.getByRole("button", { name: "Update Results" });
+    const apply = screen.getByRole("button", { name: "Show results" });
     expect((apply as HTMLButtonElement).disabled).toBe(true);
   });
 
-  test("toggling a concept enables Update Results", () => {
+  test("toggling a concept enables Show results", () => {
     render(
       <FilterDrawer
         open={true}
@@ -83,11 +83,11 @@ describe("FilterDrawer", () => {
       />,
     );
     fireEvent.click(screen.getByLabelText("Journal Article"));
-    const apply = screen.getByRole("button", { name: "Update Results" });
+    const apply = screen.getByRole("button", { name: "Show results" });
     expect((apply as HTMLButtonElement).disabled).toBe(false);
   });
 
-  test("Update Results fires onApply with one facet entry per non-empty scheme", () => {
+  test("Show results fires onApply with one facet entry per non-empty scheme", () => {
     const onApply = vi.fn();
     render(
       <FilterDrawer
@@ -100,7 +100,7 @@ describe("FilterDrawer", () => {
     );
     fireEvent.click(screen.getByLabelText("Journal Article"));
     fireEvent.click(screen.getByLabelText("Returns to Education"));
-    fireEvent.click(screen.getByRole("button", { name: "Update Results" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
     expect(onApply).toHaveBeenCalledTimes(1);
     const facets = onApply.mock.calls[0][0] as string[];
@@ -125,7 +125,7 @@ describe("FilterDrawer", () => {
       />,
     );
     fireEvent.click(screen.getByLabelText("Access to Education"));
-    fireEvent.click(screen.getByRole("button", { name: "Update Results" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
     const facet = (onApply.mock.calls[0][0] as string[])[0];
     expect(facet).toContain(URI_ACCESS);
@@ -149,23 +149,23 @@ describe("FilterDrawer", () => {
       (screen.getByLabelText("Journal Article") as HTMLInputElement).checked,
     ).toBe(true);
 
-    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
 
     expect(
       (screen.getByLabelText("Journal Article") as HTMLInputElement).checked,
     ).toBe(false);
     // Update Results re-greys because the draft is back to equal-to-applied.
     expect(
-      (screen.getByRole("button", { name: "Update Results" }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
     // And Reset does not bubble out to Cancel.
     expect(onCancel).not.toHaveBeenCalled();
   });
 
-  test("Cancel button fires onCancel", () => {
+  test("Cancel button lives in the drawer header and fires onCancel", () => {
     const onCancel = vi.fn();
-    render(
+    const { container } = render(
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
@@ -174,7 +174,10 @@ describe("FilterDrawer", () => {
         onCancel={onCancel}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    const cancel = screen.getByRole("button", { name: "Cancel" });
+    expect(container.querySelector(".filter-drawer__header")?.contains(cancel))
+      .toBe(true);
+    fireEvent.click(cancel);
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
@@ -302,7 +305,7 @@ describe("FilterDrawer", () => {
         .checked,
     ).toBe(true);
     expect(
-      (screen.getByRole("button", { name: "Update Results" }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
   });
@@ -320,7 +323,7 @@ describe("FilterDrawer", () => {
     );
     fireEvent.click(screen.getByLabelText("Educational Outcomes and Learning"));
     expect(
-      (screen.getByRole("button", { name: "Update Results" }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
         .disabled,
     ).toBe(false);
   });

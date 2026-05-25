@@ -141,8 +141,15 @@ export function FilterDrawer({
       >
         <header class="filter-drawer__header">
           <h2 id={titleId} class="filter-drawer__title">
-            Filters
+            Refine the evidence
           </h2>
+          <button
+            type="button"
+            class="filter-drawer__btn filter-drawer__btn--cancel"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
         </header>
 
         <div class="filter-drawer__body">
@@ -175,15 +182,7 @@ export function FilterDrawer({
             class="filter-drawer__btn filter-drawer__btn--reset"
             onClick={handleReset}
           >
-            Reset
-          </button>
-          <div class="filter-drawer__footer-spacer" />
-          <button
-            type="button"
-            class="filter-drawer__btn filter-drawer__btn--cancel"
-            onClick={onCancel}
-          >
-            Cancel
+            Reset all
           </button>
           <button
             type="button"
@@ -191,7 +190,7 @@ export function FilterDrawer({
             onClick={handleApply}
             disabled={!dirty}
           >
-            Update Results
+            Show results
           </button>
         </footer>
       </aside>
