@@ -18,6 +18,7 @@ import { useVocabulary } from "@/hooks/useVocabulary";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
 import { ExportButton } from "@/components/search/ExportButton";
+import { RefineButton } from "@/components/search/RefineButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/Pagination";
 import { FilterDrawer } from "@/components/filters/FilterDrawer";
@@ -164,13 +165,16 @@ function SearchPageInner({ community }: { community: Community }) {
 
   // Hide the bar on the initial browse-mode load so the skeleton owns the
   // full vertical space; show it as soon as there's anything to put in it.
+  // Refine living in the meta bar means we also keep the bar visible whenever
+  // a Refine trigger is offered, so it stays reachable before the first result.
   const showMetaBar =
     results.results !== null ||
     results.error !== null ||
     params.q !== "" ||
     params.startYear !== undefined ||
     params.endYear !== undefined ||
-    params.searchFacets.length > 0;
+    params.searchFacets.length > 0 ||
+    refine !== undefined;
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary =
@@ -266,7 +270,6 @@ function SearchPageInner({ community }: { community: Community }) {
           validationError={draft.validationError}
           onSubmit={handleSubmit}
           disabled={results.loading && results.results !== null}
-          refine={refine}
         />
       </section>
 
@@ -297,9 +300,9 @@ function SearchPageInner({ community }: { community: Community }) {
                         : null
                 : null}
             </span>
-            {results.results && (
+            {(refine || results.results) && (
               <span class="search-results__meta-right">
-                {exportJob.status === "error" && (
+                {results.results && exportJob.status === "error" && (
                   <span
                     class="search-results__export-status"
                     role="alert"
@@ -307,24 +310,38 @@ function SearchPageInner({ community }: { community: Community }) {
                     {exportJob.errorMessage ?? "Export failed."}
                   </span>
                 )}
-                <span
-                  class="visually-hidden"
-                  role="status"
-                  aria-live="polite"
-                >
-                  {exportAnnouncement}
-                </span>
-                <ExportButton
-                  disabled={exportDisabled}
-                  status={exportJob.status}
-                  onClick={handleExport}
-                  tooltip={exportTooltip}
-                />
-                <SortDropdown
-                  value={params.sort}
-                  onChange={handleSortChange}
-                  disabled={results.loading}
-                />
+                {results.results && (
+                  <span
+                    class="visually-hidden"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {exportAnnouncement}
+                  </span>
+                )}
+                {results.results && (
+                  <ExportButton
+                    disabled={exportDisabled}
+                    status={exportJob.status}
+                    onClick={handleExport}
+                    tooltip={exportTooltip}
+                  />
+                )}
+                {refine && (
+                  <RefineButton
+                    count={refine.count}
+                    disabled={refine.disabled}
+                    disabledReason={refine.disabledReason}
+                    onClick={refine.onClick}
+                  />
+                )}
+                {results.results && (
+                  <SortDropdown
+                    value={params.sort}
+                    onChange={handleSortChange}
+                    disabled={results.loading}
+                  />
+                )}
               </span>
             )}
           </div>

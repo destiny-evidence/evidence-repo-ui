@@ -1,4 +1,5 @@
 import { Tooltip } from "@/components/Tooltip";
+import { FilterIcon } from "@/components/icons";
 import "./RefineButton.css";
 
 interface RefineButtonProps {
@@ -21,7 +22,8 @@ export function RefineButton({
       onClick={onClick}
       disabled={disabled}
     >
-      Refine
+      <FilterIcon size={14} />
+      <span class="refine-btn__label">Refine</span>
       {count > 0 && <span class="refine-btn__count">{count}</span>}
     </button>
   );

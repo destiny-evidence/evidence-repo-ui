@@ -2,16 +2,21 @@
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-  background: var(--color-bg-surface);
+  background: var(--color-bg-inset);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 5px 12px;
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: var(--font-size-xs);
+  line-height: 1.2;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
+}
+
+.refine-btn__label {
+  display: inline-block;
 }
 
 .refine-btn:hover:not(:disabled) {

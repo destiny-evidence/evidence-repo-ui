@@ -37,6 +37,33 @@ export function MagnifierIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+/** Three horizontal sliders — used to denote a filter/refine control. */
+export function FilterIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.75"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      width={size}
+      height={size}
+      aria-hidden="true"
+    >
+      <path d="M3 5h10" />
+      <path d="M16 5h1" />
+      <path d="M3 10h4" />
+      <path d="M10 10h7" />
+      <path d="M3 15h10" />
+      <path d="M16 15h1" />
+      <circle cx="14.5" cy="5" r="1.75" fill="currentColor" />
+      <circle cx="8.5" cy="10" r="1.75" fill="currentColor" />
+      <circle cx="14.5" cy="15" r="1.75" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** Arrow pointing to upper-right — indicates an external link. */
 export function ExternalLinkIcon({ size = 12 }: { size?: number }) {
   return (
