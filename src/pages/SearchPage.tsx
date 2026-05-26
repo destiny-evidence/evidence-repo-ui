@@ -22,6 +22,7 @@ import { RefineButton } from "@/components/search/RefineButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/Pagination";
 import { FilterDrawer } from "@/components/filters/FilterDrawer";
+import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { NotFoundPage } from "./NotFoundPage";
 import "./SearchPage.css";
 
@@ -145,7 +146,7 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const refine = buildRefineConfig(
     vocab,
-    params.searchFacets.length,
+    totalSelectedCount(params.searchFacets, vocab.schemes ?? []),
     () => setDrawerOpen(true),
   );
 
