@@ -113,14 +113,6 @@ function FilterDrawerPanel({
     loading: facetCountsLoading,
     error: facetError,
   } = useSearchFacets(facetParams);
-  // Reset both drafts from URL on each FilterDrawer open and capture pre-open focus.
-  useEffect(() => {
-    if (!open) return;
-    previousFocusRef.current = document.activeElement;
-    setDraft(parseFacets(appliedFacets, schemes));
-    setCountryDraft(parseCountryFacets(appliedFacets));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
 
   useEffect(() => {
     const previous = document.body.style.overflow;

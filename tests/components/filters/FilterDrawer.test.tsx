@@ -736,4 +736,29 @@ describe("FilterDrawer", () => {
     expect(after?.searchFacets?.[0]).toContain(URI_JOURNAL);
     expect(after?.q).toBe("phonics");
   });
+
+  test("eager loading: toggling a country re-keys the facet hook with the new draft", () => {
+    render(
+      <FilterDrawer
+        open={true}
+        schemes={TWO_SCHEMES}
+        appliedFacets={[]}
+        params={makeSearchParams({ q: "phonics" })}
+        onApply={noop}
+        onCancel={noop}
+      />,
+    );
+    // Pre-toggle: hook fired with empty facets.
+    const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
+    expect(before?.searchFacets).toEqual([]);
+
+    fireEvent.click(screen.getByRole("button", { name: /Country/ }));
+    fireEvent.click(screen.getByLabelText("Germany"));
+
+    // Post-toggle: the most recent call carries the freshly-drafted country.
+    const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
+    expect(after?.searchFacets?.length).toBe(1);
+    expect(after?.searchFacets?.[0]).toBe("linked_data_countries:DE");
+    expect(after?.q).toBe("phonics");
+  });
 });
