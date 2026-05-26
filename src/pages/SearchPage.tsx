@@ -398,6 +398,7 @@ function SearchPageInner({ community }: { community: Community }) {
           open={drawerOpen}
           schemes={filterableSchemes}
           appliedFacets={params.searchFacets}
+          params={params}
           onApply={handleApplyFacets}
           onCancel={() => setDrawerOpen(false)}
         />

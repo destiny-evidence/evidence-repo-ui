@@ -36,12 +36,34 @@
   outline: none;
 }
 
+.concept-scheme-filter__count {
+  margin-left: auto;
+  padding-left: var(--spacing-sm);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-small);
+  transition: opacity 150ms ease;
+}
+
+.concept-scheme-filter__count--parent {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+  outline: none;
+}
+
+.concept-scheme-filter__count.is-updating {
+  opacity: 0.5;
+}
+
 /* Make the row (not the .tooltip span) the positioned ancestor for the
    bubble: with position: static here the bubble falls through to the row.
    Hover/focus still triggers on the .tooltip span (around the label only),
    but the bubble is anchored at the row's left edge so it lines up with
    the checkbox and extends rightward into the panel, avoiding the
-   horizontal clipping the drawer body would otherwise impose. */
+   horizontal clipping the drawer body would otherwise impose. Applies to
+   both label tooltips (concept definitions) and count tooltips (parent
+   semantics). */
 .concept-scheme-filter__row > .tooltip {
   position: static;
 }

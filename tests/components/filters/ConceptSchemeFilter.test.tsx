@@ -207,6 +207,117 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     ).toBe(false);
   });
 
+  test("renders locale-grouped counts next to concepts when counts are provided", () => {
+    const counts = new Map<string, number>([
+      [URI_ACCESS, 12],
+      [URI_EDUCATION_FINANCE, 1234],
+    ]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        countsLoading={false}
+        onChange={vi.fn()}
+      />,
+    );
+    // Compute the expected separator at test time so this passes regardless
+    // of the test runner's locale (en-US → "1,234", de-DE → "1.234").
+    const expected1234 = new Intl.NumberFormat().format(1234);
+    // Count's aria-label augments the input's accessible name (deliberate, so
+    // screen readers announce it) — match with a regex on the visible label.
+    const accessRow = screen
+      .getByLabelText(/^Access to Education/)
+      .closest("label")!;
+    expect(accessRow.textContent).toContain("12");
+    const financeRow = screen
+      .getByLabelText(/^Education Finance/)
+      .closest("label")!;
+    expect(financeRow.textContent).toContain(expected1234);
+  });
+
+  test("omits the count when the URI is missing from the counts map", () => {
+    // Map has Access only; the others should render with no count node.
+    const counts = new Map<string, number>([[URI_ACCESS, 7]]);
+    const { container } = render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        countsLoading={false}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(
+      container.querySelectorAll(".concept-scheme-filter__count"),
+    ).toHaveLength(1);
+  });
+
+  test("renders no count nodes when counts prop is null", () => {
+    const { container } = render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={null}
+        countsLoading={false}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(
+      container.querySelector(".concept-scheme-filter__count"),
+    ).toBeNull();
+  });
+
+  test("wraps a parent concept's count in a Tooltip explaining the parent semantics", () => {
+    const counts = new Map<string, number>([
+      [URI_ACCESS, 774],
+      [URI_EDUCATION_FINANCE, 264],
+    ]);
+    const { container } = render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        countsLoading={false}
+        onChange={vi.fn()}
+      />,
+    );
+    // Parent ("Access to Education") has children → count wrapped in Tooltip.
+    const parentCount = container.querySelector(
+      ".concept-scheme-filter__count--parent",
+    );
+    expect(parentCount).not.toBeNull();
+    expect(parentCount?.closest("[data-tooltip]")).not.toBeNull();
+
+    // Leaf ("Education Finance") has no children → bare count, no tooltip.
+    const counts2 = container.querySelectorAll(
+      ".concept-scheme-filter__count",
+    );
+    const leafCount = Array.from(counts2).find(
+      (n) => !n.classList.contains("concept-scheme-filter__count--parent"),
+    );
+    expect(leafCount).toBeDefined();
+    expect(leafCount?.closest('[data-tooltip]')).toBeNull();
+  });
+
+  test("applies the is-updating class to counts while loading", () => {
+    const counts = new Map<string, number>([[URI_ACCESS, 7]]);
+    const { container } = render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        countsLoading={true}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(
+      container.querySelector(
+        ".concept-scheme-filter__count.is-updating",
+      ),
+    ).not.toBeNull();
+  });
+
   test("a nested concept's definition is surfaced via its own Tooltip", () => {
     const { container } = render(
       <ConceptSchemeFilter
