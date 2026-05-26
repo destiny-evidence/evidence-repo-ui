@@ -207,7 +207,7 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     ).toBe(false);
   });
 
-  test("renders compact-formatted counts next to concepts when counts are provided", () => {
+  test("renders locale-grouped counts next to concepts when counts are provided", () => {
     const counts = new Map<string, number>([
       [URI_ACCESS, 12],
       [URI_EDUCATION_FINANCE, 1234],
@@ -221,6 +221,9 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
         onChange={vi.fn()}
       />,
     );
+    // Compute the expected separator at test time so this passes regardless
+    // of the test runner's locale (en-US → "1,234", de-DE → "1.234").
+    const expected1234 = new Intl.NumberFormat().format(1234);
     // Count's aria-label augments the input's accessible name (deliberate, so
     // screen readers announce it) — match with a regex on the visible label.
     const accessRow = screen
@@ -230,7 +233,7 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     const financeRow = screen
       .getByLabelText(/^Education Finance/)
       .closest("label")!;
-    expect(financeRow.textContent).toMatch(/1\.2K/i);
+    expect(financeRow.textContent).toContain(expected1234);
   });
 
   test("omits the count when the URI is missing from the counts map", () => {

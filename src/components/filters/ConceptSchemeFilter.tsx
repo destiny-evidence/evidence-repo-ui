@@ -30,15 +30,12 @@ interface ConceptItemProps {
   onChange: (next: ConceptSchemeFilterState) => void;
 }
 
-// Compact-locale notation (1234 → "1.2K", 1_500_000 → "1.5M"). Honours the
-// browser locale via Intl rather than rolling our own k/M suffixes.
-const compactFormatter = new Intl.NumberFormat(undefined, {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
+// Locale-aware grouping (1234 → "1,234" in en-US, "1.234" in de-DE). Plain
+// Intl with no notation override; the browser picks the right separator.
+const countFormatter = new Intl.NumberFormat();
 
 function formatCount(n: number): string {
-  return compactFormatter.format(n);
+  return countFormatter.format(n);
 }
 
 function ConceptItem({
@@ -72,7 +69,7 @@ function ConceptItem({
   const countNode = count !== undefined && (
     <span
       class={countClass}
-      aria-label={`${count} references`}
+      aria-label={`${formatCount(count)} investigations`}
       tabIndex={hasChildren ? 0 : undefined}
     >
       {formatCount(count)}
