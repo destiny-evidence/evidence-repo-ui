@@ -6,7 +6,8 @@
  * - No viewport-edge clamping; tooltips near the right edge of narrow
  *   viewports may clip.
  * - No portaling; an ancestor with `overflow: hidden` will clip the
- *   bubble.
+ *   bubble. Consumers near such an ancestor should reposition the bubble
+ *   so it fits inside the available space (see ConceptSchemeFilter.css).
  */
 
 .tooltip {
