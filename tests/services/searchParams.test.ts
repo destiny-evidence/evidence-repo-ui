@@ -130,6 +130,24 @@ describe("parseSearchParams facet peel + unwrap", () => {
       facets: ['linked_data_concepts:"x" OR linked_data_concepts:"y"'],
     },
     {
+      label: "peels country facet (whitelisted field, unquoted ISO-2 values)",
+      raw: "?q=phonics AND (linked_data_countries:DE OR linked_data_countries:FR)",
+      q: "phonics",
+      facets: ["linked_data_countries:DE OR linked_data_countries:FR"],
+    },
+    {
+      label: "peels mixed concept and country facets in order",
+      raw: '?q=phonics AND (linked_data_concepts:"x") AND (linked_data_countries:DE)',
+      q: "phonics",
+      facets: ['linked_data_concepts:"x"', "linked_data_countries:DE"],
+    },
+    {
+      label: "country-only facet against * sentinel base",
+      raw: "?q=* AND (linked_data_countries:DE)",
+      q: "",
+      facets: ["linked_data_countries:DE"],
+    },
+    {
       label: "non-facet trailing AND clause stays in q (no silent drop)",
       raw: '?q=phonics AND (something_else:"x")',
       q: 'phonics AND (something_else:"x")',
