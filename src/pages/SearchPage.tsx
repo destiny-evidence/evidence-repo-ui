@@ -12,6 +12,7 @@ import { navigate } from "@/services/navigation";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
+import { useSearchFacets } from "@/hooks/useSearchFacets";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
 import { useSearchExport, type ExportStatus } from "@/hooks/useSearchExport";
 import { useVocabulary } from "@/hooks/useVocabulary";
@@ -135,6 +136,7 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const corpus = useCorpusTotal();
   const results = useSearch(params);
+  const facets = useSearchFacets(params);
   const exportJob = useSearchExport();
 
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
@@ -387,6 +389,8 @@ function SearchPageInner({ community }: { community: Community }) {
           open={drawerOpen}
           schemes={vocab.schemes}
           appliedFacets={params.searchFacets}
+          facetCounts={facets.counts}
+          facetCountsLoading={facets.loading}
           onApply={handleApplyFacets}
           onCancel={() => setDrawerOpen(false)}
         />

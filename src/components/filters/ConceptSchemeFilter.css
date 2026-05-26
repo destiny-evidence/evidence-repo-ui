@@ -32,6 +32,19 @@
   outline: none;
 }
 
+.concept-scheme-filter__count {
+  margin-left: auto;
+  padding-left: var(--spacing-sm);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-small);
+  transition: opacity 150ms ease;
+}
+
+.concept-scheme-filter__count.is-updating {
+  opacity: 0.5;
+}
+
 .concept-scheme-filter__children {
   list-style: none;
   margin: 0;

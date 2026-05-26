@@ -24,6 +24,15 @@ export interface SearchResult {
   references: Reference[];
 }
 
+export interface ConceptFacetCount {
+  concept: string;
+  count: number;
+}
+
+export interface ReferenceFacetResult {
+  concepts?: ConceptFacetCount[];
+}
+
 export interface ExternalIdentifier {
   identifier: string | number;
   identifier_type: string | null;

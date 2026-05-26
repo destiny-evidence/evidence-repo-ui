@@ -16,6 +16,8 @@ import "./ConceptSchemeFilter.css";
 interface ConceptSchemeFilterProps {
   scheme: ConceptScheme;
   state: ConceptSchemeFilterState;
+  counts?: ReadonlyMap<string, number> | null;
+  countsLoading?: boolean;
   onChange: (next: ConceptSchemeFilterState) => void;
 }
 
@@ -23,10 +25,30 @@ interface ConceptItemProps {
   concept: Concept;
   state: ConceptSchemeFilterState;
   index: ConceptIndex;
+  counts: ReadonlyMap<string, number> | null;
+  countsLoading: boolean;
   onChange: (next: ConceptSchemeFilterState) => void;
 }
 
-function ConceptItem({ concept, state, index, onChange }: ConceptItemProps) {
+// Compact-locale notation (1234 → "1.2K", 1_500_000 → "1.5M"). Honours the
+// browser locale via Intl rather than rolling our own k/M suffixes.
+const compactFormatter = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+function formatCount(n: number): string {
+  return compactFormatter.format(n);
+}
+
+function ConceptItem({
+  concept,
+  state,
+  index,
+  counts,
+  countsLoading,
+  onChange,
+}: ConceptItemProps) {
   const hasDefinition = !!concept.definition;
   const labelClass = hasDefinition
     ? "concept-scheme-filter__label concept-scheme-filter__label--has-tooltip"
@@ -37,6 +59,10 @@ function ConceptItem({ concept, state, index, onChange }: ConceptItemProps) {
     </span>
   );
   const hasChildren = !!concept.narrower && concept.narrower.length > 0;
+  const count = counts?.get(concept.uri);
+  const countClass = `concept-scheme-filter__count${
+    countsLoading ? " is-updating" : ""
+  }`;
   return (
     <li class="concept-scheme-filter__item">
       <label class="concept-scheme-filter__row">
@@ -51,6 +77,11 @@ function ConceptItem({ concept, state, index, onChange }: ConceptItemProps) {
         ) : (
           labelNode
         )}
+        {count !== undefined && (
+          <span class={countClass} aria-label={`${count} references`}>
+            {formatCount(count)}
+          </span>
+        )}
       </label>
       {hasChildren && (
         <ul class="concept-scheme-filter__children">
@@ -60,6 +91,8 @@ function ConceptItem({ concept, state, index, onChange }: ConceptItemProps) {
               concept={child}
               state={state}
               index={index}
+              counts={counts}
+              countsLoading={countsLoading}
               onChange={onChange}
             />
           ))}
@@ -72,6 +105,8 @@ function ConceptItem({ concept, state, index, onChange }: ConceptItemProps) {
 export function ConceptSchemeFilter({
   scheme,
   state,
+  counts = null,
+  countsLoading = false,
   onChange,
 }: ConceptSchemeFilterProps) {
   const index = useMemo(() => buildConceptIndex(scheme), [scheme]);
@@ -83,6 +118,8 @@ export function ConceptSchemeFilter({
           concept={concept}
           state={state}
           index={index}
+          counts={counts}
+          countsLoading={countsLoading}
           onChange={onChange}
         />
       ))}

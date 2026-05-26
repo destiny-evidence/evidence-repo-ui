@@ -15,6 +15,10 @@ interface FilterDrawerProps {
   open: boolean;
   schemes: ConceptScheme[];
   appliedFacets: string[];
+  // null encodes "no facet data available yet" (initial load, error, or
+  // suppressed by parent). Drawer renders without counts in that case.
+  facetCounts?: ReadonlyMap<string, number> | null;
+  facetCountsLoading?: boolean;
   onApply: (next: string[]) => void;
   onCancel: () => void;
 }
@@ -60,6 +64,8 @@ export function FilterDrawer({
   open,
   schemes,
   appliedFacets,
+  facetCounts = null,
+  facetCountsLoading = false,
   onApply,
   onCancel,
 }: FilterDrawerProps) {
@@ -170,6 +176,11 @@ export function FilterDrawer({
             )
             .map((scheme) => {
             const state = draft.get(scheme.uri) ?? emptyConceptSchemeState();
+            // Per-scheme suppression: once any concept in this scheme is
+            // selected, the facet endpoint's counts become co-occurrence with
+            // that selection (siblings show ~0). Hide counts for the scheme
+            // until the user clears the selection.
+            const showCounts = state.size === 0 && facetCounts !== null;
             return (
               <FilterCard
                 key={scheme.uri}
@@ -179,6 +190,8 @@ export function FilterDrawer({
                 <ConceptSchemeFilter
                   scheme={scheme}
                   state={state}
+                  counts={showCounts ? facetCounts : null}
+                  countsLoading={facetCountsLoading}
                   onChange={(next) => onSchemeChange(scheme, next)}
                 />
               </FilterCard>

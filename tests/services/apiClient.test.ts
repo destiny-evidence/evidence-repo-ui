@@ -1,7 +1,15 @@
 import { vi } from "vitest";
 import { api } from "@/api/client";
-import { searchReferences, getReference } from "@/services/apiClient";
-import type { Reference, SearchResult } from "@/types/models";
+import {
+  searchReferences,
+  searchReferenceFacets,
+  getReference,
+} from "@/services/apiClient";
+import type {
+  Reference,
+  ReferenceFacetResult,
+  SearchResult,
+} from "@/types/models";
 
 vi.mock("@/api/client", () => ({
   api: {
@@ -134,6 +142,60 @@ describe("searchReferences", () => {
       "relevance",
       "-year",
     ]);
+  });
+});
+
+describe("searchReferenceFacets", () => {
+  const emptyResult: ReferenceFacetResult = { concepts: [] };
+
+  test("hits the /facets/ endpoint with q and one facet param", async () => {
+    mockedGet.mockResolvedValue(emptyResult);
+    await searchReferenceFacets("phonics", {}, ["concepts"]);
+    expect(mockedGet).toHaveBeenCalledWith(
+      "/v1/references/search/facets/?q=phonics&facet=concepts",
+    );
+  });
+
+  test("empty/whitespace query becomes browse-mode q=*", async () => {
+    mockedGet.mockResolvedValue(emptyResult);
+    await searchReferenceFacets("   ", {}, ["concepts"]);
+    const url = mockedGet.mock.calls[0][0];
+    expect(new URLSearchParams(url.split("?")[1]).get("q")).toBe("*");
+  });
+
+  test("forwards year and annotation filters; never sends page or sort", async () => {
+    mockedGet.mockResolvedValue(emptyResult);
+    await searchReferenceFacets(
+      "phonics",
+      { startYear: 2010, endYear: 2020, annotation: ["a", "b"] },
+      ["concepts"],
+    );
+    const url = mockedGet.mock.calls[0][0];
+    const params = new URLSearchParams(url.split("?")[1]);
+    expect(params.get("start_year")).toBe("2010");
+    expect(params.get("end_year")).toBe("2020");
+    expect(params.getAll("annotation")).toEqual(["a", "b"]);
+    expect(params.has("page")).toBe(false);
+    expect(params.has("sort")).toBe(false);
+  });
+
+  test("appends one facet param per requested facet", async () => {
+    mockedGet.mockResolvedValue(emptyResult);
+    await searchReferenceFacets("x", {}, ["concepts", "concepts"]);
+    const url = mockedGet.mock.calls[0][0];
+    expect(new URLSearchParams(url.split("?")[1]).getAll("facet")).toEqual([
+      "concepts",
+      "concepts",
+    ]);
+  });
+
+  test("returns the result from api.get", async () => {
+    const result: ReferenceFacetResult = {
+      concepts: [{ concept: "ex:A", count: 5 }],
+    };
+    mockedGet.mockResolvedValue(result);
+    const res = await searchReferenceFacets("x", {}, ["concepts"]);
+    expect(res).toBe(result);
   });
 });
 
