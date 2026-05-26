@@ -265,6 +265,38 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     ).toBeNull();
   });
 
+  test("wraps a parent concept's count in a Tooltip explaining the parent semantics", () => {
+    const counts = new Map<string, number>([
+      [URI_ACCESS, 774],
+      [URI_EDUCATION_FINANCE, 264],
+    ]);
+    const { container } = render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        countsLoading={false}
+        onChange={vi.fn()}
+      />,
+    );
+    // Parent ("Access to Education") has children → count wrapped in Tooltip.
+    const parentCount = container.querySelector(
+      ".concept-scheme-filter__count--parent",
+    );
+    expect(parentCount).not.toBeNull();
+    expect(parentCount?.closest("[data-tooltip]")).not.toBeNull();
+
+    // Leaf ("Education Finance") has no children → bare count, no tooltip.
+    const counts2 = container.querySelectorAll(
+      ".concept-scheme-filter__count",
+    );
+    const leafCount = Array.from(counts2).find(
+      (n) => !n.classList.contains("concept-scheme-filter__count--parent"),
+    );
+    expect(leafCount).toBeDefined();
+    expect(leafCount?.closest('[data-tooltip]')).toBeNull();
+  });
+
   test("applies the is-updating class to counts while loading", () => {
     const counts = new Map<string, number>([[URI_ACCESS, 7]]);
     const { container } = render(

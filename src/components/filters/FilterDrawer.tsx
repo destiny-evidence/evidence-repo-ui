@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { useEffect, useId, useMemo, useRef, useState } from "preact/hooks";
 import { FilterCard } from "./FilterCard";
 import { ConceptSchemeFilter } from "./ConceptSchemeFilter";
 import {
@@ -8,6 +8,8 @@ import {
   toSearchFacet,
   type ConceptSchemeFilterState,
 } from "./conceptSchemeFilterState";
+import { useSearchFacets } from "@/hooks/useSearchFacets";
+import type { SearchParams } from "@/services/searchParams";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import "./FilterDrawer.css";
 
@@ -15,10 +17,9 @@ interface FilterDrawerProps {
   open: boolean;
   schemes: ConceptScheme[];
   appliedFacets: string[];
-  // null encodes "no facet data available yet" (initial load, error, or
-  // suppressed by parent). Drawer renders without counts in that case.
-  facetCounts?: ReadonlyMap<string, number> | null;
-  facetCountsLoading?: boolean;
+  // Drives the facet-count fetch alongside the draft. Owned by SearchPage as
+  // the source of truth for q / years / annotations.
+  params: SearchParams;
   onApply: (next: string[]) => void;
   onCancel: () => void;
 }
@@ -64,8 +65,7 @@ export function FilterDrawer({
   open,
   schemes,
   appliedFacets,
-  facetCounts = null,
-  facetCountsLoading = false,
+  params,
   onApply,
   onCancel,
 }: FilterDrawerProps) {
@@ -75,6 +75,20 @@ export function FilterDrawer({
   const panelRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<Element | null>(null);
   const titleId = useId();
+
+  // Eager facet counts: every toggle changes `draft`, which retriggers the
+  // fetch via the hook's cache key. When closed, key off the URL state so
+  // mid-edit cancellations don't keep refetching from stale draft.
+  const draftFacets = useMemo(
+    () => draftToFacets(draft, schemes),
+    [draft, schemes],
+  );
+  const facetParams: SearchParams = {
+    ...params,
+    searchFacets: open ? draftFacets : appliedFacets,
+  };
+  const { counts: facetCounts, loading: facetCountsLoading } =
+    useSearchFacets(facetParams);
 
   // Reset draft from URL on each FilterDrawer open and capture pre-open focus.
   useEffect(() => {

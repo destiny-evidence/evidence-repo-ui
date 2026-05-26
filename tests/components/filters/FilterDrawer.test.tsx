@@ -1,7 +1,20 @@
-import { describe, test, expect, vi } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/preact";
+
+// Module-level mock so FilterDrawer's internal facet-count fetch is inert
+// across the suite; individual tests set the return when they care.
+vi.mock("@/hooks/useSearchFacets", () => ({
+  useSearchFacets: vi.fn(() => ({
+    counts: null,
+    loading: false,
+    error: null,
+  })),
+}));
+
 import { FilterDrawer } from "@/components/filters/FilterDrawer";
+import { useSearchFacets } from "@/hooks/useSearchFacets";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
+import { makeSearchParams } from "../../fixtures";
 import {
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,
@@ -9,6 +22,24 @@ import {
   URI_ENROLMENT,
   URI_LEARNING,
 } from "./fixtures";
+
+const mockUseSearchFacets = vi.mocked(useSearchFacets);
+
+const defaultParams = makeSearchParams();
+
+function setCounts(counts: ReadonlyMap<string, number> | null, loading = false) {
+  mockUseSearchFacets.mockReturnValue({ counts, loading, error: null });
+}
+
+beforeEach(() => {
+  mockUseSearchFacets.mockReset();
+  // Default: no counts. Tests that need counts override via setCounts().
+  mockUseSearchFacets.mockReturnValue({
+    counts: null,
+    loading: false,
+    error: null,
+  });
+});
 
 // A second scheme exercises the multi-scheme rendering and the per-scheme
 // draft Map.
@@ -33,6 +64,7 @@ describe("FilterDrawer", () => {
         open={false}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -46,6 +78,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -69,6 +102,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[scheme]}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -87,6 +121,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -101,6 +136,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -117,6 +153,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={onApply}
         onCancel={noop}
       />,
@@ -143,6 +180,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={onApply}
         onCancel={noop}
       />,
@@ -163,6 +201,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
       />,
@@ -193,6 +232,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
       />,
@@ -211,6 +251,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
       />,
@@ -226,6 +267,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
       />,
@@ -242,6 +284,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -262,6 +305,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -273,6 +317,7 @@ describe("FilterDrawer", () => {
         open={false}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -291,6 +336,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -302,6 +348,7 @@ describe("FilterDrawer", () => {
         open={false}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -319,6 +366,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={appliedFacets}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -340,6 +388,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={appliedFacets}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -352,14 +401,13 @@ describe("FilterDrawer", () => {
   });
 
   test("renders facet counts on schemes that have no selection", () => {
-    const counts = new Map<string, number>([[URI_JOURNAL, 42]]);
+    setCounts(new Map<string, number>([[URI_JOURNAL, 42]]));
     const { container } = render(
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
-        facetCounts={counts}
-        facetCountsLoading={false}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -394,18 +442,17 @@ describe("FilterDrawer", () => {
     // Hydrate the OutcomeScheme with one selection; counts for Outcome's
     // concepts should disappear, but counts in the other scheme stay.
     const appliedFacets = [`linked_data_concepts:"${URI_LEARNING}"`];
-    const counts = new Map<string, number>([
+    setCounts(new Map<string, number>([
       [URI_LEARNING, 100],
       [URI_ACCESS, 50],
       [URI_JOURNAL, 7],
-    ]);
+    ]));
     const { container } = render(
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={appliedFacets}
-        facetCounts={counts}
-        facetCountsLoading={false}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -422,18 +469,17 @@ describe("FilterDrawer", () => {
   });
 
   test("toggling a concept in a scheme suppresses that scheme's counts immediately", () => {
-    const counts = new Map<string, number>([
+    setCounts(new Map<string, number>([
       [URI_ACCESS, 50],
       [URI_LEARNING, 100],
       [URI_JOURNAL, 7],
-    ]);
+    ]));
     const { container } = render(
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
-        facetCounts={counts}
-        facetCountsLoading={false}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -468,6 +514,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={initial}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -484,6 +531,7 @@ describe("FilterDrawer", () => {
         open={false}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={next}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -493,6 +541,7 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={next}
+        params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
@@ -506,5 +555,30 @@ describe("FilterDrawer", () => {
       (screen.getByLabelText("Educational Outcomes and Learning") as HTMLInputElement)
         .checked,
     ).toBe(false);
+  });
+
+  test("eager loading: toggling a concept re-keys the facet hook with the new draft", () => {
+    render(
+      <FilterDrawer
+        open={true}
+        schemes={TWO_SCHEMES}
+        appliedFacets={[]}
+        params={makeSearchParams({ q: "phonics" })}
+        onApply={noop}
+        onCancel={noop}
+      />,
+    );
+    // Pre-toggle: hook fired with empty facets.
+    const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
+    expect(before?.searchFacets).toEqual([]);
+    expect(before?.q).toBe("phonics");
+
+    fireEvent.click(screen.getByLabelText("Journal Article"));
+
+    // Post-toggle: the most recent call carries the freshly-drafted facet.
+    const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
+    expect(after?.searchFacets?.length).toBe(1);
+    expect(after?.searchFacets?.[0]).toContain(URI_JOURNAL);
+    expect(after?.q).toBe("phonics");
   });
 });

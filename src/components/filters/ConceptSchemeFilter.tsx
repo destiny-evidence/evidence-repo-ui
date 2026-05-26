@@ -62,7 +62,22 @@ function ConceptItem({
   const count = counts?.get(concept.uri);
   const countClass = `concept-scheme-filter__count${
     countsLoading ? " is-updating" : ""
-  }`;
+  }${hasChildren ? " concept-scheme-filter__count--parent" : ""}`;
+  // Parent rows expose only the count for the parent URI itself (not a
+  // rollup of descendants), which can confuse readers since clicking the
+  // parent cascades into its subtree. Surface that semantic via a tooltip.
+  const countTooltip = hasChildren
+    ? "References tagged with this concept. Select to also include narrower concepts."
+    : undefined;
+  const countNode = count !== undefined && (
+    <span
+      class={countClass}
+      aria-label={`${count} references`}
+      tabIndex={hasChildren ? 0 : undefined}
+    >
+      {formatCount(count)}
+    </span>
+  );
   return (
     <li class="concept-scheme-filter__item">
       <label class="concept-scheme-filter__row">
@@ -77,11 +92,12 @@ function ConceptItem({
         ) : (
           labelNode
         )}
-        {count !== undefined && (
-          <span class={countClass} aria-label={`${count} references`}>
-            {formatCount(count)}
-          </span>
-        )}
+        {countNode &&
+          (countTooltip ? (
+            <Tooltip text={countTooltip}>{countNode}</Tooltip>
+          ) : (
+            countNode
+          ))}
       </label>
       {hasChildren && (
         <ul class="concept-scheme-filter__children">

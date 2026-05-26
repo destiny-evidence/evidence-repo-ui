@@ -41,6 +41,13 @@
   transition: opacity 150ms ease;
 }
 
+.concept-scheme-filter__count--parent {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+  outline: none;
+}
+
 .concept-scheme-filter__count.is-updating {
   opacity: 0.5;
 }
