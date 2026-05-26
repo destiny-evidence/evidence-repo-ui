@@ -48,6 +48,14 @@ function facetsEqual(a: readonly string[], b: readonly string[]): boolean {
   return true;
 }
 
+// Scheme labels arrive from the vocabulary as e.g. "Document Type Scheme" —
+// the trailing word is implementation detail of the SKOS model and noise to
+// the reader. Strip it (case-insensitive, only as a trailing whole word) for
+// display in the drawer.
+function schemeDisplayLabel(label: string): string {
+  return label.replace(/\s+Scheme$/i, "");
+}
+
 export function FilterDrawer({
   open,
   schemes,
@@ -141,22 +149,24 @@ export function FilterDrawer({
       >
         <header class="filter-drawer__header">
           <h2 id={titleId} class="filter-drawer__title">
-            Filters
+            Refine the evidence
           </h2>
+          <button
+            type="button"
+            class="filter-drawer__btn filter-drawer__btn--cancel"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
         </header>
 
         <div class="filter-drawer__body">
-          {schemes
-            .filter(
-              (scheme) =>
-                scheme.uri !== "evrepo:EffectSizeMetricScheme",
-            )
-            .map((scheme) => {
+          {schemes.map((scheme) => {
             const state = draft.get(scheme.uri) ?? emptyConceptSchemeState();
             return (
               <FilterCard
                 key={scheme.uri}
-                title={scheme.label}
+                title={schemeDisplayLabel(scheme.label)}
                 summary={summary(state)}
               >
                 <ConceptSchemeFilter
@@ -175,15 +185,7 @@ export function FilterDrawer({
             class="filter-drawer__btn filter-drawer__btn--reset"
             onClick={handleReset}
           >
-            Reset
-          </button>
-          <div class="filter-drawer__footer-spacer" />
-          <button
-            type="button"
-            class="filter-drawer__btn filter-drawer__btn--cancel"
-            onClick={onCancel}
-          >
-            Cancel
+            Reset all
           </button>
           <button
             type="button"
@@ -191,7 +193,7 @@ export function FilterDrawer({
             onClick={handleApply}
             disabled={!dirty}
           >
-            Update Results
+            Show results
           </button>
         </footer>
       </aside>

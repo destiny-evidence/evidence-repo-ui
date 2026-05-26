@@ -21,9 +21,9 @@ export function SortDropdown({ value, onChange, disabled = false }: SortDropdown
         onChange={handleChange}
         disabled={disabled}
       >
-        <option value="">Relevance</option>
-        <option value="newest">Publication year (newest)</option>
-        <option value="oldest">Publication year (oldest)</option>
+        <option value="">Sort: Relevance</option>
+        <option value="newest">Sort: Publication year (newest)</option>
+        <option value="oldest">Sort: Publication year (oldest)</option>
       </select>
     </span>
   );

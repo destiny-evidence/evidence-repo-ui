@@ -9,9 +9,9 @@ describe("SortDropdown", () => {
     const select = screen.getByLabelText(/sort/i) as HTMLSelectElement;
     const labels = Array.from(select.options).map((o) => o.textContent);
     expect(labels).toEqual([
-      "Relevance",
-      "Publication year (newest)",
-      "Publication year (oldest)",
+      "Sort: Relevance",
+      "Sort: Publication year (newest)",
+      "Sort: Publication year (oldest)",
     ]);
   });
 

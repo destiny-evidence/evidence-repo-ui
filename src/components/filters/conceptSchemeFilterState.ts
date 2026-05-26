@@ -147,6 +147,20 @@ function indexConceptUrisByScheme(
   return index;
 }
 
+// Sum of `selectedCount` across every per-scheme state derived from the
+// URL. Used to drive the Refine button's badge — each scheme contributes
+// its own checkbox count, the drawer never aggregates URIs directly.
+export function totalSelectedCount(
+  searchFacets: readonly string[],
+  schemes: ConceptScheme[],
+): number {
+  let total = 0;
+  for (const state of parseFacets(searchFacets, schemes).values()) {
+    total += selectedCount(state);
+  }
+  return total;
+}
+
 // Reverse of `toSearchFacet`, lifted to operate over the full
 // `SearchParams.searchFacets` array: extract every concept URI from each
 // fragment and bucket the URIs by the scheme that contains them. URIs that

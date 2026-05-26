@@ -450,7 +450,7 @@ describe("SearchPage", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
       fireEvent.click(screen.getByLabelText("Returns to Education"));
-      fireEvent.click(screen.getByRole("button", { name: "Update Results" }));
+      fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       await waitFor(() => {
         const q = new URLSearchParams(window.location.search).get("q") ?? "";
@@ -469,7 +469,7 @@ describe("SearchPage", () => {
       fireEvent.click(refine);
 
       fireEvent.click(screen.getByLabelText("Returns to Education"));
-      fireEvent.click(screen.getByRole("button", { name: "Update Results" }));
+      fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       await waitFor(() => {
         const q = new URLSearchParams(window.location.search).get("q") ?? "";
@@ -484,7 +484,7 @@ describe("SearchPage", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
       fireEvent.click(screen.getByLabelText("Access to Education"));
-      fireEvent.click(screen.getByRole("button", { name: "Update Results" }));
+      fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       await waitFor(() => {
         const q = new URLSearchParams(window.location.search).get("q") ?? "";
@@ -505,8 +505,8 @@ describe("SearchPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
       expect(window.location.search).toBe(before);
-      // Drawer is gone — no Update Results / Cancel button left in the DOM.
-      expect(screen.queryByRole("button", { name: "Update Results" })).toBeNull();
+      // Drawer is gone — no Show results / Cancel button left in the DOM.
+      expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
     });
 
     test("Refine is hidden when vocabulary has no schemes", async () => {

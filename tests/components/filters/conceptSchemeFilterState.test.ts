@@ -11,6 +11,7 @@ import {
   summary,
   toggleConcept,
   toSearchFacet,
+  totalSelectedCount,
 } from "@/components/filters/conceptSchemeFilterState";
 import type {
   Concept,
@@ -529,5 +530,33 @@ describe("parseFacets", () => {
     expect([...selectedUris(state)].sort()).toEqual(
       [URI_ACCESS, URI_LEARNING].sort(),
     );
+  });
+});
+
+describe("totalSelectedCount", () => {
+  test("returns 0 when no facets are applied", () => {
+    expect(totalSelectedCount([], [OUTCOME_SCHEME_FIXTURE])).toBe(0);
+  });
+
+  test("sums individual concept counts across schemes", () => {
+    const outcomeFragment = toSearchFacet(
+      conceptSchemeStateFromUris([URI_LEARNING, URI_RETURNS]),
+      OUTCOME_SCHEME_FIXTURE,
+    );
+    const docFragment = toSearchFacet(
+      conceptSchemeStateFromUris([URI_JOURNAL_ARTICLE]),
+      SCHEME,
+    );
+    expect(
+      totalSelectedCount([outcomeFragment, docFragment], [OUTCOME_SCHEME_FIXTURE, SCHEME]),
+    ).toBe(3);
+  });
+
+  test("counts every selected URI in a subtree (parent + descendants)", () => {
+    const fragment = toSearchFacet(
+      conceptSchemeStateFromUris([URI_ACCESS, URI_EDUCATION_FINANCE, URI_ENROLMENT]),
+      OUTCOME_SCHEME_FIXTURE,
+    );
+    expect(totalSelectedCount([fragment], [OUTCOME_SCHEME_FIXTURE])).toBe(3);
   });
 });
