@@ -64,7 +64,7 @@ function ConceptItem({
   // rollup of descendants), which can confuse readers since clicking the
   // parent cascades into its subtree. Surface that semantic via a tooltip.
   const countTooltip = hasChildren
-    ? "Investigations tagged with this concept. Select to also include narrower concepts."
+    ? "Count shows investigations tagged with this concept. Select to also include narrower concepts."
     : undefined;
   const countNode = count !== undefined && (
     <span
