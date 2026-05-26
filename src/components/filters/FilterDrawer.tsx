@@ -10,6 +10,14 @@ import {
 } from "./conceptSchemeFilterState";
 import { useSearchFacets } from "@/hooks/useSearchFacets";
 import type { SearchParams } from "@/services/searchParams";
+import { CountryFilter } from "./CountryFilter";
+import {
+  emptyCountryState,
+  parseFacets as parseCountryFacets,
+  summary as countrySummary,
+  toSearchFacet as countryToSearchFacet,
+  type CountryFilterState,
+} from "./countryFilterState";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import "./FilterDrawer.css";
 
@@ -26,10 +34,17 @@ interface FilterDrawerProps {
 
 type Draft = Map<string, ConceptSchemeFilterState>;
 
-// Serialise the drawer's per-scheme draft back into the wire format expected
-// by SearchParams.searchFacets — one entry per scheme that has at least one
-// concept selected.
-function draftToFacets(draft: Draft, schemes: ConceptScheme[]): string[] {
+// Serialise both drafts back into the wire format expected by
+// SearchParams.searchFacets — one entry per scheme that has at least one
+// concept selected, plus one trailing entry for the country selection
+// (if any). Country goes last so the URL form mirrors the on-screen order
+// (country card first, then schemes) when read left-to-right after
+// build-time stripping.
+function draftToFacets(
+  draft: Draft,
+  schemes: ConceptScheme[],
+  countryDraft: CountryFilterState,
+): string[] {
   const facets: string[] = [];
   for (const scheme of schemes) {
     const state = draft.get(scheme.uri);
@@ -37,6 +52,8 @@ function draftToFacets(draft: Draft, schemes: ConceptScheme[]): string[] {
     const facet = toSearchFacet(state, scheme);
     if (facet !== "") facets.push(facet);
   }
+  const countryFacet = countryToSearchFacet(countryDraft);
+  if (countryFacet !== "") facets.push(countryFacet);
   return facets;
 }
 
@@ -76,13 +93,16 @@ function FilterDrawerPanel({
   const [draft, setDraft] = useState<Draft>(() =>
     parseFacets(appliedFacets, schemes),
   );
+  const [countryDraft, setCountryDraft] = useState<CountryFilterState>(() =>
+    parseCountryFacets(appliedFacets),
+  );
   const panelRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<Element | null>(document.activeElement);
   const titleId = useId();
 
   const draftFacets = useMemo(
-    () => draftToFacets(draft, schemes),
-    [draft, schemes],
+    () => draftToFacets(draft, schemes, countryDraft),
+    [draft, schemes, countryDraft],
   );
   const facetParams: SearchParams = {
     ...params,
@@ -93,6 +113,14 @@ function FilterDrawerPanel({
     loading: facetCountsLoading,
     error: facetError,
   } = useSearchFacets(facetParams);
+  // Reset both drafts from URL on each FilterDrawer open and capture pre-open focus.
+  useEffect(() => {
+    if (!open) return;
+    previousFocusRef.current = document.activeElement;
+    setDraft(parseFacets(appliedFacets, schemes));
+    setCountryDraft(parseCountryFacets(appliedFacets));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
     const previous = document.body.style.overflow;
@@ -135,13 +163,17 @@ function FilterDrawerPanel({
 
   function handleReset() {
     setDraft(new Map());
+    setCountryDraft(emptyCountryState());
   }
 
   function handleApply() {
-    onApply(draftToFacets(draft, schemes));
+    onApply(draftToFacets(draft, schemes, countryDraft));
   }
 
-  const dirty = !facetsEqual(draftToFacets(draft, schemes), appliedFacets);
+  const dirty = !facetsEqual(
+    draftToFacets(draft, schemes, countryDraft),
+    appliedFacets,
+  );
 
   return (
     <div class="filter-drawer" role="presentation">
@@ -179,6 +211,12 @@ function FilterDrawerPanel({
               Investigation counts unavailable.
             </div>
           )}
+          <FilterCard title="Country" summary={countrySummary(countryDraft)}>
+            <CountryFilter
+              state={countryDraft}
+              onChange={setCountryDraft}
+            />
+          </FilterCard>
           {schemes.map((scheme) => {
             const state = draft.get(scheme.uri) ?? emptyConceptSchemeState();
             // Counts intersect with selected concepts, so siblings of a

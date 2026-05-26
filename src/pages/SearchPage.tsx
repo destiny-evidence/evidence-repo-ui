@@ -23,6 +23,7 @@ import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/Pagination";
 import { FilterDrawer } from "@/components/filters/FilterDrawer";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
+import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
 import { NotFoundPage } from "./NotFoundPage";
 import "./SearchPage.css";
 
@@ -176,7 +177,7 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const refine = buildRefineConfig(
     vocab,
-    totalSelectedCount(params.searchFacets, filterableSchemes),
+    totalSelectedCount(params.searchFacets, filterableSchemes) + totalSelectedCountryCount(params.searchFacets),
     handleOpenDrawer,
   );
 

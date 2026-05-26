@@ -551,6 +551,117 @@ describe("FilterDrawer", () => {
     ).toBe(1);
   });
 
+  describe("country filter integration", () => {
+    test("renders a Country card before any scheme card", () => {
+      const { container } = render(
+        <FilterDrawer
+          open={true}
+          schemes={TWO_SCHEMES}
+          appliedFacets={[]}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      const titles = Array.from(
+        container.querySelectorAll(".filter-card__title"),
+      ).map((n) => n.textContent);
+      expect(titles[0]).toBe("Country");
+    });
+
+    test("selecting a country and applying emits a linked_data_countries facet", () => {
+      const onApply = vi.fn();
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedFacets={[]}
+          params={defaultParams}
+          onApply={onApply}
+          onCancel={noop}
+        />,
+      );
+      // Expand the Country card and pick Germany.
+      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
+      fireEvent.click(screen.getByLabelText("Germany"));
+      fireEvent.click(screen.getByRole("button", { name: "Show results" }));
+
+      expect(onApply).toHaveBeenCalledTimes(1);
+      expect(onApply.mock.calls[0][0]).toEqual([
+        "linked_data_countries:DE",
+      ]);
+    });
+
+    test("hydrates country selection from appliedFacets", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedFacets={["linked_data_countries:DE"]}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
+      expect(
+        (screen.getByLabelText("Germany") as HTMLInputElement).checked,
+      ).toBe(true);
+      // No change vs applied → Show results stays disabled.
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+
+    test("Reset clears both scheme and country drafts", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={TWO_SCHEMES}
+          appliedFacets={[]}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.click(screen.getByLabelText("Journal Article"));
+      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
+      fireEvent.click(screen.getByLabelText("Germany"));
+
+      fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
+
+      expect(
+        (screen.getByLabelText("Journal Article") as HTMLInputElement).checked,
+      ).toBe(false);
+      expect(
+        (screen.getByLabelText("Germany") as HTMLInputElement).checked,
+      ).toBe(false);
+    });
+
+    test("applies concept and country facets together", () => {
+      const onApply = vi.fn();
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[DOCUMENT_TYPE_SCHEME]}
+          appliedFacets={[]}
+          params={defaultParams}
+          onApply={onApply}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.click(screen.getByLabelText("Journal Article"));
+      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
+      fireEvent.click(screen.getByLabelText("France"));
+      fireEvent.click(screen.getByRole("button", { name: "Show results" }));
+
+      const facets = onApply.mock.calls[0][0] as string[];
+      expect(facets).toContain(`linked_data_concepts:"${URI_JOURNAL}"`);
+      expect(facets).toContain("linked_data_countries:FR");
+    });
+  });
+
   test("re-hydrates when reopened after appliedFacets change", () => {
     const initial = [`linked_data_concepts:"${URI_LEARNING}"`];
     const { rerender } = render(
