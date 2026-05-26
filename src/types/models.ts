@@ -4,6 +4,7 @@ export interface Community {
   defaultAnnotations: string[];
   vocabularyUrl: string;
   contextUrl: string;
+  filterExcludedSchemes: string[];
 }
 
 export type Visibility = "public" | "restricted" | "hidden";

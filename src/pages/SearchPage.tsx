@@ -1,4 +1,4 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import type { Community } from "@/types/models";
 import {
@@ -144,9 +144,20 @@ function SearchPageInner({ community }: { community: Community }) {
   const vocab = useVocabulary(community.vocabularyUrl);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Excluded schemes are still kept in the vocabulary cache so labels and
+  // definitions resolve on result rows and the record detail page; they're
+  // only hidden from the filter UI (drawer + applied-filter count).
+  const filterableSchemes = useMemo(
+    () =>
+      (vocab.schemes ?? []).filter(
+        (s) => !community.filterExcludedSchemes.includes(s.uri),
+      ),
+    [vocab.schemes, community.filterExcludedSchemes],
+  );
+
   const refine = buildRefineConfig(
     vocab,
-    totalSelectedCount(params.searchFacets, vocab.schemes ?? []),
+    totalSelectedCount(params.searchFacets, filterableSchemes),
     () => setDrawerOpen(true),
   );
 
@@ -382,10 +393,10 @@ function SearchPageInner({ community }: { community: Community }) {
         )}
       </section>
 
-      {vocab.schemes && vocab.schemes.length > 0 && (
+      {filterableSchemes.length > 0 && (
         <FilterDrawer
           open={drawerOpen}
-          schemes={vocab.schemes}
+          schemes={filterableSchemes}
           appliedFacets={params.searchFacets}
           onApply={handleApplyFacets}
           onCancel={() => setDrawerOpen(false)}

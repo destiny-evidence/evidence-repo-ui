@@ -161,14 +161,7 @@ export function FilterDrawer({
         </header>
 
         <div class="filter-drawer__body">
-          {schemes
-            .filter(
-              (scheme) =>
-                scheme.uri !== "evrepo:EffectSizeMetricScheme" &&
-                scheme.uri !== "evrepo:EstimateSourceScheme" &&
-                scheme.uri !== "esea:ImplementationDescriptionScheme",
-            )
-            .map((scheme) => {
+          {schemes.map((scheme) => {
             const state = draft.get(scheme.uri) ?? emptyConceptSchemeState();
             return (
               <FilterCard
