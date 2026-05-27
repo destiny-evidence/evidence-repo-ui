@@ -634,8 +634,6 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      // Expand the Country card and pick Germany.
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       fireEvent.click(screen.getByLabelText("Germany"));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
@@ -660,7 +658,6 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       expect(
         (screen.getByLabelText("Germany") as HTMLInputElement).checked,
       ).toBe(true);
@@ -685,7 +682,6 @@ describe("FilterDrawer", () => {
         />,
       );
       fireEvent.click(screen.getByLabelText("Journal Article"));
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       fireEvent.click(screen.getByLabelText("Germany"));
 
       fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
@@ -713,7 +709,6 @@ describe("FilterDrawer", () => {
         />,
       );
       fireEvent.click(screen.getByLabelText("Journal Article"));
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       fireEvent.click(screen.getByLabelText("France"));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
@@ -744,7 +739,6 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       expect(startYearInput().value).toBe("2010");
       expect(endYearInput().value).toBe("2020");
       // Hydrated draft equals applied → Show results stays disabled.
@@ -767,7 +761,6 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(startYearInput(), { target: { value: "1990" } });
       expect(
         (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
@@ -789,7 +782,6 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(startYearInput(), { target: { value: "1990" } });
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
@@ -814,7 +806,6 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(startYearInput(), { target: { value: "2020" } });
       fireEvent.input(endYearInput(), { target: { value: "2010" } });
 
@@ -840,7 +831,6 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(endYearInput(), { target: { value: "abc" } });
 
       expect(screen.getByRole("alert")).toHaveTextContent(
@@ -865,7 +855,6 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       expect(startYearInput().value).toBe("2010");
       fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
       expect(startYearInput().value).toBe("");
@@ -886,7 +875,6 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(startYearInput(), { target: { value: "" } });
       fireEvent.input(endYearInput(), { target: { value: "" } });
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
@@ -914,7 +902,6 @@ describe("FilterDrawer", () => {
       const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
       expect(before?.startYear).toBeUndefined();
 
-      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(startYearInput(), { target: { value: "2015" } });
 
       const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
@@ -1023,7 +1010,6 @@ describe("FilterDrawer", () => {
     const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(before?.searchFacets).toEqual([]);
 
-    fireEvent.click(screen.getByRole("button", { name: /Country/ }));
     fireEvent.click(screen.getByLabelText("Germany"));
 
     // Post-toggle: the most recent call carries the freshly-drafted country.
