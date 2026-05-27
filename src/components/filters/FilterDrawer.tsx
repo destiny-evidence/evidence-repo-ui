@@ -18,17 +18,34 @@ import {
   toSearchFacet as countryToSearchFacet,
   type CountryFilterState,
 } from "./countryFilterState";
+import { YearRangeFilter } from "./YearRangeFilter";
+import {
+  commit as commitYearRange,
+  emptyYearRangeState,
+  isDirty as isYearDirty,
+  summary as yearSummary,
+  yearRangeFromParams,
+  type YearRangeFilterState,
+} from "./yearRangeFilterState";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import "./FilterDrawer.css";
+
+export interface AppliedFilters {
+  searchFacets: string[];
+  startYear: number | undefined;
+  endYear: number | undefined;
+}
 
 interface FilterDrawerProps {
   open: boolean;
   schemes: ConceptScheme[];
   appliedFacets: string[];
+  appliedStartYear: number | undefined;
+  appliedEndYear: number | undefined;
   // Drives the facet-count fetch alongside the draft. Owned by SearchPage as
-  // the source of truth for q / years / annotations.
+  // the source of truth for q / annotations.
   params: SearchParams;
-  onApply: (next: string[]) => void;
+  onApply: (next: AppliedFilters) => void;
   onCancel: () => void;
 }
 
@@ -86,6 +103,8 @@ type FilterDrawerPanelProps = Omit<FilterDrawerProps, "open">;
 function FilterDrawerPanel({
   schemes,
   appliedFacets,
+  appliedStartYear,
+  appliedEndYear,
   params,
   onApply,
   onCancel,
@@ -96,6 +115,9 @@ function FilterDrawerPanel({
   const [countryDraft, setCountryDraft] = useState<CountryFilterState>(() =>
     parseCountryFacets(appliedFacets),
   );
+  const [yearDraft, setYearDraft] = useState<YearRangeFilterState>(() =>
+    yearRangeFromParams(appliedStartYear, appliedEndYear),
+  );
   const panelRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<Element | null>(document.activeElement);
   const titleId = useId();
@@ -104,9 +126,16 @@ function FilterDrawerPanel({
     () => draftToFacets(draft, schemes, countryDraft),
     [draft, schemes, countryDraft],
   );
+  const yearCommitted = useMemo(() => commitYearRange(yearDraft), [yearDraft]);
+  // Feed the draft year range into the facet-count fetch when it's valid so
+  // the eager preview narrows alongside the user's edits; fall back to the
+  // applied URL values otherwise (parseSearchParams guarantees those are
+  // self-consistent).
   const facetParams: SearchParams = {
     ...params,
     searchFacets: draftFacets,
+    startYear: yearCommitted.ok ? yearCommitted.startYear : appliedStartYear,
+    endYear: yearCommitted.ok ? yearCommitted.endYear : appliedEndYear,
   };
   const {
     counts: facetCounts,
@@ -156,16 +185,24 @@ function FilterDrawerPanel({
   function handleReset() {
     setDraft(new Map());
     setCountryDraft(emptyCountryState());
+    setYearDraft(emptyYearRangeState());
   }
 
   function handleApply() {
-    onApply(draftToFacets(draft, schemes, countryDraft));
+    if (!yearCommitted.ok) return;
+    onApply({
+      searchFacets: draftToFacets(draft, schemes, countryDraft),
+      startYear: yearCommitted.startYear,
+      endYear: yearCommitted.endYear,
+    });
   }
 
-  const dirty = !facetsEqual(
+  const facetsDirty = !facetsEqual(
     draftToFacets(draft, schemes, countryDraft),
     appliedFacets,
   );
+  const yearDirty = isYearDirty(yearDraft, appliedStartYear, appliedEndYear);
+  const canApply = (facetsDirty || yearDirty) && yearCommitted.ok;
 
   return (
     <div class="filter-drawer" role="presentation">
@@ -203,6 +240,9 @@ function FilterDrawerPanel({
               Investigation counts unavailable.
             </div>
           )}
+          <FilterCard title="Year range" summary={yearSummary(yearDraft)}>
+            <YearRangeFilter state={yearDraft} onChange={setYearDraft} />
+          </FilterCard>
           <FilterCard title="Country" summary={countrySummary(countryDraft)}>
             <CountryFilter
               state={countryDraft}
@@ -244,7 +284,7 @@ function FilterDrawerPanel({
             type="button"
             class="filter-drawer__btn filter-drawer__btn--apply"
             onClick={handleApply}
-            disabled={!dirty}
+            disabled={!canApply}
           >
             Show results
           </button>

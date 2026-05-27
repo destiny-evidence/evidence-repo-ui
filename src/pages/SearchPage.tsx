@@ -181,14 +181,20 @@ function SearchPageInner({ community }: { community: Community }) {
     handleOpenDrawer,
   );
 
-  function handleApplyFacets(nextFacets: string[]) {
+  function handleApplyFilters(next: {
+    searchFacets: string[];
+    startYear: number | undefined;
+    endYear: number | undefined;
+  }) {
     const committed = draft.commitDraft();
     if (!committed) return;
+    // `next` comes after `committed` so the drawer's year-range draft wins
+    // over any stale year still hanging in the SearchBar draft.
     navigate(
       buildSearchUrl(community.slug, {
         ...params,
         ...committed,
-        searchFacets: nextFacets,
+        ...next,
         page: 1,
       }),
     );
@@ -418,8 +424,10 @@ function SearchPageInner({ community }: { community: Community }) {
           open={drawerOpen}
           schemes={filterableSchemes}
           appliedFacets={params.searchFacets}
+          appliedStartYear={params.startYear}
+          appliedEndYear={params.endYear}
           params={params}
-          onApply={handleApplyFacets}
+          onApply={handleApplyFilters}
           onCancel={() => setDrawerOpen(false)}
         />
       )}
