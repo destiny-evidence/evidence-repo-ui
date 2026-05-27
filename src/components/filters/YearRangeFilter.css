@@ -1,0 +1,42 @@
+.year-range-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.year-range-filter__row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.year-range-filter__year {
+  width: 80px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.year-range-filter__year:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 0;
+  border-color: var(--color-accent);
+}
+
+.year-range-filter__year[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.year-range-filter__sep {
+  color: var(--color-text-tertiary);
+}
+
+.year-range-filter__error {
+  color: var(--color-danger);
+  font-size: var(--font-size-small);
+}
