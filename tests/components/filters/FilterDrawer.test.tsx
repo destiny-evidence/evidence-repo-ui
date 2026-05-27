@@ -834,7 +834,7 @@ describe("FilterDrawer", () => {
       fireEvent.input(endYearInput(), { target: { value: "abc" } });
 
       expect(screen.getByRole("alert")).toHaveTextContent(
-        /end year must be a positive whole number/i,
+        /end year must be a 4-digit number/i,
       );
       expect(
         (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)

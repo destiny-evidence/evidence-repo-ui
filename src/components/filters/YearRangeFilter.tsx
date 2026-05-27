@@ -1,3 +1,4 @@
+import { useState } from "preact/hooks";
 import { validate, type YearRangeFilterState } from "./yearRangeFilterState";
 import "./YearRangeFilter.css";
 
@@ -7,8 +8,19 @@ interface YearRangeFilterProps {
 }
 
 export function YearRangeFilter({ state, onChange }: YearRangeFilterProps) {
+  // Hide a field's error while that field is focused so the user isn't
+  // yelled at mid-typing. Other fields' errors stay visible. Range errors
+  // require both fields unfocused so they don't flash while either is
+  // being edited.
+  const [startFocused, setStartFocused] = useState(false);
+  const [endFocused, setEndFocused] = useState(false);
+
   const result = validate(state);
-  const error = result.ok ? null : result.error;
+  const showStartError = !startFocused ? result.startError : null;
+  const showEndError = !endFocused ? result.endError : null;
+  const showRangeError =
+    !startFocused && !endFocused ? result.rangeError : null;
+  const visibleError = showStartError || showEndError || showRangeError;
 
   return (
     <div class="year-range-filter">
@@ -20,12 +32,14 @@ export function YearRangeFilter({ state, onChange }: YearRangeFilterProps) {
           autoComplete="off"
           placeholder="YYYY"
           aria-label="Start year"
-          aria-invalid={error !== null}
+          aria-invalid={showStartError !== null}
           class="year-range-filter__year"
           value={state.start}
           onInput={(e) =>
             onChange({ ...state, start: (e.target as HTMLInputElement).value })
           }
+          onFocus={() => setStartFocused(true)}
+          onBlur={() => setStartFocused(false)}
         />
         <span class="year-range-filter__sep" aria-hidden="true">—</span>
         <input
@@ -35,17 +49,19 @@ export function YearRangeFilter({ state, onChange }: YearRangeFilterProps) {
           autoComplete="off"
           placeholder="YYYY"
           aria-label="End year"
-          aria-invalid={error !== null}
+          aria-invalid={showEndError !== null}
           class="year-range-filter__year"
           value={state.end}
           onInput={(e) =>
             onChange({ ...state, end: (e.target as HTMLInputElement).value })
           }
+          onFocus={() => setEndFocused(true)}
+          onBlur={() => setEndFocused(false)}
         />
       </div>
-      {error && (
+      {visibleError && (
         <div class="year-range-filter__error" role="alert">
-          {error}
+          {visibleError}
         </div>
       )}
     </div>
