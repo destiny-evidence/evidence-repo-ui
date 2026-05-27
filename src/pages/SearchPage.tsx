@@ -24,6 +24,7 @@ import { Pagination } from "@/components/Pagination";
 import { FilterDrawer } from "@/components/filters/FilterDrawer";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
+import { totalSelectedCount as totalSelectedYearCount } from "@/components/filters/yearRangeFilterState";
 import { NotFoundPage } from "./NotFoundPage";
 import "./SearchPage.css";
 
@@ -36,13 +37,6 @@ interface SearchPageProps {
 // the UI doesn't understate the corpus size.
 function formatTotal(total: { count: number; is_lower_bound: boolean }): string {
   return `${total.count.toLocaleString()}${total.is_lower_bound ? "+" : ""}`;
-}
-
-function formatYearClause(start: number | undefined, end: number | undefined): string {
-  if (start !== undefined && end !== undefined) return ` from ${start} to ${end}`;
-  if (start !== undefined) return ` from ${start}`;
-  if (end !== undefined) return ` to ${end}`;
-  return "";
 }
 
 // 10k is destiny-repository's max_result_window; deep pagination + exports
@@ -96,8 +90,6 @@ function exportAnnouncementFor(status: ExportStatus): string {
 
 function formatResultsSummary(
   q: string,
-  startYear: number | undefined,
-  endYear: number | undefined,
   total: { count: number; is_lower_bound: boolean },
 ) {
   const qClause = q !== "" ? ` for “${q}”` : "";
@@ -106,7 +98,7 @@ function formatResultsSummary(
   return (
     <span class="search-results__meta-summary">
       <span class="search-results__meta-count">{formatTotal(total)}</span>
-      {` results${qClause}${formatYearClause(startYear, endYear)}`}
+      {` results${qClause}`}
     </span>
   );
 }
@@ -171,7 +163,9 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const refine = buildRefineConfig(
     vocab,
-    totalSelectedCount(params.searchFacets, filterableSchemes) + totalSelectedCountryCount(params.searchFacets),
+    totalSelectedCount(params.searchFacets, filterableSchemes)
+      + totalSelectedCountryCount(params.searchFacets)
+      + totalSelectedYearCount(params.startYear, params.endYear),
     handleOpenDrawer,
   );
 
@@ -200,16 +194,12 @@ function SearchPageInner({ community }: { community: Community }) {
     results.results !== null ||
     results.error !== null ||
     params.q !== "" ||
-    params.startYear !== undefined ||
-    params.endYear !== undefined ||
     params.searchFacets.length > 0 ||
     refine !== undefined;
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary =
     params.q !== "" ||
-    params.startYear !== undefined ||
-    params.endYear !== undefined ||
     params.searchFacets.length > 0 ||
     results.error !== null;
 
@@ -318,7 +308,7 @@ function SearchPageInner({ community }: { community: Community }) {
                     : results.loading
                       ? "Updating results…"
                       : results.results
-                        ? formatResultsSummary(params.q, params.startYear, params.endYear, results.results.total)
+                        ? formatResultsSummary(params.q, results.results.total)
                         : null
                 : null}
             </span>
