@@ -167,9 +167,15 @@ function FilterDrawerPanel({
         tabIndex={-1}
       >
         <header class="filter-drawer__header">
-          <h2 id={titleId} class="filter-drawer__title">
-            Refine the evidence
-          </h2>
+          <div class="filter-drawer__heading">
+            <h2 id={titleId} class="filter-drawer__title">
+              Refine the evidence
+            </h2>
+            {/* "*" is the browse-mode sentinel — don't echo it as a query. */}
+            {params.q !== "" && params.q !== "*" && (
+              <p class="filter-drawer__subtitle">Searching for “{params.q}”</p>
+            )}
+          </div>
           <button
             type="button"
             class="filter-drawer__btn filter-drawer__btn--cancel"

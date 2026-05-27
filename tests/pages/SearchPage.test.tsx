@@ -418,6 +418,46 @@ describe("SearchPage", () => {
       mockVocab.mockReturnValue(vocabWith([OUTCOME_SCHEME_FIXTURE]));
     });
 
+    test("clicking Refine commits the search bar draft (q + years) to the URL before opening", async () => {
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      // Type into the search bar but don't press Enter.
+      fireEvent.input(screen.getByRole("searchbox"), {
+        target: { value: "phonics" },
+      });
+      // URL hasn't changed yet — draft is still uncommitted.
+      expect(new URLSearchParams(window.location.search).get("q")).toBeNull();
+
+      fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
+
+      // Refine commits the draft, navigating to the searched URL, then opens
+      // the drawer (Show results button is the visible witness).
+      await waitFor(() => {
+        expect(new URLSearchParams(window.location.search).get("q")).toBe(
+          "phonics",
+        );
+      });
+      expect(screen.getByRole("button", { name: "Show results" })).toBeDefined();
+    });
+
+    test("clicking Refine with an invalid year range does NOT open the drawer", async () => {
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      // Start year after end year — commitDraft returns null.
+      const [startInput, endInput] = screen.getAllByPlaceholderText("YYYY");
+      fireEvent.input(startInput, { target: { value: "2020" } });
+      fireEvent.input(endInput, { target: { value: "2010" } });
+
+      fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
+
+      // Drawer didn't open — no Show results button in the DOM.
+      expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
+    });
+
     test("URL with one facet → Refine shows count 1 and drawer opens with concept pre-checked", async () => {
       const startQ = `* AND (linked_data_concepts:"${URI_LEARNING}")`;
       history.replaceState(null, "", `/esea?q=${encodeURIComponent(startQ)}`);

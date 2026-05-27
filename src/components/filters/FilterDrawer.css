@@ -34,11 +34,33 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+.filter-drawer__heading {
+  /* Stack title + subtitle vertically; the heading is one flex item in the
+     header row, so Cancel stays anchored on the right regardless of whether
+     the subtitle renders. min-width:0 lets the subtitle truncate cleanly. */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .filter-drawer__title {
   margin: 0;
   font-size: var(--font-size-xl);
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.filter-drawer__subtitle {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+  /* Long queries wrap so the user always sees what they searched for; the
+     drawer body scrolls, so a taller header is recoverable. word-break
+     covers degenerate inputs (pasted URLs, no spaces) that would otherwise
+     overflow the panel horizontally. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .filter-drawer__panel:focus {
