@@ -182,14 +182,16 @@ describe("SearchPage", () => {
     expect(window.location.search).toContain("q=phonics");
   });
 
-  test("year-only filter shows meta-bar count without 'for' framing", async () => {
+  test("year-only filter contributes to Refine badge, not the meta-bar text", async () => {
     history.replaceState(null, "", "/esea?start_year=2015");
+    mockVocab.mockReturnValue(vocabWith([OUTCOME_SCHEME_FIXTURE]));
     mockBoth({ results: makeResult(120, ["r1"]) });
     renderSearchPage();
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-    expect(screen.getByText(/results from/i)).toHaveTextContent(/120 results from 2015/i);
+    expect(screen.queryByText(/from 2015/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/results for/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Refine\s*1/ })).toBeInTheDocument();
   });
 
   test("URL params on mount drive the fetch", async () => {

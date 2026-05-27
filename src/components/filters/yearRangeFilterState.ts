@@ -58,6 +58,15 @@ export function summary(state: YearRangeFilterState): string {
   return "";
 }
 
+// Year range is binary for badge purposes: a one- or two-sided range counts
+// as a single applied filter regardless of which bound(s) are set.
+export function totalSelectedCount(
+  startYear: number | undefined,
+  endYear: number | undefined,
+): number {
+  return startYear !== undefined || endYear !== undefined ? 1 : 0;
+}
+
 export function isDirty(
   state: YearRangeFilterState,
   appliedStart: number | undefined,
