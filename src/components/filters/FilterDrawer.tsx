@@ -240,7 +240,7 @@ function FilterDrawerPanel({
               Investigation counts unavailable.
             </div>
           )}
-          <FilterCard title="Year range" summary={yearSummary(yearDraft)}>
+          <FilterCard title="Publication year" summary={yearSummary(yearDraft)}>
             <YearRangeFilter state={yearDraft} onChange={setYearDraft} />
           </FilterCard>
           <FilterCard title="Country" summary={countrySummary(countryDraft)}>
