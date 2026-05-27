@@ -27,79 +27,90 @@ describe("yearRangeFromParams", () => {
 
 describe("validate", () => {
   test("empty state is a valid unbounded range", () => {
-    expect(validate({ start: "", end: "" })).toEqual({
-      ok: true,
-      startYear: undefined,
-      endYear: undefined,
-    });
+    const r = validate({ start: "", end: "" });
+    expect(r.ok).toBe(true);
+    expect(r.startYear).toBeUndefined();
+    expect(r.endYear).toBeUndefined();
   });
 
   test("only start filled is valid", () => {
-    expect(validate({ start: "1990", end: "" })).toEqual({
-      ok: true,
-      startYear: 1990,
-      endYear: undefined,
-    });
+    const r = validate({ start: "1990", end: "" });
+    expect(r.ok).toBe(true);
+    expect(r.startYear).toBe(1990);
+    expect(r.endYear).toBeUndefined();
   });
 
   test("only end filled is valid", () => {
-    expect(validate({ start: "", end: "2000" })).toEqual({
-      ok: true,
-      startYear: undefined,
-      endYear: 2000,
-    });
+    const r = validate({ start: "", end: "2000" });
+    expect(r.ok).toBe(true);
+    expect(r.startYear).toBeUndefined();
+    expect(r.endYear).toBe(2000);
   });
 
   test("two-sided valid range parses", () => {
-    expect(validate({ start: "2010", end: "2020" })).toEqual({
-      ok: true,
-      startYear: 2010,
-      endYear: 2020,
-    });
+    const r = validate({ start: "2010", end: "2020" });
+    expect(r.ok).toBe(true);
+    expect(r.startYear).toBe(2010);
+    expect(r.endYear).toBe(2020);
   });
 
   test("start equal to end is allowed", () => {
-    expect(validate({ start: "2010", end: "2010" })).toEqual({
-      ok: true,
-      startYear: 2010,
-      endYear: 2010,
-    });
+    const r = validate({ start: "2010", end: "2010" });
+    expect(r.ok).toBe(true);
+    expect(r.startYear).toBe(2010);
+    expect(r.endYear).toBe(2010);
   });
 
   test("non-numeric start is rejected", () => {
     const result = validate({ start: "abc", end: "" });
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toMatch(/start year/i);
+    expect(result.startError).toMatch(/start year/i);
+    expect(result.endError).toBeNull();
   });
 
   test("non-numeric end is rejected", () => {
     const result = validate({ start: "", end: "x" });
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toMatch(/end year/i);
+    expect(result.endError).toMatch(/end year/i);
+    expect(result.startError).toBeNull();
   });
 
   test("non-integer like 1990.5 is rejected", () => {
-    const result = validate({ start: "1990.5", end: "" });
-    expect(result.ok).toBe(false);
+    expect(validate({ start: "1990.5", end: "" }).ok).toBe(false);
   });
 
   test("zero is rejected (parseYear requires positive)", () => {
-    const result = validate({ start: "0", end: "" });
-    expect(result.ok).toBe(false);
+    expect(validate({ start: "0", end: "" }).ok).toBe(false);
   });
 
-  test("start greater than end is rejected", () => {
+  test("fewer than 4 digits is rejected", () => {
+    const result = validate({ start: "222", end: "" });
+    expect(result.startError).toMatch(/4-digit/i);
+  });
+
+  test("more than 4 digits is rejected", () => {
+    const result = validate({ start: "", end: "20240" });
+    expect(result.endError).toMatch(/4-digit/i);
+  });
+
+  test("both fields invalid reports both errors", () => {
+    const result = validate({ start: "222", end: "20" });
+    expect(result.startError).toMatch(/4-digit/i);
+    expect(result.endError).toMatch(/4-digit/i);
+  });
+
+  test("start greater than end is reported as a range error", () => {
     const result = validate({ start: "2020", end: "2010" });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toMatch(/not exceed/i);
+    expect(result.rangeError).toMatch(/not exceed/i);
+    expect(result.startError).toBeNull();
+    expect(result.endError).toBeNull();
   });
 
   test("whitespace-only input is treated as empty", () => {
-    expect(validate({ start: "   ", end: "2010" })).toEqual({
-      ok: true,
-      startYear: undefined,
-      endYear: 2010,
-    });
+    const r = validate({ start: "   ", end: "2010" });
+    expect(r.ok).toBe(true);
+    expect(r.startYear).toBeUndefined();
+    expect(r.endYear).toBe(2010);
   });
 });
 

@@ -7,9 +7,15 @@ export interface YearRangeFilterState {
   readonly end: string;
 }
 
-export type ValidationResult =
-  | { ok: true; startYear: number | undefined; endYear: number | undefined }
-  | { ok: false; error: string };
+// Per-field errors
+export interface ValidationResult {
+  ok: boolean;
+  startYear: number | undefined;
+  endYear: number | undefined;
+  startError: string | null;
+  endError: string | null;
+  rangeError: string | null;
+}
 
 export function emptyYearRangeState(): YearRangeFilterState {
   return { start: "", end: "" };
@@ -26,24 +32,36 @@ export function yearRangeFromParams(
   return { start: yearToInput(startYear), end: yearToInput(endYear) };
 }
 
-// One-sided ranges are valid: the backend treats a missing start_year /
-// end_year as "unbounded on that side". Only flag an input that's non-empty
-// AND unparseable, or a two-sided range with start > end.
+// One-sided ranges are valid.
 export function validate(state: YearRangeFilterState): ValidationResult {
   const startTrim = state.start.trim();
   const endTrim = state.end.trim();
-  if (startTrim !== "" && parseYear(startTrim) === undefined) {
-    return { ok: false, error: "Start year must be a positive whole number." };
-  }
-  if (endTrim !== "" && parseYear(endTrim) === undefined) {
-    return { ok: false, error: "End year must be a positive whole number." };
-  }
-  const startYear = parseYear(startTrim);
-  const endYear = parseYear(endTrim);
-  if (startYear !== undefined && endYear !== undefined && startYear > endYear) {
-    return { ok: false, error: "Start year must not exceed end year." };
-  }
-  return { ok: true, startYear, endYear };
+  const startError =
+    startTrim !== "" && !isFourDigitYear(startTrim)
+      ? "Start year must be a 4-digit number."
+      : null;
+  const endError =
+    endTrim !== "" && !isFourDigitYear(endTrim)
+      ? "End year must be a 4-digit number."
+      : null;
+  const startYear = startError === null ? parseYear(startTrim) : undefined;
+  const endYear = endError === null ? parseYear(endTrim) : undefined;
+  const rangeError =
+    startYear !== undefined && endYear !== undefined && startYear > endYear
+      ? "Start year must not exceed end year."
+      : null;
+  return {
+    ok: startError === null && endError === null && rangeError === null,
+    startYear,
+    endYear,
+    startError,
+    endError,
+    rangeError,
+  };
+}
+
+function isFourDigitYear(raw: string): boolean {
+  return /^\d{4}$/.test(raw) && parseYear(raw) !== undefined;
 }
 
 // Chip text for the collapsed FilterCard. Falls back to "" when the state is
@@ -67,10 +85,12 @@ export function totalSelectedCount(
   return startYear !== undefined || endYear !== undefined ? 1 : 0;
 }
 
-// Empty or exactly 4 digits
+// Empty or a 4-digit year — the only inputs we treat as "complete" for the
+// purposes of the eager facet refetch. Partial input like "20" stays out so
+// every keystroke doesn't trigger a request.
 export function isYearInputReady(raw: string): boolean {
   const t = raw.trim();
-  return t === "" || /^\d{4}$/.test(t);
+  return t === "" || isFourDigitYear(t);
 }
 
 export function isDirty(
