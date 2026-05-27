@@ -600,7 +600,7 @@ describe("FilterDrawer", () => {
   });
 
   describe("country filter integration", () => {
-    test("renders the Country card after Year range but before any scheme card", () => {
+    test("renders the Country card after Publication year but before any scheme card", () => {
       const { container } = render(
         <FilterDrawer
           open={true}
@@ -616,7 +616,7 @@ describe("FilterDrawer", () => {
       const titles = Array.from(
         container.querySelectorAll(".filter-card__title"),
       ).map((n) => n.textContent);
-      expect(titles[0]).toBe("Year range");
+      expect(titles[0]).toBe("Publication year");
       expect(titles[1]).toBe("Country");
     });
 
@@ -744,7 +744,7 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Year range/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       expect(startYearInput().value).toBe("2010");
       expect(endYearInput().value).toBe("2020");
       // Hydrated draft equals applied → Show results stays disabled.
@@ -767,7 +767,7 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Year range/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(startYearInput(), { target: { value: "1990" } });
       expect(
         (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
@@ -789,7 +789,7 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Year range/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(startYearInput(), { target: { value: "1990" } });
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
@@ -814,7 +814,7 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Year range/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(startYearInput(), { target: { value: "2020" } });
       fireEvent.input(endYearInput(), { target: { value: "2010" } });
 
@@ -840,7 +840,7 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Year range/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(endYearInput(), { target: { value: "abc" } });
 
       expect(screen.getByRole("alert")).toHaveTextContent(
@@ -865,7 +865,7 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Year range/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       expect(startYearInput().value).toBe("2010");
       fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
       expect(startYearInput().value).toBe("");
@@ -886,7 +886,7 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Year range/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(startYearInput(), { target: { value: "" } });
       fireEvent.input(endYearInput(), { target: { value: "" } });
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
@@ -914,7 +914,7 @@ describe("FilterDrawer", () => {
       const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
       expect(before?.startYear).toBeUndefined();
 
-      fireEvent.click(screen.getByRole("button", { name: /Year range/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       fireEvent.input(startYearInput(), { target: { value: "2015" } });
 
       const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];

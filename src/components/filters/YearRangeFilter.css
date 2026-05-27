@@ -7,14 +7,15 @@
 .year-range-filter__row {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
 }
 
 .year-range-filter__year {
-  width: 80px;
-  padding: 6px 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 12px 16px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-bg-surface);
   font-family: var(--font-mono);
   font-size: var(--font-size-body);
