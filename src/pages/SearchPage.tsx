@@ -156,18 +156,12 @@ function SearchPageInner({ community }: { community: Community }) {
     [vocab.schemes, community.filterExcludedSchemes],
   );
 
-  // Treat clicking Refine like submitting the search bar: commit any
-  // pending q / year edits before opening the drawer, so facet counts
-  // and the post-Apply navigation reflect what the user has typed.
-  // Validation errors short-circuit and keep the drawer closed.
+  // Treat clicking Refine like submitting the search bar: commit any pending
+  // Q edit before opening the drawer so the drawer's facet-count fetch and
+  // the post-Apply navigation reflect what the user has typed.
   function handleOpenDrawer() {
     const committed = draft.commitDraft();
-    if (!committed) return;
-    const changed =
-      params.q !== committed.q ||
-      params.startYear !== committed.startYear ||
-      params.endYear !== committed.endYear;
-    if (changed) {
+    if (params.q !== committed.q) {
       navigate(
         buildSearchUrl(community.slug, { ...params, ...committed, page: 1 }),
       );
@@ -187,9 +181,6 @@ function SearchPageInner({ community }: { community: Community }) {
     endYear: number | undefined;
   }) {
     const committed = draft.commitDraft();
-    if (!committed) return;
-    // `next` comes after `committed` so the drawer's year-range draft wins
-    // over any stale year still hanging in the SearchBar draft.
     navigate(
       buildSearchUrl(community.slug, {
         ...params,
@@ -224,7 +215,6 @@ function SearchPageInner({ community }: { community: Community }) {
 
   function handleSubmit() {
     const committed = draft.commitDraft();
-    if (!committed) return;
     navigate(buildSearchUrl(community.slug, { ...params, ...committed, page: 1 }));
   }
 
@@ -234,7 +224,6 @@ function SearchPageInner({ community }: { community: Community }) {
 
   function handleSortChange(sort: SortOption | undefined) {
     const committed = draft.commitDraft();
-    if (!committed) return;
     navigate(buildSearchUrl(community.slug, { ...params, ...committed, sort, page: 1 }));
   }
 
@@ -300,12 +289,7 @@ function SearchPageInner({ community }: { community: Community }) {
         </p>
         <SearchBar
           draftQ={draft.draftQ}
-          draftStart={draft.draftStart}
-          draftEnd={draft.draftEnd}
           onDraftQChange={draft.setDraftQ}
-          onDraftStartChange={draft.setDraftStart}
-          onDraftEndChange={draft.setDraftEnd}
-          validationError={draft.validationError}
           onSubmit={handleSubmit}
           disabled={results.loading && results.results !== null}
         />
