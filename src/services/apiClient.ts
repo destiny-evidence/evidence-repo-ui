@@ -22,8 +22,6 @@ function isPositiveSafeInt(n: number | undefined): n is number {
   return n !== undefined && Number.isSafeInteger(n) && n >= 1;
 }
 
-// Shared with the facets endpoint, which accepts the same q/year/annotation
-// filters but no page or sort. Browse-mode shim mirrors searchReferences.
 function buildSharedSearchParams(
   query: string | undefined,
   filters: Pick<SearchFilters, "startYear" | "endYear" | "annotation">,

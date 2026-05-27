@@ -91,6 +91,50 @@ describe("FilterDrawer", () => {
     ).toBeDefined();
   });
 
+  test("shows a subtitle nudge with the current query when params.q is set", () => {
+    const { container } = render(
+      <FilterDrawer
+        open={true}
+        schemes={TWO_SCHEMES}
+        appliedFacets={[]}
+        params={makeSearchParams({ q: "phonics" })}
+        onApply={noop}
+        onCancel={noop}
+      />,
+    );
+    // Bind on the class and the query value, not the surrounding wording —
+    // the prose around the query is expected to iterate.
+    const subtitle = container.querySelector(".filter-drawer__subtitle");
+    expect(subtitle).not.toBeNull();
+    expect(subtitle?.textContent).toContain("phonics");
+  });
+
+  test("hides the subtitle nudge in browse mode (empty q or '*')", () => {
+    const { rerender, container } = render(
+      <FilterDrawer
+        open={true}
+        schemes={TWO_SCHEMES}
+        appliedFacets={[]}
+        params={defaultParams}
+        onApply={noop}
+        onCancel={noop}
+      />,
+    );
+    expect(container.querySelector(".filter-drawer__subtitle")).toBeNull();
+
+    rerender(
+      <FilterDrawer
+        open={true}
+        schemes={TWO_SCHEMES}
+        appliedFacets={[]}
+        params={makeSearchParams({ q: "*" })}
+        onApply={noop}
+        onCancel={noop}
+      />,
+    );
+    expect(container.querySelector(".filter-drawer__subtitle")).toBeNull();
+  });
+
   test("strips a trailing ' Scheme' from the scheme label", () => {
     const scheme: ConceptScheme = {
       uri: "https://vocab.esea.education/EducationLevelScheme",

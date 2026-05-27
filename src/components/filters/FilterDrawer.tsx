@@ -58,10 +58,7 @@ function schemeDisplayLabel(label: string): string {
   return label.replace(/\s+Scheme$/i, "");
 }
 
-// Thin wrapper that gates rendering — and therefore hook execution — on
-// `open`. Keeping the hooks inside FilterDrawerPanel means we don't fire the
-// facet-count fetch (or any of the effects) until the drawer is actually
-// opened, so users who never refine don't pay the network cost.
+// Gates hook execution on `open` — users who never refine don't fetch facets.
 export function FilterDrawer({ open, ...rest }: FilterDrawerProps) {
   if (!open) return null;
   return <FilterDrawerPanel {...rest} />;
@@ -80,14 +77,9 @@ function FilterDrawerPanel({
     parseFacets(appliedFacets, schemes),
   );
   const panelRef = useRef<HTMLElement>(null);
-  // Captured at mount (= drawer open). useRef's initial value runs once on
-  // mount, so this snapshots the focused element at the moment the user
-  // triggered open.
   const previousFocusRef = useRef<Element | null>(document.activeElement);
   const titleId = useId();
 
-  // Eager facet counts: every toggle changes `draft`, which retriggers the
-  // fetch via the hook's cache key.
   const draftFacets = useMemo(
     () => draftToFacets(draft, schemes),
     [draft, schemes],
@@ -102,7 +94,6 @@ function FilterDrawerPanel({
     error: facetError,
   } = useSearchFacets(facetParams);
 
-  // Lock body scroll while mounted; restore on unmount.
   useEffect(() => {
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -111,8 +102,6 @@ function FilterDrawerPanel({
     };
   }, []);
 
-  // Focus the dialog panel itself on mount (it carries tabindex=-1).
-  // Restore focus to wherever it was on unmount.
   useEffect(() => {
     panelRef.current?.focus();
     return () => {
@@ -121,7 +110,6 @@ function FilterDrawerPanel({
     };
   }, []);
 
-  // Escape dismisses the drawer (treated as Cancel).
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -167,9 +155,15 @@ function FilterDrawerPanel({
         tabIndex={-1}
       >
         <header class="filter-drawer__header">
-          <h2 id={titleId} class="filter-drawer__title">
-            Refine the evidence
-          </h2>
+          <div class="filter-drawer__heading">
+            <h2 id={titleId} class="filter-drawer__title">
+              Refine the evidence
+            </h2>
+            {/* "*" is the browse-mode sentinel — don't echo it as a query. */}
+            {params.q !== "" && params.q !== "*" && (
+              <p class="filter-drawer__subtitle">Searching for “{params.q}”</p>
+            )}
+          </div>
           <button
             type="button"
             class="filter-drawer__btn filter-drawer__btn--cancel"
@@ -187,10 +181,8 @@ function FilterDrawerPanel({
           )}
           {schemes.map((scheme) => {
             const state = draft.get(scheme.uri) ?? emptyConceptSchemeState();
-            // Per-scheme suppression: once any concept in this scheme is
-            // selected, the facet endpoint's counts become co-occurrence with
-            // that selection (siblings show ~0). Hide counts for the scheme
-            // until the user clears the selection.
+            // Counts intersect with selected concepts, so siblings of a
+            // selection drop to ~0; hide per-scheme once anything's picked.
             const showCounts = state.size === 0 && facetCounts !== null;
             return (
               <FilterCard

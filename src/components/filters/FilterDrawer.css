@@ -34,11 +34,27 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+.filter-drawer__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .filter-drawer__title {
   margin: 0;
   font-size: var(--font-size-xl);
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.filter-drawer__subtitle {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+  /* Break unbroken strings (pasted URLs) so they don't overflow the panel. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .filter-drawer__panel:focus {

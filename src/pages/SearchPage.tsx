@@ -155,10 +155,29 @@ function SearchPageInner({ community }: { community: Community }) {
     [vocab.schemes, community.filterExcludedSchemes],
   );
 
+  // Treat clicking Refine like submitting the search bar: commit any
+  // pending q / year edits before opening the drawer, so facet counts
+  // and the post-Apply navigation reflect what the user has typed.
+  // Validation errors short-circuit and keep the drawer closed.
+  function handleOpenDrawer() {
+    const committed = draft.commitDraft();
+    if (!committed) return;
+    const changed =
+      params.q !== committed.q ||
+      params.startYear !== committed.startYear ||
+      params.endYear !== committed.endYear;
+    if (changed) {
+      navigate(
+        buildSearchUrl(community.slug, { ...params, ...committed, page: 1 }),
+      );
+    }
+    setDrawerOpen(true);
+  }
+
   const refine = buildRefineConfig(
     vocab,
     totalSelectedCount(params.searchFacets, filterableSchemes),
-    () => setDrawerOpen(true),
+    handleOpenDrawer,
   );
 
   function handleApplyFacets(nextFacets: string[]) {

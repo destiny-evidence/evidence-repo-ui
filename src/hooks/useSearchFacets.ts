@@ -4,9 +4,7 @@ import { buildFacetedQuery } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchParams } from "@/services/searchParams";
 
-// Cache key for the facets request. Mirrors useSearch's paramsKey but omits
-// `page` and `sort` — facet counts are invariant under both, so paging or
-// re-sorting must not retrigger the fetch.
+// Omits `page` and `sort` — facet counts are invariant under both.
 function paramsKey(
   params: SearchParams,
   slug: string,
@@ -41,8 +39,7 @@ export function useSearchFacets(params: SearchParams): {
     if (!community) return;
     let cancelled = false;
 
-    // Mirror useSearch's dim-while-updating: keep prior counts visible while
-    // a new fetch is in flight so the drawer doesn't flicker on every search.
+    // Keep prior counts visible while refetching (dim-while-updating).
     setError(null);
     setLoading(true);
 
