@@ -1,4 +1,4 @@
-import { commit, type YearRangeFilterState } from "./yearRangeFilterState";
+import { validate, type YearRangeFilterState } from "./yearRangeFilterState";
 import "./YearRangeFilter.css";
 
 interface YearRangeFilterProps {
@@ -7,7 +7,7 @@ interface YearRangeFilterProps {
 }
 
 export function YearRangeFilter({ state, onChange }: YearRangeFilterProps) {
-  const result = commit(state);
+  const result = validate(state);
   const error = result.ok ? null : result.error;
 
   return (

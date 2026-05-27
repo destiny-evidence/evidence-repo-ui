@@ -20,7 +20,8 @@ import {
 } from "./countryFilterState";
 import { YearRangeFilter } from "./YearRangeFilter";
 import {
-  commit as commitYearRange,
+  validate as validateYearRange,
+  isYearInputReady,
   emptyYearRangeState,
   isDirty as isYearDirty,
   summary as yearSummary,
@@ -126,16 +127,16 @@ function FilterDrawerPanel({
     () => draftToFacets(draft, schemes, countryDraft),
     [draft, schemes, countryDraft],
   );
-  const yearCommitted = useMemo(() => commitYearRange(yearDraft), [yearDraft]);
-  // Feed the draft year range into the facet-count fetch when it's valid so
-  // the eager preview narrows alongside the user's edits; fall back to the
-  // applied URL values otherwise (parseSearchParams guarantees those are
-  // self-consistent).
+  const yearValidation = useMemo(() => validateYearRange(yearDraft), [yearDraft]);
+  const startReady = isYearInputReady(yearDraft.start);
+  const endReady = isYearInputReady(yearDraft.end);
   const facetParams: SearchParams = {
     ...params,
     searchFacets: draftFacets,
-    startYear: yearCommitted.ok ? yearCommitted.startYear : appliedStartYear,
-    endYear: yearCommitted.ok ? yearCommitted.endYear : appliedEndYear,
+    startYear:
+      yearValidation.ok && startReady ? yearValidation.startYear : appliedStartYear,
+    endYear:
+      yearValidation.ok && endReady ? yearValidation.endYear : appliedEndYear,
   };
   const {
     counts: facetCounts,
@@ -189,11 +190,11 @@ function FilterDrawerPanel({
   }
 
   function handleApply() {
-    if (!yearCommitted.ok) return;
+    if (!yearValidation.ok) return;
     onApply({
       searchFacets: draftToFacets(draft, schemes, countryDraft),
-      startYear: yearCommitted.startYear,
-      endYear: yearCommitted.endYear,
+      startYear: yearValidation.startYear,
+      endYear: yearValidation.endYear,
     });
   }
 
@@ -202,7 +203,7 @@ function FilterDrawerPanel({
     appliedFacets,
   );
   const yearDirty = isYearDirty(yearDraft, appliedStartYear, appliedEndYear);
-  const canApply = (facetsDirty || yearDirty) && yearCommitted.ok;
+  const canApply = (facetsDirty || yearDirty) && yearValidation.ok;
 
   return (
     <div class="filter-drawer" role="presentation">

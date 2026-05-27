@@ -7,7 +7,7 @@ export interface YearRangeFilterState {
   readonly end: string;
 }
 
-export type CommitResult =
+export type ValidationResult =
   | { ok: true; startYear: number | undefined; endYear: number | undefined }
   | { ok: false; error: string };
 
@@ -29,7 +29,7 @@ export function yearRangeFromParams(
 // One-sided ranges are valid: the backend treats a missing start_year /
 // end_year as "unbounded on that side". Only flag an input that's non-empty
 // AND unparseable, or a two-sided range with start > end.
-export function commit(state: YearRangeFilterState): CommitResult {
+export function validate(state: YearRangeFilterState): ValidationResult {
   const startTrim = state.start.trim();
   const endTrim = state.end.trim();
   if (startTrim !== "" && parseYear(startTrim) === undefined) {
@@ -49,7 +49,7 @@ export function commit(state: YearRangeFilterState): CommitResult {
 // Chip text for the collapsed FilterCard. Falls back to "" when the state is
 // invalid so the chip doesn't display a misleading range.
 export function summary(state: YearRangeFilterState): string {
-  const result = commit(state);
+  const result = validate(state);
   if (!result.ok) return "";
   const { startYear, endYear } = result;
   if (startYear !== undefined && endYear !== undefined) return `${startYear}–${endYear}`;
@@ -67,12 +67,18 @@ export function totalSelectedCount(
   return startYear !== undefined || endYear !== undefined ? 1 : 0;
 }
 
+// Empty or exactly 4 digits
+export function isYearInputReady(raw: string): boolean {
+  const t = raw.trim();
+  return t === "" || /^\d{4}$/.test(t);
+}
+
 export function isDirty(
   state: YearRangeFilterState,
   appliedStart: number | undefined,
   appliedEnd: number | undefined,
 ): boolean {
-  const result = commit(state);
+  const result = validate(state);
   if (!result.ok) return true;
   return result.startYear !== appliedStart || result.endYear !== appliedEnd;
 }

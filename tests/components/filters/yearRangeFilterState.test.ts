@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import {
-  commit,
+  validate,
   emptyYearRangeState,
   isDirty,
   summary,
@@ -25,9 +25,9 @@ describe("yearRangeFromParams", () => {
   });
 });
 
-describe("commit", () => {
+describe("validate", () => {
   test("empty state is a valid unbounded range", () => {
-    expect(commit({ start: "", end: "" })).toEqual({
+    expect(validate({ start: "", end: "" })).toEqual({
       ok: true,
       startYear: undefined,
       endYear: undefined,
@@ -35,7 +35,7 @@ describe("commit", () => {
   });
 
   test("only start filled is valid", () => {
-    expect(commit({ start: "1990", end: "" })).toEqual({
+    expect(validate({ start: "1990", end: "" })).toEqual({
       ok: true,
       startYear: 1990,
       endYear: undefined,
@@ -43,7 +43,7 @@ describe("commit", () => {
   });
 
   test("only end filled is valid", () => {
-    expect(commit({ start: "", end: "2000" })).toEqual({
+    expect(validate({ start: "", end: "2000" })).toEqual({
       ok: true,
       startYear: undefined,
       endYear: 2000,
@@ -51,7 +51,7 @@ describe("commit", () => {
   });
 
   test("two-sided valid range parses", () => {
-    expect(commit({ start: "2010", end: "2020" })).toEqual({
+    expect(validate({ start: "2010", end: "2020" })).toEqual({
       ok: true,
       startYear: 2010,
       endYear: 2020,
@@ -59,7 +59,7 @@ describe("commit", () => {
   });
 
   test("start equal to end is allowed", () => {
-    expect(commit({ start: "2010", end: "2010" })).toEqual({
+    expect(validate({ start: "2010", end: "2010" })).toEqual({
       ok: true,
       startYear: 2010,
       endYear: 2010,
@@ -67,35 +67,35 @@ describe("commit", () => {
   });
 
   test("non-numeric start is rejected", () => {
-    const result = commit({ start: "abc", end: "" });
+    const result = validate({ start: "abc", end: "" });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toMatch(/start year/i);
   });
 
   test("non-numeric end is rejected", () => {
-    const result = commit({ start: "", end: "x" });
+    const result = validate({ start: "", end: "x" });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toMatch(/end year/i);
   });
 
   test("non-integer like 1990.5 is rejected", () => {
-    const result = commit({ start: "1990.5", end: "" });
+    const result = validate({ start: "1990.5", end: "" });
     expect(result.ok).toBe(false);
   });
 
   test("zero is rejected (parseYear requires positive)", () => {
-    const result = commit({ start: "0", end: "" });
+    const result = validate({ start: "0", end: "" });
     expect(result.ok).toBe(false);
   });
 
   test("start greater than end is rejected", () => {
-    const result = commit({ start: "2020", end: "2010" });
+    const result = validate({ start: "2020", end: "2010" });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toMatch(/not exceed/i);
   });
 
   test("whitespace-only input is treated as empty", () => {
-    expect(commit({ start: "   ", end: "2010" })).toEqual({
+    expect(validate({ start: "   ", end: "2010" })).toEqual({
       ok: true,
       startYear: undefined,
       endYear: 2010,
