@@ -549,6 +549,20 @@ describe("SearchPage", () => {
       expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
     });
 
+    test("Refine badge sums concept selections and country selections", async () => {
+      const startQ =
+        `* AND (linked_data_concepts:"${URI_LEARNING}")`
+        + " AND (linked_data_countries:DE OR linked_data_countries:FR)";
+      history.replaceState(null, "", `/esea?q=${encodeURIComponent(startQ)}`);
+      mockBoth({ results: makeResult(7, ["r1"]) });
+
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      // 1 concept + 2 countries → badge reads 3.
+      expect(screen.getByRole("button", { name: /Refine\s*3/ })).toBeDefined();
+    });
+
     test("Refine is hidden when vocabulary has no schemes", async () => {
       mockVocab.mockReturnValue(vocabWith([]));
       mockBoth({ results: makeResult(120, ["r1"]) });

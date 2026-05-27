@@ -9,6 +9,10 @@ export const SORT_BACKEND: Record<SortOption, string> = {
   oldest: "publication_year",
 };
 
+// Lucene field names the trailing-fragment peeler will recognise as facets.
+// Anything else trailing the q is left alone — see `something_else:"x"` in tests.
+const FACET_FIELDS = ["linked_data_concepts", "linked_data_countries"] as const;
+
 export interface SearchParams {
   q: string;
   page: number;
@@ -53,7 +57,9 @@ export function parseSearchParams(search: string): SearchParams {
 
   let q = (params.get("q") ?? "").trim();
 
-  const facetTail = /\s+AND\s+\(\s*(linked_data_concepts:[^)]+?)\s*\)\s*$/;
+  const facetTail = new RegExp(
+    `\\s+AND\\s+\\(\\s*((?:${FACET_FIELDS.join("|")}):[^)]+?)\\s*\\)\\s*$`,
+  );
   const searchFacets: string[] = [];
   while (true) {
     const m = q.match(facetTail);
