@@ -30,8 +30,6 @@ interface ConceptItemProps {
   onChange: (next: ConceptSchemeFilterState) => void;
 }
 
-// Locale-aware grouping (1234 → "1,234" in en-US, "1.234" in de-DE). Plain
-// Intl with no notation override; the browser picks the right separator.
 const countFormatter = new Intl.NumberFormat();
 
 function formatCount(n: number): string {
@@ -60,9 +58,6 @@ function ConceptItem({
   const countClass = `concept-scheme-filter__count${
     countsLoading ? " is-updating" : ""
   }${hasChildren ? " concept-scheme-filter__count--parent" : ""}`;
-  // Parent rows expose only the count for the parent URI itself (not a
-  // rollup of descendants), which can confuse readers since clicking the
-  // parent cascades into its subtree. Surface that semantic via a tooltip.
   const countTooltip = hasChildren
     ? "Count shows investigations tagged with this concept. Select to also include narrower concepts."
     : undefined;

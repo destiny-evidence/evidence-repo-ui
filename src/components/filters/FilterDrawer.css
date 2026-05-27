@@ -35,9 +35,6 @@
 }
 
 .filter-drawer__heading {
-  /* Stack title + subtitle vertically; the heading is one flex item in the
-     header row, so Cancel stays anchored on the right regardless of whether
-     the subtitle renders. min-width:0 lets the subtitle truncate cleanly. */
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -55,10 +52,7 @@
   margin: 0;
   font-size: var(--font-size-small);
   color: var(--color-text-tertiary);
-  /* Long queries wrap so the user always sees what they searched for; the
-     drawer body scrolls, so a taller header is recoverable. word-break
-     covers degenerate inputs (pasted URLs, no spaces) that would otherwise
-     overflow the panel horizontally. */
+  /* Break unbroken strings (pasted URLs) so they don't overflow the panel. */
   overflow-wrap: anywhere;
   word-break: break-word;
 }
