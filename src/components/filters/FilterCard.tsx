@@ -6,11 +6,12 @@ import "./FilterCard.css";
 interface FilterCardProps {
   title: string;
   summary?: string;
+  defaultExpanded?: boolean;
   children: ComponentChildren;
 }
 
-export function FilterCard({ title, summary, children }: FilterCardProps) {
-  const [expanded, setExpanded] = useState(false);
+export function FilterCard({ title, summary, defaultExpanded = false, children }: FilterCardProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const panelId = useId();
   const showSummary = !!summary;
 

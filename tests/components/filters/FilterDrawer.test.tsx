@@ -65,6 +65,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -80,6 +82,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -100,6 +104,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={makeSearchParams({ q: "phonics" })}
         onApply={noop}
         onCancel={noop}
@@ -119,6 +125,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -132,6 +140,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={makeSearchParams({ q: "*" })}
         onApply={noop}
         onCancel={noop}
@@ -152,6 +162,8 @@ describe("FilterDrawer", () => {
         schemes={[scheme]}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -172,6 +184,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -188,6 +202,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -206,6 +222,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={onApply}
         onCancel={noop}
@@ -238,6 +256,8 @@ describe("FilterDrawer", () => {
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={onApply}
         onCancel={noop}
@@ -261,6 +281,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -293,6 +315,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -313,6 +337,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -330,6 +356,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -348,6 +376,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -370,6 +400,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -383,6 +415,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -403,6 +437,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -416,6 +452,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -434,6 +472,8 @@ describe("FilterDrawer", () => {
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedCountryCodes={[]}
         appliedConceptFilters={[[URI_LEARNING]]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -456,6 +496,8 @@ describe("FilterDrawer", () => {
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedCountryCodes={[]}
         appliedConceptFilters={[[URI_LEARNING]]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -476,6 +518,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -522,6 +566,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[[URI_LEARNING]]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -552,6 +598,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -582,13 +630,15 @@ describe("FilterDrawer", () => {
   });
 
   describe("country filter integration", () => {
-    test("renders a Country card before any scheme card", () => {
+    test("renders the Country card after Publication year but before any scheme card", () => {
       const { container } = render(
         <FilterDrawer
           open={true}
           schemes={TWO_SCHEMES}
           appliedCountryCodes={[]}
           appliedConceptFilters={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
           params={defaultParams}
           onApply={noop}
           onCancel={noop}
@@ -597,7 +647,8 @@ describe("FilterDrawer", () => {
       const titles = Array.from(
         container.querySelectorAll(".filter-card__title"),
       ).map((n) => n.textContent);
-      expect(titles[0]).toBe("Country");
+      expect(titles[0]).toBe("Publication year");
+      expect(titles[1]).toBe("Country");
     });
 
     test("selecting a country and applying emits a linked_data_countries facet", () => {
@@ -608,13 +659,13 @@ describe("FilterDrawer", () => {
           schemes={[]}
           appliedCountryCodes={[]}
           appliedConceptFilters={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
           params={defaultParams}
           onApply={onApply}
           onCancel={noop}
         />,
       );
-      // Expand the Country card and pick Germany.
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       fireEvent.click(screen.getByLabelText("Germany"));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
@@ -622,6 +673,8 @@ describe("FilterDrawer", () => {
       expect(onApply.mock.calls[0][0]).toEqual({
         countryCodes: ["DE"],
         conceptFilters: [],
+        startYear: undefined,
+        endYear: undefined,
       });
     });
 
@@ -632,12 +685,13 @@ describe("FilterDrawer", () => {
           schemes={[]}
           appliedCountryCodes={["DE"]}
           appliedConceptFilters={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
           params={defaultParams}
           onApply={noop}
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       expect(
         (screen.getByLabelText("Germany") as HTMLInputElement).checked,
       ).toBe(true);
@@ -655,13 +709,14 @@ describe("FilterDrawer", () => {
           schemes={TWO_SCHEMES}
           appliedCountryCodes={[]}
           appliedConceptFilters={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
           params={defaultParams}
           onApply={noop}
           onCancel={noop}
         />,
       );
       fireEvent.click(screen.getByLabelText("Journal Article"));
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       fireEvent.click(screen.getByLabelText("Germany"));
 
       fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
@@ -682,19 +737,222 @@ describe("FilterDrawer", () => {
           schemes={[DOCUMENT_TYPE_SCHEME]}
           appliedCountryCodes={[]}
           appliedConceptFilters={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
           params={defaultParams}
           onApply={onApply}
           onCancel={noop}
         />,
       );
       fireEvent.click(screen.getByLabelText("Journal Article"));
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       fireEvent.click(screen.getByLabelText("France"));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       const applied = onApply.mock.calls[0][0] as AppliedFilters;
       expect(applied.countryCodes).toEqual(["FR"]);
       expect(applied.conceptFilters).toEqual([[URI_JOURNAL]]);
+    });
+  });
+
+  describe("year range integration", () => {
+    function startYearInput() {
+      return screen.getByLabelText("Start year") as HTMLInputElement;
+    }
+    function endYearInput() {
+      return screen.getByLabelText("End year") as HTMLInputElement;
+    }
+
+    test("hydrates the year inputs from appliedStartYear / appliedEndYear", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
+          appliedStartYear={2010}
+          appliedEndYear={2020}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      expect(startYearInput().value).toBe("2010");
+      expect(endYearInput().value).toBe("2020");
+      // Hydrated draft equals applied → Show results stays disabled.
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+
+    test("editing a year enables Show results", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.input(startYearInput(), { target: { value: "1990" } });
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false);
+    });
+
+    test("applying a one-sided range emits undefined for the missing side", () => {
+      const onApply = vi.fn();
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
+          params={defaultParams}
+          onApply={onApply}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.input(startYearInput(), { target: { value: "1990" } });
+      fireEvent.click(screen.getByRole("button", { name: "Show results" }));
+
+      expect(onApply).toHaveBeenCalledTimes(1);
+      expect(onApply.mock.calls[0][0]).toEqual({
+        countryCodes: [],
+        conceptFilters: [],
+        startYear: 1990,
+        endYear: undefined,
+      });
+    });
+
+    test("start > end shows inline error and disables Show results", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.input(startYearInput(), { target: { value: "2020" } });
+      fireEvent.input(endYearInput(), { target: { value: "2010" } });
+
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        /start year must not exceed end year/i,
+      );
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+
+    test("non-numeric end year flags an error and blocks Show results", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.input(endYearInput(), { target: { value: "abc" } });
+
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        /end year must be a 4-digit number/i,
+      );
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+
+    test("Reset clears year inputs alongside facet drafts", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
+          appliedStartYear={2010}
+          appliedEndYear={2020}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      expect(startYearInput().value).toBe("2010");
+      fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
+      expect(startYearInput().value).toBe("");
+      expect(endYearInput().value).toBe("");
+    });
+
+    test("clearing a previously-applied range applies undefined years", () => {
+      const onApply = vi.fn();
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
+          appliedStartYear={2010}
+          appliedEndYear={2020}
+          params={defaultParams}
+          onApply={onApply}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.input(startYearInput(), { target: { value: "" } });
+      fireEvent.input(endYearInput(), { target: { value: "" } });
+      fireEvent.click(screen.getByRole("button", { name: "Show results" }));
+
+      expect(onApply.mock.calls[0][0]).toEqual({
+        countryCodes: [],
+        conceptFilters: [],
+        startYear: undefined,
+        endYear: undefined,
+      });
+    });
+
+    test("eager loading: editing a year re-keys the facet hook with the new range", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={TWO_SCHEMES}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
+          params={makeSearchParams({ q: "phonics" })}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
+      expect(before?.startYear).toBeUndefined();
+
+      fireEvent.input(startYearInput(), { target: { value: "2015" } });
+
+      const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
+      expect(after?.startYear).toBe(2015);
+      expect(after?.q).toBe("phonics");
     });
   });
 
@@ -706,6 +964,8 @@ describe("FilterDrawer", () => {
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedCountryCodes={[]}
         appliedConceptFilters={initial}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -724,6 +984,8 @@ describe("FilterDrawer", () => {
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedCountryCodes={[]}
         appliedConceptFilters={next}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -735,6 +997,8 @@ describe("FilterDrawer", () => {
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedCountryCodes={[]}
         appliedConceptFilters={next}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -758,6 +1022,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={makeSearchParams({ q: "phonics" })}
         onApply={noop}
         onCancel={noop}
@@ -786,6 +1052,8 @@ describe("FilterDrawer", () => {
         schemes={TWO_SCHEMES}
         appliedCountryCodes={[]}
         appliedConceptFilters={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={makeSearchParams({ q: "phonics" })}
         onApply={noop}
         onCancel={noop}
@@ -795,7 +1063,6 @@ describe("FilterDrawer", () => {
     const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(before?.countryCodes).toEqual([]);
 
-    fireEvent.click(screen.getByRole("button", { name: /Country/ }));
     fireEvent.click(screen.getByLabelText("Germany"));
 
     // Post-toggle: the most recent call carries the freshly-drafted country.

@@ -18,12 +18,24 @@ import {
   summary as countrySummary,
   type CountryFilterState,
 } from "./countryFilterState";
+import { YearRangeFilter } from "./YearRangeFilter";
+import {
+  validate as validateYearRange,
+  isYearInputReady,
+  emptyYearRangeState,
+  isDirty as isYearDirty,
+  summary as yearSummary,
+  yearRangeFromParams,
+  type YearRangeFilterState,
+} from "./yearRangeFilterState";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import "./FilterDrawer.css";
 
 export interface AppliedFilters {
   conceptFilters: readonly (readonly string[])[];
   countryCodes: readonly string[];
+  startYear: number | undefined;
+  endYear: number | undefined;
 }
 
 interface FilterDrawerProps {
@@ -31,8 +43,10 @@ interface FilterDrawerProps {
   schemes: ConceptScheme[];
   appliedConceptFilters: readonly (readonly string[])[];
   appliedCountryCodes: readonly string[];
+  appliedStartYear: number | undefined;
+  appliedEndYear: number | undefined;
   // Drives the facet-count fetch alongside the draft. Owned by SearchPage as
-  // the source of truth for q / years / annotations.
+  // the source of truth for q / annotations.
   params: SearchParams;
   onApply: (next: AppliedFilters) => void;
   onCancel: () => void;
@@ -105,6 +119,8 @@ function FilterDrawerPanel({
   schemes,
   appliedConceptFilters,
   appliedCountryCodes,
+  appliedStartYear,
+  appliedEndYear,
   params,
   onApply,
   onCancel,
@@ -114,6 +130,9 @@ function FilterDrawerPanel({
   );
   const [countryDraft, setCountryDraft] = useState<CountryFilterState>(() =>
     countryStateFromCodes(appliedCountryCodes),
+  );
+  const [yearDraft, setYearDraft] = useState<YearRangeFilterState>(() =>
+    yearRangeFromParams(appliedStartYear, appliedEndYear),
   );
   const panelRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<Element | null>(document.activeElement);
@@ -127,10 +146,22 @@ function FilterDrawerPanel({
     () => selectedCodes(countryDraft),
     [countryDraft],
   );
+  const yearValidation = useMemo(() => validateYearRange(yearDraft), [yearDraft]);
+  const startReady = isYearInputReady(yearDraft.start);
+  const endReady = isYearInputReady(yearDraft.end);
+  // Feed the draft year range into the facet-count fetch when each input is
+  // ready (empty or a full 4-digit year) so the preview narrows alongside the
+  // user's edits; fall back to the applied URL values for any in-flight
+  // partial input. parseSearchParams already guarantees the applied values
+  // are self-consistent.
   const facetParams: SearchParams = {
     ...params,
     conceptFilters: draftConceptFilters,
     countryCodes: draftCountryCodes,
+    startYear:
+      yearValidation.ok && startReady ? yearValidation.startYear : appliedStartYear,
+    endYear:
+      yearValidation.ok && endReady ? yearValidation.endYear : appliedEndYear,
   };
   const {
     counts: facetCounts,
@@ -180,18 +211,24 @@ function FilterDrawerPanel({
   function handleReset() {
     setDraft(new Map());
     setCountryDraft(emptyCountryState());
+    setYearDraft(emptyYearRangeState());
   }
 
   function handleApply() {
+    if (!yearValidation.ok) return;
     onApply({
       conceptFilters: draftConceptFilters,
       countryCodes: draftCountryCodes,
+      startYear: yearValidation.startYear,
+      endYear: yearValidation.endYear,
     });
   }
 
-  const dirty =
+  const facetsDirty =
     !codeArraysEqual(draftCountryCodes, appliedCountryCodes) ||
     !conceptFiltersEqual(draftConceptFilters, appliedConceptFilters);
+  const yearDirty = isYearDirty(yearDraft, appliedStartYear, appliedEndYear);
+  const canApply = (facetsDirty || yearDirty) && yearValidation.ok;
 
   return (
     <div class="filter-drawer" role="presentation">
@@ -229,7 +266,18 @@ function FilterDrawerPanel({
               Investigation counts unavailable.
             </div>
           )}
-          <FilterCard title="Country" summary={countrySummary(countryDraft)}>
+          <FilterCard
+            title="Publication year"
+            summary={yearSummary(yearDraft)}
+            defaultExpanded
+          >
+            <YearRangeFilter state={yearDraft} onChange={setYearDraft} />
+          </FilterCard>
+          <FilterCard
+            title="Country"
+            summary={countrySummary(countryDraft)}
+            defaultExpanded
+          >
             <CountryFilter
               state={countryDraft}
               onChange={setCountryDraft}
@@ -267,7 +315,7 @@ function FilterDrawerPanel({
             type="button"
             class="filter-drawer__btn filter-drawer__btn--apply"
             onClick={handleApply}
-            disabled={!dirty}
+            disabled={!canApply}
           >
             Show results
           </button>

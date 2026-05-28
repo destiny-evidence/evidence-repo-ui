@@ -182,14 +182,16 @@ describe("SearchPage", () => {
     expect(window.location.search).toContain("q=phonics");
   });
 
-  test("year-only filter shows meta-bar count without 'for' framing", async () => {
+  test("year-only filter contributes to Refine badge, not the meta-bar text", async () => {
     history.replaceState(null, "", "/esea?start_year=2015");
+    mockVocab.mockReturnValue(vocabWith([OUTCOME_SCHEME_FIXTURE]));
     mockBoth({ results: makeResult(120, ["r1"]) });
     renderSearchPage();
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-    expect(screen.getByText(/results from/i)).toHaveTextContent(/120 results from 2015/i);
+    expect(screen.queryByText(/from 2015/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/results for/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Refine\s*1/ })).toBeInTheDocument();
   });
 
   test("URL params on mount drive the fetch", async () => {
@@ -303,53 +305,22 @@ describe("SearchPage", () => {
     expect(screen.getByText(/results for/i)).toHaveTextContent(/10,000\+ results for “education”/i);
   });
 
-  test("changing sort commits unsubmitted draft query and year filters", async () => {
+  test("changing sort commits an unsubmitted draft query", async () => {
     // Regression: previously the sort dropdown navigated using URL params
-    // only, dropping any text/year edits the user hadn't yet submitted.
+    // only, dropping any text edits the user hadn't yet submitted.
     mockBoth({ results: makeResult(5721, ["r1"]) });
     renderSearchPage();
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
     fireEvent.input(screen.getByRole("searchbox"), { target: { value: "literacy" } });
-    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2001" } });
-    fireEvent.input(screen.getByLabelText(/end year/i), { target: { value: "2010" } });
 
     fireEvent.change(screen.getByLabelText(/sort results/i), { target: { value: "oldest" } });
 
     await waitFor(() => expect(window.location.search).toContain("sort=oldest"));
     expect(window.location.search).toContain("q=literacy");
-    expect(window.location.search).toContain("start_year=2001");
-    expect(window.location.search).toContain("end_year=2010");
   });
 
-  test("invalid year range blocks submit and shows validation message", async () => {
-    mockBoth({ results: makeResult(5721, ["r1"]) });
-    renderSearchPage();
-    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-
-    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2024" } });
-    fireEvent.input(screen.getByLabelText(/end year/i), { target: { value: "2010" } });
-    fireEvent.click(screen.getByRole("button", { name: /search/i }));
-
-    expect(screen.getByRole("alert")).toHaveTextContent(/start year must not exceed end year/i);
-    expect(window.location.search).toBe("");
-  });
-
-  test("validation error clears when user edits a year field", async () => {
-    mockBoth({ results: makeResult(5721, ["r1"]) });
-    renderSearchPage();
-    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-
-    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2024" } });
-    fireEvent.input(screen.getByLabelText(/end year/i), { target: { value: "2010" } });
-    fireEvent.click(screen.getByRole("button", { name: /search/i }));
-    expect(screen.getByRole("alert")).toBeInTheDocument();
-
-    fireEvent.input(screen.getByLabelText(/start year/i), { target: { value: "2000" } });
-    expect(screen.queryByRole("alert")).toBeNull();
-  });
-
-  test("drafts resync when the URL changes externally (back/forward)", async () => {
+  test("draft Q resyncs when the URL changes externally (back/forward)", async () => {
     history.replaceState(null, "", "/esea?q=alpha");
     mockBoth({ results: makeResult(5721, ["r1"]) });
     renderSearchPage();
@@ -359,7 +330,6 @@ describe("SearchPage", () => {
     window.dispatchEvent(new PopStateEvent("popstate"));
 
     await waitFor(() => expect(screen.getByRole("searchbox")).toHaveValue("beta"));
-    expect(screen.getByLabelText(/start year/i)).toHaveValue("2020");
   });
 
   test("search failure: renders retry, retry refetches without URL change", async () => {
@@ -424,7 +394,7 @@ describe("SearchPage", () => {
       mockVocab.mockReturnValue(vocabWith([OUTCOME_SCHEME_FIXTURE]));
     });
 
-    test("clicking Refine commits the search bar draft (q + years) to the URL before opening", async () => {
+    test("clicking Refine commits the search bar draft Q to the URL before opening", async () => {
       mockBoth({ results: makeResult(120, ["r1"]) });
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
@@ -446,22 +416,6 @@ describe("SearchPage", () => {
         );
       });
       expect(screen.getByRole("button", { name: "Show results" })).toBeDefined();
-    });
-
-    test("clicking Refine with an invalid year range does NOT open the drawer", async () => {
-      mockBoth({ results: makeResult(120, ["r1"]) });
-      renderSearchPage();
-      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-
-      // Start year after end year — commitDraft returns null.
-      const [startInput, endInput] = screen.getAllByPlaceholderText("YYYY");
-      fireEvent.input(startInput, { target: { value: "2020" } });
-      fireEvent.input(endInput, { target: { value: "2010" } });
-
-      fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
-
-      // Drawer didn't open — no Show results button in the DOM.
-      expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
     });
 
     test("URL with one facet → Refine shows count 1 and drawer opens with concept pre-checked", async () => {
