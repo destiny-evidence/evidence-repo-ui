@@ -116,9 +116,11 @@ export function CountryFilter({
         })}
         {visible.length === 0 && (
           <li class="country-filter__empty">
-            {query.trim() === ""
-              ? "No countries match the current filters."
-              : `No references for “${query.trim()}”.`}
+            {counts == null
+              ? "Loading countries…"
+              : query.trim() === ""
+                ? "No countries match the current filters."
+                : `No references for “${query.trim()}”.`}
           </li>
         )}
       </ul>

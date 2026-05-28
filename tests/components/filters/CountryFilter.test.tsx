@@ -19,11 +19,22 @@ describe("CountryFilter", () => {
     expect(screen.queryByLabelText("France")).toBeNull();
   });
 
-  test("counts === null + no selection → empty list with placeholder", () => {
+  test("counts === null + no selection → \"Loading countries…\" hint", () => {
     render(
       <CountryFilter
         state={emptyCountryState()}
         counts={null}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Loading countries/i)).toBeDefined();
+  });
+
+  test("counts loaded but empty + no selection → \"No countries match\" message", () => {
+    render(
+      <CountryFilter
+        state={emptyCountryState()}
+        counts={new Map()}
         onChange={vi.fn()}
       />,
     );
