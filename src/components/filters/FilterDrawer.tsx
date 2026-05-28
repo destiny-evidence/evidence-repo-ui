@@ -271,6 +271,8 @@ function FilterDrawerPanel({
           >
             <CountryFilter
               state={countryDraft}
+              counts={facetCounts?.countries ?? null}
+              countsLoading={facetCountsLoading}
               onChange={setCountryDraft}
             />
           </FilterCard>
@@ -285,7 +287,7 @@ function FilterDrawerPanel({
                 <ConceptSchemeFilter
                   scheme={scheme}
                   state={state}
-                  counts={facetCounts}
+                  counts={facetCounts?.concepts ?? null}
                   countsLoading={facetCountsLoading}
                   onChange={(next) => onSchemeChange(scheme, next)}
                 />

@@ -18,8 +18,6 @@ export interface SearchParams {
   // One `concept=` URL param per inner array; URIs in an array are OR'd
   // (must share a sibling set), arrays are AND'd.
   conceptFilters: readonly (readonly string[])[];
-  // ISO-3166 alpha-2. Translated to Lucene `linked_data_countries:` clauses
-  // at the API boundary since the backend has no structured country filter.
   countryCodes: readonly string[];
 }
 
@@ -53,8 +51,10 @@ export function parseSearchParams(search: string): SearchParams {
   // URLs with lower-case codes still match the right rows.
   const countryCodes: string[] = [];
   for (const raw of params.getAll("country")) {
-    const code = raw.trim().toUpperCase();
-    if (/^[A-Z]{2}$/.test(code)) countryCodes.push(code);
+    for (const piece of raw.split(",")) {
+      const code = piece.trim().toUpperCase();
+      if (/^[A-Z]{2}$/.test(code)) countryCodes.push(code);
+    }
   }
 
   const pageRaw = parseDecimalInt(params.get("page"));
@@ -78,7 +78,9 @@ export function toQueryString(params: SearchParams): string {
   for (const group of params.conceptFilters) {
     if (group.length > 0) out.append("concept", group.join(","));
   }
-  for (const code of params.countryCodes) out.append("country", code);
+  if (params.countryCodes.length > 0) {
+    out.append("country", params.countryCodes.join(","));
+  }
   if (params.startYear !== undefined) out.set("start_year", String(params.startYear));
   if (params.endYear !== undefined) out.set("end_year", String(params.endYear));
   if (params.sort !== undefined) out.set("sort", params.sort);
@@ -92,7 +94,7 @@ export function buildSearchUrl(communitySlug: string, params: SearchParams): str
 }
 
 // "*" substitution satisfies the backend's `min_length=1` constraint when
-// the user hasn't typed anything and has no country filter.
+// the user hasn't typed anything.
 export function toExportSearchQuery(
   params: SearchParams,
   annotations: string[] | undefined,
@@ -109,21 +111,8 @@ export function toExportSearchQuery(
   if (params.conceptFilters.length > 0) {
     filters.conceptFilters = params.conceptFilters;
   }
-  const query = buildLuceneQuery(params.q, params.countryCodes) || "*";
-  return { query, filters };
-}
-
-// Base is paren-wrapped because Lucene binds AND tighter than OR:
-// `a OR b AND (f)` would parse as `a OR (b AND (f))`. Empty base → `*`.
-export function buildLuceneQuery(
-  q: string,
-  countryCodes: readonly string[],
-): string {
-  const trimmed = q.trim();
-  if (countryCodes.length === 0) return trimmed;
-  const base = trimmed === "" ? "*" : `(${trimmed})`;
-  const countryClause = countryCodes
-    .map((c) => `linked_data_countries:${c}`)
-    .join(" OR ");
-  return `${base} AND (${countryClause})`;
+  if (params.countryCodes.length > 0) {
+    filters.countryCodes = params.countryCodes;
+  }
+  return { query: params.q.trim() || "*", filters };
 }

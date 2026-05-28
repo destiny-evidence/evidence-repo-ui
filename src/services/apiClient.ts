@@ -6,7 +6,7 @@ import type {
   SearchResult,
 } from "@/types/models";
 
-export type FacetType = "concepts";
+export type FacetType = "concepts" | "countries";
 
 export interface SearchFilters {
   page?: number;
@@ -17,6 +17,9 @@ export interface SearchFilters {
   // One `concept=` URL param per inner array; URIs in an array are OR'd
   // (must share a sibling set in the vocab), arrays are AND'd.
   conceptFilters?: readonly (readonly string[])[];
+  // ISO-3166 alpha-2 codes; comma-joined into a single `country=` param. The
+  // facet endpoint accepts only one OR'd country filter, which this satisfies.
+  countryCodes?: readonly string[];
 }
 
 // Mirrors parseSearchParams: page must be >= 1, years > 0, all safe integers.
@@ -34,9 +37,20 @@ function appendConceptFilters(
   }
 }
 
+function appendCountryCodes(
+  params: URLSearchParams,
+  countryCodes: readonly string[] | undefined,
+): void {
+  if (countryCodes && countryCodes.length > 0) {
+    params.append("country", countryCodes.join(","));
+  }
+}
+
+type SharedFilterFields = "startYear" | "endYear" | "annotation" | "conceptFilters" | "countryCodes";
+
 function buildSharedSearchParams(
   query: string | undefined,
-  filters: Pick<SearchFilters, "startYear" | "endYear" | "annotation" | "conceptFilters">,
+  filters: Pick<SearchFilters, SharedFilterFields>,
 ): URLSearchParams {
   const normalizedQuery = query?.trim();
   // Browse-mode shim: empty q would produce "(q) AND ..." on the backend,
@@ -50,6 +64,7 @@ function buildSharedSearchParams(
   if (isPositiveSafeInt(filters.endYear)) params.set("end_year", String(filters.endYear));
   for (const a of filters.annotation ?? []) params.append("annotation", a);
   appendConceptFilters(params, filters.conceptFilters);
+  appendCountryCodes(params, filters.countryCodes);
   return params;
 }
 
@@ -65,7 +80,7 @@ export async function searchReferences(
 
 export async function searchReferenceFacets(
   query: string | undefined,
-  filters: Pick<SearchFilters, "startYear" | "endYear" | "annotation" | "conceptFilters">,
+  filters: Pick<SearchFilters, SharedFilterFields>,
   facets: FacetType[],
   options: { vocabularyUrl?: string } = {},
 ): Promise<ReferenceFacetResult> {
@@ -99,6 +114,7 @@ export async function requestSearchExport(
   for (const a of filters.annotation ?? []) params.append("annotation", a);
   for (const s of filters.sort ?? []) params.append("sort", s);
   appendConceptFilters(params, filters.conceptFilters);
+  appendCountryCodes(params, filters.countryCodes);
   return api.post<SearchExportRead>(
     `/v1/references/search/exports/?${params.toString()}`,
     undefined,

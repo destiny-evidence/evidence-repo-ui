@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
 import { searchReferences, type SearchFilters } from "@/services/apiClient";
-import { SORT_BACKEND, buildLuceneQuery } from "@/services/searchParams";
+import { SORT_BACKEND } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
@@ -63,11 +63,11 @@ export function useSearch(params: SearchParams): {
       endYear: params.endYear,
       annotation: community.defaultAnnotations,
       conceptFilters: params.conceptFilters,
+      countryCodes: params.countryCodes,
     };
     if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
 
-    const wireQuery = buildLuceneQuery(params.q, params.countryCodes);
-    searchReferences(wireQuery || undefined, filters)
+    searchReferences(params.q || undefined, filters)
       .then((r) => { if (!cancelled) setResults(r); })
       .catch((e) => {
         if (cancelled) return;

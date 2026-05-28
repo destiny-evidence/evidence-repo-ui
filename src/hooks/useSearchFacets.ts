@@ -1,9 +1,13 @@
 import { useEffect, useState } from "preact/hooks";
 import { searchReferenceFacets } from "@/services/apiClient";
-import { buildLuceneQuery } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import { toTurtleUrl } from "@/services/vocabulary/vocabularyService";
 import type { SearchParams } from "@/services/searchParams";
+
+export interface FacetCounts {
+  concepts: ReadonlyMap<string, number>;
+  countries: ReadonlyMap<string, number>;
+}
 
 // Omits `page` and `sort` — facet counts are invariant under both.
 function paramsKey(
@@ -23,7 +27,7 @@ function paramsKey(
 }
 
 export function useSearchFacets(params: SearchParams): {
-  counts: ReadonlyMap<string, number> | null;
+  counts: FacetCounts | null;
   loading: boolean;
   error: Error | null;
 } {
@@ -33,7 +37,7 @@ export function useSearchFacets(params: SearchParams): {
     community?.slug ?? "",
     community?.defaultAnnotations ?? [],
   );
-  const [counts, setCounts] = useState<ReadonlyMap<string, number> | null>(null);
+  const [counts, setCounts] = useState<FacetCounts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -45,26 +49,30 @@ export function useSearchFacets(params: SearchParams): {
     setError(null);
     setLoading(true);
 
-    const wireQuery = buildLuceneQuery(params.q, params.countryCodes);
     searchReferenceFacets(
-      wireQuery || undefined,
+      params.q || undefined,
       {
         startYear: params.startYear,
         endYear: params.endYear,
         annotation: community.defaultAnnotations,
         conceptFilters: params.conceptFilters,
+        countryCodes: params.countryCodes,
       },
-      ["concepts"],
+      ["concepts", "countries"],
       // Backend wants the Turtle vocab; the env URL is the JSON-LD one.
       { vocabularyUrl: toTurtleUrl(community.vocabularyUrl) },
     )
       .then((r) => {
         if (cancelled) return;
-        const map = new Map<string, number>();
+        const conceptCounts = new Map<string, number>();
         for (const { concept, count } of r.concepts ?? []) {
-          map.set(concept, count);
+          conceptCounts.set(concept, count);
         }
-        setCounts(map);
+        const countryCounts = new Map<string, number>();
+        for (const { country, count } of r.countries ?? []) {
+          countryCounts.set(country, count);
+        }
+        setCounts({ concepts: conceptCounts, countries: countryCounts });
       })
       .catch((e) => {
         if (cancelled) return;

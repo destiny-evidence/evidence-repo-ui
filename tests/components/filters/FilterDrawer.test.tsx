@@ -27,7 +27,15 @@ const mockUseSearchFacets = vi.mocked(useSearchFacets);
 
 const defaultParams = makeSearchParams();
 
-function setCounts(counts: ReadonlyMap<string, number> | null, loading = false) {
+function setCounts(
+  conceptCounts: ReadonlyMap<string, number> | null,
+  loading = false,
+  countryCounts: ReadonlyMap<string, number> = new Map(),
+) {
+  const counts =
+    conceptCounts == null
+      ? null
+      : { concepts: conceptCounts, countries: countryCounts };
   mockUseSearchFacets.mockReturnValue({ counts, loading, error: null });
 }
 

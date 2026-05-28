@@ -27,49 +27,71 @@ function result(...pairs: [string, number][]): ReferenceFacetResult {
   return { concepts: pairs.map(([concept, count]) => ({ concept, count })) };
 }
 
+function countryResult(...pairs: [string, number][]): ReferenceFacetResult {
+  return { countries: pairs.map(([country, count]) => ({ country, count })) };
+}
+
 beforeEach(() => {
   mockFacets.mockReset();
   window.history.replaceState(null, "", "/");
 });
 
 describe("useSearchFacets", () => {
-  test("fetches on mount with q + community annotations", async () => {
+  test("fetches on mount with q + community annotations + both facet types", async () => {
     mockFacets.mockResolvedValue(result(["ex:A", 12]));
     const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(hook.current.loading).toBe(false));
-    expect(hook.current.counts?.get("ex:A")).toBe(12);
+    expect(hook.current.counts?.concepts.get("ex:A")).toBe(12);
+    // Turtle URL ends in .ttl (env URL is the .jsonld form; the hook swaps it).
     expect(mockFacets).toHaveBeenCalledWith(
       "phonics",
       expect.objectContaining({
         annotation: ["domain-inclusion/jacobs-education"],
         conceptFilters: [],
       }),
-      ["concepts"],
-      expect.objectContaining({ vocabularyUrl: expect.any(String) }),
+      ["concepts", "countries"],
+      expect.objectContaining({
+        vocabularyUrl: expect.stringMatching(/\.ttl$/),
+      }),
     );
   });
 
-  test("converts the SDK response array to a Map keyed by concept URI", async () => {
-    mockFacets.mockResolvedValue(result(["ex:A", 1], ["ex:B", 2]));
+  test("parses both concept and country buckets into their respective Maps", async () => {
+    mockFacets.mockResolvedValue({
+      concepts: [{ concept: "ex:A", count: 1 }, { concept: "ex:B", count: 2 }],
+      countries: [{ country: "DE", count: 50 }, { country: "FR", count: 30 }],
+    });
     const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(hook.current.counts).not.toBeNull());
-    expect(hook.current.counts?.size).toBe(2);
-    expect(hook.current.counts?.get("ex:A")).toBe(1);
-    expect(hook.current.counts?.get("ex:B")).toBe(2);
+    expect(hook.current.counts?.concepts.get("ex:A")).toBe(1);
+    expect(hook.current.counts?.concepts.get("ex:B")).toBe(2);
+    expect(hook.current.counts?.countries.get("DE")).toBe(50);
+    expect(hook.current.counts?.countries.get("FR")).toBe(30);
   });
 
-  test("handles a response with no concepts field as an empty Map", async () => {
+  test("handles a response with no facet fields as empty Maps", async () => {
     mockFacets.mockResolvedValue({});
     const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(hook.current.loading).toBe(false));
     expect(hook.current.counts).not.toBeNull();
-    expect(hook.current.counts?.size).toBe(0);
+    expect(hook.current.counts?.concepts.size).toBe(0);
+    expect(hook.current.counts?.countries.size).toBe(0);
+  });
+
+  test("parses country buckets even when concepts field is absent", async () => {
+    mockFacets.mockResolvedValue(countryResult(["DE", 50]));
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(hook.current.counts).not.toBeNull());
+    expect(hook.current.counts?.countries.get("DE")).toBe(50);
+    expect(hook.current.counts?.concepts.size).toBe(0);
   });
 
   test("does NOT refetch when only page changes", async () => {
@@ -137,14 +159,14 @@ describe("useSearchFacets", () => {
       },
     );
     resolvers[0](result(["ex:A", 10]));
-    await waitFor(() => expect(hook.current.counts?.get("ex:A")).toBe(10));
+    await waitFor(() => expect(hook.current.counts?.concepts.get("ex:A")).toBe(10));
 
     rerender({ p: { ...baseParams, q: "next" } });
-    expect(hook.current.counts?.get("ex:A")).toBe(10);
+    expect(hook.current.counts?.concepts.get("ex:A")).toBe(10);
     expect(hook.current.loading).toBe(true);
 
     resolvers[1](result(["ex:A", 20]));
-    await waitFor(() => expect(hook.current.counts?.get("ex:A")).toBe(20));
+    await waitFor(() => expect(hook.current.counts?.concepts.get("ex:A")).toBe(20));
   });
 
   test("clears counts to null on settled error", async () => {

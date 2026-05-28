@@ -3,7 +3,6 @@ import {
   parseSearchParams,
   toQueryString,
   buildSearchUrl,
-  buildLuceneQuery,
   toExportSearchQuery,
 } from "@/services/searchParams";
 import { makeSearchParams } from "../fixtures";
@@ -161,7 +160,14 @@ describe("parseSearchParams country codes", () => {
     expect(parseSearchParams("?country=DE").countryCodes).toEqual(["DE"]);
   });
 
-  test("multiple country= params → multiple codes in URL order", () => {
+  test("comma-separated value → multiple codes (OR semantics)", () => {
+    expect(parseSearchParams("?country=DE,FR").countryCodes).toEqual([
+      "DE",
+      "FR",
+    ]);
+  });
+
+  test("multiple country= params flatten into one OR'd list (legacy/lenient)", () => {
     expect(parseSearchParams("?country=DE&country=FR").countryCodes).toEqual([
       "DE",
       "FR",
@@ -169,12 +175,14 @@ describe("parseSearchParams country codes", () => {
   });
 
   test("upper-cases lower-case codes from hand-edited URLs", () => {
-    expect(parseSearchParams("?country=de").countryCodes).toEqual(["DE"]);
+    expect(parseSearchParams("?country=de,fr").countryCodes).toEqual([
+      "DE",
+      "FR",
+    ]);
   });
 
   test("rejects non-ISO-3166-alpha-2 values", () => {
-    expect(parseSearchParams("?country=DEU&country=1&country=").countryCodes)
-      .toEqual([]);
+    expect(parseSearchParams("?country=DEU,1,,DE").countryCodes).toEqual(["DE"]);
   });
 });
 
@@ -222,9 +230,9 @@ describe("toQueryString", () => {
     );
   });
 
-  test("emits one country= param per code in COUNTRIES order", () => {
+  test("emits a single comma-joined country= param (OR semantics)", () => {
     const p = makeSearchParams({ countryCodes: ["DE", "FR"] });
-    expect(toQueryString(p)).toBe("country=DE&country=FR");
+    expect(toQueryString(p)).toBe("country=DE%2CFR");
   });
 
   test("q comes before concept=, country=, and tail params", () => {
@@ -273,52 +281,6 @@ describe("buildSearchUrl", () => {
   });
 });
 
-describe("buildLuceneQuery", () => {
-  test.each([
-    {
-      label: "no countries, whitespace q → empty (trim + collapse)",
-      q: "   ",
-      codes: [],
-      expected: "",
-    },
-    {
-      label: "no countries, non-empty q → unchanged",
-      q: "phonics",
-      codes: [],
-      expected: "phonics",
-    },
-    {
-      label: "empty q + one country → * AND (clause)",
-      q: "",
-      codes: ["DE"],
-      expected: "* AND (linked_data_countries:DE)",
-    },
-    {
-      label: "empty q + multiple countries → * AND (OR-joined clauses)",
-      q: "",
-      codes: ["DE", "FR"],
-      expected:
-        "* AND (linked_data_countries:DE OR linked_data_countries:FR)",
-    },
-    {
-      label: "non-empty q wraps base",
-      q: "phonics",
-      codes: ["DE"],
-      expected: "(phonics) AND (linked_data_countries:DE)",
-    },
-    // Without the wrap, `phonics OR reading AND (...)` binds as
-    // `phonics OR (reading AND (...))` — wrong semantics.
-    {
-      label: "boolean base is wrapped (precedence)",
-      q: "phonics OR reading",
-      codes: ["DE"],
-      expected: "(phonics OR reading) AND (linked_data_countries:DE)",
-    },
-  ])("$label", ({ q, codes, expected }) => {
-    expect(buildLuceneQuery(q, codes)).toBe(expected);
-  });
-});
-
 describe("toExportSearchQuery", () => {
   test("no concept or country, non-empty q → existing behaviour preserved", () => {
     const p = makeSearchParams({ q: "phonics" });
@@ -329,18 +291,18 @@ describe("toExportSearchQuery", () => {
     expect(toExportSearchQuery(makeSearchParams(), ["dom-x"]).query).toBe("*");
   });
 
-  test("country present → '(base) AND (linked_data_countries:...)'", () => {
-    const p = makeSearchParams({ q: "phonics", countryCodes: ["DE"] });
-    expect(toExportSearchQuery(p, ["dom-x"]).query).toBe(
-      "(phonics) AND (linked_data_countries:DE)",
-    );
+  test("country filters travel as structured filter, not embedded in query", () => {
+    const p = makeSearchParams({ q: "phonics", countryCodes: ["DE", "FR"] });
+    const out = toExportSearchQuery(p, ["dom-x"]);
+    expect(out.query).toBe("phonics");
+    expect(out.filters.countryCodes).toEqual(["DE", "FR"]);
   });
 
-  test("country present + empty q → '* AND (...)'", () => {
+  test("country filters with empty q → '*' query, codes on filters", () => {
     const p = makeSearchParams({ countryCodes: ["DE"] });
-    expect(toExportSearchQuery(p, ["dom-x"]).query).toBe(
-      "* AND (linked_data_countries:DE)",
-    );
+    const out = toExportSearchQuery(p, ["dom-x"]);
+    expect(out.query).toBe("*");
+    expect(out.filters.countryCodes).toEqual(["DE"]);
   });
 
   test("concept filters travel as structured filter, not embedded in query", () => {
@@ -353,7 +315,7 @@ describe("toExportSearchQuery", () => {
     expect(out.filters.conceptFilters).toEqual([["https://x/A"]]);
   });
 
-  test("filters (annotation, years, sort) unaffected by facets", () => {
+  test("filters carry years + annotations + sort alongside structured countries", () => {
     const p = makeSearchParams({
       q: "phonics",
       startYear: 2010,
@@ -366,6 +328,7 @@ describe("toExportSearchQuery", () => {
       endYear: 2024,
       annotation: ["dom-x"],
       sort: ["-publication_year"],
+      countryCodes: ["DE"],
     });
   });
 });

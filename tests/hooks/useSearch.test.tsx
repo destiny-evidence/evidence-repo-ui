@@ -51,6 +51,7 @@ describe("useSearch", () => {
       endYear: undefined,
       annotation: ["domain-inclusion/jacobs-education"],
       conceptFilters: [],
+      countryCodes: [],
     });
   });
 
@@ -248,34 +249,34 @@ describe("useSearch", () => {
     expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  // Wire-query exact format is owned by searchParams unit tests.
-  test("threads conceptFilters into searchReferences filters and countries into the wire query", async () => {
+  test("threads conceptFilters + countryCodes through as structured filters", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const params = makeSearchParams({
       q: "phonics",
       conceptFilters: [
         ["https://vocab.esea.education/EducationLevelScheme/C00002"],
       ],
-      countryCodes: ["DE"],
+      countryCodes: ["DE", "FR"],
     });
     renderHook(() => useSearch(params), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
     expect(mockSearch).toHaveBeenCalledWith(
-      expect.stringContaining("linked_data_countries:DE"),
+      "phonics",
       expect.objectContaining({
         annotation: ["domain-inclusion/jacobs-education"],
         conceptFilters: [
           ["https://vocab.esea.education/EducationLevelScheme/C00002"],
         ],
+        countryCodes: ["DE", "FR"],
       }),
     );
   });
 
-  // Country-only search must still pass a wire query, not undefined — else
-  // the backend drops to browse mode and ignores the country filter.
-  test("empty q + country calls searchReferences with the synthesised wire query (not undefined)", async () => {
+  // Empty q passes undefined so the apiClient's browse-mode shim kicks in
+  // and the backend doesn't get an invalid empty Lucene query.
+  test("empty q with countryCodes calls searchReferences with q=undefined + countryCodes on filters", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const params = makeSearchParams({ countryCodes: ["DE"] });
     renderHook(() => useSearch(params), {
@@ -283,8 +284,8 @@ describe("useSearch", () => {
     });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
     expect(mockSearch).toHaveBeenCalledWith(
-      expect.stringContaining("linked_data_countries:DE"),
-      expect.anything(),
+      undefined,
+      expect.objectContaining({ countryCodes: ["DE"] }),
     );
   });
 

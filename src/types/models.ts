@@ -30,8 +30,14 @@ export interface ConceptFacetCount {
   count: number;
 }
 
+export interface CountryFacetCount {
+  country: string;
+  count: number;
+}
+
 export interface ReferenceFacetResult {
   concepts?: ConceptFacetCount[];
+  countries?: CountryFacetCount[];
 }
 
 export interface ExternalIdentifier {
