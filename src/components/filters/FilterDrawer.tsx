@@ -54,10 +54,6 @@ interface FilterDrawerProps {
 
 type Draft = Map<string, ConceptSchemeFilterState>;
 
-// Serialise the concept draft into the structured `conceptFilters` shape:
-// for each scheme that has at least one selection, emit one or more
-// sibling-set groups via `toConceptFilterGroups`. The flat result is ordered
-// by scheme order, then preorder within each scheme — stable URLs.
 function draftToConceptFilters(
   draft: Draft,
   schemes: ConceptScheme[],
@@ -73,7 +69,6 @@ function draftToConceptFilters(
   return groups;
 }
 
-// Order-insensitive equality on country code arrays.
 function codeArraysEqual(
   a: readonly string[],
   b: readonly string[],
@@ -84,10 +79,8 @@ function codeArraysEqual(
   return true;
 }
 
-// Order-insensitive equality on structured concept filters. Two filter arrays
-// are equivalent if they contain the same set of sibling-groups, and each
-// group contains the same URIs (order within a group is incidental — backend
-// OR's them; order between groups is incidental — backend AND's them).
+// Order-insensitive: backend OR's within a group and AND's between groups,
+// so neither ordering is load-bearing for dirty-checking.
 function conceptFiltersEqual(
   a: readonly (readonly string[])[],
   b: readonly (readonly string[])[],
@@ -147,13 +140,11 @@ function FilterDrawerPanel({
     [countryDraft],
   );
   const yearValidation = useMemo(() => validateYearRange(yearDraft), [yearDraft]);
+  // Only feed each year into the preview fetch when its input is "ready"
+  // (empty or a complete 4-digit year) — partial typing like "20" shouldn't
+  // trigger a refetch per keystroke.
   const startReady = isYearInputReady(yearDraft.start);
   const endReady = isYearInputReady(yearDraft.end);
-  // Feed the draft year range into the facet-count fetch when each input is
-  // ready (empty or a full 4-digit year) so the preview narrows alongside the
-  // user's edits; fall back to the applied URL values for any in-flight
-  // partial input. parseSearchParams already guarantees the applied values
-  // are self-consistent.
   const facetParams: SearchParams = {
     ...params,
     conceptFilters: draftConceptFilters,

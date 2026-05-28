@@ -66,9 +66,6 @@ export function useSearch(params: SearchParams): {
     };
     if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
 
-    // Country codes get folded into the Lucene q at the API boundary (backend
-    // has no structured country filter); concept filters travel separately on
-    // `filters`.
     const wireQuery = buildLuceneQuery(params.q, params.countryCodes);
     searchReferences(wireQuery || undefined, filters)
       .then((r) => { if (!cancelled) setResults(r); })

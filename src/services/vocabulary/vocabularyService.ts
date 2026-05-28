@@ -41,12 +41,10 @@ export interface VocabularyData {
 const SKOS_CONCEPT = "skos:Concept";
 const SKOS_CONCEPT_SCHEME = "skos:ConceptScheme";
 
-/** Normalize a vocabulary URL to its .jsonld form. */
 function toJsonLdUrl(vocabularyUrl: string): string {
   return toExtension(vocabularyUrl, "jsonld");
 }
 
-/** Normalize a vocabulary URL to its .ttl form. */
 export function toTurtleUrl(vocabularyUrl: string): string {
   return toExtension(vocabularyUrl, "ttl");
 }

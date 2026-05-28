@@ -248,9 +248,7 @@ describe("useSearch", () => {
     expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  // Witnesses that concept filters travel as structured `conceptFilters` and
-  // country codes get folded into the Lucene wire query — exact join/
-  // precedence format is owned by searchParams unit tests.
+  // Wire-query exact format is owned by searchParams unit tests.
   test("threads conceptFilters into searchReferences filters and countries into the wire query", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const params = makeSearchParams({
@@ -275,9 +273,8 @@ describe("useSearch", () => {
     );
   });
 
-  // Pins the composition for empty q + country: useSearch must pass the
-  // synthesised wire query (not undefined) so the backend receives the
-  // country filter instead of dropping to browse mode.
+  // Country-only search must still pass a wire query, not undefined — else
+  // the backend drops to browse mode and ignores the country filter.
   test("empty q + country calls searchReferences with the synthesised wire query (not undefined)", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const params = makeSearchParams({ countryCodes: ["DE"] });

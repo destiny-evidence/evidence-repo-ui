@@ -236,9 +236,8 @@ describe("FilterDrawer", () => {
     expect(onApply).toHaveBeenCalledTimes(1);
     const applied = onApply.mock.calls[0][0] as AppliedFilters;
     expect(applied.countryCodes).toEqual([]);
-    // Journal Article (DocumentType) and Returns (Outcome) are top concepts
-    // of different schemes, so they emit two separate sibling-set groups —
-    // emitted in scheme order (Outcome first per TWO_SCHEMES).
+    // Concepts from different schemes → separate sibling-set groups, in
+    // scheme order (Outcome first per TWO_SCHEMES).
     expect(applied.conceptFilters).toEqual([
       ["https://vocab.esea.education/OutcomeScheme/C00130"],
       [URI_JOURNAL],
@@ -246,9 +245,6 @@ describe("FilterDrawer", () => {
   });
 
   test("toggling parent concept selects descendants via subtree semantics", () => {
-    // Sanity check that the drawer plumbs the scheme through to
-    // ConceptSchemeFilter correctly (which owns the subtree toggle), and that
-    // the auto-rollup parent + descendants land in disjoint sibling-set groups.
     const onApply = vi.fn();
     render(
       <FilterDrawer
@@ -463,9 +459,6 @@ describe("FilterDrawer", () => {
   });
 
   test("hydrates the draft from appliedConceptFilters on open", () => {
-    // appliedConceptFilters carries the URI for "Educational Outcomes and
-    // Learning"; the drawer should open with that concept already checked and
-    // Show results disabled (draft == applied).
     render(
       <FilterDrawer
         open={true}
@@ -552,9 +545,8 @@ describe("FilterDrawer", () => {
   }
 
   test("renders sibling counts on a scheme that already has a selection", () => {
-    // Backend now returns toggle-semantic counts, so siblings of a selected
-    // concept retain meaningful (non-zero) counts. The drawer no longer
-    // suppresses them.
+    // Toggle-semantic counts keep meaningful values for siblings of a
+    // selected concept; the drawer no longer suppresses them.
     setCounts(new Map<string, number>([
       [URI_LEARNING, 100],
       [URI_ACCESS, 50],
@@ -573,8 +565,7 @@ describe("FilterDrawer", () => {
         onCancel={noop}
       />,
     );
-    // Outcome scheme shows both Access (sibling, unselected, count 50) and
-    // Learning (selected, count 100) — two visible count badges in this card.
+    // Two badges in the Outcome card: Access (50) + Learning (100, selected).
     expect(
       countNodesInSchemeContaining(container, "Access to Education").length,
     ).toBe(2);
@@ -619,8 +610,7 @@ describe("FilterDrawer", () => {
       screen.getByLabelText(/^Educational Outcomes and Learning/),
     );
 
-    // After selection, both scheme's counts remain visible (Access + Learning
-    // in Outcome; Journal in DocumentType).
+    // After selection, both schemes' counts remain visible.
     expect(
       countNodesInSchemeContaining(container, "Access to Education").length,
     ).toBe(2);
@@ -1029,7 +1019,6 @@ describe("FilterDrawer", () => {
         onCancel={noop}
       />,
     );
-    // Pre-toggle: hook fired with empty concept filters and country codes.
     const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(before?.countryCodes).toEqual([]);
     expect(before?.conceptFilters).toEqual([]);
@@ -1037,8 +1026,6 @@ describe("FilterDrawer", () => {
 
     fireEvent.click(screen.getByLabelText("Journal Article"));
 
-    // Post-toggle: the most recent call carries the freshly-drafted concept
-    // filter as a structured sibling-set group.
     const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(after?.countryCodes).toEqual([]);
     expect(after?.conceptFilters).toEqual([[URI_JOURNAL]]);
@@ -1059,7 +1046,6 @@ describe("FilterDrawer", () => {
         onCancel={noop}
       />,
     );
-    // Pre-toggle: hook fired with no country codes.
     const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(before?.countryCodes).toEqual([]);
 

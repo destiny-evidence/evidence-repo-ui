@@ -373,10 +373,9 @@ describe("SearchPage", () => {
     // browse-mode hero with no indication that a filter is active.
     history.replaceState(null, "", "/esea?concept=EducationLevelScheme%2FC00002");
     mockSearch.mockImplementation((_q, filters) => {
-      // The corpus fetch goes through with no annotation filter; the search
-      // fetch comes through with the community annotations bound. Branch on
-      // that so the search hangs (never resolves) while the corpus call still
-      // resolves and the hero settles.
+      // Corpus call has no annotation filter; the search call carries the
+      // community annotations. Hang the search; let the corpus resolve so
+      // the hero settles.
       if (!filters?.annotation || filters.annotation.length === 0) {
         return Promise.resolve(makeResult(5721, ["corpus-ref"]));
       }
@@ -451,8 +450,7 @@ describe("SearchPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       await waitFor(() => {
-        // Learning and Returns are top-level siblings — they share a sibling
-        // set, so they land in one concept= group (comma-joined).
+        // Siblings comma-join into one concept= param.
         const conceptParams = new URLSearchParams(window.location.search).getAll("concept");
         expect(conceptParams).toHaveLength(1);
         expect(conceptParams[0]).toContain(URI_LEARNING);
@@ -488,9 +486,7 @@ describe("SearchPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       await waitFor(() => {
-        // Auto-rollup: clicking the parent selects parent + 2 children. They
-        // land in two disjoint sibling-set groups (one for the parent at the
-        // scheme-root level, one for the children under the parent).
+        // Auto-rollup: parent + 2 children land in two disjoint sibling-set groups.
         const conceptParams = new URLSearchParams(window.location.search).getAll("concept");
         expect(conceptParams).toHaveLength(2);
         const joined = conceptParams.join(",");
@@ -715,7 +711,6 @@ describe("SearchPage", () => {
         endYear: undefined,
         annotation: ["domain-inclusion/jacobs-education"],
       });
-      // No conceptFilters key when no concept selections are active.
       await waitFor(() =>
         expect(
           screen.getByRole("button", { name: /preparing/i }),
@@ -739,8 +734,7 @@ describe("SearchPage", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /export to excel/i }));
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
-      // Concept filter travels as structured `conceptFilters` on the filters
-      // arg, not embedded in the Lucene query.
+      // Concepts travel as structured filter, not embedded in the Lucene q.
       expect(mockRequestExport).toHaveBeenCalledWith("phonics", {
         startYear: undefined,
         endYear: undefined,

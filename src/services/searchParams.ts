@@ -15,14 +15,11 @@ export interface SearchParams {
   startYear: number | undefined;
   endYear: number | undefined;
   sort: SortOption | undefined;
-  // Structured concept filters. Each inner array is one `concept=` URL param,
-  // serialised as a comma-separated list of URIs. Within one inner array: OR
-  // (siblings under one broader). Between inner arrays: AND.
+  // One `concept=` URL param per inner array; URIs in an array are OR'd
+  // (must share a sibling set), arrays are AND'd.
   conceptFilters: readonly (readonly string[])[];
-  // ISO-3166 alpha-2 country codes. Each emits one `country=<XX>` URL param.
-  // Backend has no structured country filter yet — the API client translates
-  // these to `linked_data_countries:XX` Lucene clauses inside `q` at the
-  // request boundary.
+  // ISO-3166 alpha-2. Translated to Lucene `linked_data_countries:` clauses
+  // at the API boundary since the backend has no structured country filter.
   countryCodes: readonly string[];
 }
 
@@ -52,8 +49,8 @@ export function parseSearchParams(search: string): SearchParams {
     if (uris.length > 0) conceptFilters.push(uris);
   }
 
-  // Backend normalises to upper-case + strip; mirror so hand-edited URLs
-  // with lower-case codes still match the right rows.
+  // Upper-case + strip mirrors the backend's normalisation, so hand-edited
+  // URLs with lower-case codes still match the right rows.
   const countryCodes: string[] = [];
   for (const raw of params.getAll("country")) {
     const code = raw.trim().toUpperCase();
@@ -94,11 +91,8 @@ export function buildSearchUrl(communitySlug: string, params: SearchParams): str
   return qs ? `/${communitySlug}?${qs}` : `/${communitySlug}`;
 }
 
-// Maps a SearchParams + community annotations to the query/filters shape the
-// export endpoint expects. Country codes get folded into the Lucene query at
-// the API boundary; concept filters travel as structured `filters.conceptFilters`.
-// Substitutes "*" for an empty browse-mode query so the backend's
-// `min_length=1` constraint is satisfied.
+// "*" substitution satisfies the backend's `min_length=1` constraint when
+// the user hasn't typed anything and has no country filter.
 export function toExportSearchQuery(
   params: SearchParams,
   annotations: string[] | undefined,
@@ -119,10 +113,7 @@ export function toExportSearchQuery(
   return { query, filters };
 }
 
-// Folds country codes into a Lucene `q` string at the API boundary. Backend
-// has no structured country filter yet, so we still emit one paren-wrapped
-// `linked_data_countries:XX OR linked_data_countries:YY` clause AND'd onto the
-// base query. Base is paren-wrapped because Lucene binds AND tighter than OR:
+// Base is paren-wrapped because Lucene binds AND tighter than OR:
 // `a OR b AND (f)` would parse as `a OR (b AND (f))`. Empty base → `*`.
 export function buildLuceneQuery(
   q: string,

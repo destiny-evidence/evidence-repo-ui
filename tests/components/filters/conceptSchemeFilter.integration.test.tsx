@@ -55,9 +55,7 @@ describe("FilterCard + ConceptSchemeFilter integration", () => {
 
     expect(header.getAttribute("aria-expanded")).toBe("false");
     expect(screen.getByText("3 selected")).toBeDefined();
-    // Auto-rollup: clicking the parent selects it + both children. Each lands
-    // in its own sibling-set group (parent under the scheme root, children
-    // under the parent). Backend validates these as disjoint sibling sets.
+    // Auto-rollup: parent + descendants land in disjoint sibling-set groups.
     const groups: string[][] = JSON.parse(
       screen.getByTestId("groups").textContent ?? "[]",
     );
@@ -66,10 +64,8 @@ describe("FilterCard + ConceptSchemeFilter integration", () => {
       [URI_EDUCATION_FINANCE, URI_ENROLMENT],
     ]);
 
-    // Plumb the structured groups through the real searchParams pipeline.
-    // Catches silent contract drift in the URL encoder — e.g. a missing
-    // comma-join would split each URI into its own concept= param and
-    // violate the sibling-set rule.
+    // Round-trip through the URL — a missing comma-join would split each URI
+    // into its own concept= param and trip the backend's sibling-set rule.
     const params = makeSearchParams({ conceptFilters: groups });
     const url = "?" + toQueryString(params);
     expect(parseSearchParams(url).conceptFilters).toEqual(groups);

@@ -19,8 +19,7 @@ export function countryStateFromCodes(
   return brand(new Set(codes));
 }
 
-// Returned in COUNTRIES order, not insertion order, so the URL form is stable
-// across re-renders.
+// COUNTRIES-order, not insertion-order — keeps the URL stable across renders.
 export function selectedCodes(state: CountryFilterState): readonly string[] {
   const codes: string[] = [];
   for (const country of COUNTRIES) {

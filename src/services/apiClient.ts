@@ -14,10 +14,8 @@ export interface SearchFilters {
   endYear?: number;
   annotation?: string[];
   sort?: string[];
-  // One `concept=` URL param per inner array. Within an array: OR-joined as a
-  // comma-separated value. Between arrays: AND. The backend enforces (400 on
-  // violation) that URIs in one array must share a sibling set in the active
-  // vocabulary, and different arrays must have disjoint sibling sets.
+  // One `concept=` URL param per inner array; URIs in an array are OR'd
+  // (must share a sibling set in the vocab), arrays are AND'd.
   conceptFilters?: readonly (readonly string[])[];
 }
 
@@ -73,10 +71,8 @@ export async function searchReferenceFacets(
 ): Promise<ReferenceFacetResult> {
   const params = buildSharedSearchParams(query, filters);
   for (const f of facets) params.append("facet", f);
-  // Backend requires `vocabulary=` whenever concept filters are combined with a
-  // concept-facet request — that's what triggers the sibling-aware aggregation.
-  // Without concept filters the param is optional; we skip it to keep the URL
-  // tight.
+  // Backend requires `vocabulary=` when concept filters are present (triggers
+  // sibling-aware aggregation); it's optional otherwise, so skip it.
   if (
     options.vocabularyUrl &&
     filters.conceptFilters &&

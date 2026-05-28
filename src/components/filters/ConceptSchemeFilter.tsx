@@ -55,25 +55,14 @@ function ConceptItem({
   );
   const hasChildren = !!concept.narrower && concept.narrower.length > 0;
   const rawCount = counts?.get(concept.uri);
-  // Once any response has arrived, treat a concept missing from the response
-  // as count=0. Two backend paths drop here:
-  //   - sibling-aware aggregation enumerates every sibling explicitly and
-  //     returns 0-count buckets for siblings with no matches;
-  //   - standard terms aggregation only returns non-zero buckets, so a
-  //     concept absent from the response has 0 matches under the active
-  //     filter (assuming the response wasn't truncated by the bucket cap).
-  // Coercing missing → 0 keeps the disable/grey behaviour consistent across
-  // both paths. We deliberately key this on `counts != null` alone, not on
-  // `!countsLoading`: useSearchFacets preserves the prior Map across a
-  // refetch (dim-while-updating), so the rows that were greyed before stay
-  // greyed during the in-flight fetch rather than becoming clickable again.
+  // Once a response has arrived, a concept missing from it has 0 matches
+  // (standard terms aggregation omits 0-buckets). Key on `counts != null`
+  // alone so previously-greyed rows stay greyed through a refetch.
   const count: number | undefined =
     rawCount !== undefined ? rawCount : counts != null ? 0 : undefined;
   const selected = isSelected(state, concept.uri);
-  // A 0 on an unselected row means "selecting this would give 0 results" —
-  // disable to prevent a guaranteed-empty pick. A 0 on a selected row means
-  // "un-selecting this wouldn't change your results" — leave it enabled so
-  // the user can act on the signal.
+  // 0 + unselected = guaranteed-empty pick → disable. 0 + selected stays
+  // enabled so the user can un-tick a no-op filter.
   const isEmpty = count === 0 && !selected;
   const showCountBadge = count !== undefined && count > 0;
   const rowClass = `concept-scheme-filter__row${

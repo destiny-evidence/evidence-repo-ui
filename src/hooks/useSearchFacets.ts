@@ -45,9 +45,6 @@ export function useSearchFacets(params: SearchParams): {
     setError(null);
     setLoading(true);
 
-    // Country codes get folded into the Lucene q at the API boundary (backend
-    // has no structured country filter); concept filters travel separately as
-    // structured params on `filters`.
     const wireQuery = buildLuceneQuery(params.q, params.countryCodes);
     searchReferenceFacets(
       wireQuery || undefined,
@@ -58,9 +55,7 @@ export function useSearchFacets(params: SearchParams): {
         conceptFilters: params.conceptFilters,
       },
       ["concepts"],
-      // Backend consumes the Turtle serialisation of the vocab; the env-var
-      // canonical URL ends in `.jsonld` for the UI's own fetch, so swap the
-      // extension at the request boundary.
+      // Backend wants the Turtle vocab; the env URL is the JSON-LD one.
       { vocabularyUrl: toTurtleUrl(community.vocabularyUrl) },
     )
       .then((r) => {

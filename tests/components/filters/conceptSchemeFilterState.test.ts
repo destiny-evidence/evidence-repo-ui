@@ -382,11 +382,8 @@ describe("toConceptFilterGroups", () => {
     ]);
   });
 
-  // Auto-rollup case: clicking a parent selects it + every descendant. The
-  // parent ends up in its own top-level group; the children end up in a
-  // separate group keyed by the parent. These groups have disjoint sibling
-  // sets, which the backend accepts. Linchpin test — drift here would 400 on
-  // the backend.
+  // Auto-rollup leaves parent + descendants both selected; they must split
+  // into disjoint sibling-set groups or the backend 400s on overlap.
   test("a fully-selected subtree splits into separate sibling-set groups (parent vs descendants)", () => {
     const state = conceptSchemeStateFromUris([
       URI_ACCESS,
@@ -405,8 +402,7 @@ describe("toConceptFilterGroups", () => {
       URI_RETURNS,
       URI_EDUCATION_FINANCE,
     ]);
-    // Preorder walk visits Education_Finance (child of Access) before Learning
-    // / Returns (top-level siblings), so its group is emitted first.
+    // Preorder: Education_Finance (under Access) comes before Learning/Returns.
     expect(toConceptFilterGroups(state, OUTCOME_SCHEME_FIXTURE)).toEqual([
       [URI_EDUCATION_FINANCE],
       [URI_LEARNING, URI_RETURNS],

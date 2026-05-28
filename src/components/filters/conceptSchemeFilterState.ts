@@ -117,24 +117,17 @@ function walkConcepts(concepts: readonly Concept[]): Concept[] {
   return all;
 }
 
-// Bucket the scheme's selected URIs into sibling-set groups. Each group → one
-// `concept=` URL parameter. Group key is the URI of the common broader concept
-// (siblings under one parent); top concepts fall back to the scheme URI as a
-// synthetic parent so they bucket together — and stay disjoint from any other
-// scheme's top concepts. The auto-rollup invariant in `toggleConcept` means a
-// parent + every descendant can be selected simultaneously; they land in
-// separate groups (the parent under its grandparent, the descendants under
-// the parent), which the backend validates as disjoint sibling sets.
-// Within-group ordering follows the scheme's depth-first preorder so URLs are
-// stable across re-renders.
+// Buckets selections into sibling-set groups for the backend's `concept=`
+// param: one group per common broader URI, with top concepts keyed by the
+// scheme URI so they share a synthetic root. Auto-rollup can leave a parent
+// + every descendant selected; they land in separate groups (disjoint sibling
+// sets), which is what the backend validates.
 export function toConceptFilterGroups(
   state: ConceptSchemeFilterState,
   scheme: ConceptScheme,
 ): string[][] {
   if (state.size === 0) return [];
   const index = buildConceptIndex(scheme);
-  // Insertion order = first-seen-in-preorder, which means top-level siblings
-  // get bucketed first, then each deeper level as the walk descends.
   const groups = new Map<string, string[]>();
   for (const concept of walkConcepts(scheme.topConcepts)) {
     if (!state.has(concept.uri)) continue;
@@ -175,12 +168,8 @@ export function totalSelectedCount(
   return total;
 }
 
-// Reverse of `toConceptFilterGroups`, lifted to operate over the full
-// structured `conceptFilters` array: bucket every URI back into the scheme
-// that contains it. Inner-array grouping (which sibling set each URI belonged
-// to) is recoverable from the scheme tree, so we discard it on the way in.
-// URIs that don't belong to any of the supplied schemes are silently dropped —
-// defensive for stale URLs pointing at a vocabulary that has since changed.
+// URIs that don't belong to any supplied scheme are silently dropped —
+// defensive for stale URLs pointing at a vocab that has since changed.
 export function parseConceptFilters(
   conceptFilters: readonly (readonly string[])[],
   schemes: ConceptScheme[],

@@ -25,9 +25,6 @@
   color: var(--color-text-primary);
 }
 
-/* Toggle-semantic count of 0 on an unselected concept: picking it would
-   produce zero results. Grey the row and disable the checkbox to prevent
-   the dead-end click. */
 .concept-scheme-filter__row--empty {
   color: var(--color-text-tertiary);
   cursor: not-allowed;
