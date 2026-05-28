@@ -23,11 +23,7 @@ const COMMUNITIES: Community[] = [
       "VITE_ESEA_CONTEXT_URL",
       import.meta.env.VITE_ESEA_CONTEXT_URL,
     ),
-    filterExcludedSchemes: [
-      "evrepo:EffectSizeMetricScheme",
-      "evrepo:EstimateSourceScheme",
-      "esea:ImplementationDescriptionScheme",
-    ],
+    filterExcludedSchemes: ["esea:ImplementationDescriptionScheme"],
   },
 ];
 
