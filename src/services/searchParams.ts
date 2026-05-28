@@ -93,15 +93,13 @@ export function buildSearchUrl(communitySlug: string, params: SearchParams): str
   return qs ? `/${communitySlug}?${qs}` : `/${communitySlug}`;
 }
 
-// "*" substitution satisfies the backend's `min_length=1` constraint when
-// the user hasn't typed anything.
+// Maps a SearchParams + community annotations to the query/filters shape the
+// export endpoint expects. Substitutes "*" for an empty browse-mode query
+// so the backend's `min_length=1` constraint is satisfied.
 export function toExportSearchQuery(
   params: SearchParams,
   annotations: string[] | undefined,
-): {
-  query: string;
-  filters: Omit<SearchFilters, "page">;
-} {
+): { query: string; filters: Omit<SearchFilters, "page"> } {
   const filters: Omit<SearchFilters, "page"> = {
     startYear: params.startYear,
     endYear: params.endYear,

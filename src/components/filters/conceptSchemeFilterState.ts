@@ -108,7 +108,7 @@ export function toggleConcept(
   return brand(next);
 }
 
-function walkConcepts(concepts: readonly Concept[]): Concept[] {
+function walkConcepts(concepts: Concept[]): Concept[] {
   const all: Concept[] = [];
   for (const concept of concepts) {
     all.push(concept);

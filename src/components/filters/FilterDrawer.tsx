@@ -69,10 +69,7 @@ function draftToConceptFilters(
   return groups;
 }
 
-function codeArraysEqual(
-  a: readonly string[],
-  b: readonly string[],
-): boolean {
+function codeArraysEqual(a: readonly string[], b: readonly string[]): boolean {
   if (a.length !== b.length) return false;
   const seen = new Set(a);
   for (const x of b) if (!seen.has(x)) return false;

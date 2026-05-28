@@ -86,13 +86,9 @@ export async function searchReferenceFacets(
 ): Promise<ReferenceFacetResult> {
   const params = buildSharedSearchParams(query, filters);
   for (const f of facets) params.append("facet", f);
-  // Backend requires `vocabulary=` when concept filters are present (triggers
-  // sibling-aware aggregation); it's optional otherwise, so skip it.
-  if (
-    options.vocabularyUrl &&
-    filters.conceptFilters &&
-    filters.conceptFilters.length > 0
-  ) {
+  // `vocabulary=` is what triggers sibling-aware aggregation; only required
+  // when concept filters are active.
+  if (options.vocabularyUrl && filters.conceptFilters?.length) {
     params.set("vocabulary", options.vocabularyUrl);
   }
   return api.get<ReferenceFacetResult>(
