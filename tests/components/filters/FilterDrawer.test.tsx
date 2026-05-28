@@ -27,16 +27,20 @@ const mockUseSearchFacets = vi.mocked(useSearchFacets);
 
 const defaultParams = makeSearchParams();
 
-function setCounts(
-  conceptCounts: ReadonlyMap<string, number> | null,
+function setCounts({
+  concepts = new Map<string, number>(),
+  countries = new Map<string, number>(),
   loading = false,
-  countryCounts: ReadonlyMap<string, number> = new Map(),
-) {
-  const counts =
-    conceptCounts == null
-      ? null
-      : { concepts: conceptCounts, countries: countryCounts };
-  mockUseSearchFacets.mockReturnValue({ counts, loading, error: null });
+}: {
+  concepts?: ReadonlyMap<string, number>;
+  countries?: ReadonlyMap<string, number>;
+  loading?: boolean;
+} = {}) {
+  mockUseSearchFacets.mockReturnValue({
+    counts: { concepts, countries },
+    loading,
+    error: null,
+  });
 }
 
 beforeEach(() => {
@@ -512,7 +516,7 @@ describe("FilterDrawer", () => {
   });
 
   test("renders facet counts on schemes that have no selection", () => {
-    setCounts(new Map<string, number>([[URI_JOURNAL, 42]]));
+    setCounts({ concepts: new Map([[URI_JOURNAL, 42]]) });
     const { container } = render(
       <FilterDrawer
         open={true}
@@ -555,11 +559,13 @@ describe("FilterDrawer", () => {
   test("renders sibling counts on a scheme that already has a selection", () => {
     // Toggle-semantic counts keep meaningful values for siblings of a
     // selected concept; the drawer no longer suppresses them.
-    setCounts(new Map<string, number>([
-      [URI_LEARNING, 100],
-      [URI_ACCESS, 50],
-      [URI_JOURNAL, 7],
-    ]));
+    setCounts({
+      concepts: new Map([
+        [URI_LEARNING, 100],
+        [URI_ACCESS, 50],
+        [URI_JOURNAL, 7],
+      ]),
+    });
     const { container } = render(
       <FilterDrawer
         open={true}
@@ -586,11 +592,13 @@ describe("FilterDrawer", () => {
   });
 
   test("counts stay visible after toggling a concept in the same scheme", () => {
-    setCounts(new Map<string, number>([
-      [URI_ACCESS, 50],
-      [URI_LEARNING, 100],
-      [URI_JOURNAL, 7],
-    ]));
+    setCounts({
+      concepts: new Map([
+        [URI_ACCESS, 50],
+        [URI_LEARNING, 100],
+        [URI_JOURNAL, 7],
+      ]),
+    });
     const { container } = render(
       <FilterDrawer
         open={true}
@@ -651,6 +659,7 @@ describe("FilterDrawer", () => {
 
     test("selecting a country and applying emits a linked_data_countries facet", () => {
       const onApply = vi.fn();
+      setCounts({ countries: new Map([["DE", 230]]) });
       render(
         <FilterDrawer
           open={true}
@@ -664,7 +673,7 @@ describe("FilterDrawer", () => {
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByLabelText("Germany"));
+      fireEvent.click(screen.getByLabelText(/^Germany/));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       expect(onApply).toHaveBeenCalledTimes(1);
@@ -701,6 +710,7 @@ describe("FilterDrawer", () => {
     });
 
     test("Reset clears both scheme and country drafts", () => {
+      setCounts({ countries: new Map([["DE", 230]]) });
       render(
         <FilterDrawer
           open={true}
@@ -715,7 +725,7 @@ describe("FilterDrawer", () => {
         />,
       );
       fireEvent.click(screen.getByLabelText("Journal Article"));
-      fireEvent.click(screen.getByLabelText("Germany"));
+      fireEvent.click(screen.getByLabelText(/^Germany/));
 
       fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
 
@@ -723,12 +733,13 @@ describe("FilterDrawer", () => {
         (screen.getByLabelText("Journal Article") as HTMLInputElement).checked,
       ).toBe(false);
       expect(
-        (screen.getByLabelText("Germany") as HTMLInputElement).checked,
+        (screen.getByLabelText(/^Germany/) as HTMLInputElement).checked,
       ).toBe(false);
     });
 
     test("applies concept and country facets together", () => {
       const onApply = vi.fn();
+      setCounts({ countries: new Map([["FR", 12]]) });
       render(
         <FilterDrawer
           open={true}
@@ -743,7 +754,7 @@ describe("FilterDrawer", () => {
         />,
       );
       fireEvent.click(screen.getByLabelText("Journal Article"));
-      fireEvent.click(screen.getByLabelText("France"));
+      fireEvent.click(screen.getByLabelText(/^France/));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       const applied = onApply.mock.calls[0][0] as AppliedFilters;
@@ -1041,6 +1052,7 @@ describe("FilterDrawer", () => {
   });
 
   test("eager loading: toggling a country re-keys the facet hook with the new draft", () => {
+    setCounts({ countries: new Map([["DE", 230]]) });
     render(
       <FilterDrawer
         open={true}
@@ -1057,7 +1069,7 @@ describe("FilterDrawer", () => {
     const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(before?.countryCodes).toEqual([]);
 
-    fireEvent.click(screen.getByLabelText("Germany"));
+    fireEvent.click(screen.getByLabelText(/^Germany/));
 
     // Post-toggle: the most recent call carries the freshly-drafted country.
     const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];

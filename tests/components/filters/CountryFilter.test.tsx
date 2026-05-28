@@ -7,7 +7,19 @@ import {
 } from "@/components/filters/countryFilterState";
 
 describe("CountryFilter", () => {
-  test("renders the full country list when counts are null (no fetch yet)", () => {
+  test("counts === null (no fetch yet) → shows only selected codes", () => {
+    render(
+      <CountryFilter
+        state={countryStateFromCodes(["DE"])}
+        counts={null}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByLabelText("Germany")).toBeDefined();
+    expect(screen.queryByLabelText("France")).toBeNull();
+  });
+
+  test("counts === null + no selection → empty list with placeholder", () => {
     render(
       <CountryFilter
         state={emptyCountryState()}
@@ -15,10 +27,7 @@ describe("CountryFilter", () => {
         onChange={vi.fn()}
       />,
     );
-    // A few well-known codes from COUNTRIES.
-    expect(screen.getByLabelText("Germany")).toBeDefined();
-    expect(screen.getByLabelText("France")).toBeDefined();
-    expect(screen.getByLabelText("United Kingdom")).toBeDefined();
+    expect(screen.getByText(/No countries match the current filters/i)).toBeDefined();
   });
 
   test("renders count badge for countries present in the aggregation", () => {

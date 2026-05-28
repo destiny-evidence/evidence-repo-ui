@@ -28,21 +28,18 @@ function isPositiveSafeInt(n: number | undefined): n is number {
   return n !== undefined && Number.isSafeInteger(n) && n >= 1;
 }
 
-function appendConceptFilters(
+// concept and country are always serialised together — one `concept=` per
+// sibling group, one `country=` for the OR'd codes. Extend here when the
+// backend grows another structured filter (e.g. `country_wb_region=`).
+function appendStructuredFilters(
   params: URLSearchParams,
-  conceptFilters: readonly (readonly string[])[] | undefined,
+  filters: Pick<SearchFilters, "conceptFilters" | "countryCodes">,
 ): void {
-  for (const group of conceptFilters ?? []) {
+  for (const group of filters.conceptFilters ?? []) {
     if (group.length > 0) params.append("concept", group.join(","));
   }
-}
-
-function appendCountryCodes(
-  params: URLSearchParams,
-  countryCodes: readonly string[] | undefined,
-): void {
-  if (countryCodes && countryCodes.length > 0) {
-    params.append("country", countryCodes.join(","));
+  if (filters.countryCodes?.length) {
+    params.append("country", filters.countryCodes.join(","));
   }
 }
 
@@ -63,8 +60,7 @@ function buildSharedSearchParams(
   if (isPositiveSafeInt(filters.startYear)) params.set("start_year", String(filters.startYear));
   if (isPositiveSafeInt(filters.endYear)) params.set("end_year", String(filters.endYear));
   for (const a of filters.annotation ?? []) params.append("annotation", a);
-  appendConceptFilters(params, filters.conceptFilters);
-  appendCountryCodes(params, filters.countryCodes);
+  appendStructuredFilters(params, filters);
   return params;
 }
 
@@ -109,8 +105,7 @@ export async function requestSearchExport(
   if (isPositiveSafeInt(filters.endYear)) params.set("end_year", String(filters.endYear));
   for (const a of filters.annotation ?? []) params.append("annotation", a);
   for (const s of filters.sort ?? []) params.append("sort", s);
-  appendConceptFilters(params, filters.conceptFilters);
-  appendCountryCodes(params, filters.countryCodes);
+  appendStructuredFilters(params, filters);
   return api.post<SearchExportRead>(
     `/v1/references/search/exports/?${params.toString()}`,
     undefined,

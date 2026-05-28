@@ -1,12 +1,10 @@
 import { useMemo, useState } from "preact/hooks";
 import { MagnifierIcon } from "@/components/icons";
 import {
-  filterCountries,
   isSelected,
   toggleCountry,
   type CountryFilterState,
 } from "./countryFilterState";
-import { COUNTRIES, type Country } from "./countries";
 import "./CountryFilter.css";
 
 interface CountryFilterProps {
@@ -16,10 +14,27 @@ interface CountryFilterProps {
   onChange: (next: CountryFilterState) => void;
 }
 
+interface CountryRow {
+  code: string;
+  name: string;
+}
+
 const countFormatter = new Intl.NumberFormat();
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 
 function formatCount(n: number): string {
   return countFormatter.format(n);
+}
+
+function regionName(code: string): string {
+  return regionNames.of(code) ?? code;
+}
+
+// Diacritic-insensitive: typing "cote" must match "Côte d'Ivoire". Both sides
+// are NFD-normalised so the decomposed accent codepoint can be stripped before
+// the substring test.
+function fold(s: string): string {
+  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 }
 
 export function CountryFilter({
@@ -29,16 +44,29 @@ export function CountryFilter({
   onChange,
 }: CountryFilterProps) {
   const [query, setQuery] = useState("");
-  // Once counts have loaded, hide 0-count rows but keep selected ones so the
-  // user can un-tick them.
-  const inAggregation = useMemo<(c: Country) => boolean>(() => {
-    if (counts == null) return () => true;
-    return (c) => isSelected(state, c.code) || (counts.get(c.code) ?? 0) > 0;
+
+  // The visible list is derived from the aggregation plus any currently-
+  // selected codes (so the user can un-tick a selection even if it has no
+  // current matches). Pre-load (counts === null) and error states show only
+  // selected codes — there's no static country universe to fall back to.
+  const rows = useMemo<CountryRow[]>(() => {
+    const codes = new Set<string>(state);
+    if (counts != null) {
+      for (const [code, count] of counts) {
+        if (count > 0) codes.add(code);
+      }
+    }
+    const list: CountryRow[] = [];
+    for (const code of codes) list.push({ code, name: regionName(code) });
+    list.sort((a, b) => a.name.localeCompare(b.name));
+    return list;
   }, [counts, state]);
-  const visible = useMemo(
-    () => filterCountries(query, COUNTRIES).filter(inAggregation),
-    [query, inAggregation],
-  );
+
+  const visible = useMemo(() => {
+    const needle = fold(query.trim());
+    if (needle === "") return rows;
+    return rows.filter((r) => fold(r.name).includes(needle));
+  }, [rows, query]);
 
   return (
     <div class="country-filter">
