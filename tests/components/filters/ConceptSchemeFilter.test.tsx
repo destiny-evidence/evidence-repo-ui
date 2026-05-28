@@ -368,3 +368,137 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     expect(selectedUris(onChange.mock.calls[0][0])).toEqual([]);
   });
 });
+
+describe("ConceptSchemeFilter 0-count rendering", () => {
+  test("unselected concept with count=0 → disabled checkbox + row--empty class + no badge", () => {
+    const counts = new Map<string, number>([
+      [URI_ACCESS, 50],
+      [URI_EDUCATION_FINANCE, 0],
+    ]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        onChange={vi.fn()}
+      />,
+    );
+    const financeInput = screen.getByLabelText<HTMLInputElement>(
+      /^Education Finance/,
+    );
+    expect(financeInput.disabled).toBe(true);
+    const financeRow = financeInput.closest("label")!;
+    expect(financeRow.className).toContain("concept-scheme-filter__row--empty");
+    // No count badge on the 0-row.
+    expect(
+      financeRow.querySelector(".concept-scheme-filter__count"),
+    ).toBeNull();
+  });
+
+  test("selected concept with count=0 → checkbox stays enabled, badge still hidden", () => {
+    const counts = new Map<string, number>([[URI_EDUCATION_FINANCE, 0]]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={conceptSchemeStateFromUris([URI_EDUCATION_FINANCE])}
+        counts={counts}
+        onChange={vi.fn()}
+      />,
+    );
+    const financeInput = screen.getByLabelText<HTMLInputElement>(
+      /^Education Finance/,
+    );
+    expect(financeInput.disabled).toBe(false);
+    expect(financeInput.checked).toBe(true);
+    const financeRow = financeInput.closest("label")!;
+    expect(financeRow.className).not.toContain(
+      "concept-scheme-filter__row--empty",
+    );
+  });
+
+  test("count > 0 renders normally regardless of selection", () => {
+    const counts = new Map<string, number>([
+      [URI_ACCESS, 50],
+      [URI_EDUCATION_FINANCE, 10],
+    ]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        onChange={vi.fn()}
+      />,
+    );
+    const accessInput = screen.getByLabelText<HTMLInputElement>(
+      /^Access to Education/,
+    );
+    expect(accessInput.disabled).toBe(false);
+    expect(
+      accessInput.closest("label")!.className,
+    ).not.toContain("concept-scheme-filter__row--empty");
+  });
+
+  test("missing concept after counts have settled → treated as 0 (disabled + empty)", () => {
+    // Counts arrived with only Access; the standard terms aggregation omits
+    // 0-buckets, so missing-after-load is effectively 0. UI matches.
+    const counts = new Map<string, number>([[URI_ACCESS, 50]]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        countsLoading={false}
+        onChange={vi.fn()}
+      />,
+    );
+    const financeInput = screen.getByLabelText<HTMLInputElement>(
+      /^Education Finance/,
+    );
+    expect(financeInput.disabled).toBe(true);
+    expect(
+      financeInput.closest("label")!.className,
+    ).toContain("concept-scheme-filter__row--empty");
+  });
+
+  test("missing concept stays disabled across a refetch (dim-while-updating)", () => {
+    // useSearchFacets preserves the prior counts Map while a new fetch is
+    // in flight — keying the missing-as-0 coercion on `counts != null` alone
+    // means rows that were greyed before the refetch stay greyed during it,
+    // rather than briefly becoming clickable.
+    const counts = new Map<string, number>([[URI_ACCESS, 50]]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        countsLoading={true}
+        onChange={vi.fn()}
+      />,
+    );
+    const financeInput = screen.getByLabelText<HTMLInputElement>(
+      /^Education Finance/,
+    );
+    expect(financeInput.disabled).toBe(true);
+    expect(
+      financeInput.closest("label")!.className,
+    ).toContain("concept-scheme-filter__row--empty");
+  });
+
+  test("counts === null (no fetch yet) → all rows render normally", () => {
+    // Drawer just opened; the facet fetch hasn't returned anything. Nothing
+    // should be greyed yet — we don't know what the counts are.
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={null}
+        countsLoading={false}
+        onChange={vi.fn()}
+      />,
+    );
+    const financeInput = screen.getByLabelText<HTMLInputElement>(
+      /^Education Finance/,
+    );
+    expect(financeInput.disabled).toBe(false);
+  });
+});

@@ -54,17 +54,28 @@ function ConceptItem({
     </span>
   );
   const hasChildren = !!concept.narrower && concept.narrower.length > 0;
-  const count = counts?.get(concept.uri);
+  const rawCount = counts?.get(concept.uri);
+  // Once any response has arrived, treat a concept missing from the response
+  // as count=0. Two backend paths drop here:
+  //   - sibling-aware aggregation enumerates every sibling explicitly and
+  //     returns 0-count buckets for siblings with no matches;
+  //   - standard terms aggregation only returns non-zero buckets, so a
+  //     concept absent from the response has 0 matches under the active
+  //     filter (assuming the response wasn't truncated by the bucket cap).
+  // Coercing missing → 0 keeps the disable/grey behaviour consistent across
+  // both paths. We deliberately key this on `counts != null` alone, not on
+  // `!countsLoading`: useSearchFacets preserves the prior Map across a
+  // refetch (dim-while-updating), so the rows that were greyed before stay
+  // greyed during the in-flight fetch rather than becoming clickable again.
+  const count: number | undefined =
+    rawCount !== undefined ? rawCount : counts != null ? 0 : undefined;
   const selected = isSelected(state, concept.uri);
-  // Backend now returns toggle-semantic counts for every sibling, including
-  // 0-buckets. A 0 on an unselected row means "selecting this would give 0
-  // results" — disable to prevent a guaranteed-empty pick. A 0 on a selected
-  // row means "un-selecting this wouldn't change your results" — leave it
-  // enabled so the user can act on the signal. `count === undefined` covers
-  // both the initial load and any concept the backend didn't return a bucket
-  // for; we render those the same as today (no badge, no styling change).
+  // A 0 on an unselected row means "selecting this would give 0 results" —
+  // disable to prevent a guaranteed-empty pick. A 0 on a selected row means
+  // "un-selecting this wouldn't change your results" — leave it enabled so
+  // the user can act on the signal.
   const isEmpty = count === 0 && !selected;
-  const showCountBadge = count !== undefined && !isEmpty;
+  const showCountBadge = count !== undefined && count > 0;
   const rowClass = `concept-scheme-filter__row${
     isEmpty ? " concept-scheme-filter__row--empty" : ""
   }`;

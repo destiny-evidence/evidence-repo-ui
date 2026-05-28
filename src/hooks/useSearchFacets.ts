@@ -2,6 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import { searchReferenceFacets } from "@/services/apiClient";
 import { buildLuceneQuery } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
+import { toTurtleUrl } from "@/services/vocabulary/vocabularyService";
 import type { SearchParams } from "@/services/searchParams";
 
 // Omits `page` and `sort` — facet counts are invariant under both.
@@ -57,7 +58,10 @@ export function useSearchFacets(params: SearchParams): {
         conceptFilters: params.conceptFilters,
       },
       ["concepts"],
-      { vocabularyUrl: community.vocabularyUrl },
+      // Backend consumes the Turtle serialisation of the vocab; the env-var
+      // canonical URL ends in `.jsonld` for the UI's own fetch, so swap the
+      // extension at the request boundary.
+      { vocabularyUrl: toTurtleUrl(community.vocabularyUrl) },
     )
       .then((r) => {
         if (cancelled) return;
