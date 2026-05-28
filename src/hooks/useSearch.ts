@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
 import { searchReferences, type SearchFilters } from "@/services/apiClient";
-import { SORT_BACKEND, buildFacetedQuery } from "@/services/searchParams";
+import { SORT_BACKEND, buildLuceneQuery } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
@@ -22,7 +22,8 @@ function paramsKey(
     `sort=${params.sort ?? ""}`,
     `slug=${slug}`,
     `ann=${JSON.stringify(annotations)}`,
-    `facets=${JSON.stringify(params.searchFacets)}`,
+    `countries=${JSON.stringify(params.countryCodes)}`,
+    `concepts=${JSON.stringify(params.conceptFilters)}`,
   ].join("&");
 }
 
@@ -61,10 +62,14 @@ export function useSearch(params: SearchParams): {
       startYear: params.startYear,
       endYear: params.endYear,
       annotation: community.defaultAnnotations,
+      conceptFilters: params.conceptFilters,
     };
     if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
 
-    const wireQuery = buildFacetedQuery(params.q, params.searchFacets);
+    // Country codes get folded into the Lucene q at the API boundary (backend
+    // has no structured country filter); concept filters travel separately on
+    // `filters`.
+    const wireQuery = buildLuceneQuery(params.q, params.countryCodes);
     searchReferences(wireQuery || undefined, filters)
       .then((r) => { if (!cancelled) setResults(r); })
       .catch((e) => {

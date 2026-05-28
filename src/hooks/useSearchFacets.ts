@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { searchReferenceFacets } from "@/services/apiClient";
-import { buildFacetedQuery } from "@/services/searchParams";
+import { buildLuceneQuery } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchParams } from "@/services/searchParams";
 
@@ -16,7 +16,8 @@ function paramsKey(
     `end=${params.endYear ?? ""}`,
     `slug=${slug}`,
     `ann=${JSON.stringify(annotations)}`,
-    `facets=${JSON.stringify(params.searchFacets)}`,
+    `countries=${JSON.stringify(params.countryCodes)}`,
+    `concepts=${JSON.stringify(params.conceptFilters)}`,
   ].join("&");
 }
 
@@ -43,15 +44,20 @@ export function useSearchFacets(params: SearchParams): {
     setError(null);
     setLoading(true);
 
-    const wireQuery = buildFacetedQuery(params.q, params.searchFacets);
+    // Country codes get folded into the Lucene q at the API boundary (backend
+    // has no structured country filter); concept filters travel separately as
+    // structured params on `filters`.
+    const wireQuery = buildLuceneQuery(params.q, params.countryCodes);
     searchReferenceFacets(
       wireQuery || undefined,
       {
         startYear: params.startYear,
         endYear: params.endYear,
         annotation: community.defaultAnnotations,
+        conceptFilters: params.conceptFilters,
       },
       ["concepts"],
+      { vocabularyUrl: community.vocabularyUrl },
     )
       .then((r) => {
         if (cancelled) return;

@@ -11,7 +11,7 @@ vi.mock("@/hooks/useSearchFacets", () => ({
   })),
 }));
 
-import { FilterDrawer } from "@/components/filters/FilterDrawer";
+import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
 import { useSearchFacets } from "@/hooks/useSearchFacets";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { makeSearchParams } from "../../fixtures";
@@ -63,7 +63,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={false}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -77,7 +78,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -96,7 +98,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={makeSearchParams({ q: "phonics" })}
         onApply={noop}
         onCancel={noop}
@@ -114,7 +117,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -126,7 +130,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={makeSearchParams({ q: "*" })}
         onApply={noop}
         onCancel={noop}
@@ -145,7 +150,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={[scheme]}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -164,7 +170,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -179,7 +186,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -190,13 +198,14 @@ describe("FilterDrawer", () => {
     expect((apply as HTMLButtonElement).disabled).toBe(false);
   });
 
-  test("Show results fires onApply with one facet entry per non-empty scheme", () => {
+  test("Show results fires onApply with one sibling-set group per selection", () => {
     const onApply = vi.fn();
     render(
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={onApply}
         onCancel={noop}
@@ -207,23 +216,28 @@ describe("FilterDrawer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
     expect(onApply).toHaveBeenCalledTimes(1);
-    const facets = onApply.mock.calls[0][0] as string[];
-    expect(facets).toHaveLength(2);
-    expect(facets).toContain(
-      `linked_data_concepts:"https://vocab.esea.education/OutcomeScheme/C00130"`,
-    );
-    expect(facets).toContain(`linked_data_concepts:"${URI_JOURNAL}"`);
+    const applied = onApply.mock.calls[0][0] as AppliedFilters;
+    expect(applied.countryCodes).toEqual([]);
+    // Journal Article (DocumentType) and Returns (Outcome) are top concepts
+    // of different schemes, so they emit two separate sibling-set groups —
+    // emitted in scheme order (Outcome first per TWO_SCHEMES).
+    expect(applied.conceptFilters).toEqual([
+      ["https://vocab.esea.education/OutcomeScheme/C00130"],
+      [URI_JOURNAL],
+    ]);
   });
 
   test("toggling parent concept selects descendants via subtree semantics", () => {
     // Sanity check that the drawer plumbs the scheme through to
-    // ConceptSchemeFilter correctly (which owns the subtree toggle).
+    // ConceptSchemeFilter correctly (which owns the subtree toggle), and that
+    // the auto-rollup parent + descendants land in disjoint sibling-set groups.
     const onApply = vi.fn();
     render(
       <FilterDrawer
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={onApply}
         onCancel={noop}
@@ -232,10 +246,11 @@ describe("FilterDrawer", () => {
     fireEvent.click(screen.getByLabelText("Access to Education"));
     fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
-    const facet = (onApply.mock.calls[0][0] as string[])[0];
-    expect(facet).toContain(URI_ACCESS);
-    expect(facet).toContain(URI_EDUCATION_FINANCE);
-    expect(facet).toContain(URI_ENROLMENT);
+    const applied = onApply.mock.calls[0][0] as AppliedFilters;
+    expect(applied.conceptFilters).toEqual([
+      [URI_ACCESS],
+      [URI_EDUCATION_FINANCE, URI_ENROLMENT],
+    ]);
   });
 
   test("Reset clears the draft without closing the drawer", () => {
@@ -244,7 +259,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -275,7 +291,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -294,7 +311,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -310,7 +328,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -327,7 +346,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -348,7 +368,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -360,7 +381,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={false}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -379,7 +401,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -391,7 +414,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={false}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -400,16 +424,16 @@ describe("FilterDrawer", () => {
     expect(document.body.style.overflow).toBe("auto");
   });
 
-  test("hydrates the draft from appliedFacets on open", () => {
-    // appliedFacets carries the URI for "Educational Outcomes and Learning";
-    // the drawer should open with that concept already checked and Update
-    // Results disabled (draft == applied).
-    const appliedFacets = [`linked_data_concepts:"${URI_LEARNING}"`];
+  test("hydrates the draft from appliedConceptFilters on open", () => {
+    // appliedConceptFilters carries the URI for "Educational Outcomes and
+    // Learning"; the drawer should open with that concept already checked and
+    // Show results disabled (draft == applied).
     render(
       <FilterDrawer
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedFacets={appliedFacets}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[[URI_LEARNING]]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -425,13 +449,13 @@ describe("FilterDrawer", () => {
     ).toBe(true);
   });
 
-  test("toggling away from a hydrated selection enables Update Results", () => {
-    const appliedFacets = [`linked_data_concepts:"${URI_LEARNING}"`];
+  test("toggling away from a hydrated selection enables Show results", () => {
     render(
       <FilterDrawer
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedFacets={appliedFacets}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[[URI_LEARNING]]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -450,7 +474,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -482,10 +507,10 @@ describe("FilterDrawer", () => {
     return container.querySelectorAll(":not(*)");
   }
 
-  test("hides facet counts for a scheme once any concept in it is selected", () => {
-    // Hydrate the OutcomeScheme with one selection; counts for Outcome's
-    // concepts should disappear, but counts in the other scheme stay.
-    const appliedFacets = [`linked_data_concepts:"${URI_LEARNING}"`];
+  test("renders sibling counts on a scheme that already has a selection", () => {
+    // Backend now returns toggle-semantic counts, so siblings of a selected
+    // concept retain meaningful (non-zero) counts. The drawer no longer
+    // suppresses them.
     setCounts(new Map<string, number>([
       [URI_LEARNING, 100],
       [URI_ACCESS, 50],
@@ -495,15 +520,18 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={appliedFacets}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[[URI_LEARNING]]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
     );
+    // Outcome scheme shows both Access (sibling, unselected, count 50) and
+    // Learning (selected, count 100) — two visible count badges in this card.
     expect(
       countNodesInSchemeContaining(container, "Access to Education").length,
-    ).toBe(0);
+    ).toBe(2);
     const journalCounts = countNodesInSchemeContaining(
       container,
       "Journal Article",
@@ -512,7 +540,7 @@ describe("FilterDrawer", () => {
     expect(journalCounts[0].textContent).toBe("7");
   });
 
-  test("toggling a concept in a scheme suppresses that scheme's counts immediately", () => {
+  test("counts stay visible after toggling a concept in the same scheme", () => {
     setCounts(new Map<string, number>([
       [URI_ACCESS, 50],
       [URI_LEARNING, 100],
@@ -522,13 +550,14 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
       />,
     );
-    // Before: both schemes show their respective counts.
+    // Both schemes show their counts initially.
     expect(
       countNodesInSchemeContaining(container, "Access to Education").length,
     ).toBeGreaterThan(0);
@@ -542,10 +571,11 @@ describe("FilterDrawer", () => {
       screen.getByLabelText(/^Educational Outcomes and Learning/),
     );
 
-    // OutcomeScheme counts disappear; DocumentType scheme's count survives.
+    // After selection, both scheme's counts remain visible (Access + Learning
+    // in Outcome; Journal in DocumentType).
     expect(
       countNodesInSchemeContaining(container, "Access to Education").length,
-    ).toBe(0);
+    ).toBe(2);
     expect(
       countNodesInSchemeContaining(container, "Journal Article").length,
     ).toBe(1);
@@ -557,7 +587,8 @@ describe("FilterDrawer", () => {
         <FilterDrawer
           open={true}
           schemes={TWO_SCHEMES}
-          appliedFacets={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
           params={defaultParams}
           onApply={noop}
           onCancel={noop}
@@ -575,7 +606,8 @@ describe("FilterDrawer", () => {
         <FilterDrawer
           open={true}
           schemes={[]}
-          appliedFacets={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
           params={defaultParams}
           onApply={onApply}
           onCancel={noop}
@@ -587,17 +619,19 @@ describe("FilterDrawer", () => {
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       expect(onApply).toHaveBeenCalledTimes(1);
-      expect(onApply.mock.calls[0][0]).toEqual([
-        "linked_data_countries:DE",
-      ]);
+      expect(onApply.mock.calls[0][0]).toEqual({
+        countryCodes: ["DE"],
+        conceptFilters: [],
+      });
     });
 
-    test("hydrates country selection from appliedFacets", () => {
+    test("hydrates country selection from appliedCountryCodes", () => {
       render(
         <FilterDrawer
           open={true}
           schemes={[]}
-          appliedFacets={["linked_data_countries:DE"]}
+          appliedCountryCodes={["DE"]}
+          appliedConceptFilters={[]}
           params={defaultParams}
           onApply={noop}
           onCancel={noop}
@@ -619,7 +653,8 @@ describe("FilterDrawer", () => {
         <FilterDrawer
           open={true}
           schemes={TWO_SCHEMES}
-          appliedFacets={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
           params={defaultParams}
           onApply={noop}
           onCancel={noop}
@@ -645,7 +680,8 @@ describe("FilterDrawer", () => {
         <FilterDrawer
           open={true}
           schemes={[DOCUMENT_TYPE_SCHEME]}
-          appliedFacets={[]}
+          appliedCountryCodes={[]}
+          appliedConceptFilters={[]}
           params={defaultParams}
           onApply={onApply}
           onCancel={noop}
@@ -656,19 +692,20 @@ describe("FilterDrawer", () => {
       fireEvent.click(screen.getByLabelText("France"));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
-      const facets = onApply.mock.calls[0][0] as string[];
-      expect(facets).toContain(`linked_data_concepts:"${URI_JOURNAL}"`);
-      expect(facets).toContain("linked_data_countries:FR");
+      const applied = onApply.mock.calls[0][0] as AppliedFilters;
+      expect(applied.countryCodes).toEqual(["FR"]);
+      expect(applied.conceptFilters).toEqual([[URI_JOURNAL]]);
     });
   });
 
-  test("re-hydrates when reopened after appliedFacets change", () => {
-    const initial = [`linked_data_concepts:"${URI_LEARNING}"`];
+  test("re-hydrates when reopened after appliedConceptFilters change", () => {
+    const initial: readonly (readonly string[])[] = [[URI_LEARNING]];
     const { rerender } = render(
       <FilterDrawer
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedFacets={initial}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={initial}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -680,12 +717,13 @@ describe("FilterDrawer", () => {
     ).toBe(true);
 
     // Close → URL changes externally → reopen.
-    const next = [`linked_data_concepts:"${URI_ACCESS}"`];
+    const next: readonly (readonly string[])[] = [[URI_ACCESS]];
     rerender(
       <FilterDrawer
         open={false}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedFacets={next}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={next}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -695,7 +733,8 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedFacets={next}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={next}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -717,23 +756,26 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={makeSearchParams({ q: "phonics" })}
         onApply={noop}
         onCancel={noop}
       />,
     );
-    // Pre-toggle: hook fired with empty facets.
+    // Pre-toggle: hook fired with empty concept filters and country codes.
     const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
-    expect(before?.searchFacets).toEqual([]);
+    expect(before?.countryCodes).toEqual([]);
+    expect(before?.conceptFilters).toEqual([]);
     expect(before?.q).toBe("phonics");
 
     fireEvent.click(screen.getByLabelText("Journal Article"));
 
-    // Post-toggle: the most recent call carries the freshly-drafted facet.
+    // Post-toggle: the most recent call carries the freshly-drafted concept
+    // filter as a structured sibling-set group.
     const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
-    expect(after?.searchFacets?.length).toBe(1);
-    expect(after?.searchFacets?.[0]).toContain(URI_JOURNAL);
+    expect(after?.countryCodes).toEqual([]);
+    expect(after?.conceptFilters).toEqual([[URI_JOURNAL]]);
     expect(after?.q).toBe("phonics");
   });
 
@@ -742,23 +784,23 @@ describe("FilterDrawer", () => {
       <FilterDrawer
         open={true}
         schemes={TWO_SCHEMES}
-        appliedFacets={[]}
+        appliedCountryCodes={[]}
+        appliedConceptFilters={[]}
         params={makeSearchParams({ q: "phonics" })}
         onApply={noop}
         onCancel={noop}
       />,
     );
-    // Pre-toggle: hook fired with empty facets.
+    // Pre-toggle: hook fired with no country codes.
     const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
-    expect(before?.searchFacets).toEqual([]);
+    expect(before?.countryCodes).toEqual([]);
 
     fireEvent.click(screen.getByRole("button", { name: /Country/ }));
     fireEvent.click(screen.getByLabelText("Germany"));
 
     // Post-toggle: the most recent call carries the freshly-drafted country.
     const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
-    expect(after?.searchFacets?.length).toBe(1);
-    expect(after?.searchFacets?.[0]).toBe("linked_data_countries:DE");
+    expect(after?.countryCodes).toEqual(["DE"]);
     expect(after?.q).toBe("phonics");
   });
 });

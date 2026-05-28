@@ -14,6 +14,11 @@ export interface SearchFilters {
   endYear?: number;
   annotation?: string[];
   sort?: string[];
+  // One `concept=` URL param per inner array. Within an array: OR-joined as a
+  // comma-separated value. Between arrays: AND. The backend enforces (400 on
+  // violation) that URIs in one array must share a sibling set in the active
+  // vocabulary, and different arrays must have disjoint sibling sets.
+  conceptFilters?: readonly (readonly string[])[];
 }
 
 // Mirrors parseSearchParams: page must be >= 1, years > 0, all safe integers.
@@ -22,9 +27,18 @@ function isPositiveSafeInt(n: number | undefined): n is number {
   return n !== undefined && Number.isSafeInteger(n) && n >= 1;
 }
 
+function appendConceptFilters(
+  params: URLSearchParams,
+  conceptFilters: readonly (readonly string[])[] | undefined,
+): void {
+  for (const group of conceptFilters ?? []) {
+    if (group.length > 0) params.append("concept", group.join(","));
+  }
+}
+
 function buildSharedSearchParams(
   query: string | undefined,
-  filters: Pick<SearchFilters, "startYear" | "endYear" | "annotation">,
+  filters: Pick<SearchFilters, "startYear" | "endYear" | "annotation" | "conceptFilters">,
 ): URLSearchParams {
   const normalizedQuery = query?.trim();
   // Browse-mode shim: empty q would produce "(q) AND ..." on the backend,
@@ -37,6 +51,7 @@ function buildSharedSearchParams(
   if (isPositiveSafeInt(filters.startYear)) params.set("start_year", String(filters.startYear));
   if (isPositiveSafeInt(filters.endYear)) params.set("end_year", String(filters.endYear));
   for (const a of filters.annotation ?? []) params.append("annotation", a);
+  appendConceptFilters(params, filters.conceptFilters);
   return params;
 }
 
@@ -52,11 +67,23 @@ export async function searchReferences(
 
 export async function searchReferenceFacets(
   query: string | undefined,
-  filters: Pick<SearchFilters, "startYear" | "endYear" | "annotation">,
+  filters: Pick<SearchFilters, "startYear" | "endYear" | "annotation" | "conceptFilters">,
   facets: FacetType[],
+  options: { vocabularyUrl?: string } = {},
 ): Promise<ReferenceFacetResult> {
   const params = buildSharedSearchParams(query, filters);
   for (const f of facets) params.append("facet", f);
+  // Backend requires `vocabulary=` whenever concept filters are combined with a
+  // concept-facet request — that's what triggers the sibling-aware aggregation.
+  // Without concept filters the param is optional; we skip it to keep the URL
+  // tight.
+  if (
+    options.vocabularyUrl &&
+    filters.conceptFilters &&
+    filters.conceptFilters.length > 0
+  ) {
+    params.set("vocabulary", options.vocabularyUrl);
+  }
   return api.get<ReferenceFacetResult>(
     `/v1/references/search/facets/?${params.toString()}`,
   );
@@ -75,6 +102,7 @@ export async function requestSearchExport(
   if (isPositiveSafeInt(filters.endYear)) params.set("end_year", String(filters.endYear));
   for (const a of filters.annotation ?? []) params.append("annotation", a);
   for (const s of filters.sort ?? []) params.append("sort", s);
+  appendConceptFilters(params, filters.conceptFilters);
   return api.post<SearchExportRead>(
     `/v1/references/search/exports/?${params.toString()}`,
     undefined,

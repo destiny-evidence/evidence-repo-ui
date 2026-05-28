@@ -3,67 +3,85 @@ import { FilterCard } from "./FilterCard";
 import { ConceptSchemeFilter } from "./ConceptSchemeFilter";
 import {
   emptyConceptSchemeState,
-  parseFacets,
+  parseConceptFilters,
   summary,
-  toSearchFacet,
+  toConceptFilterGroups,
   type ConceptSchemeFilterState,
 } from "./conceptSchemeFilterState";
 import { useSearchFacets } from "@/hooks/useSearchFacets";
 import type { SearchParams } from "@/services/searchParams";
 import { CountryFilter } from "./CountryFilter";
 import {
+  countryStateFromCodes,
   emptyCountryState,
-  parseFacets as parseCountryFacets,
+  selectedCodes,
   summary as countrySummary,
-  toSearchFacet as countryToSearchFacet,
   type CountryFilterState,
 } from "./countryFilterState";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import "./FilterDrawer.css";
 
+export interface AppliedFilters {
+  conceptFilters: readonly (readonly string[])[];
+  countryCodes: readonly string[];
+}
+
 interface FilterDrawerProps {
   open: boolean;
   schemes: ConceptScheme[];
-  appliedFacets: string[];
+  appliedConceptFilters: readonly (readonly string[])[];
+  appliedCountryCodes: readonly string[];
   // Drives the facet-count fetch alongside the draft. Owned by SearchPage as
   // the source of truth for q / years / annotations.
   params: SearchParams;
-  onApply: (next: string[]) => void;
+  onApply: (next: AppliedFilters) => void;
   onCancel: () => void;
 }
 
 type Draft = Map<string, ConceptSchemeFilterState>;
 
-// Serialise both drafts back into the wire format expected by
-// SearchParams.searchFacets — one entry per scheme that has at least one
-// concept selected, plus one trailing entry for the country selection
-// (if any). Country goes last so the URL form mirrors the on-screen order
-// (country card first, then schemes) when read left-to-right after
-// build-time stripping.
-function draftToFacets(
+// Serialise the concept draft into the structured `conceptFilters` shape:
+// for each scheme that has at least one selection, emit one or more
+// sibling-set groups via `toConceptFilterGroups`. The flat result is ordered
+// by scheme order, then preorder within each scheme — stable URLs.
+function draftToConceptFilters(
   draft: Draft,
   schemes: ConceptScheme[],
-  countryDraft: CountryFilterState,
-): string[] {
-  const facets: string[] = [];
+): string[][] {
+  const groups: string[][] = [];
   for (const scheme of schemes) {
     const state = draft.get(scheme.uri);
     if (!state || state.size === 0) continue;
-    const facet = toSearchFacet(state, scheme);
-    if (facet !== "") facets.push(facet);
+    for (const group of toConceptFilterGroups(state, scheme)) {
+      groups.push(group);
+    }
   }
-  const countryFacet = countryToSearchFacet(countryDraft);
-  if (countryFacet !== "") facets.push(countryFacet);
-  return facets;
+  return groups;
 }
 
-// Order-insensitive set equality on facet strings. URL ordering of
-// `searchFacets` is incidental — we don't want to flag the draft as dirty
-// just because two schemes' fragments swapped position.
-function facetsEqual(a: readonly string[], b: readonly string[]): boolean {
+// Order-insensitive equality on country code arrays.
+function codeArraysEqual(
+  a: readonly string[],
+  b: readonly string[],
+): boolean {
   if (a.length !== b.length) return false;
   const seen = new Set(a);
   for (const x of b) if (!seen.has(x)) return false;
+  return true;
+}
+
+// Order-insensitive equality on structured concept filters. Two filter arrays
+// are equivalent if they contain the same set of sibling-groups, and each
+// group contains the same URIs (order within a group is incidental — backend
+// OR's them; order between groups is incidental — backend AND's them).
+function conceptFiltersEqual(
+  a: readonly (readonly string[])[],
+  b: readonly (readonly string[])[],
+): boolean {
+  if (a.length !== b.length) return false;
+  const canon = (g: readonly string[]) => [...g].sort().join("\n");
+  const seen = new Set(a.map(canon));
+  for (const g of b) if (!seen.has(canon(g))) return false;
   return true;
 }
 
@@ -85,28 +103,34 @@ type FilterDrawerPanelProps = Omit<FilterDrawerProps, "open">;
 
 function FilterDrawerPanel({
   schemes,
-  appliedFacets,
+  appliedConceptFilters,
+  appliedCountryCodes,
   params,
   onApply,
   onCancel,
 }: FilterDrawerPanelProps) {
   const [draft, setDraft] = useState<Draft>(() =>
-    parseFacets(appliedFacets, schemes),
+    parseConceptFilters(appliedConceptFilters, schemes),
   );
   const [countryDraft, setCountryDraft] = useState<CountryFilterState>(() =>
-    parseCountryFacets(appliedFacets),
+    countryStateFromCodes(appliedCountryCodes),
   );
   const panelRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<Element | null>(document.activeElement);
   const titleId = useId();
 
-  const draftFacets = useMemo(
-    () => draftToFacets(draft, schemes, countryDraft),
-    [draft, schemes, countryDraft],
+  const draftConceptFilters = useMemo(
+    () => draftToConceptFilters(draft, schemes),
+    [draft, schemes],
+  );
+  const draftCountryCodes = useMemo(
+    () => selectedCodes(countryDraft),
+    [countryDraft],
   );
   const facetParams: SearchParams = {
     ...params,
-    searchFacets: draftFacets,
+    conceptFilters: draftConceptFilters,
+    countryCodes: draftCountryCodes,
   };
   const {
     counts: facetCounts,
@@ -159,13 +183,15 @@ function FilterDrawerPanel({
   }
 
   function handleApply() {
-    onApply(draftToFacets(draft, schemes, countryDraft));
+    onApply({
+      conceptFilters: draftConceptFilters,
+      countryCodes: draftCountryCodes,
+    });
   }
 
-  const dirty = !facetsEqual(
-    draftToFacets(draft, schemes, countryDraft),
-    appliedFacets,
-  );
+  const dirty =
+    !codeArraysEqual(draftCountryCodes, appliedCountryCodes) ||
+    !conceptFiltersEqual(draftConceptFilters, appliedConceptFilters);
 
   return (
     <div class="filter-drawer" role="presentation">
@@ -211,9 +237,6 @@ function FilterDrawerPanel({
           </FilterCard>
           {schemes.map((scheme) => {
             const state = draft.get(scheme.uri) ?? emptyConceptSchemeState();
-            // Counts intersect with selected concepts, so siblings of a
-            // selection drop to ~0; hide per-scheme once anything's picked.
-            const showCounts = state.size === 0 && facetCounts !== null;
             return (
               <FilterCard
                 key={scheme.uri}
@@ -223,7 +246,7 @@ function FilterDrawerPanel({
                 <ConceptSchemeFilter
                   scheme={scheme}
                   state={state}
-                  counts={showCounts ? facetCounts : null}
+                  counts={facetCounts}
                   countsLoading={facetCountsLoading}
                   onChange={(next) => onSchemeChange(scheme, next)}
                 />

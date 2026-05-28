@@ -5,12 +5,10 @@ import {
   filterCountries,
   isEmpty,
   isSelected,
-  parseFacets,
   selectedCodes,
   selectedCount,
   summary,
   toggleCountry,
-  toSearchFacet,
   totalSelectedCount,
 } from "@/components/filters/countryFilterState";
 
@@ -80,93 +78,29 @@ describe("toggleCountry", () => {
   });
 });
 
-describe("toSearchFacet", () => {
-  test("empty state → empty string", () => {
-    expect(toSearchFacet(emptyCountryState())).toBe("");
-  });
-
-  test("single selection → single unquoted clause", () => {
-    expect(toSearchFacet(countryStateFromCodes(["DE"]))).toBe(
-      "linked_data_countries:DE",
-    );
-  });
-
-  test("multiple selections joined with OR in COUNTRIES order", () => {
-    // COUNTRIES is sorted alphabetically by name → France, Germany, United Kingdom.
-    expect(toSearchFacet(countryStateFromCodes(["GB", "DE", "FR"]))).toBe(
-      "linked_data_countries:FR OR linked_data_countries:DE OR linked_data_countries:GB",
-    );
+describe("selectedCodes", () => {
+  test("returns selected codes in COUNTRIES order, not insertion order", () => {
+    // COUNTRIES is alphabetised by name → France, Germany, United Kingdom.
+    expect(selectedCodes(countryStateFromCodes(["GB", "DE", "FR"]))).toEqual([
+      "FR",
+      "DE",
+      "GB",
+    ]);
   });
 
   test("ignores codes that aren't in COUNTRIES", () => {
-    // ZZ is reserved/unassigned and not in the country-converter list.
-    expect(toSearchFacet(countryStateFromCodes(["ZZ", "DE"]))).toBe(
-      "linked_data_countries:DE",
-    );
-  });
-});
-
-describe("parseFacets", () => {
-  test("empty input → empty state", () => {
-    expect(isEmpty(parseFacets([]))).toBe(true);
-  });
-
-  test("single fragment with one code", () => {
-    const result = parseFacets(["linked_data_countries:DE"]);
-    expect(selectedCodes(result)).toEqual(["DE"]);
-  });
-
-  test("multi-code OR fragment", () => {
-    const result = parseFacets([
-      "linked_data_countries:DE OR linked_data_countries:FR",
-    ]);
-    expect(selectedCount(result)).toBe(2);
-    expect(isSelected(result, "DE")).toBe(true);
-    expect(isSelected(result, "FR")).toBe(true);
-  });
-
-  test("ignores concept-scheme fragments interleaved in the same array", () => {
-    const result = parseFacets([
-      'linked_data_concepts:"https://vocab.esea.education/X/Y"',
-      "linked_data_countries:DE",
-    ]);
-    expect(selectedCodes(result)).toEqual(["DE"]);
-  });
-
-  test("upper-cases lower-case codes from hand-edited URLs", () => {
-    const result = parseFacets(["linked_data_countries:de"]);
-    expect(isSelected(result, "DE")).toBe(true);
-  });
-
-  test("round-trips through toSearchFacet", () => {
-    const original = countryStateFromCodes(["DE", "FR", "GB"]);
-    const fragment = toSearchFacet(original);
-    const parsed = parseFacets([fragment]);
-    expect([...selectedCodes(parsed)].sort()).toEqual(["DE", "FR", "GB"]);
+    // ZZ is reserved/unassigned.
+    expect(selectedCodes(countryStateFromCodes(["ZZ", "DE"]))).toEqual(["DE"]);
   });
 });
 
 describe("totalSelectedCount", () => {
-  test("returns 0 when no facets are applied", () => {
+  test("returns 0 for an empty codes array", () => {
     expect(totalSelectedCount([])).toBe(0);
   });
 
-  test("counts every code across all country fragments", () => {
-    expect(
-      totalSelectedCount([
-        "linked_data_countries:DE OR linked_data_countries:FR",
-        "linked_data_countries:GB",
-      ]),
-    ).toBe(3);
-  });
-
-  test("ignores concept-scheme fragments", () => {
-    expect(
-      totalSelectedCount([
-        'linked_data_concepts:"https://vocab.esea.education/X/Y"',
-        "linked_data_countries:DE",
-      ]),
-    ).toBe(1);
+  test("returns the array length for non-empty input", () => {
+    expect(totalSelectedCount(["DE", "FR", "GB"])).toBe(3);
   });
 });
 

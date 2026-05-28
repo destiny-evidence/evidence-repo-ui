@@ -108,7 +108,7 @@ export function toggleConcept(
   return brand(next);
 }
 
-function walkConcepts(concepts: Concept[]): Concept[] {
+function walkConcepts(concepts: readonly Concept[]): Concept[] {
   const all: Concept[] = [];
   for (const concept of concepts) {
     all.push(concept);
@@ -117,23 +117,37 @@ function walkConcepts(concepts: Concept[]): Concept[] {
   return all;
 }
 
-// Builds one SearchParams.searchFacets[] entry: an unwrapped, OR-joined
-// sequence of linked_data_concepts:"..." clauses for every selected
-// concept, with full concept URIs embedded verbatim.
-export function toSearchFacet(
+// Bucket the scheme's selected URIs into sibling-set groups. Each group → one
+// `concept=` URL parameter. Group key is the URI of the common broader concept
+// (siblings under one parent); top concepts fall back to the scheme URI as a
+// synthetic parent so they bucket together — and stay disjoint from any other
+// scheme's top concepts. The auto-rollup invariant in `toggleConcept` means a
+// parent + every descendant can be selected simultaneously; they land in
+// separate groups (the parent under its grandparent, the descendants under
+// the parent), which the backend validates as disjoint sibling sets.
+// Within-group ordering follows the scheme's depth-first preorder so URLs are
+// stable across re-renders.
+export function toConceptFilterGroups(
   state: ConceptSchemeFilterState,
   scheme: ConceptScheme,
-): string {
-  const clauses: string[] = [];
+): string[][] {
+  if (state.size === 0) return [];
+  const index = buildConceptIndex(scheme);
+  // Insertion order = first-seen-in-preorder, which means top-level siblings
+  // get bucketed first, then each deeper level as the walk descends.
+  const groups = new Map<string, string[]>();
   for (const concept of walkConcepts(scheme.topConcepts)) {
-    if (state.has(concept.uri)) {
-      clauses.push(`linked_data_concepts:"${concept.uri}"`);
+    if (!state.has(concept.uri)) continue;
+    const groupKey = index.broader.get(concept.uri) ?? scheme.uri;
+    let group = groups.get(groupKey);
+    if (!group) {
+      group = [];
+      groups.set(groupKey, group);
     }
+    group.push(concept.uri);
   }
-  return clauses.join(" OR ");
+  return Array.from(groups.values());
 }
-
-const FACET_URI_RE = /linked_data_concepts:"([^"]+)"/g;
 
 function indexConceptUrisByScheme(
   schemes: ConceptScheme[],
@@ -151,30 +165,30 @@ function indexConceptUrisByScheme(
 // URL. Used to drive the Refine button's badge — each scheme contributes
 // its own checkbox count, the drawer never aggregates URIs directly.
 export function totalSelectedCount(
-  searchFacets: readonly string[],
+  conceptFilters: readonly (readonly string[])[],
   schemes: ConceptScheme[],
 ): number {
   let total = 0;
-  for (const state of parseFacets(searchFacets, schemes).values()) {
+  for (const state of parseConceptFilters(conceptFilters, schemes).values()) {
     total += selectedCount(state);
   }
   return total;
 }
 
-// Reverse of `toSearchFacet`, lifted to operate over the full
-// `SearchParams.searchFacets` array: extract every concept URI from each
-// fragment and bucket the URIs by the scheme that contains them. URIs that
-// don't belong to any of the supplied schemes are silently dropped —
+// Reverse of `toConceptFilterGroups`, lifted to operate over the full
+// structured `conceptFilters` array: bucket every URI back into the scheme
+// that contains it. Inner-array grouping (which sibling set each URI belonged
+// to) is recoverable from the scheme tree, so we discard it on the way in.
+// URIs that don't belong to any of the supplied schemes are silently dropped —
 // defensive for stale URLs pointing at a vocabulary that has since changed.
-export function parseFacets(
-  searchFacets: readonly string[],
+export function parseConceptFilters(
+  conceptFilters: readonly (readonly string[])[],
   schemes: ConceptScheme[],
 ): Map<string, ConceptSchemeFilterState> {
   const uriToScheme = indexConceptUrisByScheme(schemes);
   const buckets = new Map<string, Set<string>>();
-  for (const fragment of searchFacets) {
-    for (const match of fragment.matchAll(FACET_URI_RE)) {
-      const uri = match[1];
+  for (const group of conceptFilters) {
+    for (const uri of group) {
       const schemeUri = uriToScheme.get(uri);
       if (schemeUri === undefined) continue;
       let bucket = buckets.get(schemeUri);

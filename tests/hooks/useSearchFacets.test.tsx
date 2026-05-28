@@ -44,8 +44,10 @@ describe("useSearchFacets", () => {
       "phonics",
       expect.objectContaining({
         annotation: ["domain-inclusion/jacobs-education"],
+        conceptFilters: [],
       }),
       ["concepts"],
+      expect.objectContaining({ vocabularyUrl: expect.any(String) }),
     );
   });
 
@@ -105,7 +107,7 @@ describe("useSearchFacets", () => {
     await waitFor(() => expect(mockFacets).toHaveBeenCalledTimes(2));
   });
 
-  test("refetches when facets change (counts are intersection-with-selection)", async () => {
+  test("refetches when conceptFilters change (sibling-aware counts depend on the filter set)", async () => {
     mockFacets.mockResolvedValue(result());
     const { rerender } = renderHook(({ p }) => useSearchFacets(p), {
       wrapper: withCommunityPath("/esea"),
@@ -115,7 +117,7 @@ describe("useSearchFacets", () => {
     rerender({
       p: {
         ...baseParams,
-        searchFacets: ['linked_data_concepts:"ex:A"'],
+        conceptFilters: [["ex:A"]],
       },
     });
     await waitFor(() => expect(mockFacets).toHaveBeenCalledTimes(2));

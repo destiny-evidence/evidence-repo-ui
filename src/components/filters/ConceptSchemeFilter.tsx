@@ -55,13 +55,26 @@ function ConceptItem({
   );
   const hasChildren = !!concept.narrower && concept.narrower.length > 0;
   const count = counts?.get(concept.uri);
+  const selected = isSelected(state, concept.uri);
+  // Backend now returns toggle-semantic counts for every sibling, including
+  // 0-buckets. A 0 on an unselected row means "selecting this would give 0
+  // results" — disable to prevent a guaranteed-empty pick. A 0 on a selected
+  // row means "un-selecting this wouldn't change your results" — leave it
+  // enabled so the user can act on the signal. `count === undefined` covers
+  // both the initial load and any concept the backend didn't return a bucket
+  // for; we render those the same as today (no badge, no styling change).
+  const isEmpty = count === 0 && !selected;
+  const showCountBadge = count !== undefined && !isEmpty;
+  const rowClass = `concept-scheme-filter__row${
+    isEmpty ? " concept-scheme-filter__row--empty" : ""
+  }`;
   const countClass = `concept-scheme-filter__count${
     countsLoading ? " is-updating" : ""
   }${hasChildren ? " concept-scheme-filter__count--parent" : ""}`;
   const countTooltip = hasChildren
-    ? "Count shows investigations tagged with this concept. Select to also include narrower concepts."
+    ? "Results you'd see if you toggled this concept. Selecting a parent includes all narrower concepts."
     : undefined;
-  const countNode = count !== undefined && (
+  const countNode = showCountBadge && (
     <span
       class={countClass}
       aria-label={`${formatCount(count)} investigations`}
@@ -72,11 +85,12 @@ function ConceptItem({
   );
   return (
     <li class="concept-scheme-filter__item">
-      <label class="concept-scheme-filter__row">
+      <label class={rowClass}>
         <input
           class="concept-scheme-filter__checkbox"
           type="checkbox"
-          checked={isSelected(state, concept.uri)}
+          checked={selected}
+          disabled={isEmpty}
           onChange={() => onChange(toggleConcept(state, concept, index))}
         />
         {hasDefinition ? (
