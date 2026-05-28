@@ -64,6 +64,8 @@ describe("FilterDrawer", () => {
         open={false}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -78,6 +80,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -97,6 +101,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={makeSearchParams({ q: "phonics" })}
         onApply={noop}
         onCancel={noop}
@@ -115,6 +121,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -127,6 +135,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={makeSearchParams({ q: "*" })}
         onApply={noop}
         onCancel={noop}
@@ -146,6 +156,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[scheme]}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -165,6 +177,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -180,6 +194,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -197,6 +213,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={onApply}
         onCancel={noop}
@@ -207,7 +225,7 @@ describe("FilterDrawer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
     expect(onApply).toHaveBeenCalledTimes(1);
-    const facets = onApply.mock.calls[0][0] as string[];
+    const facets = onApply.mock.calls[0][0].searchFacets as string[];
     expect(facets).toHaveLength(2);
     expect(facets).toContain(
       `linked_data_concepts:"https://vocab.esea.education/OutcomeScheme/C00130"`,
@@ -224,6 +242,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={onApply}
         onCancel={noop}
@@ -232,7 +252,7 @@ describe("FilterDrawer", () => {
     fireEvent.click(screen.getByLabelText("Access to Education"));
     fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
-    const facet = (onApply.mock.calls[0][0] as string[])[0];
+    const facet = (onApply.mock.calls[0][0].searchFacets as string[])[0];
     expect(facet).toContain(URI_ACCESS);
     expect(facet).toContain(URI_EDUCATION_FINANCE);
     expect(facet).toContain(URI_ENROLMENT);
@@ -245,6 +265,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -276,6 +298,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -295,6 +319,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -311,6 +337,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={onCancel}
@@ -328,6 +356,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -349,6 +379,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -361,6 +393,8 @@ describe("FilterDrawer", () => {
         open={false}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -380,6 +414,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -392,6 +428,8 @@ describe("FilterDrawer", () => {
         open={false}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -410,6 +448,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={appliedFacets}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -432,6 +472,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={appliedFacets}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -451,6 +493,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -496,6 +540,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={appliedFacets}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -523,6 +569,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -552,12 +600,14 @@ describe("FilterDrawer", () => {
   });
 
   describe("country filter integration", () => {
-    test("renders a Country card before any scheme card", () => {
+    test("renders the Country card after Publication year but before any scheme card", () => {
       const { container } = render(
         <FilterDrawer
           open={true}
           schemes={TWO_SCHEMES}
           appliedFacets={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
           params={defaultParams}
           onApply={noop}
           onCancel={noop}
@@ -566,7 +616,8 @@ describe("FilterDrawer", () => {
       const titles = Array.from(
         container.querySelectorAll(".filter-card__title"),
       ).map((n) => n.textContent);
-      expect(titles[0]).toBe("Country");
+      expect(titles[0]).toBe("Publication year");
+      expect(titles[1]).toBe("Country");
     });
 
     test("selecting a country and applying emits a linked_data_countries facet", () => {
@@ -576,20 +627,22 @@ describe("FilterDrawer", () => {
           open={true}
           schemes={[]}
           appliedFacets={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
           params={defaultParams}
           onApply={onApply}
           onCancel={noop}
         />,
       );
-      // Expand the Country card and pick Germany.
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       fireEvent.click(screen.getByLabelText("Germany"));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       expect(onApply).toHaveBeenCalledTimes(1);
-      expect(onApply.mock.calls[0][0]).toEqual([
-        "linked_data_countries:DE",
-      ]);
+      expect(onApply.mock.calls[0][0]).toEqual({
+        searchFacets: ["linked_data_countries:DE"],
+        startYear: undefined,
+        endYear: undefined,
+      });
     });
 
     test("hydrates country selection from appliedFacets", () => {
@@ -598,12 +651,13 @@ describe("FilterDrawer", () => {
           open={true}
           schemes={[]}
           appliedFacets={["linked_data_countries:DE"]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
           params={defaultParams}
           onApply={noop}
           onCancel={noop}
         />,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       expect(
         (screen.getByLabelText("Germany") as HTMLInputElement).checked,
       ).toBe(true);
@@ -620,13 +674,14 @@ describe("FilterDrawer", () => {
           open={true}
           schemes={TWO_SCHEMES}
           appliedFacets={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
           params={defaultParams}
           onApply={noop}
           onCancel={noop}
         />,
       );
       fireEvent.click(screen.getByLabelText("Journal Article"));
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       fireEvent.click(screen.getByLabelText("Germany"));
 
       fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
@@ -646,19 +701,212 @@ describe("FilterDrawer", () => {
           open={true}
           schemes={[DOCUMENT_TYPE_SCHEME]}
           appliedFacets={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
           params={defaultParams}
           onApply={onApply}
           onCancel={noop}
         />,
       );
       fireEvent.click(screen.getByLabelText("Journal Article"));
-      fireEvent.click(screen.getByRole("button", { name: /Country/ }));
       fireEvent.click(screen.getByLabelText("France"));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
-      const facets = onApply.mock.calls[0][0] as string[];
+      const facets = onApply.mock.calls[0][0].searchFacets as string[];
       expect(facets).toContain(`linked_data_concepts:"${URI_JOURNAL}"`);
       expect(facets).toContain("linked_data_countries:FR");
+    });
+  });
+
+  describe("year range integration", () => {
+    function startYearInput() {
+      return screen.getByLabelText("Start year") as HTMLInputElement;
+    }
+    function endYearInput() {
+      return screen.getByLabelText("End year") as HTMLInputElement;
+    }
+
+    test("hydrates the year inputs from appliedStartYear / appliedEndYear", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedFacets={[]}
+          appliedStartYear={2010}
+          appliedEndYear={2020}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      expect(startYearInput().value).toBe("2010");
+      expect(endYearInput().value).toBe("2020");
+      // Hydrated draft equals applied → Show results stays disabled.
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+
+    test("editing a year enables Show results", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedFacets={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.input(startYearInput(), { target: { value: "1990" } });
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false);
+    });
+
+    test("applying a one-sided range emits undefined for the missing side", () => {
+      const onApply = vi.fn();
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedFacets={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
+          params={defaultParams}
+          onApply={onApply}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.input(startYearInput(), { target: { value: "1990" } });
+      fireEvent.click(screen.getByRole("button", { name: "Show results" }));
+
+      expect(onApply).toHaveBeenCalledTimes(1);
+      expect(onApply.mock.calls[0][0]).toEqual({
+        searchFacets: [],
+        startYear: 1990,
+        endYear: undefined,
+      });
+    });
+
+    test("start > end shows inline error and disables Show results", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedFacets={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.input(startYearInput(), { target: { value: "2020" } });
+      fireEvent.input(endYearInput(), { target: { value: "2010" } });
+
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        /start year must not exceed end year/i,
+      );
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+
+    test("non-numeric end year flags an error and blocks Show results", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedFacets={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.input(endYearInput(), { target: { value: "abc" } });
+
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        /end year must be a 4-digit number/i,
+      );
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+
+    test("Reset clears year inputs alongside facet drafts", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedFacets={[]}
+          appliedStartYear={2010}
+          appliedEndYear={2020}
+          params={defaultParams}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      expect(startYearInput().value).toBe("2010");
+      fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
+      expect(startYearInput().value).toBe("");
+      expect(endYearInput().value).toBe("");
+    });
+
+    test("clearing a previously-applied range applies undefined years", () => {
+      const onApply = vi.fn();
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={[]}
+          appliedFacets={[]}
+          appliedStartYear={2010}
+          appliedEndYear={2020}
+          params={defaultParams}
+          onApply={onApply}
+          onCancel={noop}
+        />,
+      );
+      fireEvent.input(startYearInput(), { target: { value: "" } });
+      fireEvent.input(endYearInput(), { target: { value: "" } });
+      fireEvent.click(screen.getByRole("button", { name: "Show results" }));
+
+      expect(onApply.mock.calls[0][0]).toEqual({
+        searchFacets: [],
+        startYear: undefined,
+        endYear: undefined,
+      });
+    });
+
+    test("eager loading: editing a year re-keys the facet hook with the new range", () => {
+      render(
+        <FilterDrawer
+          open={true}
+          schemes={TWO_SCHEMES}
+          appliedFacets={[]}
+          appliedStartYear={undefined}
+          appliedEndYear={undefined}
+          params={makeSearchParams({ q: "phonics" })}
+          onApply={noop}
+          onCancel={noop}
+        />,
+      );
+      const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
+      expect(before?.startYear).toBeUndefined();
+
+      fireEvent.input(startYearInput(), { target: { value: "2015" } });
+
+      const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
+      expect(after?.startYear).toBe(2015);
+      expect(after?.q).toBe("phonics");
     });
   });
 
@@ -669,6 +917,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={initial}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -686,6 +936,8 @@ describe("FilterDrawer", () => {
         open={false}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={next}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -696,6 +948,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={[OUTCOME_SCHEME_FIXTURE]}
         appliedFacets={next}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={defaultParams}
         onApply={noop}
         onCancel={noop}
@@ -718,6 +972,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={makeSearchParams({ q: "phonics" })}
         onApply={noop}
         onCancel={noop}
@@ -743,6 +999,8 @@ describe("FilterDrawer", () => {
         open={true}
         schemes={TWO_SCHEMES}
         appliedFacets={[]}
+        appliedStartYear={undefined}
+        appliedEndYear={undefined}
         params={makeSearchParams({ q: "phonics" })}
         onApply={noop}
         onCancel={noop}
@@ -752,7 +1010,6 @@ describe("FilterDrawer", () => {
     const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(before?.searchFacets).toEqual([]);
 
-    fireEvent.click(screen.getByRole("button", { name: /Country/ }));
     fireEvent.click(screen.getByLabelText("Germany"));
 
     // Post-toggle: the most recent call carries the freshly-drafted country.

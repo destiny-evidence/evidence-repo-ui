@@ -24,6 +24,7 @@ import { Pagination } from "@/components/Pagination";
 import { FilterDrawer } from "@/components/filters/FilterDrawer";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
+import { totalSelectedCount as totalSelectedYearCount } from "@/components/filters/yearRangeFilterState";
 import { NotFoundPage } from "./NotFoundPage";
 import "./SearchPage.css";
 
@@ -36,13 +37,6 @@ interface SearchPageProps {
 // the UI doesn't understate the corpus size.
 function formatTotal(total: { count: number; is_lower_bound: boolean }): string {
   return `${total.count.toLocaleString()}${total.is_lower_bound ? "+" : ""}`;
-}
-
-function formatYearClause(start: number | undefined, end: number | undefined): string {
-  if (start !== undefined && end !== undefined) return ` from ${start} to ${end}`;
-  if (start !== undefined) return ` from ${start}`;
-  if (end !== undefined) return ` to ${end}`;
-  return "";
 }
 
 // 10k is destiny-repository's max_result_window; deep pagination + exports
@@ -96,8 +90,6 @@ function exportAnnouncementFor(status: ExportStatus): string {
 
 function formatResultsSummary(
   q: string,
-  startYear: number | undefined,
-  endYear: number | undefined,
   total: { count: number; is_lower_bound: boolean },
 ) {
   const qClause = q !== "" ? ` for “${q}”` : "";
@@ -106,7 +98,7 @@ function formatResultsSummary(
   return (
     <span class="search-results__meta-summary">
       <span class="search-results__meta-count">{formatTotal(total)}</span>
-      {` results${qClause}${formatYearClause(startYear, endYear)}`}
+      {` results${qClause}`}
     </span>
   );
 }
@@ -156,18 +148,12 @@ function SearchPageInner({ community }: { community: Community }) {
     [vocab.schemes, community.filterExcludedSchemes],
   );
 
-  // Treat clicking Refine like submitting the search bar: commit any
-  // pending q / year edits before opening the drawer, so facet counts
-  // and the post-Apply navigation reflect what the user has typed.
-  // Validation errors short-circuit and keep the drawer closed.
+  // Treat clicking Refine like submitting the search bar: commit any pending
+  // Q edit before opening the drawer so the drawer's facet-count fetch and
+  // the post-Apply navigation reflect what the user has typed.
   function handleOpenDrawer() {
     const committed = draft.commitDraft();
-    if (!committed) return;
-    const changed =
-      params.q !== committed.q ||
-      params.startYear !== committed.startYear ||
-      params.endYear !== committed.endYear;
-    if (changed) {
+    if (params.q !== committed.q) {
       navigate(
         buildSearchUrl(community.slug, { ...params, ...committed, page: 1 }),
       );
@@ -177,18 +163,23 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const refine = buildRefineConfig(
     vocab,
-    totalSelectedCount(params.searchFacets, filterableSchemes) + totalSelectedCountryCount(params.searchFacets),
+    totalSelectedCount(params.searchFacets, filterableSchemes)
+      + totalSelectedCountryCount(params.searchFacets)
+      + totalSelectedYearCount(params.startYear, params.endYear),
     handleOpenDrawer,
   );
 
-  function handleApplyFacets(nextFacets: string[]) {
+  function handleApplyFilters(next: {
+    searchFacets: string[];
+    startYear: number | undefined;
+    endYear: number | undefined;
+  }) {
     const committed = draft.commitDraft();
-    if (!committed) return;
     navigate(
       buildSearchUrl(community.slug, {
         ...params,
         ...committed,
-        searchFacets: nextFacets,
+        ...next,
         page: 1,
       }),
     );
@@ -203,22 +194,17 @@ function SearchPageInner({ community }: { community: Community }) {
     results.results !== null ||
     results.error !== null ||
     params.q !== "" ||
-    params.startYear !== undefined ||
-    params.endYear !== undefined ||
     params.searchFacets.length > 0 ||
     refine !== undefined;
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary =
     params.q !== "" ||
-    params.startYear !== undefined ||
-    params.endYear !== undefined ||
     params.searchFacets.length > 0 ||
     results.error !== null;
 
   function handleSubmit() {
     const committed = draft.commitDraft();
-    if (!committed) return;
     navigate(buildSearchUrl(community.slug, { ...params, ...committed, page: 1 }));
   }
 
@@ -228,7 +214,6 @@ function SearchPageInner({ community }: { community: Community }) {
 
   function handleSortChange(sort: SortOption | undefined) {
     const committed = draft.commitDraft();
-    if (!committed) return;
     navigate(buildSearchUrl(community.slug, { ...params, ...committed, sort, page: 1 }));
   }
 
@@ -294,12 +279,7 @@ function SearchPageInner({ community }: { community: Community }) {
         </p>
         <SearchBar
           draftQ={draft.draftQ}
-          draftStart={draft.draftStart}
-          draftEnd={draft.draftEnd}
           onDraftQChange={draft.setDraftQ}
-          onDraftStartChange={draft.setDraftStart}
-          onDraftEndChange={draft.setDraftEnd}
-          validationError={draft.validationError}
           onSubmit={handleSubmit}
           disabled={results.loading && results.results !== null}
         />
@@ -328,7 +308,7 @@ function SearchPageInner({ community }: { community: Community }) {
                     : results.loading
                       ? "Updating results…"
                       : results.results
-                        ? formatResultsSummary(params.q, params.startYear, params.endYear, results.results.total)
+                        ? formatResultsSummary(params.q, results.results.total)
                         : null
                 : null}
             </span>
@@ -418,8 +398,10 @@ function SearchPageInner({ community }: { community: Community }) {
           open={drawerOpen}
           schemes={filterableSchemes}
           appliedFacets={params.searchFacets}
+          appliedStartYear={params.startYear}
+          appliedEndYear={params.endYear}
           params={params}
-          onApply={handleApplyFacets}
+          onApply={handleApplyFilters}
           onCancel={() => setDrawerOpen(false)}
         />
       )}

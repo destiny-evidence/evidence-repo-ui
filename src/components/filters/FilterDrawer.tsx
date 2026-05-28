@@ -18,17 +18,35 @@ import {
   toSearchFacet as countryToSearchFacet,
   type CountryFilterState,
 } from "./countryFilterState";
+import { YearRangeFilter } from "./YearRangeFilter";
+import {
+  validate as validateYearRange,
+  isYearInputReady,
+  emptyYearRangeState,
+  isDirty as isYearDirty,
+  summary as yearSummary,
+  yearRangeFromParams,
+  type YearRangeFilterState,
+} from "./yearRangeFilterState";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import "./FilterDrawer.css";
+
+export interface AppliedFilters {
+  searchFacets: string[];
+  startYear: number | undefined;
+  endYear: number | undefined;
+}
 
 interface FilterDrawerProps {
   open: boolean;
   schemes: ConceptScheme[];
   appliedFacets: string[];
+  appliedStartYear: number | undefined;
+  appliedEndYear: number | undefined;
   // Drives the facet-count fetch alongside the draft. Owned by SearchPage as
-  // the source of truth for q / years / annotations.
+  // the source of truth for q / annotations.
   params: SearchParams;
-  onApply: (next: string[]) => void;
+  onApply: (next: AppliedFilters) => void;
   onCancel: () => void;
 }
 
@@ -86,6 +104,8 @@ type FilterDrawerPanelProps = Omit<FilterDrawerProps, "open">;
 function FilterDrawerPanel({
   schemes,
   appliedFacets,
+  appliedStartYear,
+  appliedEndYear,
   params,
   onApply,
   onCancel,
@@ -96,6 +116,9 @@ function FilterDrawerPanel({
   const [countryDraft, setCountryDraft] = useState<CountryFilterState>(() =>
     parseCountryFacets(appliedFacets),
   );
+  const [yearDraft, setYearDraft] = useState<YearRangeFilterState>(() =>
+    yearRangeFromParams(appliedStartYear, appliedEndYear),
+  );
   const panelRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<Element | null>(document.activeElement);
   const titleId = useId();
@@ -104,9 +127,16 @@ function FilterDrawerPanel({
     () => draftToFacets(draft, schemes, countryDraft),
     [draft, schemes, countryDraft],
   );
+  const yearValidation = useMemo(() => validateYearRange(yearDraft), [yearDraft]);
+  const startReady = isYearInputReady(yearDraft.start);
+  const endReady = isYearInputReady(yearDraft.end);
   const facetParams: SearchParams = {
     ...params,
     searchFacets: draftFacets,
+    startYear:
+      yearValidation.ok && startReady ? yearValidation.startYear : appliedStartYear,
+    endYear:
+      yearValidation.ok && endReady ? yearValidation.endYear : appliedEndYear,
   };
   const {
     counts: facetCounts,
@@ -156,16 +186,24 @@ function FilterDrawerPanel({
   function handleReset() {
     setDraft(new Map());
     setCountryDraft(emptyCountryState());
+    setYearDraft(emptyYearRangeState());
   }
 
   function handleApply() {
-    onApply(draftToFacets(draft, schemes, countryDraft));
+    if (!yearValidation.ok) return;
+    onApply({
+      searchFacets: draftToFacets(draft, schemes, countryDraft),
+      startYear: yearValidation.startYear,
+      endYear: yearValidation.endYear,
+    });
   }
 
-  const dirty = !facetsEqual(
+  const facetsDirty = !facetsEqual(
     draftToFacets(draft, schemes, countryDraft),
     appliedFacets,
   );
+  const yearDirty = isYearDirty(yearDraft, appliedStartYear, appliedEndYear);
+  const canApply = (facetsDirty || yearDirty) && yearValidation.ok;
 
   return (
     <div class="filter-drawer" role="presentation">
@@ -203,7 +241,18 @@ function FilterDrawerPanel({
               Investigation counts unavailable.
             </div>
           )}
-          <FilterCard title="Country" summary={countrySummary(countryDraft)}>
+          <FilterCard
+            title="Publication year"
+            summary={yearSummary(yearDraft)}
+            defaultExpanded
+          >
+            <YearRangeFilter state={yearDraft} onChange={setYearDraft} />
+          </FilterCard>
+          <FilterCard
+            title="Country"
+            summary={countrySummary(countryDraft)}
+            defaultExpanded
+          >
             <CountryFilter
               state={countryDraft}
               onChange={setCountryDraft}
@@ -244,7 +293,7 @@ function FilterDrawerPanel({
             type="button"
             class="filter-drawer__btn filter-drawer__btn--apply"
             onClick={handleApply}
-            disabled={!dirty}
+            disabled={!canApply}
           >
             Show results
           </button>
