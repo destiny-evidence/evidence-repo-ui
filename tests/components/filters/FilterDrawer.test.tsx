@@ -657,7 +657,7 @@ describe("FilterDrawer", () => {
       expect(titles[1]).toBe("Country");
     });
 
-    test("selecting a country and applying emits a linked_data_countries facet", () => {
+    test("selecting a country and applying emits the code on appliedCountryCodes", () => {
       const onApply = vi.fn();
       setCounts({ countries: new Map([["DE", 230]]) });
       render(

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "preact/hooks";
 import { MagnifierIcon } from "@/components/icons";
+import { countryName } from "@/utils/country";
 import {
   isSelected,
   toggleCountry,
@@ -20,19 +21,12 @@ interface CountryRow {
 }
 
 const countFormatter = new Intl.NumberFormat();
-const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 
 function formatCount(n: number): string {
   return countFormatter.format(n);
 }
 
-function regionName(code: string): string {
-  return regionNames.of(code) ?? code;
-}
-
-// Diacritic-insensitive: typing "cote" must match "Côte d'Ivoire". Both sides
-// are NFD-normalised so the decomposed accent codepoint can be stripped before
-// the substring test.
+// Diacritic-insensitive: typing "cote" matches "Côte d'Ivoire".
 function fold(s: string): string {
   return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 }
@@ -45,10 +39,8 @@ export function CountryFilter({
 }: CountryFilterProps) {
   const [query, setQuery] = useState("");
 
-  // The visible list is derived from the aggregation plus any currently-
-  // selected codes (so the user can un-tick a selection even if it has no
-  // current matches). Pre-load (counts === null) and error states show only
-  // selected codes — there's no static country universe to fall back to.
+  // Selected codes are always included so the user can un-tick a no-results
+  // pick; otherwise we list only codes with non-zero counts.
   const rows = useMemo<CountryRow[]>(() => {
     const codes = new Set<string>(state);
     if (counts != null) {
@@ -57,7 +49,7 @@ export function CountryFilter({
       }
     }
     const list: CountryRow[] = [];
-    for (const code of codes) list.push({ code, name: regionName(code) });
+    for (const code of codes) list.push({ code, name: countryName(code) });
     list.sort((a, b) => a.name.localeCompare(b.name));
     return list;
   }, [counts, state]);
@@ -85,8 +77,7 @@ export function CountryFilter({
       </div>
       <ul class="country-filter__list">
         {visible.map((country) => {
-          const rawCount = counts?.get(country.code);
-          const count = rawCount ?? (counts != null ? 0 : undefined);
+          const count = counts?.get(country.code);
           const selected = isSelected(state, country.code);
           const showCountBadge = count !== undefined && count > 0;
           const countClass = `country-filter__count${
