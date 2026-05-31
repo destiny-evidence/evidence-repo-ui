@@ -13,6 +13,7 @@ vi.mock("@/hooks/useSearchFacets", () => ({
 
 import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
 import { useSearchFacets } from "@/hooks/useSearchFacets";
+import type { ComponentProps } from "preact";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { makeSearchParams } from "../../fixtures";
 import {
@@ -53,8 +54,6 @@ beforeEach(() => {
   });
 });
 
-// A second scheme exercises the multi-scheme rendering and the per-scheme
-// draft Map.
 const URI_JOURNAL = "https://vocab.esea.education/DocumentTypeScheme/C00008";
 const DOCUMENT_TYPE_SCHEME: ConceptScheme = {
   uri: "https://vocab.esea.education/DocumentTypeScheme",
@@ -69,38 +68,37 @@ const TWO_SCHEMES: ConceptScheme[] = [
 
 function noop() {}
 
+type DrawerProps = ComponentProps<typeof FilterDrawer>;
+
+const baseDrawerProps: DrawerProps = {
+  open: true,
+  schemes: TWO_SCHEMES,
+  appliedConceptFilters: [],
+  appliedCountryCodes: [],
+  appliedStartYear: undefined,
+  appliedEndYear: undefined,
+  params: defaultParams,
+  onApply: noop,
+  onCancel: noop,
+};
+
+function renderDrawer(overrides: Partial<DrawerProps> = {}) {
+  const result = render(<FilterDrawer {...baseDrawerProps} {...overrides} />);
+  return {
+    ...result,
+    rerender: (next: Partial<DrawerProps> = {}) =>
+      result.rerender(<FilterDrawer {...baseDrawerProps} {...next} />),
+  };
+}
+
 describe("FilterDrawer", () => {
   test("renders nothing when closed", () => {
-    const { container } = render(
-      <FilterDrawer
-        open={false}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    const { container } = renderDrawer({ open: false });
     expect(container.firstChild).toBeNull();
   });
 
   test("renders one FilterCard per scheme", () => {
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    renderDrawer();
     expect(
       screen.getByRole("button", { name: /^Outcome/ }),
     ).toBeDefined();
@@ -110,19 +108,9 @@ describe("FilterDrawer", () => {
   });
 
   test("shows a subtitle nudge with the current query when params.q is set", () => {
-    const { container } = render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={makeSearchParams({ q: "phonics" })}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    const { container } = renderDrawer({
+      params: makeSearchParams({ q: "phonics" }),
+    });
     // Bind on the class and the query value, not the surrounding wording —
     // the prose around the query is expected to iterate.
     const subtitle = container.querySelector(".filter-drawer__subtitle");
@@ -131,34 +119,10 @@ describe("FilterDrawer", () => {
   });
 
   test("hides the subtitle nudge in browse mode (empty q or '*')", () => {
-    const { rerender, container } = render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    const { rerender, container } = renderDrawer();
     expect(container.querySelector(".filter-drawer__subtitle")).toBeNull();
 
-    rerender(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={makeSearchParams({ q: "*" })}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    rerender({ params: makeSearchParams({ q: "*" }) });
     expect(container.querySelector(".filter-drawer__subtitle")).toBeNull();
   });
 
@@ -168,19 +132,7 @@ describe("FilterDrawer", () => {
       label: "Education Level Scheme",
       topConcepts: [{ uri: "x", label: "Primary" }],
     };
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={[scheme]}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    renderDrawer({ schemes: [scheme] });
     expect(
       screen.getByRole("button", { name: /^Education Level/ }),
     ).toBeDefined();
@@ -190,37 +142,13 @@ describe("FilterDrawer", () => {
   });
 
   test("opens with Show results disabled when nothing is selected", () => {
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    renderDrawer();
     const apply = screen.getByRole("button", { name: "Show results" });
     expect((apply as HTMLButtonElement).disabled).toBe(true);
   });
 
   test("toggling a concept enables Show results", () => {
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    renderDrawer();
     fireEvent.click(screen.getByLabelText("Journal Article"));
     const apply = screen.getByRole("button", { name: "Show results" });
     expect((apply as HTMLButtonElement).disabled).toBe(false);
@@ -228,19 +156,7 @@ describe("FilterDrawer", () => {
 
   test("Show results fires onApply with one sibling-set group per selection", () => {
     const onApply = vi.fn();
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={onApply}
-        onCancel={noop}
-      />,
-    );
+    renderDrawer({ onApply });
     fireEvent.click(screen.getByLabelText("Journal Article"));
     fireEvent.click(screen.getByLabelText("Returns to Education"));
     fireEvent.click(screen.getByRole("button", { name: "Show results" }));
@@ -258,19 +174,7 @@ describe("FilterDrawer", () => {
 
   test("toggling parent concept selects descendants via subtree semantics", () => {
     const onApply = vi.fn();
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={onApply}
-        onCancel={noop}
-      />,
-    );
+    renderDrawer({ schemes: [OUTCOME_SCHEME_FIXTURE], onApply });
     fireEvent.click(screen.getByLabelText("Access to Education"));
     fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
@@ -283,19 +187,7 @@ describe("FilterDrawer", () => {
 
   test("Reset clears the draft without closing the drawer", () => {
     const onCancel = vi.fn();
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={onCancel}
-      />,
-    );
+    renderDrawer({ onCancel });
     fireEvent.click(screen.getByLabelText("Journal Article"));
     expect(
       (screen.getByLabelText("Journal Article") as HTMLInputElement).checked,
@@ -317,19 +209,7 @@ describe("FilterDrawer", () => {
 
   test("Cancel button lives in the drawer header and fires onCancel", () => {
     const onCancel = vi.fn();
-    const { container } = render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={onCancel}
-      />,
-    );
+    const { container } = renderDrawer({ onCancel });
     const cancel = screen.getByRole("button", { name: "Cancel" });
     expect(container.querySelector(".filter-drawer__header")?.contains(cancel))
       .toBe(true);
@@ -339,38 +219,14 @@ describe("FilterDrawer", () => {
 
   test("Escape key fires onCancel", () => {
     const onCancel = vi.fn();
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={onCancel}
-      />,
-    );
+    renderDrawer({ onCancel });
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
   test("backdrop click does NOT fire onCancel", () => {
     const onCancel = vi.fn();
-    const { container } = render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={onCancel}
-      />,
-    );
+    const { container } = renderDrawer({ onCancel });
     const backdrop = container.querySelector(".filter-drawer__backdrop");
     expect(backdrop).not.toBeNull();
     fireEvent.click(backdrop!);
@@ -378,19 +234,7 @@ describe("FilterDrawer", () => {
   });
 
   test("focus lands on the dialog panel when opened", () => {
-    const { container } = render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    const { container } = renderDrawer();
     const panel = container.querySelector(".filter-drawer__panel");
     expect(panel).not.toBeNull();
     expect(document.activeElement).toBe(panel);
@@ -402,34 +246,10 @@ describe("FilterDrawer", () => {
     trigger.focus();
     expect(document.activeElement).toBe(trigger);
 
-    const { rerender } = render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    const { rerender } = renderDrawer();
     expect(document.activeElement).not.toBe(trigger);
 
-    rerender(
-      <FilterDrawer
-        open={false}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    rerender({ open: false });
     expect(document.activeElement).toBe(trigger);
 
     // Tidy up so the next test starts with a fresh body.
@@ -439,51 +259,18 @@ describe("FilterDrawer", () => {
 
   test("locks body scroll while open and restores prior value on close", () => {
     document.body.style.overflow = "auto";
-    const { rerender } = render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    const { rerender } = renderDrawer();
     expect(document.body.style.overflow).toBe("hidden");
 
-    rerender(
-      <FilterDrawer
-        open={false}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    rerender({ open: false });
     expect(document.body.style.overflow).toBe("auto");
   });
 
   test("hydrates the draft from appliedConceptFilters on open", () => {
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[[URI_LEARNING]]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    renderDrawer({
+      schemes: [OUTCOME_SCHEME_FIXTURE],
+      appliedConceptFilters: [[URI_LEARNING]],
+    });
     expect(
       (screen.getByLabelText("Educational Outcomes and Learning") as HTMLInputElement)
         .checked,
@@ -495,19 +282,10 @@ describe("FilterDrawer", () => {
   });
 
   test("toggling away from a hydrated selection enables Show results", () => {
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[[URI_LEARNING]]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    renderDrawer({
+      schemes: [OUTCOME_SCHEME_FIXTURE],
+      appliedConceptFilters: [[URI_LEARNING]],
+    });
     fireEvent.click(screen.getByLabelText("Educational Outcomes and Learning"));
     expect(
       (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
@@ -517,19 +295,7 @@ describe("FilterDrawer", () => {
 
   test("renders facet counts on schemes that have no selection", () => {
     setCounts({ concepts: new Map([[URI_JOURNAL, 42]]) });
-    const { container } = render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    const { container } = renderDrawer();
     expect(
       container.querySelector(".concept-scheme-filter__count")?.textContent,
     ).toBe("42");
@@ -566,19 +332,9 @@ describe("FilterDrawer", () => {
         [URI_JOURNAL, 7],
       ]),
     });
-    const { container } = render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[[URI_LEARNING]]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    const { container } = renderDrawer({
+      appliedConceptFilters: [[URI_LEARNING]],
+    });
     // Two badges in the Outcome card: Access (50) + Learning (100, selected).
     expect(
       countNodesInSchemeContaining(container, "Access to Education").length,
@@ -599,19 +355,7 @@ describe("FilterDrawer", () => {
         [URI_JOURNAL, 7],
       ]),
     });
-    const { container } = render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    const { container } = renderDrawer();
     // Both schemes show their counts initially.
     expect(
       countNodesInSchemeContaining(container, "Access to Education").length,
@@ -637,19 +381,7 @@ describe("FilterDrawer", () => {
 
   describe("country filter integration", () => {
     test("renders the Country card after Publication year but before any scheme card", () => {
-      const { container } = render(
-        <FilterDrawer
-          open={true}
-          schemes={TWO_SCHEMES}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={undefined}
-          appliedEndYear={undefined}
-          params={defaultParams}
-          onApply={noop}
-          onCancel={noop}
-        />,
-      );
+      const { container } = renderDrawer();
       const titles = Array.from(
         container.querySelectorAll(".filter-card__title"),
       ).map((n) => n.textContent);
@@ -660,19 +392,7 @@ describe("FilterDrawer", () => {
     test("selecting a country and applying emits the code on appliedCountryCodes", () => {
       const onApply = vi.fn();
       setCounts({ countries: new Map([["DE", 230]]) });
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={[]}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={undefined}
-          appliedEndYear={undefined}
-          params={defaultParams}
-          onApply={onApply}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({ schemes: [], onApply });
       fireEvent.click(screen.getByLabelText(/^Germany/));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
@@ -686,19 +406,7 @@ describe("FilterDrawer", () => {
     });
 
     test("hydrates country selection from appliedCountryCodes", () => {
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={[]}
-          appliedCountryCodes={["DE"]}
-          appliedConceptFilters={[]}
-          appliedStartYear={undefined}
-          appliedEndYear={undefined}
-          params={defaultParams}
-          onApply={noop}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({ schemes: [], appliedCountryCodes: ["DE"] });
       expect(
         (screen.getByLabelText("Germany") as HTMLInputElement).checked,
       ).toBe(true);
@@ -711,19 +419,7 @@ describe("FilterDrawer", () => {
 
     test("Reset clears both scheme and country drafts", () => {
       setCounts({ countries: new Map([["DE", 230]]) });
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={TWO_SCHEMES}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={undefined}
-          appliedEndYear={undefined}
-          params={defaultParams}
-          onApply={noop}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer();
       fireEvent.click(screen.getByLabelText("Journal Article"));
       fireEvent.click(screen.getByLabelText(/^Germany/));
 
@@ -740,19 +436,7 @@ describe("FilterDrawer", () => {
     test("applies concept and country facets together", () => {
       const onApply = vi.fn();
       setCounts({ countries: new Map([["FR", 12]]) });
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={[DOCUMENT_TYPE_SCHEME]}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={undefined}
-          appliedEndYear={undefined}
-          params={defaultParams}
-          onApply={onApply}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({ schemes: [DOCUMENT_TYPE_SCHEME], onApply });
       fireEvent.click(screen.getByLabelText("Journal Article"));
       fireEvent.click(screen.getByLabelText(/^France/));
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
@@ -772,19 +456,11 @@ describe("FilterDrawer", () => {
     }
 
     test("hydrates the year inputs from appliedStartYear / appliedEndYear", () => {
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={[]}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={2010}
-          appliedEndYear={2020}
-          params={defaultParams}
-          onApply={noop}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({
+        schemes: [],
+        appliedStartYear: 2010,
+        appliedEndYear: 2020,
+      });
       expect(startYearInput().value).toBe("2010");
       expect(endYearInput().value).toBe("2020");
       // Hydrated draft equals applied → Show results stays disabled.
@@ -795,19 +471,7 @@ describe("FilterDrawer", () => {
     });
 
     test("editing a year enables Show results", () => {
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={[]}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={undefined}
-          appliedEndYear={undefined}
-          params={defaultParams}
-          onApply={noop}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({ schemes: [] });
       fireEvent.input(startYearInput(), { target: { value: "1990" } });
       expect(
         (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
@@ -817,19 +481,7 @@ describe("FilterDrawer", () => {
 
     test("applying a one-sided range emits undefined for the missing side", () => {
       const onApply = vi.fn();
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={[]}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={undefined}
-          appliedEndYear={undefined}
-          params={defaultParams}
-          onApply={onApply}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({ schemes: [], onApply });
       fireEvent.input(startYearInput(), { target: { value: "1990" } });
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
@@ -843,19 +495,7 @@ describe("FilterDrawer", () => {
     });
 
     test("start > end shows inline error and disables Show results", () => {
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={[]}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={undefined}
-          appliedEndYear={undefined}
-          params={defaultParams}
-          onApply={noop}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({ schemes: [] });
       fireEvent.input(startYearInput(), { target: { value: "2020" } });
       fireEvent.input(endYearInput(), { target: { value: "2010" } });
 
@@ -869,19 +509,7 @@ describe("FilterDrawer", () => {
     });
 
     test("non-numeric end year flags an error and blocks Show results", () => {
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={[]}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={undefined}
-          appliedEndYear={undefined}
-          params={defaultParams}
-          onApply={noop}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({ schemes: [] });
       fireEvent.input(endYearInput(), { target: { value: "abc" } });
 
       expect(screen.getByRole("alert")).toHaveTextContent(
@@ -894,19 +522,11 @@ describe("FilterDrawer", () => {
     });
 
     test("Reset clears year inputs alongside facet drafts", () => {
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={[]}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={2010}
-          appliedEndYear={2020}
-          params={defaultParams}
-          onApply={noop}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({
+        schemes: [],
+        appliedStartYear: 2010,
+        appliedEndYear: 2020,
+      });
       expect(startYearInput().value).toBe("2010");
       fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
       expect(startYearInput().value).toBe("");
@@ -915,19 +535,12 @@ describe("FilterDrawer", () => {
 
     test("clearing a previously-applied range applies undefined years", () => {
       const onApply = vi.fn();
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={[]}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={2010}
-          appliedEndYear={2020}
-          params={defaultParams}
-          onApply={onApply}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({
+        schemes: [],
+        appliedStartYear: 2010,
+        appliedEndYear: 2020,
+        onApply,
+      });
       fireEvent.input(startYearInput(), { target: { value: "" } });
       fireEvent.input(endYearInput(), { target: { value: "" } });
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
@@ -941,19 +554,7 @@ describe("FilterDrawer", () => {
     });
 
     test("eager loading: editing a year re-keys the facet hook with the new range", () => {
-      render(
-        <FilterDrawer
-          open={true}
-          schemes={TWO_SCHEMES}
-          appliedCountryCodes={[]}
-          appliedConceptFilters={[]}
-          appliedStartYear={undefined}
-          appliedEndYear={undefined}
-          params={makeSearchParams({ q: "phonics" })}
-          onApply={noop}
-          onCancel={noop}
-        />,
-      );
+      renderDrawer({ params: makeSearchParams({ q: "phonics" }) });
       const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
       expect(before?.startYear).toBeUndefined();
 
@@ -967,19 +568,10 @@ describe("FilterDrawer", () => {
 
   test("re-hydrates when reopened after appliedConceptFilters change", () => {
     const initial: readonly (readonly string[])[] = [[URI_LEARNING]];
-    const { rerender } = render(
-      <FilterDrawer
-        open={true}
-        schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={initial}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    const { rerender } = renderDrawer({
+      schemes: [OUTCOME_SCHEME_FIXTURE],
+      appliedConceptFilters: initial,
+    });
     expect(
       (screen.getByLabelText("Educational Outcomes and Learning") as HTMLInputElement)
         .checked,
@@ -987,32 +579,15 @@ describe("FilterDrawer", () => {
 
     // Close → URL changes externally → reopen.
     const next: readonly (readonly string[])[] = [[URI_ACCESS]];
-    rerender(
-      <FilterDrawer
-        open={false}
-        schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={next}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
-    rerender(
-      <FilterDrawer
-        open={true}
-        schemes={[OUTCOME_SCHEME_FIXTURE]}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={next}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={defaultParams}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    rerender({
+      open: false,
+      schemes: [OUTCOME_SCHEME_FIXTURE],
+      appliedConceptFilters: next,
+    });
+    rerender({
+      schemes: [OUTCOME_SCHEME_FIXTURE],
+      appliedConceptFilters: next,
+    });
 
     // toggleConceptSubtree selects the whole subtree under "Access to Education".
     expect(
@@ -1025,19 +600,7 @@ describe("FilterDrawer", () => {
   });
 
   test("eager loading: toggling a concept re-keys the facet hook with the new draft", () => {
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={makeSearchParams({ q: "phonics" })}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    renderDrawer({ params: makeSearchParams({ q: "phonics" }) });
     const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(before?.countryCodes).toEqual([]);
     expect(before?.conceptFilters).toEqual([]);
@@ -1053,19 +616,7 @@ describe("FilterDrawer", () => {
 
   test("eager loading: toggling a country re-keys the facet hook with the new draft", () => {
     setCounts({ countries: new Map([["DE", 230]]) });
-    render(
-      <FilterDrawer
-        open={true}
-        schemes={TWO_SCHEMES}
-        appliedCountryCodes={[]}
-        appliedConceptFilters={[]}
-        appliedStartYear={undefined}
-        appliedEndYear={undefined}
-        params={makeSearchParams({ q: "phonics" })}
-        onApply={noop}
-        onCancel={noop}
-      />,
-    );
+    renderDrawer({ params: makeSearchParams({ q: "phonics" }) });
     const before = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(before?.countryCodes).toEqual([]);
 
