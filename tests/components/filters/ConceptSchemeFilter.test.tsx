@@ -333,7 +333,9 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     ).not.toBeNull();
   });
 
-  test("clicking an unselected parent selects the parent and all descendants", () => {
+  test("clicking an unselected parent selects only the parent URI", () => {
+    // Cascade removed: clicking parent matches docs tagged with the parent
+    // URI literally, not its subtree. See destiny-repository#655.
     const onChange = vi.fn();
     render(
       <ConceptSchemeFilter
@@ -344,14 +346,10 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     );
     fireEvent.click(screen.getByLabelText("Access to Education"));
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(selectedUris(onChange.mock.calls[0][0])).toEqual([
-      URI_ACCESS,
-      URI_EDUCATION_FINANCE,
-      URI_ENROLMENT,
-    ]);
+    expect(selectedUris(onChange.mock.calls[0][0])).toEqual([URI_ACCESS]);
   });
 
-  test("clicking a selected parent clears the parent and all descendants", () => {
+  test("clicking a selected parent removes only the parent URI; children stay", () => {
     const onChange = vi.fn();
     render(
       <ConceptSchemeFilter
@@ -365,7 +363,9 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
       />,
     );
     fireEvent.click(screen.getByLabelText("Access to Education"));
-    expect(selectedUris(onChange.mock.calls[0][0])).toEqual([]);
+    expect([...selectedUris(onChange.mock.calls[0][0])].sort()).toEqual(
+      [URI_EDUCATION_FINANCE, URI_ENROLMENT].sort(),
+    );
   });
 });
 

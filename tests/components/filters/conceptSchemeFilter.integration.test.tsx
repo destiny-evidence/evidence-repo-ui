@@ -18,7 +18,6 @@ import {
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,
   URI_EDUCATION_FINANCE,
-  URI_ENROLMENT,
 } from "./fixtures";
 
 function Harness() {
@@ -41,7 +40,7 @@ function Harness() {
 }
 
 describe("FilterCard + ConceptSchemeFilter integration", () => {
-  test("clicking a parent emits structured concept-filter groups that round-trip through the search pipeline", () => {
+  test("clicking concepts emits structured concept-filter groups that round-trip through the search pipeline", () => {
     render(<Harness />);
 
     const header = screen.getByRole("button", { name: /Outcome/ });
@@ -50,18 +49,22 @@ describe("FilterCard + ConceptSchemeFilter integration", () => {
     expect(screen.getByTestId("groups").textContent).toBe("[]");
 
     fireEvent.click(header);
+    // Cascade was removed (destiny-repository#655) — click the parent and a
+    // child individually to exercise the multi-group emission.
     fireEvent.click(screen.getByLabelText("Access to Education"));
+    fireEvent.click(screen.getByLabelText("Education Finance"));
     fireEvent.click(header);
 
     expect(header.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.getByText("3 selected")).toBeDefined();
-    // Auto-rollup: parent + descendants land in disjoint sibling-set groups.
+    expect(screen.getByText("2 selected")).toBeDefined();
+    // Parent + child sit in disjoint sibling-set groups (parent's broader is
+    // the scheme root; child's broader is the parent).
     const groups: string[][] = JSON.parse(
       screen.getByTestId("groups").textContent ?? "[]",
     );
     expect(groups).toEqual([
       [URI_ACCESS],
-      [URI_EDUCATION_FINANCE, URI_ENROLMENT],
+      [URI_EDUCATION_FINANCE],
     ]);
 
     // Round-trip through the URL — a missing comma-join would split each URI

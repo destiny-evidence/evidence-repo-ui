@@ -8,8 +8,6 @@ import {
   URI_LEARNING,
   URI_RETURNS,
   URI_ACCESS,
-  URI_EDUCATION_FINANCE,
-  URI_ENROLMENT,
 } from "../components/filters/fixtures";
 
 function renderSearchPage() {
@@ -476,7 +474,9 @@ describe("SearchPage", () => {
       });
     });
 
-    test("selecting a parent concept applies the whole subtree (parent + descendants) to the URL", async () => {
+    test("selecting a parent concept applies only the parent URI (no cascade)", async () => {
+      // Cascade removed: see destiny-repository#655. Selecting parent matches
+      // docs tagged with the parent URI literally, not its subtree.
       mockBoth({ results: makeResult(120, ["r1"]) });
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
@@ -486,13 +486,8 @@ describe("SearchPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       await waitFor(() => {
-        // Auto-rollup: parent + 2 children land in two disjoint sibling-set groups.
         const conceptParams = new URLSearchParams(window.location.search).getAll("concept");
-        expect(conceptParams).toHaveLength(2);
-        const joined = conceptParams.join(",");
-        expect(joined).toContain(URI_ACCESS);
-        expect(joined).toContain(URI_EDUCATION_FINANCE);
-        expect(joined).toContain(URI_ENROLMENT);
+        expect(conceptParams).toEqual([URI_ACCESS]);
       });
     });
 

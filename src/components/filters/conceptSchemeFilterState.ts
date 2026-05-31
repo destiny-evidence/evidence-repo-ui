@@ -70,41 +70,20 @@ export function buildConceptIndex(scheme: ConceptScheme): ConceptIndex {
   return { byUri, broader };
 }
 
-// Toggles the clicked concept plus all of its narrower descendants together,
-// then reconciles ancestors upward via `index.broader`: at each level the
-// parent is selected iff every one of its `narrower` is selected. Recomputing
-// from sibling state handles both directions in one pass — selecting the last
-// missing sibling rolls a parent in, deselecting any sibling rolls it back out.
-// Direction of the initial subtree change is set by the clicked concept's
-// current state: if selected, the whole subtree is cleared; otherwise added.
-// This loses any independent child selections on deselect — a deliberate
-// tradeoff for predictable subtree semantics.
+// Toggles a single concept URI. Subtree cascade and ancestor auto-rollup
+// previously lived here, but interacted badly with the backend's literal-URI
+// matching: clicking a parent would silently AND its URI into the query,
+// excluding docs tagged only at narrower levels (destiny-repository#655).
+// Selecting a parent now means "literally this URI" — subtree expansion
+// returns when destiny-repository#655 / #712 ship and the backend matches
+// narrower concepts implicitly.
 export function toggleConcept(
   state: ConceptSchemeFilterState,
   concept: Concept,
-  index: ConceptIndex,
 ): ConceptSchemeFilterState {
-  const subtree = walkConcepts([concept]);
   const next = new Set(state);
-  if (next.has(concept.uri)) {
-    for (const c of subtree) next.delete(c.uri);
-  } else {
-    for (const c of subtree) next.add(c.uri);
-  }
-
-  let cursor: string | undefined = concept.uri;
-  while (cursor) {
-    const parentUri = index.broader.get(cursor);
-    if (!parentUri) break;
-    const parent = index.byUri.get(parentUri);
-    const children = parent?.narrower;
-    if (!children || children.length === 0) break;
-    const allSelected = children.every((c) => next.has(c.uri));
-    if (allSelected) next.add(parentUri);
-    else next.delete(parentUri);
-    cursor = parentUri;
-  }
-
+  if (next.has(concept.uri)) next.delete(concept.uri);
+  else next.add(concept.uri);
   return brand(next);
 }
 

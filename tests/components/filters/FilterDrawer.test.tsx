@@ -19,8 +19,6 @@ import { makeSearchParams } from "../../fixtures";
 import {
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,
-  URI_EDUCATION_FINANCE,
-  URI_ENROLMENT,
   URI_LEARNING,
 } from "./fixtures";
 
@@ -172,17 +170,16 @@ describe("FilterDrawer", () => {
     ]);
   });
 
-  test("toggling parent concept selects descendants via subtree semantics", () => {
+  test("toggling parent concept emits only the parent URI (no cascade)", () => {
+    // Cascade removed: see destiny-repository#655. Children must be clicked
+    // individually until the backend matches narrower concepts implicitly.
     const onApply = vi.fn();
     renderDrawer({ schemes: [OUTCOME_SCHEME_FIXTURE], onApply });
     fireEvent.click(screen.getByLabelText("Access to Education"));
     fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
     const applied = onApply.mock.calls[0][0] as AppliedFilters;
-    expect(applied.conceptFilters).toEqual([
-      [URI_ACCESS],
-      [URI_EDUCATION_FINANCE, URI_ENROLMENT],
-    ]);
+    expect(applied.conceptFilters).toEqual([[URI_ACCESS]]);
   });
 
   test("Reset clears the draft without closing the drawer", () => {
@@ -589,7 +586,6 @@ describe("FilterDrawer", () => {
       appliedConceptFilters: next,
     });
 
-    // toggleConceptSubtree selects the whole subtree under "Access to Education".
     expect(
       (screen.getByLabelText("Access to Education") as HTMLInputElement).checked,
     ).toBe(true);

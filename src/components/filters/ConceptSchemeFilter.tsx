@@ -1,10 +1,7 @@
-import { useMemo } from "preact/hooks";
 import { Tooltip } from "../Tooltip";
 import {
-  buildConceptIndex,
   isSelected,
   toggleConcept,
-  type ConceptIndex,
   type ConceptSchemeFilterState,
 } from "./conceptSchemeFilterState";
 import type {
@@ -24,7 +21,6 @@ interface ConceptSchemeFilterProps {
 interface ConceptItemProps {
   concept: Concept;
   state: ConceptSchemeFilterState;
-  index: ConceptIndex;
   counts: ReadonlyMap<string, number> | null;
   countsLoading: boolean;
   onChange: (next: ConceptSchemeFilterState) => void;
@@ -39,7 +35,6 @@ function formatCount(n: number): string {
 function ConceptItem({
   concept,
   state,
-  index,
   counts,
   countsLoading,
   onChange,
@@ -91,7 +86,7 @@ function ConceptItem({
           type="checkbox"
           checked={selected}
           disabled={isEmpty}
-          onChange={() => onChange(toggleConcept(state, concept, index))}
+          onChange={() => onChange(toggleConcept(state, concept))}
         />
         {hasDefinition ? (
           <Tooltip text={concept.definition}>{labelNode}</Tooltip>
@@ -112,7 +107,6 @@ function ConceptItem({
               key={child.uri}
               concept={child}
               state={state}
-              index={index}
               counts={counts}
               countsLoading={countsLoading}
               onChange={onChange}
@@ -131,7 +125,6 @@ export function ConceptSchemeFilter({
   countsLoading = false,
   onChange,
 }: ConceptSchemeFilterProps) {
-  const index = useMemo(() => buildConceptIndex(scheme), [scheme]);
   return (
     <ul class="concept-scheme-filter">
       {scheme.topConcepts.map((concept) => (
@@ -139,7 +132,6 @@ export function ConceptSchemeFilter({
           key={concept.uri}
           concept={concept}
           state={state}
-          index={index}
           counts={counts}
           countsLoading={countsLoading}
           onChange={onChange}
