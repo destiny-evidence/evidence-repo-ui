@@ -107,7 +107,7 @@ export function CountryFilter({
         })}
         {visible.length === 0 && (
           <li class="country-filter__empty">
-            {counts == null
+            {countsLoading
               ? "Loading countries…"
               : query.trim() === ""
                 ? "No countries match the current filters."

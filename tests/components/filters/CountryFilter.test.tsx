@@ -19,11 +19,27 @@ describe("CountryFilter", () => {
     expect(screen.queryByLabelText("France")).toBeNull();
   });
 
-  test("counts === null + no selection → \"Loading countries…\" hint", () => {
+  test("countsLoading + no selection → \"Loading countries…\" hint", () => {
     render(
       <CountryFilter
         state={emptyCountryState()}
         counts={null}
+        countsLoading={true}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Loading countries/i)).toBeDefined();
+  });
+
+  test("countsLoading is shown during refetch even with prior counts", () => {
+    // Under eager loading, counts may stay populated while a new fetch is
+    // in flight. If the new query has no matches, the empty state should
+    // read as "Loading…" until the refetch settles, not "No countries match".
+    render(
+      <CountryFilter
+        state={emptyCountryState()}
+        counts={new Map()}
+        countsLoading={true}
         onChange={vi.fn()}
       />,
     );
