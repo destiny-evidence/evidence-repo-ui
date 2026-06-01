@@ -6,7 +6,7 @@ import type {
   SearchResult,
 } from "@/types/models";
 
-export type FacetType = "concepts";
+export type FacetType = "concepts" | "countries";
 
 export interface SearchFilters {
   page?: number;
@@ -14,6 +14,12 @@ export interface SearchFilters {
   endYear?: number;
   annotation?: string[];
   sort?: string[];
+  // One `concept=` URL param per inner array; URIs in an array are OR'd
+  // (must share a sibling set in the vocab), arrays are AND'd.
+  conceptFilters?: readonly (readonly string[])[];
+  // ISO-3166 alpha-2 codes; comma-joined into a single `country=` param. The
+  // facet endpoint accepts only one OR'd country filter, which this satisfies.
+  countryCodes?: readonly string[];
 }
 
 // Mirrors parseSearchParams: page must be >= 1, years > 0, all safe integers.
@@ -22,9 +28,26 @@ function isPositiveSafeInt(n: number | undefined): n is number {
   return n !== undefined && Number.isSafeInteger(n) && n >= 1;
 }
 
+// concept and country are always serialised together — one `concept=` per
+// sibling group, one `country=` for the OR'd codes. Extend here when the
+// backend grows another structured filter (e.g. `country_wb_region=`).
+function appendStructuredFilters(
+  params: URLSearchParams,
+  filters: Pick<SearchFilters, "conceptFilters" | "countryCodes">,
+): void {
+  for (const group of filters.conceptFilters ?? []) {
+    if (group.length > 0) params.append("concept", group.join(","));
+  }
+  if (filters.countryCodes?.length) {
+    params.append("country", filters.countryCodes.join(","));
+  }
+}
+
+type SharedFilterFields = "startYear" | "endYear" | "annotation" | "conceptFilters" | "countryCodes";
+
 function buildSharedSearchParams(
   query: string | undefined,
-  filters: Pick<SearchFilters, "startYear" | "endYear" | "annotation">,
+  filters: Pick<SearchFilters, SharedFilterFields>,
 ): URLSearchParams {
   const normalizedQuery = query?.trim();
   // Browse-mode shim: empty q would produce "(q) AND ..." on the backend,
@@ -37,6 +60,7 @@ function buildSharedSearchParams(
   if (isPositiveSafeInt(filters.startYear)) params.set("start_year", String(filters.startYear));
   if (isPositiveSafeInt(filters.endYear)) params.set("end_year", String(filters.endYear));
   for (const a of filters.annotation ?? []) params.append("annotation", a);
+  appendStructuredFilters(params, filters);
   return params;
 }
 
@@ -52,11 +76,17 @@ export async function searchReferences(
 
 export async function searchReferenceFacets(
   query: string | undefined,
-  filters: Pick<SearchFilters, "startYear" | "endYear" | "annotation">,
+  filters: Pick<SearchFilters, SharedFilterFields>,
   facets: FacetType[],
+  options: { vocabularyUrl?: string } = {},
 ): Promise<ReferenceFacetResult> {
   const params = buildSharedSearchParams(query, filters);
   for (const f of facets) params.append("facet", f);
+  // `vocabulary=` is what triggers sibling-aware aggregation; only required
+  // when concept filters are active.
+  if (options.vocabularyUrl && filters.conceptFilters?.length) {
+    params.set("vocabulary", options.vocabularyUrl);
+  }
   return api.get<ReferenceFacetResult>(
     `/v1/references/search/facets/?${params.toString()}`,
   );
@@ -75,6 +105,7 @@ export async function requestSearchExport(
   if (isPositiveSafeInt(filters.endYear)) params.set("end_year", String(filters.endYear));
   for (const a of filters.annotation ?? []) params.append("annotation", a);
   for (const s of filters.sort ?? []) params.append("sort", s);
+  appendStructuredFilters(params, filters);
   return api.post<SearchExportRead>(
     `/v1/references/search/exports/?${params.toString()}`,
     undefined,

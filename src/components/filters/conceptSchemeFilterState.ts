@@ -70,41 +70,13 @@ export function buildConceptIndex(scheme: ConceptScheme): ConceptIndex {
   return { byUri, broader };
 }
 
-// Toggles the clicked concept plus all of its narrower descendants together,
-// then reconciles ancestors upward via `index.broader`: at each level the
-// parent is selected iff every one of its `narrower` is selected. Recomputing
-// from sibling state handles both directions in one pass — selecting the last
-// missing sibling rolls a parent in, deselecting any sibling rolls it back out.
-// Direction of the initial subtree change is set by the clicked concept's
-// current state: if selected, the whole subtree is cleared; otherwise added.
-// This loses any independent child selections on deselect — a deliberate
-// tradeoff for predictable subtree semantics.
 export function toggleConcept(
   state: ConceptSchemeFilterState,
   concept: Concept,
-  index: ConceptIndex,
 ): ConceptSchemeFilterState {
-  const subtree = walkConcepts([concept]);
   const next = new Set(state);
-  if (next.has(concept.uri)) {
-    for (const c of subtree) next.delete(c.uri);
-  } else {
-    for (const c of subtree) next.add(c.uri);
-  }
-
-  let cursor: string | undefined = concept.uri;
-  while (cursor) {
-    const parentUri = index.broader.get(cursor);
-    if (!parentUri) break;
-    const parent = index.byUri.get(parentUri);
-    const children = parent?.narrower;
-    if (!children || children.length === 0) break;
-    const allSelected = children.every((c) => next.has(c.uri));
-    if (allSelected) next.add(parentUri);
-    else next.delete(parentUri);
-    cursor = parentUri;
-  }
-
+  if (next.has(concept.uri)) next.delete(concept.uri);
+  else next.add(concept.uri);
   return brand(next);
 }
 
@@ -117,23 +89,30 @@ function walkConcepts(concepts: Concept[]): Concept[] {
   return all;
 }
 
-// Builds one SearchParams.searchFacets[] entry: an unwrapped, OR-joined
-// sequence of linked_data_concepts:"..." clauses for every selected
-// concept, with full concept URIs embedded verbatim.
-export function toSearchFacet(
+// Buckets selections into sibling-set groups for the backend's `concept=`
+// param: one group per common broader URI, with top concepts keyed by the
+// scheme URI so they share a synthetic root. Auto-rollup can leave a parent
+// + every descendant selected; they land in separate groups (disjoint sibling
+// sets), which is what the backend validates.
+export function toConceptFilterGroups(
   state: ConceptSchemeFilterState,
   scheme: ConceptScheme,
-): string {
-  const clauses: string[] = [];
+): string[][] {
+  if (state.size === 0) return [];
+  const index = buildConceptIndex(scheme);
+  const groups = new Map<string, string[]>();
   for (const concept of walkConcepts(scheme.topConcepts)) {
-    if (state.has(concept.uri)) {
-      clauses.push(`linked_data_concepts:"${concept.uri}"`);
+    if (!state.has(concept.uri)) continue;
+    const groupKey = index.broader.get(concept.uri) ?? scheme.uri;
+    let group = groups.get(groupKey);
+    if (!group) {
+      group = [];
+      groups.set(groupKey, group);
     }
+    group.push(concept.uri);
   }
-  return clauses.join(" OR ");
+  return Array.from(groups.values());
 }
-
-const FACET_URI_RE = /linked_data_concepts:"([^"]+)"/g;
 
 function indexConceptUrisByScheme(
   schemes: ConceptScheme[],
@@ -151,30 +130,26 @@ function indexConceptUrisByScheme(
 // URL. Used to drive the Refine button's badge — each scheme contributes
 // its own checkbox count, the drawer never aggregates URIs directly.
 export function totalSelectedCount(
-  searchFacets: readonly string[],
+  conceptFilters: readonly (readonly string[])[],
   schemes: ConceptScheme[],
 ): number {
   let total = 0;
-  for (const state of parseFacets(searchFacets, schemes).values()) {
+  for (const state of parseConceptFilters(conceptFilters, schemes).values()) {
     total += selectedCount(state);
   }
   return total;
 }
 
-// Reverse of `toSearchFacet`, lifted to operate over the full
-// `SearchParams.searchFacets` array: extract every concept URI from each
-// fragment and bucket the URIs by the scheme that contains them. URIs that
-// don't belong to any of the supplied schemes are silently dropped —
-// defensive for stale URLs pointing at a vocabulary that has since changed.
-export function parseFacets(
-  searchFacets: readonly string[],
+// URIs that don't belong to any supplied scheme are silently dropped —
+// defensive for stale URLs pointing at a vocab that has since changed.
+export function parseConceptFilters(
+  conceptFilters: readonly (readonly string[])[],
   schemes: ConceptScheme[],
 ): Map<string, ConceptSchemeFilterState> {
   const uriToScheme = indexConceptUrisByScheme(schemes);
   const buckets = new Map<string, Set<string>>();
-  for (const fragment of searchFacets) {
-    for (const match of fragment.matchAll(FACET_URI_RE)) {
-      const uri = match[1];
+  for (const group of conceptFilters) {
+    for (const uri of group) {
       const schemeUri = uriToScheme.get(uri);
       if (schemeUri === undefined) continue;
       let bucket = buckets.get(schemeUri);

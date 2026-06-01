@@ -3,19 +3,19 @@ import { FilterCard } from "./FilterCard";
 import { ConceptSchemeFilter } from "./ConceptSchemeFilter";
 import {
   emptyConceptSchemeState,
-  parseFacets,
+  parseConceptFilters,
   summary,
-  toSearchFacet,
+  toConceptFilterGroups,
   type ConceptSchemeFilterState,
 } from "./conceptSchemeFilterState";
 import { useSearchFacets } from "@/hooks/useSearchFacets";
 import type { SearchParams } from "@/services/searchParams";
 import { CountryFilter } from "./CountryFilter";
 import {
+  countryStateFromCodes,
   emptyCountryState,
-  parseFacets as parseCountryFacets,
+  selectedCodes,
   summary as countrySummary,
-  toSearchFacet as countryToSearchFacet,
   type CountryFilterState,
 } from "./countryFilterState";
 import { YearRangeFilter } from "./YearRangeFilter";
@@ -32,7 +32,8 @@ import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import "./FilterDrawer.css";
 
 export interface AppliedFilters {
-  searchFacets: string[];
+  conceptFilters: readonly (readonly string[])[];
+  countryCodes: readonly string[];
   startYear: number | undefined;
   endYear: number | undefined;
 }
@@ -40,7 +41,8 @@ export interface AppliedFilters {
 interface FilterDrawerProps {
   open: boolean;
   schemes: ConceptScheme[];
-  appliedFacets: string[];
+  appliedConceptFilters: readonly (readonly string[])[];
+  appliedCountryCodes: readonly string[];
   appliedStartYear: number | undefined;
   appliedEndYear: number | undefined;
   // Drives the facet-count fetch alongside the draft. Owned by SearchPage as
@@ -52,36 +54,38 @@ interface FilterDrawerProps {
 
 type Draft = Map<string, ConceptSchemeFilterState>;
 
-// Serialise both drafts back into the wire format expected by
-// SearchParams.searchFacets — one entry per scheme that has at least one
-// concept selected, plus one trailing entry for the country selection
-// (if any). Country goes last so the URL form mirrors the on-screen order
-// (country card first, then schemes) when read left-to-right after
-// build-time stripping.
-function draftToFacets(
+function draftToConceptFilters(
   draft: Draft,
   schemes: ConceptScheme[],
-  countryDraft: CountryFilterState,
-): string[] {
-  const facets: string[] = [];
+): string[][] {
+  const groups: string[][] = [];
   for (const scheme of schemes) {
     const state = draft.get(scheme.uri);
     if (!state || state.size === 0) continue;
-    const facet = toSearchFacet(state, scheme);
-    if (facet !== "") facets.push(facet);
+    for (const group of toConceptFilterGroups(state, scheme)) {
+      groups.push(group);
+    }
   }
-  const countryFacet = countryToSearchFacet(countryDraft);
-  if (countryFacet !== "") facets.push(countryFacet);
-  return facets;
+  return groups;
 }
 
-// Order-insensitive set equality on facet strings. URL ordering of
-// `searchFacets` is incidental — we don't want to flag the draft as dirty
-// just because two schemes' fragments swapped position.
-function facetsEqual(a: readonly string[], b: readonly string[]): boolean {
+function codeArraysEqual(a: readonly string[], b: readonly string[]): boolean {
   if (a.length !== b.length) return false;
   const seen = new Set(a);
   for (const x of b) if (!seen.has(x)) return false;
+  return true;
+}
+
+// Order-insensitive: backend OR's within a group and AND's between groups,
+// so neither ordering is load-bearing for dirty-checking.
+function conceptFiltersEqual(
+  a: readonly (readonly string[])[],
+  b: readonly (readonly string[])[],
+): boolean {
+  if (a.length !== b.length) return false;
+  const canon = (g: readonly string[]) => [...g].sort().join("\n");
+  const seen = new Set(a.map(canon));
+  for (const g of b) if (!seen.has(canon(g))) return false;
   return true;
 }
 
@@ -103,7 +107,8 @@ type FilterDrawerPanelProps = Omit<FilterDrawerProps, "open">;
 
 function FilterDrawerPanel({
   schemes,
-  appliedFacets,
+  appliedConceptFilters,
+  appliedCountryCodes,
   appliedStartYear,
   appliedEndYear,
   params,
@@ -111,10 +116,10 @@ function FilterDrawerPanel({
   onCancel,
 }: FilterDrawerPanelProps) {
   const [draft, setDraft] = useState<Draft>(() =>
-    parseFacets(appliedFacets, schemes),
+    parseConceptFilters(appliedConceptFilters, schemes),
   );
   const [countryDraft, setCountryDraft] = useState<CountryFilterState>(() =>
-    parseCountryFacets(appliedFacets),
+    countryStateFromCodes(appliedCountryCodes),
   );
   const [yearDraft, setYearDraft] = useState<YearRangeFilterState>(() =>
     yearRangeFromParams(appliedStartYear, appliedEndYear),
@@ -123,16 +128,24 @@ function FilterDrawerPanel({
   const previousFocusRef = useRef<Element | null>(document.activeElement);
   const titleId = useId();
 
-  const draftFacets = useMemo(
-    () => draftToFacets(draft, schemes, countryDraft),
-    [draft, schemes, countryDraft],
+  const draftConceptFilters = useMemo(
+    () => draftToConceptFilters(draft, schemes),
+    [draft, schemes],
+  );
+  const draftCountryCodes = useMemo(
+    () => selectedCodes(countryDraft),
+    [countryDraft],
   );
   const yearValidation = useMemo(() => validateYearRange(yearDraft), [yearDraft]);
+  // Only feed each year into the preview fetch when its input is "ready"
+  // (empty or a complete 4-digit year) — partial typing like "20" shouldn't
+  // trigger a refetch per keystroke.
   const startReady = isYearInputReady(yearDraft.start);
   const endReady = isYearInputReady(yearDraft.end);
   const facetParams: SearchParams = {
     ...params,
-    searchFacets: draftFacets,
+    conceptFilters: draftConceptFilters,
+    countryCodes: draftCountryCodes,
     startYear:
       yearValidation.ok && startReady ? yearValidation.startYear : appliedStartYear,
     endYear:
@@ -192,16 +205,16 @@ function FilterDrawerPanel({
   function handleApply() {
     if (!yearValidation.ok) return;
     onApply({
-      searchFacets: draftToFacets(draft, schemes, countryDraft),
+      conceptFilters: draftConceptFilters,
+      countryCodes: draftCountryCodes,
       startYear: yearValidation.startYear,
       endYear: yearValidation.endYear,
     });
   }
 
-  const facetsDirty = !facetsEqual(
-    draftToFacets(draft, schemes, countryDraft),
-    appliedFacets,
-  );
+  const facetsDirty =
+    !codeArraysEqual(draftCountryCodes, appliedCountryCodes) ||
+    !conceptFiltersEqual(draftConceptFilters, appliedConceptFilters);
   const yearDirty = isYearDirty(yearDraft, appliedStartYear, appliedEndYear);
   const canApply = (facetsDirty || yearDirty) && yearValidation.ok;
 
@@ -255,14 +268,13 @@ function FilterDrawerPanel({
           >
             <CountryFilter
               state={countryDraft}
+              counts={facetCounts?.countries ?? null}
+              countsLoading={facetCountsLoading}
               onChange={setCountryDraft}
             />
           </FilterCard>
           {schemes.map((scheme) => {
             const state = draft.get(scheme.uri) ?? emptyConceptSchemeState();
-            // Counts intersect with selected concepts, so siblings of a
-            // selection drop to ~0; hide per-scheme once anything's picked.
-            const showCounts = state.size === 0 && facetCounts !== null;
             return (
               <FilterCard
                 key={scheme.uri}
@@ -272,7 +284,7 @@ function FilterDrawerPanel({
                 <ConceptSchemeFilter
                   scheme={scheme}
                   state={state}
-                  counts={showCounts ? facetCounts : null}
+                  counts={facetCounts?.concepts ?? null}
                   countsLoading={facetCountsLoading}
                   onChange={(next) => onSchemeChange(scheme, next)}
                 />

@@ -6,11 +6,10 @@ import { ConceptSchemeFilter } from "@/components/filters/ConceptSchemeFilter";
 import {
   emptyConceptSchemeState,
   summary,
-  toSearchFacet,
+  toConceptFilterGroups,
   type ConceptSchemeFilterState,
 } from "@/components/filters/conceptSchemeFilterState";
 import {
-  buildFacetedQuery,
   parseSearchParams,
   toQueryString,
 } from "@/services/searchParams";
@@ -19,13 +18,13 @@ import {
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,
   URI_EDUCATION_FINANCE,
-  URI_ENROLMENT,
 } from "./fixtures";
 
 function Harness() {
   const [state, setState] = useState<ConceptSchemeFilterState>(
     emptyConceptSchemeState(),
   );
+  const groups = toConceptFilterGroups(state, OUTCOME_SCHEME_FIXTURE);
   return (
     <>
       <FilterCard title={OUTCOME_SCHEME_FIXTURE.label} summary={summary(state)}>
@@ -35,46 +34,43 @@ function Harness() {
           onChange={setState}
         />
       </FilterCard>
-      <pre data-testid="facet">
-        {toSearchFacet(state, OUTCOME_SCHEME_FIXTURE)}
-      </pre>
+      <pre data-testid="groups">{JSON.stringify(groups)}</pre>
     </>
   );
 }
 
 describe("FilterCard + ConceptSchemeFilter integration", () => {
-  test("clicking a parent emits a searchFacets entry that round-trips through the search pipeline", () => {
+  test("clicking concepts emits structured concept-filter groups that round-trip through the search pipeline", () => {
     render(<Harness />);
 
     const header = screen.getByRole("button", { name: /Outcome/ });
     expect(header.getAttribute("aria-expanded")).toBe("false");
     expect(screen.queryByText(/selected/)).toBeNull();
-    expect(screen.getByTestId("facet").textContent).toBe("");
+    expect(screen.getByTestId("groups").textContent).toBe("[]");
 
     fireEvent.click(header);
+    // Cascade was removed (destiny-repository#655) — click the parent and a
+    // child individually to exercise the multi-group emission.
     fireEvent.click(screen.getByLabelText("Access to Education"));
+    fireEvent.click(screen.getByLabelText("Education Finance"));
     fireEvent.click(header);
 
     expect(header.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.getByText("3 selected")).toBeDefined();
-    expect(screen.getByTestId("facet").textContent).toBe(
-      `linked_data_concepts:"${URI_ACCESS}"` +
-        ` OR linked_data_concepts:"${URI_EDUCATION_FINANCE}"` +
-        ` OR linked_data_concepts:"${URI_ENROLMENT}"`,
+    expect(screen.getByText("2 selected")).toBeDefined();
+    // Parent + child sit in disjoint sibling-set groups (parent's broader is
+    // the scheme root; child's broader is the parent).
+    const groups: string[][] = JSON.parse(
+      screen.getByTestId("groups").textContent ?? "[]",
     );
+    expect(groups).toEqual([
+      [URI_ACCESS],
+      [URI_EDUCATION_FINANCE],
+    ]);
 
-    // Plumb the filter's output through the real searchParams pipeline.
-    // Catches silent contract drift: a re-wrap would break the round-trip,
-    // a prefix transform would hide URIs from the wire-form query.
-    const facet = screen.getByTestId("facet").textContent ?? "";
-    const params = makeSearchParams({ searchFacets: [facet] });
-
+    // Round-trip through the URL — a missing comma-join would split each URI
+    // into its own concept= param and trip the backend's sibling-set rule.
+    const params = makeSearchParams({ conceptFilters: groups });
     const url = "?" + toQueryString(params);
-    expect(parseSearchParams(url).searchFacets).toEqual([facet]);
-
-    const wire = buildFacetedQuery(params.q, params.searchFacets);
-    expect(wire).toContain(URI_ACCESS);
-    expect(wire).toContain(URI_EDUCATION_FINANCE);
-    expect(wire).toContain(URI_ENROLMENT);
+    expect(parseSearchParams(url).conceptFilters).toEqual(groups);
   });
 });

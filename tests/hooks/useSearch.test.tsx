@@ -50,6 +50,8 @@ describe("useSearch", () => {
       startYear: undefined,
       endYear: undefined,
       annotation: ["domain-inclusion/jacobs-education"],
+      conceptFilters: [],
+      countryCodes: [],
     });
   });
 
@@ -247,45 +249,47 @@ describe("useSearch", () => {
     expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  // Witnesses that facets are threaded into the wire query — exact join/
-  // precedence format is owned by searchParams unit tests.
-  test("passes facet URIs through to the wire query when calling searchReferences", async () => {
+  test("threads conceptFilters + countryCodes through as structured filters", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const params = makeSearchParams({
       q: "phonics",
-      searchFacets: ['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"'],
+      conceptFilters: [
+        ["https://vocab.esea.education/EducationLevelScheme/C00002"],
+      ],
+      countryCodes: ["DE", "FR"],
     });
     renderHook(() => useSearch(params), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
     expect(mockSearch).toHaveBeenCalledWith(
-      expect.stringContaining("https://vocab.esea.education/EducationLevelScheme/C00002"),
+      "phonics",
       expect.objectContaining({
         annotation: ["domain-inclusion/jacobs-education"],
+        conceptFilters: [
+          ["https://vocab.esea.education/EducationLevelScheme/C00002"],
+        ],
+        countryCodes: ["DE", "FR"],
       }),
     );
   });
 
-  // Pins the composition for empty q + facets: useSearch must pass the
-  // faceted wire query (not undefined) so the backend receives the filter
-  // instead of dropping to browse mode.
-  test("empty q + facets calls searchReferences with the faceted wire query (not undefined)", async () => {
+  // Empty q passes undefined so the apiClient's browse-mode shim kicks in
+  // and the backend doesn't get an invalid empty Lucene query.
+  test("empty q with countryCodes calls searchReferences with q=undefined + countryCodes on filters", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
-    const params = makeSearchParams({
-      searchFacets: ['linked_data_concepts:"https://vocab.esea.education/EducationLevelScheme/C00002"'],
-    });
+    const params = makeSearchParams({ countryCodes: ["DE"] });
     renderHook(() => useSearch(params), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
     expect(mockSearch).toHaveBeenCalledWith(
-      expect.stringContaining("https://vocab.esea.education/EducationLevelScheme/C00002"),
-      expect.anything(),
+      undefined,
+      expect.objectContaining({ countryCodes: ["DE"] }),
     );
   });
 
-  test("refetches on facet change; not on structurally-identical rerender", async () => {
+  test("refetches on conceptFilters change; not on structurally-identical rerender", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const { rerender } = renderHook(
       ({ p }) => useSearch(p),
@@ -296,32 +300,32 @@ describe("useSearch", () => {
     );
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
 
-    rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00002"'] } });
+    rerender({ p: { ...baseParams, conceptFilters: [["EducationLevelScheme/C00002"]] } });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
 
-    rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00003"'] } });
+    rerender({ p: { ...baseParams, conceptFilters: [["EducationLevelScheme/C00003"]] } });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(3));
 
     // Flush a tick so any async effect a regression might schedule has a chance
     // to fire before we assert no extra call.
-    rerender({ p: { ...baseParams, searchFacets: ['linked_data_concepts:"EducationLevelScheme/C00003"'] } });
+    rerender({ p: { ...baseParams, conceptFilters: [["EducationLevelScheme/C00003"]] } });
     await act(async () => {});
     expect(mockSearch).toHaveBeenCalledTimes(3);
   });
 
-  test("cache key is order-sensitive for facets", async () => {
+  test("cache key is order-sensitive for conceptFilters", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
-    const facetsA = ['linked_data_concepts:"x"', 'linked_data_concepts:"y"'];
-    const facetsB = ['linked_data_concepts:"y"', 'linked_data_concepts:"x"'];
+    const filtersA: readonly (readonly string[])[] = [["x"], ["y"]];
+    const filtersB: readonly (readonly string[])[] = [["y"], ["x"]];
     const { rerender } = renderHook(
       ({ p }) => useSearch(p),
       {
         wrapper: withCommunityPath("/esea"),
-        initialProps: { p: { ...baseParams, searchFacets: facetsA } },
+        initialProps: { p: { ...baseParams, conceptFilters: filtersA } },
       },
     );
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
-    rerender({ p: { ...baseParams, searchFacets: facetsB } });
+    rerender({ p: { ...baseParams, conceptFilters: filtersB } });
     await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(2));
   });
 });

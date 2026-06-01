@@ -333,7 +333,9 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     ).not.toBeNull();
   });
 
-  test("clicking an unselected parent selects the parent and all descendants", () => {
+  test("clicking an unselected parent selects only the parent URI", () => {
+    // Cascade removed: clicking parent matches docs tagged with the parent
+    // URI literally, not its subtree. See destiny-repository#655.
     const onChange = vi.fn();
     render(
       <ConceptSchemeFilter
@@ -344,14 +346,10 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     );
     fireEvent.click(screen.getByLabelText("Access to Education"));
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(selectedUris(onChange.mock.calls[0][0])).toEqual([
-      URI_ACCESS,
-      URI_EDUCATION_FINANCE,
-      URI_ENROLMENT,
-    ]);
+    expect(selectedUris(onChange.mock.calls[0][0])).toEqual([URI_ACCESS]);
   });
 
-  test("clicking a selected parent clears the parent and all descendants", () => {
+  test("clicking a selected parent removes only the parent URI; children stay", () => {
     const onChange = vi.fn();
     render(
       <ConceptSchemeFilter
@@ -365,6 +363,137 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
       />,
     );
     fireEvent.click(screen.getByLabelText("Access to Education"));
-    expect(selectedUris(onChange.mock.calls[0][0])).toEqual([]);
+    expect([...selectedUris(onChange.mock.calls[0][0])].sort()).toEqual(
+      [URI_EDUCATION_FINANCE, URI_ENROLMENT].sort(),
+    );
+  });
+});
+
+describe("ConceptSchemeFilter 0-count rendering", () => {
+  test("unselected concept with count=0 → disabled checkbox + row--empty class + no badge", () => {
+    const counts = new Map<string, number>([
+      [URI_ACCESS, 50],
+      [URI_EDUCATION_FINANCE, 0],
+    ]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        onChange={vi.fn()}
+      />,
+    );
+    const financeInput = screen.getByLabelText<HTMLInputElement>(
+      /^Education Finance/,
+    );
+    expect(financeInput.disabled).toBe(true);
+    const financeRow = financeInput.closest("label")!;
+    expect(financeRow.className).toContain("concept-scheme-filter__row--empty");
+    expect(
+      financeRow.querySelector(".concept-scheme-filter__count"),
+    ).toBeNull();
+  });
+
+  test("selected concept with count=0 → checkbox stays enabled, badge still hidden", () => {
+    const counts = new Map<string, number>([[URI_EDUCATION_FINANCE, 0]]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={conceptSchemeStateFromUris([URI_EDUCATION_FINANCE])}
+        counts={counts}
+        onChange={vi.fn()}
+      />,
+    );
+    const financeInput = screen.getByLabelText<HTMLInputElement>(
+      /^Education Finance/,
+    );
+    expect(financeInput.disabled).toBe(false);
+    expect(financeInput.checked).toBe(true);
+    const financeRow = financeInput.closest("label")!;
+    expect(financeRow.className).not.toContain(
+      "concept-scheme-filter__row--empty",
+    );
+  });
+
+  test("count > 0 renders normally regardless of selection", () => {
+    const counts = new Map<string, number>([
+      [URI_ACCESS, 50],
+      [URI_EDUCATION_FINANCE, 10],
+    ]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        onChange={vi.fn()}
+      />,
+    );
+    const accessInput = screen.getByLabelText<HTMLInputElement>(
+      /^Access to Education/,
+    );
+    expect(accessInput.disabled).toBe(false);
+    expect(
+      accessInput.closest("label")!.className,
+    ).not.toContain("concept-scheme-filter__row--empty");
+  });
+
+  test("missing concept after counts have settled → treated as 0 (disabled + empty)", () => {
+    // Standard terms aggregation omits 0-buckets, so a concept missing from
+    // the settled response has 0 matches under the active filter.
+    const counts = new Map<string, number>([[URI_ACCESS, 50]]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        countsLoading={false}
+        onChange={vi.fn()}
+      />,
+    );
+    const financeInput = screen.getByLabelText<HTMLInputElement>(
+      /^Education Finance/,
+    );
+    expect(financeInput.disabled).toBe(true);
+    expect(
+      financeInput.closest("label")!.className,
+    ).toContain("concept-scheme-filter__row--empty");
+  });
+
+  test("missing concept stays disabled across a refetch (dim-while-updating)", () => {
+    // Prior counts survive a refetch, so previously-greyed rows shouldn't
+    // briefly become clickable while the new response is in flight.
+    const counts = new Map<string, number>([[URI_ACCESS, 50]]);
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        countsLoading={true}
+        onChange={vi.fn()}
+      />,
+    );
+    const financeInput = screen.getByLabelText<HTMLInputElement>(
+      /^Education Finance/,
+    );
+    expect(financeInput.disabled).toBe(true);
+    expect(
+      financeInput.closest("label")!.className,
+    ).toContain("concept-scheme-filter__row--empty");
+  });
+
+  test("counts === null (no fetch yet) → all rows render normally", () => {
+    render(
+      <ConceptSchemeFilter
+        scheme={OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={null}
+        countsLoading={false}
+        onChange={vi.fn()}
+      />,
+    );
+    const financeInput = screen.getByLabelText<HTMLInputElement>(
+      /^Education Finance/,
+    );
+    expect(financeInput.disabled).toBe(false);
   });
 });

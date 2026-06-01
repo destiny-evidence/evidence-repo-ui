@@ -21,7 +21,7 @@ import { ExportButton } from "@/components/search/ExportButton";
 import { RefineButton } from "@/components/search/RefineButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/Pagination";
-import { FilterDrawer } from "@/components/filters/FilterDrawer";
+import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
 import { totalSelectedCount as totalSelectedYearCount } from "@/components/filters/yearRangeFilterState";
@@ -163,17 +163,13 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const refine = buildRefineConfig(
     vocab,
-    totalSelectedCount(params.searchFacets, filterableSchemes)
-      + totalSelectedCountryCount(params.searchFacets)
+    totalSelectedCount(params.conceptFilters, filterableSchemes)
+      + totalSelectedCountryCount(params.countryCodes)
       + totalSelectedYearCount(params.startYear, params.endYear),
     handleOpenDrawer,
   );
 
-  function handleApplyFilters(next: {
-    searchFacets: string[];
-    startYear: number | undefined;
-    endYear: number | undefined;
-  }) {
+  function handleApplyFilters(next: AppliedFilters) {
     const committed = draft.commitDraft();
     navigate(
       buildSearchUrl(community.slug, {
@@ -194,13 +190,19 @@ function SearchPageInner({ community }: { community: Community }) {
     results.results !== null ||
     results.error !== null ||
     params.q !== "" ||
-    params.searchFacets.length > 0 ||
+    params.startYear !== undefined ||
+    params.endYear !== undefined ||
+    params.countryCodes.length > 0 ||
+    params.conceptFilters.length > 0 ||
     refine !== undefined;
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary =
     params.q !== "" ||
-    params.searchFacets.length > 0 ||
+    params.startYear !== undefined ||
+    params.endYear !== undefined ||
+    params.countryCodes.length > 0 ||
+    params.conceptFilters.length > 0 ||
     results.error !== null;
 
   function handleSubmit() {
@@ -397,7 +399,8 @@ function SearchPageInner({ community }: { community: Community }) {
         <FilterDrawer
           open={drawerOpen}
           schemes={filterableSchemes}
-          appliedFacets={params.searchFacets}
+          appliedConceptFilters={params.conceptFilters}
+          appliedCountryCodes={params.countryCodes}
           appliedStartYear={params.startYear}
           appliedEndYear={params.endYear}
           params={params}

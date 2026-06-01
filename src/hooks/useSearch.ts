@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
 import { searchReferences, type SearchFilters } from "@/services/apiClient";
-import { SORT_BACKEND, buildFacetedQuery } from "@/services/searchParams";
+import { SORT_BACKEND } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
@@ -22,7 +22,8 @@ function paramsKey(
     `sort=${params.sort ?? ""}`,
     `slug=${slug}`,
     `ann=${JSON.stringify(annotations)}`,
-    `facets=${JSON.stringify(params.searchFacets)}`,
+    `countries=${JSON.stringify(params.countryCodes)}`,
+    `concepts=${JSON.stringify(params.conceptFilters)}`,
   ].join("&");
 }
 
@@ -61,11 +62,12 @@ export function useSearch(params: SearchParams): {
       startYear: params.startYear,
       endYear: params.endYear,
       annotation: community.defaultAnnotations,
+      conceptFilters: params.conceptFilters,
+      countryCodes: params.countryCodes,
     };
     if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
 
-    const wireQuery = buildFacetedQuery(params.q, params.searchFacets);
-    searchReferences(wireQuery || undefined, filters)
+    searchReferences(params.q || undefined, filters)
       .then((r) => { if (!cancelled) setResults(r); })
       .catch((e) => {
         if (cancelled) return;

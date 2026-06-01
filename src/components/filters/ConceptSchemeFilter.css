@@ -25,9 +25,18 @@
   color: var(--color-text-primary);
 }
 
+.concept-scheme-filter__row--empty {
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
 .concept-scheme-filter__checkbox {
   margin: 0;
   cursor: pointer;
+}
+
+.concept-scheme-filter__row--empty .concept-scheme-filter__checkbox {
+  cursor: not-allowed;
 }
 
 .concept-scheme-filter__label--has-tooltip {

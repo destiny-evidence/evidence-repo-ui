@@ -5,12 +5,12 @@ import {
   emptyConceptSchemeState,
   isEmpty,
   isSelected,
-  parseFacets,
+  parseConceptFilters,
   selectedCount,
   selectedUris,
   summary,
+  toConceptFilterGroups,
   toggleConcept,
-  toSearchFacet,
   totalSelectedCount,
 } from "@/components/filters/conceptSchemeFilterState";
 import type {
@@ -43,9 +43,6 @@ const SCHEME: ConceptScheme = {
     { uri: URI_GOVERNMENT_REPORT, label: "Government Report/Document" },
   ],
 };
-
-const SCHEME_INDEX = buildConceptIndex(SCHEME);
-const OUTCOME_INDEX = buildConceptIndex(OUTCOME_SCHEME_FIXTURE);
 
 describe("emptyConceptSchemeState", () => {
   test("starts empty", () => {
@@ -106,211 +103,74 @@ describe("toggleConcept", () => {
   const LEAF: Concept = { uri: URI_JOURNAL_ARTICLE, label: "Journal Article" };
 
   const ACCESS_SUBTREE = OUTCOME_SCHEME_FIXTURE.topConcepts[0];
-  const EDUCATION_FINANCE: Concept = ACCESS_SUBTREE.narrower![0];
   const ENROLMENT: Concept = ACCESS_SUBTREE.narrower![1];
 
-  test("on a leaf adds the URI when absent and removes it when present", () => {
+  test("adds the URI when absent and removes it when present", () => {
     const empty = emptyConceptSchemeState();
-    const added = toggleConcept(empty, LEAF, SCHEME_INDEX);
+    const added = toggleConcept(empty, LEAF);
     expect(selectedUris(added)).toEqual([LEAF.uri]);
 
-    const removed = toggleConcept(added, LEAF, SCHEME_INDEX);
+    const removed = toggleConcept(added, LEAF);
     expect(isEmpty(removed)).toBe(true);
   });
 
-  test("on an unselected parent adds the parent and every descendant", () => {
-    const result = toggleConcept(
-      emptyConceptSchemeState(),
-      ACCESS_SUBTREE,
-      OUTCOME_INDEX,
-    );
+  test("on a parent only adds the parent URI; descendants are not cascaded in", () => {
+    // Cascade was removed: selecting the parent matches docs tagged with the
+    // parent URI literally, not its subtree. See destiny-repository#655.
+    const result = toggleConcept(emptyConceptSchemeState(), ACCESS_SUBTREE);
     expect(isSelected(result, URI_ACCESS)).toBe(true);
-    expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(true);
-    expect(isSelected(result, URI_ENROLMENT)).toBe(true);
-    expect(selectedCount(result)).toBe(3);
+    expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(false);
+    expect(isSelected(result, URI_ENROLMENT)).toBe(false);
+    expect(selectedCount(result)).toBe(1);
   });
 
-  test("on a fully selected parent removes the parent and every descendant", () => {
+  test("on a selected parent removes only the parent URI; children are untouched", () => {
     const before = conceptSchemeStateFromUris([
       URI_ACCESS,
       URI_EDUCATION_FINANCE,
       URI_ENROLMENT,
     ]);
-    const result = toggleConcept(before, ACCESS_SUBTREE, OUTCOME_INDEX);
-    expect(isEmpty(result)).toBe(true);
-  });
-
-  test("clicking an unselected parent overrides partial child selections", () => {
-    const before = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
-    const result = toggleConcept(before, ACCESS_SUBTREE, OUTCOME_INDEX);
-    expect(selectedCount(result)).toBe(3);
-    expect(isSelected(result, URI_ACCESS)).toBe(true);
+    const result = toggleConcept(before, ACCESS_SUBTREE);
+    expect(isSelected(result, URI_ACCESS)).toBe(false);
+    expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(true);
     expect(isSelected(result, URI_ENROLMENT)).toBe(true);
   });
 
-  test("clicking a selected parent clears the whole subtree, including children selected independently", () => {
-    const before = conceptSchemeStateFromUris([URI_ACCESS, URI_ENROLMENT]);
-    const result = toggleConcept(before, ACCESS_SUBTREE, OUTCOME_INDEX);
-    expect(isEmpty(result)).toBe(true);
+  test("toggling a child does not auto-rollup its parent even if all siblings are selected", () => {
+    // Previously selecting the last missing sibling rolled the parent in
+    // — this caused an AND with the (often-empty) parent URI on the backend
+    // query. With auto-rollup removed, parent stays unselected.
+    const before = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
+    const result = toggleConcept(before, ENROLMENT);
+    expect(isSelected(result, URI_ENROLMENT)).toBe(true);
+    expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(true);
+    expect(isSelected(result, URI_ACCESS)).toBe(false);
+  });
+
+  test("toggling a child off does not auto-deselect its parent", () => {
+    const before = conceptSchemeStateFromUris([
+      URI_ACCESS,
+      URI_EDUCATION_FINANCE,
+      URI_ENROLMENT,
+    ]);
+    const result = toggleConcept(before, ENROLMENT);
+    expect(isSelected(result, URI_ENROLMENT)).toBe(false);
+    expect(isSelected(result, URI_ACCESS)).toBe(true);
+    expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(true);
   });
 
   test("does not mutate the input state", () => {
     const before = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
     const beforeSnapshot = selectedUris(before);
-    toggleConcept(before, ACCESS_SUBTREE, OUTCOME_INDEX);
+    toggleConcept(before, ACCESS_SUBTREE);
     expect(selectedUris(before)).toEqual(beforeSnapshot);
   });
 
-  test("walks more than two levels deep", () => {
-    const grandchild: Concept = { uri: "u:grandchild", label: "Grandchild" };
-    const child: Concept = {
-      uri: "u:child",
-      label: "Child",
-      narrower: [grandchild],
-    };
-    const deep: Concept = {
-      uri: "u:root",
-      label: "Root",
-      narrower: [child],
-    };
-    const deepIndex = buildConceptIndex({
-      uri: "u:scheme",
-      label: "Deep",
-      topConcepts: [deep],
-    });
-    const result = toggleConcept(
-      emptyConceptSchemeState(),
-      deep,
-      deepIndex,
-    );
-    expect(selectedUris(result)).toEqual(["u:root", "u:child", "u:grandchild"]);
-  });
-
-  test("leaves URIs from outside the subtree untouched", () => {
+  test("leaves unrelated URIs untouched", () => {
     const before = conceptSchemeStateFromUris([URI_LEARNING]);
-    const result = toggleConcept(before, ACCESS_SUBTREE, OUTCOME_INDEX);
+    const result = toggleConcept(before, ACCESS_SUBTREE);
     expect(isSelected(result, URI_LEARNING)).toBe(true);
     expect(isSelected(result, URI_ACCESS)).toBe(true);
-  });
-
-  // Upward reconciliation: selecting the last missing sibling rolls the parent
-  // in; deselecting any sibling rolls it back out. Driven by `index.broader`
-  // and a per-level "every child selected?" check.
-  describe("upward reconciliation", () => {
-    test("selecting the last missing child auto-selects the parent", () => {
-      const before = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
-      const result = toggleConcept(before, ENROLMENT, OUTCOME_INDEX);
-      expect(isSelected(result, URI_ACCESS)).toBe(true);
-      expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(true);
-      expect(isSelected(result, URI_ENROLMENT)).toBe(true);
-    });
-
-    test("selecting fewer than all siblings leaves the parent unselected", () => {
-      const result = toggleConcept(
-        emptyConceptSchemeState(),
-        EDUCATION_FINANCE,
-        OUTCOME_INDEX,
-      );
-      expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(true);
-      expect(isSelected(result, URI_ACCESS)).toBe(false);
-    });
-
-    test("deselecting one child of a fully-selected parent removes the parent too", () => {
-      const before = conceptSchemeStateFromUris([
-        URI_ACCESS,
-        URI_EDUCATION_FINANCE,
-        URI_ENROLMENT,
-      ]);
-      const result = toggleConcept(before, ENROLMENT, OUTCOME_INDEX);
-      expect(isSelected(result, URI_ENROLMENT)).toBe(false);
-      expect(isSelected(result, URI_ACCESS)).toBe(false);
-      expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(true);
-    });
-
-    test("cascades through multiple levels when grandchildren complete a grandparent", () => {
-      const grandA: Concept = { uri: "u:gA", label: "GA" };
-      const grandB: Concept = { uri: "u:gB", label: "GB" };
-      const childX: Concept = {
-        uri: "u:cX",
-        label: "CX",
-        narrower: [grandA, grandB],
-      };
-      const childY: Concept = { uri: "u:cY", label: "CY" };
-      const root: Concept = {
-        uri: "u:root",
-        label: "Root",
-        narrower: [childX, childY],
-      };
-      const idx = buildConceptIndex({
-        uri: "u:scheme",
-        label: "Cascade",
-        topConcepts: [root],
-      });
-
-      // Pre-state: grandA + childY already selected. Toggling grandB should
-      // complete childX, which together with childY completes root.
-      const before = conceptSchemeStateFromUris(["u:gA", "u:cY"]);
-      const result = toggleConcept(before, grandB, idx);
-      expect(isSelected(result, "u:gB")).toBe(true);
-      expect(isSelected(result, "u:cX")).toBe(true);
-      expect(isSelected(result, "u:root")).toBe(true);
-    });
-
-    test("deselecting a deep leaf cascades the un-selection up multiple levels", () => {
-      const grandA: Concept = { uri: "u:gA", label: "GA" };
-      const grandB: Concept = { uri: "u:gB", label: "GB" };
-      const childX: Concept = {
-        uri: "u:cX",
-        label: "CX",
-        narrower: [grandA, grandB],
-      };
-      const childY: Concept = { uri: "u:cY", label: "CY" };
-      const root: Concept = {
-        uri: "u:root",
-        label: "Root",
-        narrower: [childX, childY],
-      };
-      const idx = buildConceptIndex({
-        uri: "u:scheme",
-        label: "Cascade",
-        topConcepts: [root],
-      });
-
-      const before = conceptSchemeStateFromUris([
-        "u:root",
-        "u:cX",
-        "u:gA",
-        "u:gB",
-        "u:cY",
-      ]);
-      const result = toggleConcept(before, grandA, idx);
-      expect(isSelected(result, "u:gA")).toBe(false);
-      expect(isSelected(result, "u:cX")).toBe(false);
-      expect(isSelected(result, "u:root")).toBe(false);
-      expect(isSelected(result, "u:gB")).toBe(true);
-      expect(isSelected(result, "u:cY")).toBe(true);
-    });
-
-    test("clicking an internal node whose siblings are already selected rolls up", () => {
-      // Siblings of ACCESS_SUBTREE (Learning, Returns) selected; clicking
-      // ACCESS_SUBTREE adds its subtree and should — were there a level above
-      // top concepts — propagate. Since top concepts have no parent we just
-      // confirm no error and the subtree is added.
-      const before = conceptSchemeStateFromUris([URI_LEARNING, URI_RETURNS]);
-      const result = toggleConcept(before, ACCESS_SUBTREE, OUTCOME_INDEX);
-      expect(isSelected(result, URI_ACCESS)).toBe(true);
-      expect(isSelected(result, URI_LEARNING)).toBe(true);
-      expect(isSelected(result, URI_RETURNS)).toBe(true);
-    });
-
-    test("top concept toggle terminates cleanly with no parent in the index", () => {
-      const result = toggleConcept(
-        emptyConceptSchemeState(),
-        ACCESS_SUBTREE,
-        OUTCOME_INDEX,
-      );
-      expect(isSelected(result, URI_ACCESS)).toBe(true);
-    });
   });
 });
 
@@ -338,109 +198,94 @@ describe("buildConceptIndex", () => {
   });
 });
 
-describe("toSearchFacet", () => {
-  test("returns empty string when state is empty", () => {
-    expect(toSearchFacet(emptyConceptSchemeState(), SCHEME)).toBe("");
+describe("toConceptFilterGroups", () => {
+  test("returns no groups when state is empty", () => {
+    expect(toConceptFilterGroups(emptyConceptSchemeState(), SCHEME)).toEqual([]);
   });
 
-  test("returns a single clause without parentheses for one selection", () => {
+  test("a single top-level selection lands in one group with one URI", () => {
     const state = conceptSchemeStateFromUris([URI_JOURNAL_ARTICLE]);
-    expect(toSearchFacet(state, SCHEME)).toBe(
-      `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`,
-    );
-  });
-
-  test("joins multiple selections with OR and no outer parens", () => {
-    const state = conceptSchemeStateFromUris([
-      URI_JOURNAL_ARTICLE,
-      URI_THESIS,
+    expect(toConceptFilterGroups(state, SCHEME)).toEqual([
+      [URI_JOURNAL_ARTICLE],
     ]);
-    expect(toSearchFacet(state, SCHEME)).toBe(
-      `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"` +
-        ` OR linked_data_concepts:"${URI_THESIS}"`,
-    );
   });
 
-  test("uses scheme.topConcepts order, not insertion order", () => {
+  test("multiple sibling selections at the same level collapse into one group", () => {
+    const state = conceptSchemeStateFromUris([URI_JOURNAL_ARTICLE, URI_THESIS]);
+    expect(toConceptFilterGroups(state, SCHEME)).toEqual([
+      [URI_JOURNAL_ARTICLE, URI_THESIS],
+    ]);
+  });
+
+  test("URIs within a group follow scheme preorder, not insertion order", () => {
     const state = conceptSchemeStateFromUris([
       URI_GOVERNMENT_REPORT,
       URI_JOURNAL_ARTICLE,
     ]);
-    expect(toSearchFacet(state, SCHEME)).toBe(
-      `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"` +
-        ` OR linked_data_concepts:"${URI_GOVERNMENT_REPORT}"`,
-    );
+    expect(toConceptFilterGroups(state, SCHEME)).toEqual([
+      [URI_JOURNAL_ARTICLE, URI_GOVERNMENT_REPORT],
+    ]);
   });
 
   test("ignores selected URIs that are not in the scheme", () => {
     const stale = "https://vocab.esea.education/OtherScheme/C99999";
     const state = conceptSchemeStateFromUris([stale, URI_JOURNAL_ARTICLE]);
-    expect(toSearchFacet(state, SCHEME)).toBe(
-      `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`,
-    );
-  });
-
-  test("embeds the full concept URI verbatim inside the quotes", () => {
-    const state = conceptSchemeStateFromUris([URI_JOURNAL_ARTICLE]);
-    const fragment = toSearchFacet(state, SCHEME);
-    expect(fragment).toContain(URI_JOURNAL_ARTICLE);
-    expect(fragment.startsWith('linked_data_concepts:"')).toBe(true);
-    expect(fragment.endsWith('"')).toBe(true);
-  });
-
-  test("includes a selected narrower concept from a two-tier scheme", () => {
-    const state = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
-    expect(toSearchFacet(state, OUTCOME_SCHEME_FIXTURE)).toBe(
-      `linked_data_concepts:"${URI_EDUCATION_FINANCE}"`,
-    );
-  });
-
-  test("walks the tree depth-first preorder when ordering clauses", () => {
-    const state = conceptSchemeStateFromUris([
-      URI_RETURNS,
-      URI_ENROLMENT,
-      URI_ACCESS,
-      URI_LEARNING,
+    expect(toConceptFilterGroups(state, SCHEME)).toEqual([
+      [URI_JOURNAL_ARTICLE],
     ]);
-    expect(toSearchFacet(state, OUTCOME_SCHEME_FIXTURE)).toBe(
-      `linked_data_concepts:"${URI_ACCESS}"` +
-        ` OR linked_data_concepts:"${URI_ENROLMENT}"` +
-        ` OR linked_data_concepts:"${URI_LEARNING}"` +
-        ` OR linked_data_concepts:"${URI_RETURNS}"`,
-    );
   });
 
-  test("emits both parent and child clauses when both are selected", () => {
+  test("a single narrower concept lands in one group keyed by its parent", () => {
+    const state = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
+    expect(toConceptFilterGroups(state, OUTCOME_SCHEME_FIXTURE)).toEqual([
+      [URI_EDUCATION_FINANCE],
+    ]);
+  });
+
+  // Parent + descendants can coexist in the state via URL hydration; they
+  // must split into disjoint sibling-set groups or the backend 400s on overlap.
+  test("a fully-selected subtree splits into separate sibling-set groups (parent vs descendants)", () => {
     const state = conceptSchemeStateFromUris([
       URI_ACCESS,
       URI_EDUCATION_FINANCE,
+      URI_ENROLMENT,
     ]);
-    expect(toSearchFacet(state, OUTCOME_SCHEME_FIXTURE)).toBe(
-      `linked_data_concepts:"${URI_ACCESS}"` +
-        ` OR linked_data_concepts:"${URI_EDUCATION_FINANCE}"`,
-    );
+    expect(toConceptFilterGroups(state, OUTCOME_SCHEME_FIXTURE)).toEqual([
+      [URI_ACCESS],
+      [URI_EDUCATION_FINANCE, URI_ENROLMENT],
+    ]);
+  });
+
+  test("top-level siblings under different parents do NOT mix with the same scheme's children", () => {
+    const state = conceptSchemeStateFromUris([
+      URI_LEARNING,
+      URI_RETURNS,
+      URI_EDUCATION_FINANCE,
+    ]);
+    // Preorder: Education_Finance (under Access) comes before Learning/Returns.
+    expect(toConceptFilterGroups(state, OUTCOME_SCHEME_FIXTURE)).toEqual([
+      [URI_EDUCATION_FINANCE],
+      [URI_LEARNING, URI_RETURNS],
+    ]);
   });
 });
 
-describe("parseFacets", () => {
+describe("parseConceptFilters", () => {
   const DOCUMENT_TYPE_SCHEME: ConceptScheme = SCHEME;
 
   test("empty input → empty map", () => {
-    const result = parseFacets([], [OUTCOME_SCHEME_FIXTURE]);
+    const result = parseConceptFilters([], [OUTCOME_SCHEME_FIXTURE]);
     expect(result.size).toBe(0);
   });
 
-  test("empty schemes → empty map even if facets carry URIs", () => {
-    const result = parseFacets(
-      [`linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`],
-      [],
-    );
+  test("empty schemes → empty map even if filters carry URIs", () => {
+    const result = parseConceptFilters([[URI_JOURNAL_ARTICLE]], []);
     expect(result.size).toBe(0);
   });
 
-  test("single fragment with one URI lands in the owning scheme bucket", () => {
-    const result = parseFacets(
-      [`linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`],
+  test("single-URI group lands in the owning scheme bucket", () => {
+    const result = parseConceptFilters(
+      [[URI_JOURNAL_ARTICLE]],
       [DOCUMENT_TYPE_SCHEME],
     );
     expect(result.size).toBe(1);
@@ -449,11 +294,11 @@ describe("parseFacets", () => {
     expect(selectedUris(state!)).toEqual([URI_JOURNAL_ARTICLE]);
   });
 
-  test("multi-URI fragment splits into a single scheme bucket", () => {
-    const fragment =
-      `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"` +
-      ` OR linked_data_concepts:"${URI_THESIS}"`;
-    const result = parseFacets([fragment], [DOCUMENT_TYPE_SCHEME]);
+  test("multi-URI group lands in a single scheme bucket", () => {
+    const result = parseConceptFilters(
+      [[URI_JOURNAL_ARTICLE, URI_THESIS]],
+      [DOCUMENT_TYPE_SCHEME],
+    );
     const state = result.get(DOCUMENT_TYPE_SCHEME.uri)!;
     expect(selectedCount(state)).toBe(2);
     expect(isSelected(state, URI_JOURNAL_ARTICLE)).toBe(true);
@@ -461,43 +306,32 @@ describe("parseFacets", () => {
   });
 
   test("URIs from two schemes split into two buckets", () => {
-    const result = parseFacets(
-      [
-        `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`,
-        `linked_data_concepts:"${URI_ACCESS}"`,
-      ],
+    const result = parseConceptFilters(
+      [[URI_JOURNAL_ARTICLE], [URI_ACCESS]],
       [DOCUMENT_TYPE_SCHEME, OUTCOME_SCHEME_FIXTURE],
     );
     expect(result.size).toBe(2);
-    expect(
-      selectedUris(result.get(DOCUMENT_TYPE_SCHEME.uri)!),
-    ).toEqual([URI_JOURNAL_ARTICLE]);
-    expect(
-      selectedUris(result.get(OUTCOME_SCHEME_FIXTURE.uri)!),
-    ).toEqual([URI_ACCESS]);
+    expect(selectedUris(result.get(DOCUMENT_TYPE_SCHEME.uri)!)).toEqual([
+      URI_JOURNAL_ARTICLE,
+    ]);
+    expect(selectedUris(result.get(OUTCOME_SCHEME_FIXTURE.uri)!)).toEqual([
+      URI_ACCESS,
+    ]);
   });
 
-  test("URIs from the same scheme spread across fragments merge into one bucket", () => {
-    const result = parseFacets(
-      [
-        `linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`,
-        `linked_data_concepts:"${URI_THESIS}"`,
-      ],
+  test("URIs from the same scheme spread across groups merge into one bucket", () => {
+    const result = parseConceptFilters(
+      [[URI_JOURNAL_ARTICLE], [URI_THESIS]],
       [DOCUMENT_TYPE_SCHEME],
     );
     expect(result.size).toBe(1);
-    expect(
-      selectedCount(result.get(DOCUMENT_TYPE_SCHEME.uri)!),
-    ).toBe(2);
+    expect(selectedCount(result.get(DOCUMENT_TYPE_SCHEME.uri)!)).toBe(2);
   });
 
   test("URIs that don't belong to any scheme are silently dropped", () => {
     const stale = "https://vocab.esea.education/RetiredScheme/X1";
-    const result = parseFacets(
-      [
-        `linked_data_concepts:"${stale}"` +
-          ` OR linked_data_concepts:"${URI_JOURNAL_ARTICLE}"`,
-      ],
+    const result = parseConceptFilters(
+      [[stale, URI_JOURNAL_ARTICLE]],
       [DOCUMENT_TYPE_SCHEME],
     );
     const state = result.get(DOCUMENT_TYPE_SCHEME.uri)!;
@@ -505,27 +339,27 @@ describe("parseFacets", () => {
   });
 
   test("ignores everything when no URI matches any scheme", () => {
-    const result = parseFacets(
-      [`linked_data_concepts:"u:does-not-exist"`],
+    const result = parseConceptFilters(
+      [["u:does-not-exist"]],
       [DOCUMENT_TYPE_SCHEME, OUTCOME_SCHEME_FIXTURE],
     );
     expect(result.size).toBe(0);
   });
 
   test("picks up narrower-tier concept URIs, not just top-level ones", () => {
-    const result = parseFacets(
-      [`linked_data_concepts:"${URI_EDUCATION_FINANCE}"`],
+    const result = parseConceptFilters(
+      [[URI_EDUCATION_FINANCE]],
       [OUTCOME_SCHEME_FIXTURE],
     );
     const state = result.get(OUTCOME_SCHEME_FIXTURE.uri)!;
     expect(isSelected(state, URI_EDUCATION_FINANCE)).toBe(true);
   });
 
-  test("round-trips through toSearchFacet", () => {
+  test("round-trips through toConceptFilterGroups", () => {
     // Pick a selection that exercises both a parent and narrower concept.
     const original = conceptSchemeStateFromUris([URI_ACCESS, URI_LEARNING]);
-    const fragment = toSearchFacet(original, OUTCOME_SCHEME_FIXTURE);
-    const parsed = parseFacets([fragment], [OUTCOME_SCHEME_FIXTURE]);
+    const groups = toConceptFilterGroups(original, OUTCOME_SCHEME_FIXTURE);
+    const parsed = parseConceptFilters(groups, [OUTCOME_SCHEME_FIXTURE]);
     const state = parsed.get(OUTCOME_SCHEME_FIXTURE.uri)!;
     expect([...selectedUris(state)].sort()).toEqual(
       [URI_ACCESS, URI_LEARNING].sort(),
@@ -534,29 +368,36 @@ describe("parseFacets", () => {
 });
 
 describe("totalSelectedCount", () => {
-  test("returns 0 when no facets are applied", () => {
+  test("returns 0 when no filters are applied", () => {
     expect(totalSelectedCount([], [OUTCOME_SCHEME_FIXTURE])).toBe(0);
   });
 
   test("sums individual concept counts across schemes", () => {
-    const outcomeFragment = toSearchFacet(
+    const outcomeGroups = toConceptFilterGroups(
       conceptSchemeStateFromUris([URI_LEARNING, URI_RETURNS]),
       OUTCOME_SCHEME_FIXTURE,
     );
-    const docFragment = toSearchFacet(
+    const docGroups = toConceptFilterGroups(
       conceptSchemeStateFromUris([URI_JOURNAL_ARTICLE]),
       SCHEME,
     );
     expect(
-      totalSelectedCount([outcomeFragment, docFragment], [OUTCOME_SCHEME_FIXTURE, SCHEME]),
+      totalSelectedCount(
+        [...outcomeGroups, ...docGroups],
+        [OUTCOME_SCHEME_FIXTURE, SCHEME],
+      ),
     ).toBe(3);
   });
 
   test("counts every selected URI in a subtree (parent + descendants)", () => {
-    const fragment = toSearchFacet(
-      conceptSchemeStateFromUris([URI_ACCESS, URI_EDUCATION_FINANCE, URI_ENROLMENT]),
+    const groups = toConceptFilterGroups(
+      conceptSchemeStateFromUris([
+        URI_ACCESS,
+        URI_EDUCATION_FINANCE,
+        URI_ENROLMENT,
+      ]),
       OUTCOME_SCHEME_FIXTURE,
     );
-    expect(totalSelectedCount([fragment], [OUTCOME_SCHEME_FIXTURE])).toBe(3);
+    expect(totalSelectedCount(groups, [OUTCOME_SCHEME_FIXTURE])).toBe(3);
   });
 });

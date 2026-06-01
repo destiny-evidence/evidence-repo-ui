@@ -26,7 +26,8 @@ export function makeSearchParams(
     startYear: undefined,
     endYear: undefined,
     sort: undefined,
-    searchFacets: [],
+    conceptFilters: [],
+    countryCodes: [],
     ...overrides,
   };
 }
