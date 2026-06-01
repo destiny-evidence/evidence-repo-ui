@@ -37,7 +37,7 @@
 
 .arm-data__cell--name {
   font-family: var(--font-body);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-text-primary);
 }
 

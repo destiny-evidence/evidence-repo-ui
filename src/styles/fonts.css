@@ -6,32 +6,52 @@
 @font-face {
   font-family: "Signifier";
   src: url("./fonts/signifier-regular.woff2") format("woff2");
-  font-weight: normal;
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Signifier";
   src: url("./fonts/signifier-regular-italic.woff2") format("woff2");
-  font-weight: normal;
+  font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
+@font-face {
+  font-family: "Signifier";
+  src: url("./fonts/signifier-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
 
-/* Untitled Sans: only Medium is licensed. Declared as the family's `normal`
-   weight so default body text (font-weight: 400) matches it directly. */
+/* Untitled Sans: Regular (400), Medium (500) + Medium Italic, Bold (700). */
+@font-face {
+  font-family: "Untitled Sans";
+  src: url("./fonts/untitled-sans-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 @font-face {
   font-family: "Untitled Sans";
   src: url("./fonts/untitled-sans-medium.woff2") format("woff2");
-  font-weight: normal;
+  font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Untitled Sans";
   src: url("./fonts/untitled-sans-medium-italic.woff2") format("woff2");
-  font-weight: normal;
+  font-weight: 500;
   font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Untitled Sans";
+  src: url("./fonts/untitled-sans-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
   font-display: swap;
 }
 

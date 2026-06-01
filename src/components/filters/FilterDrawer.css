@@ -44,7 +44,7 @@
 .filter-drawer__title {
   margin: 0;
   font-size: var(--font-size-xl);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-text-primary);
 }
 
@@ -92,7 +92,7 @@
 .filter-drawer__btn {
   font-family: var(--font-body);
   font-size: var(--font-size-small);
-  font-weight: 600;
+  font-weight: 500;
   padding: 8px 16px;
   border-radius: var(--radius-sm);
   cursor: pointer;
