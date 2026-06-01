@@ -1,10 +1,7 @@
-import { useMemo } from "preact/hooks";
 import { Tooltip } from "../Tooltip";
 import {
-  buildConceptIndex,
   isSelected,
   toggleConcept,
-  type ConceptIndex,
   type ConceptSchemeFilterState,
 } from "./conceptSchemeFilterState";
 import type {
@@ -24,7 +21,6 @@ interface ConceptSchemeFilterProps {
 interface ConceptItemProps {
   concept: Concept;
   state: ConceptSchemeFilterState;
-  index: ConceptIndex;
   counts: ReadonlyMap<string, number> | null;
   countsLoading: boolean;
   onChange: (next: ConceptSchemeFilterState) => void;
@@ -39,7 +35,6 @@ function formatCount(n: number): string {
 function ConceptItem({
   concept,
   state,
-  index,
   counts,
   countsLoading,
   onChange,
@@ -54,14 +49,27 @@ function ConceptItem({
     </span>
   );
   const hasChildren = !!concept.narrower && concept.narrower.length > 0;
-  const count = counts?.get(concept.uri);
+  const rawCount = counts?.get(concept.uri);
+  // Once a response has arrived, a concept missing from it has 0 matches
+  // (standard terms aggregation omits 0-buckets). Key on `counts != null`
+  // alone so previously-greyed rows stay greyed through a refetch.
+  const count: number | undefined =
+    rawCount !== undefined ? rawCount : counts != null ? 0 : undefined;
+  const selected = isSelected(state, concept.uri);
+  // 0 + unselected = guaranteed-empty pick → disable. 0 + selected stays
+  // enabled so the user can un-tick a no-op filter.
+  const isEmpty = count === 0 && !selected;
+  const showCountBadge = count !== undefined && count > 0;
+  const rowClass = `concept-scheme-filter__row${
+    isEmpty ? " concept-scheme-filter__row--empty" : ""
+  }`;
   const countClass = `concept-scheme-filter__count${
     countsLoading ? " is-updating" : ""
   }${hasChildren ? " concept-scheme-filter__count--parent" : ""}`;
   const countTooltip = hasChildren
-    ? "Count shows investigations tagged with this concept. Select to also include narrower concepts."
+    ? "Results you'd see if you toggled this concept. Selecting a parent includes all narrower concepts."
     : undefined;
-  const countNode = count !== undefined && (
+  const countNode = showCountBadge && (
     <span
       class={countClass}
       aria-label={`${formatCount(count)} investigations`}
@@ -72,12 +80,13 @@ function ConceptItem({
   );
   return (
     <li class="concept-scheme-filter__item">
-      <label class="concept-scheme-filter__row">
+      <label class={rowClass}>
         <input
           class="concept-scheme-filter__checkbox"
           type="checkbox"
-          checked={isSelected(state, concept.uri)}
-          onChange={() => onChange(toggleConcept(state, concept, index))}
+          checked={selected}
+          disabled={isEmpty}
+          onChange={() => onChange(toggleConcept(state, concept))}
         />
         {hasDefinition ? (
           <Tooltip text={concept.definition}>{labelNode}</Tooltip>
@@ -98,7 +107,6 @@ function ConceptItem({
               key={child.uri}
               concept={child}
               state={state}
-              index={index}
               counts={counts}
               countsLoading={countsLoading}
               onChange={onChange}
@@ -117,7 +125,6 @@ export function ConceptSchemeFilter({
   countsLoading = false,
   onChange,
 }: ConceptSchemeFilterProps) {
-  const index = useMemo(() => buildConceptIndex(scheme), [scheme]);
   return (
     <ul class="concept-scheme-filter">
       {scheme.topConcepts.map((concept) => (
@@ -125,7 +132,6 @@ export function ConceptSchemeFilter({
           key={concept.uri}
           concept={concept}
           state={state}
-          index={index}
           counts={counts}
           countsLoading={countsLoading}
           onChange={onChange}

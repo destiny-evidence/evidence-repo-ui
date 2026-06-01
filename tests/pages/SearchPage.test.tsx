@@ -8,8 +8,6 @@ import {
   URI_LEARNING,
   URI_RETURNS,
   URI_ACCESS,
-  URI_EDUCATION_FINANCE,
-  URI_ENROLMENT,
 } from "../components/filters/fixtures";
 
 function renderSearchPage() {
@@ -355,7 +353,7 @@ describe("SearchPage", () => {
     // otherwise filtered results render under the browse-mode hero with no count.
     // Asserts via class scope because the facet-only summary text has no q/year
     // discriminator and the count + " results" text live in sibling elements.
-    history.replaceState(null, "", "/esea?q=%2A+AND+%28linked_data_concepts%3A%22EducationLevelScheme%2FC00002%22%29");
+    history.replaceState(null, "", "/esea?concept=EducationLevelScheme%2FC00002");
     mockBoth({ results: makeResult(7, ["r1"]) });
     const { container } = renderSearchPage();
     await waitFor(() => {
@@ -371,9 +369,14 @@ describe("SearchPage", () => {
     // pins the harder case: the facets gate alone must fire showMetaBar while
     // the fetch is still in flight, otherwise a facet URL loads under the
     // browse-mode hero with no indication that a filter is active.
-    history.replaceState(null, "", "/esea?q=%2A+AND+%28linked_data_concepts%3A%22EducationLevelScheme%2FC00002%22%29");
-    mockSearch.mockImplementation((q) => {
-      if (q === undefined) return Promise.resolve(makeResult(5721, ["corpus-ref"]));
+    history.replaceState(null, "", "/esea?concept=EducationLevelScheme%2FC00002");
+    mockSearch.mockImplementation((_q, filters) => {
+      // Corpus call has no annotation filter; the search call carries the
+      // community annotations. Hang the search; let the corpus resolve so
+      // the hero settles.
+      if (!filters?.annotation || filters.annotation.length === 0) {
+        return Promise.resolve(makeResult(5721, ["corpus-ref"]));
+      }
       return new Promise(() => {}); // never resolves
     });
     const { container } = renderSearchPage();
@@ -413,8 +416,7 @@ describe("SearchPage", () => {
     });
 
     test("URL with one facet → Refine shows count 1 and drawer opens with concept pre-checked", async () => {
-      const startQ = `* AND (linked_data_concepts:"${URI_LEARNING}")`;
-      history.replaceState(null, "", `/esea?q=${encodeURIComponent(startQ)}`);
+      history.replaceState(null, "", `/esea?concept=${encodeURIComponent(URI_LEARNING)}`);
       mockBoth({ results: makeResult(7, ["r1"]) });
 
       renderSearchPage();
@@ -434,9 +436,8 @@ describe("SearchPage", () => {
       ).toBe(false);
     });
 
-    test("toggling a second concept and applying navigates with both URIs in q", async () => {
-      const startQ = `* AND (linked_data_concepts:"${URI_LEARNING}")`;
-      history.replaceState(null, "", `/esea?q=${encodeURIComponent(startQ)}`);
+    test("toggling a second sibling concept and applying navigates with both URIs as concept= params", async () => {
+      history.replaceState(null, "", `/esea?concept=${encodeURIComponent(URI_LEARNING)}`);
       mockBoth({ results: makeResult(7, ["r1"]) });
 
       renderSearchPage();
@@ -447,13 +448,15 @@ describe("SearchPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       await waitFor(() => {
-        const q = new URLSearchParams(window.location.search).get("q") ?? "";
-        expect(q).toContain(URI_LEARNING);
-        expect(q).toContain(URI_RETURNS);
+        // Siblings comma-join into one concept= param.
+        const conceptParams = new URLSearchParams(window.location.search).getAll("concept");
+        expect(conceptParams).toHaveLength(1);
+        expect(conceptParams[0]).toContain(URI_LEARNING);
+        expect(conceptParams[0]).toContain(URI_RETURNS);
       });
     });
 
-    test("empty URL → adding a facet through the drawer navigates with the URI in q", async () => {
+    test("empty URL → adding a facet through the drawer navigates with the URI as a concept= param", async () => {
       mockBoth({ results: makeResult(120, ["r1"]) });
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
@@ -466,12 +469,14 @@ describe("SearchPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       await waitFor(() => {
-        const q = new URLSearchParams(window.location.search).get("q") ?? "";
-        expect(q).toContain(URI_RETURNS);
+        const conceptParams = new URLSearchParams(window.location.search).getAll("concept");
+        expect(conceptParams).toEqual([URI_RETURNS]);
       });
     });
 
-    test("selecting a parent concept applies the whole subtree (parent + descendants) to the URL", async () => {
+    test("selecting a parent concept applies only the parent URI (no cascade)", async () => {
+      // Cascade removed: see destiny-repository#655. Selecting parent matches
+      // docs tagged with the parent URI literally, not its subtree.
       mockBoth({ results: makeResult(120, ["r1"]) });
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
@@ -481,10 +486,8 @@ describe("SearchPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 
       await waitFor(() => {
-        const q = new URLSearchParams(window.location.search).get("q") ?? "";
-        expect(q).toContain(URI_ACCESS);
-        expect(q).toContain(URI_EDUCATION_FINANCE);
-        expect(q).toContain(URI_ENROLMENT);
+        const conceptParams = new URLSearchParams(window.location.search).getAll("concept");
+        expect(conceptParams).toEqual([URI_ACCESS]);
       });
     });
 
@@ -504,10 +507,11 @@ describe("SearchPage", () => {
     });
 
     test("Refine badge sums concept selections and country selections", async () => {
-      const startQ =
-        `* AND (linked_data_concepts:"${URI_LEARNING}")`
-        + " AND (linked_data_countries:DE OR linked_data_countries:FR)";
-      history.replaceState(null, "", `/esea?q=${encodeURIComponent(startQ)}`);
+      history.replaceState(
+        null,
+        "",
+        `/esea?concept=${encodeURIComponent(URI_LEARNING)}&country=DE&country=FR`,
+      );
       mockBoth({ results: makeResult(7, ["r1"]) });
 
       renderSearchPage();
@@ -709,13 +713,13 @@ describe("SearchPage", () => {
       );
     });
 
-    test("facet URL → Export passes facet through to requestSearchExport", async () => {
+    test("facet URL → Export passes concept filter through to requestSearchExport", async () => {
       // SearchPage-layer integration: catches stale params at the call site,
       // which the unit tests on toExportSearchQuery in isolation cannot.
       history.replaceState(
         null,
         "",
-        "/esea?q=%28phonics%29+AND+%28linked_data_concepts%3A%22https%3A%2F%2Fvocab.esea.education%2FEducationLevelScheme%2FC00002%22%29",
+        "/esea?q=phonics&concept=https%3A%2F%2Fvocab.esea.education%2FEducationLevelScheme%2FC00002",
       );
       mockBoth({ results: makeResult(7, ["r1"]) });
       mockRequestExport.mockResolvedValue({ id: "job-facet", status: "pending", truncated: false });
@@ -725,15 +729,15 @@ describe("SearchPage", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /export to excel/i }));
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
-      // Exact join/precedence is owned by toExportSearchQuery unit tests.
-      expect(mockRequestExport).toHaveBeenCalledWith(
-        expect.stringContaining("https://vocab.esea.education/EducationLevelScheme/C00002"),
-        {
-          startYear: undefined,
-          endYear: undefined,
-          annotation: ["domain-inclusion/jacobs-education"],
-        },
-      );
+      // Concepts travel as structured filter, not embedded in the Lucene q.
+      expect(mockRequestExport).toHaveBeenCalledWith("phonics", {
+        startYear: undefined,
+        endYear: undefined,
+        annotation: ["domain-inclusion/jacobs-education"],
+        conceptFilters: [
+          ["https://vocab.esea.education/EducationLevelScheme/C00002"],
+        ],
+      });
     });
   });
 });

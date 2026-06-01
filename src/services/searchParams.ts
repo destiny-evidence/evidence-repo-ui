@@ -9,17 +9,16 @@ export const SORT_BACKEND: Record<SortOption, string> = {
   oldest: "publication_year",
 };
 
-// Lucene field names the trailing-fragment peeler will recognise as facets.
-// Anything else trailing the q is left alone — see `something_else:"x"` in tests.
-const FACET_FIELDS = ["linked_data_concepts", "linked_data_countries"] as const;
-
 export interface SearchParams {
   q: string;
   page: number;
   startYear: number | undefined;
   endYear: number | undefined;
   sort: SortOption | undefined;
-  searchFacets: string[];
+  // One `concept=` URL param per inner array; URIs in an array are OR'd
+  // (must share a sibling set), arrays are AND'd.
+  conceptFilters: readonly (readonly string[])[];
+  countryCodes: readonly string[];
 }
 
 // Unknown values fall back to undefined (relevance).
@@ -35,42 +34,27 @@ function parseDecimalInt(raw: string | null): number | undefined {
   return Number.isSafeInteger(n) ? n : undefined;
 }
 
-// Strips an outer ( ... ) pair iff the first "(" balances at the last ")".
-// "(a) AND (b)" → unchanged (first "(" closes before the end).
-function stripOuterWrap(s: string): string {
-  if (!s.startsWith("(") || !s.endsWith(")")) return s;
-  let depth = 0;
-  for (let i = 0; i < s.length; i++) {
-    if (s[i] === "(") depth++;
-    else if (s[i] === ")") {
-      depth--;
-      if (depth === 0 && i < s.length - 1) return s;
-    }
-  }
-  return depth === 0 ? s.slice(1, -1) : s;
-}
-
 export function parseSearchParams(search: string): SearchParams {
   const params = new URLSearchParams(
     search.startsWith("?") ? search.slice(1) : search,
   );
 
-  let q = (params.get("q") ?? "").trim();
+  const q = (params.get("q") ?? "").trim();
 
-  const facetTail = new RegExp(
-    `\\s+AND\\s+\\(\\s*((?:${FACET_FIELDS.join("|")}):[^)]+?)\\s*\\)\\s*$`,
-  );
-  const searchFacets: string[] = [];
-  while (true) {
-    const m = q.match(facetTail);
-    if (!m) break;
-    searchFacets.unshift(m[1]);
-    q = q.slice(0, q.length - m[0].length).trimEnd();
+  const conceptFilters: string[][] = [];
+  for (const raw of params.getAll("concept")) {
+    const uris = raw.split(",").map((s) => s.trim()).filter((s) => s !== "");
+    if (uris.length > 0) conceptFilters.push(uris);
   }
 
-  if (searchFacets.length > 0) {
-    if (q === "*") q = "";
-    else q = stripOuterWrap(q);
+  // Upper-case + strip mirrors the backend's normalisation, so hand-edited
+  // URLs with lower-case codes still match the right rows.
+  const countryCodes: string[] = [];
+  for (const raw of params.getAll("country")) {
+    for (const piece of raw.split(",")) {
+      const code = piece.trim().toUpperCase();
+      if (/^[A-Z]{2}$/.test(code)) countryCodes.push(code);
+    }
   }
 
   const pageRaw = parseDecimalInt(params.get("page"));
@@ -85,15 +69,18 @@ export function parseSearchParams(search: string): SearchParams {
 
   const sort = parseSort(params.get("sort"));
 
-  return { q, page, startYear, endYear, sort, searchFacets };
+  return { q, page, startYear, endYear, sort, conceptFilters, countryCodes };
 }
 
 export function toQueryString(params: SearchParams): string {
   const out = new URLSearchParams();
-  const qSerialised = params.searchFacets.length > 0
-    ? buildFacetedQuery(params.q, params.searchFacets)
-    : params.q;
-  if (qSerialised) out.set("q", qSerialised);
+  if (params.q) out.set("q", params.q);
+  for (const group of params.conceptFilters) {
+    if (group.length > 0) out.append("concept", group.join(","));
+  }
+  if (params.countryCodes.length > 0) {
+    out.append("country", params.countryCodes.join(","));
+  }
   if (params.startYear !== undefined) out.set("start_year", String(params.startYear));
   if (params.endYear !== undefined) out.set("end_year", String(params.endYear));
   if (params.sort !== undefined) out.set("sort", params.sort);
@@ -108,7 +95,7 @@ export function buildSearchUrl(communitySlug: string, params: SearchParams): str
 
 // Maps a SearchParams + community annotations to the query/filters shape the
 // export endpoint expects. Substitutes "*" for an empty browse-mode query
-// (no q, no facets) so the backend's `min_length=1` constraint is satisfied.
+// so the backend's `min_length=1` constraint is satisfied.
 export function toExportSearchQuery(
   params: SearchParams,
   annotations: string[] | undefined,
@@ -119,15 +106,11 @@ export function toExportSearchQuery(
     annotation: annotations,
   };
   if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
-  const query = buildFacetedQuery(params.q, params.searchFacets) || "*";
-  return { query, filters };
-}
-
-// Base is paren-wrapped because Lucene binds AND tighter than OR:
-// `a OR b AND (f)` would parse as `a OR (b AND (f))`. Empty base → `*`.
-export function buildFacetedQuery(q: string, facets: string[]): string {
-  const trimmed = q.trim();
-  if (facets.length === 0) return trimmed;
-  const base = trimmed === "" ? "*" : `(${trimmed})`;
-  return [base, ...facets.map((f) => `(${f})`)].join(" AND ");
+  if (params.conceptFilters.length > 0) {
+    filters.conceptFilters = params.conceptFilters;
+  }
+  if (params.countryCodes.length > 0) {
+    filters.countryCodes = params.countryCodes;
+  }
+  return { query: params.q.trim() || "*", filters };
 }
