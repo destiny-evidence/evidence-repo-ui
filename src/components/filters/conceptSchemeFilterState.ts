@@ -70,13 +70,6 @@ export function buildConceptIndex(scheme: ConceptScheme): ConceptIndex {
   return { byUri, broader };
 }
 
-// Toggles a single concept URI. Subtree cascade and ancestor auto-rollup
-// previously lived here, but interacted badly with the backend's literal-URI
-// matching: clicking a parent would silently AND its URI into the query,
-// excluding docs tagged only at narrower levels (destiny-repository#655).
-// Selecting a parent now means "literally this URI" — subtree expansion
-// returns when destiny-repository#655 / #712 ship and the backend matches
-// narrower concepts implicitly.
 export function toggleConcept(
   state: ConceptSchemeFilterState,
   concept: Concept,
