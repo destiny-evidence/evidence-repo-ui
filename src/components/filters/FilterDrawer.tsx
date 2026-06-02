@@ -40,6 +40,8 @@ export interface AppliedFilters {
 
 interface FilterDrawerProps {
   open: boolean;
+  title?: string;
+  countNoun?: string;
   schemes: ConceptScheme[];
   appliedConceptFilters: readonly (readonly string[])[];
   appliedCountryCodes: readonly string[];
@@ -106,6 +108,8 @@ export function FilterDrawer({ open, ...rest }: FilterDrawerProps) {
 type FilterDrawerPanelProps = Omit<FilterDrawerProps, "open">;
 
 function FilterDrawerPanel({
+  title = "Refine the evidence",
+  countNoun = "results",
   schemes,
   appliedConceptFilters,
   appliedCountryCodes,
@@ -232,7 +236,7 @@ function FilterDrawerPanel({
         <header class="filter-drawer__header">
           <div class="filter-drawer__heading">
             <h2 id={titleId} class="filter-drawer__title">
-              Refine the evidence
+              {title}
             </h2>
             {/* "*" is the browse-mode sentinel — don't echo it as a query. */}
             {params.q !== "" && params.q !== "*" && (
@@ -251,7 +255,7 @@ function FilterDrawerPanel({
         <div class="filter-drawer__body">
           {facetError && (
             <div class="filter-drawer__notice" role="status">
-              Investigation counts unavailable.
+              Filter counts unavailable.
             </div>
           )}
           <FilterCard
@@ -270,6 +274,7 @@ function FilterDrawerPanel({
               state={countryDraft}
               counts={facetCounts?.countries ?? null}
               countsLoading={facetCountsLoading}
+              countNoun={countNoun}
               onChange={setCountryDraft}
             />
           </FilterCard>
@@ -286,6 +291,7 @@ function FilterDrawerPanel({
                   state={state}
                   counts={facetCounts?.concepts ?? null}
                   countsLoading={facetCountsLoading}
+                  countNoun={countNoun}
                   onChange={(next) => onSchemeChange(scheme, next)}
                 />
               </FilterCard>

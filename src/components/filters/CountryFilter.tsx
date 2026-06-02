@@ -12,6 +12,7 @@ interface CountryFilterProps {
   state: CountryFilterState;
   counts?: ReadonlyMap<string, number> | null;
   countsLoading?: boolean;
+  countNoun?: string;
   onChange: (next: CountryFilterState) => void;
 }
 
@@ -35,6 +36,7 @@ export function CountryFilter({
   state,
   counts = null,
   countsLoading = false,
+  countNoun = "results",
   onChange,
 }: CountryFilterProps) {
   const [query, setQuery] = useState("");
@@ -96,7 +98,7 @@ export function CountryFilter({
                 {showCountBadge && (
                   <span
                     class={countClass}
-                    aria-label={`${formatCount(count)} investigations`}
+                    aria-label={`${formatCount(count)} ${countNoun}`}
                   >
                     {formatCount(count)}
                   </span>
@@ -111,7 +113,7 @@ export function CountryFilter({
               ? "Loading countries…"
               : query.trim() === ""
                 ? "No countries match the current filters."
-                : `No references for “${query.trim()}”.`}
+                : `No ${countNoun} for “${query.trim()}”.`}
           </li>
         )}
       </ul>

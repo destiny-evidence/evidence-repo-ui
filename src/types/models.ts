@@ -1,3 +1,18 @@
+export interface CommunityFeatures {
+  // No UI yet; reserved so the evidence map can ship behind a flag (#103).
+  evidenceMap: boolean;
+}
+
+// See buildCopy() in services/communities.ts for the shared fallbacks.
+export interface CommunityCopy {
+  searchPlaceholder: string;
+  drawerTitle: string;
+  // Plural noun for a count of evidence items: "investigations" / "references".
+  countNoun: string;
+  // Completes "{N} {countNoun} across {corpusDescriptor}", e.g. "education research".
+  corpusDescriptor: string;
+}
+
 export interface Community {
   slug: string;
   name: string;
@@ -5,6 +20,8 @@ export interface Community {
   vocabularyUrl: string;
   contextUrl: string;
   filterExcludedSchemes: string[];
+  features: CommunityFeatures;
+  copy: CommunityCopy;
 }
 
 export type Visibility = "public" | "restricted" | "hidden";

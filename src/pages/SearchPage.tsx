@@ -274,7 +274,7 @@ function SearchPageInner({ community }: { community: Community }) {
         <h1 class="search-hero__title">Search the evidence</h1>
         <p class="search-hero__subtitle">
           {corpus.total
-            ? `${formatTotal(corpus.total)} investigations across ${community.name.toLowerCase()} research`
+            ? `${formatTotal(corpus.total)} ${community.copy.countNoun} across ${community.copy.corpusDescriptor}`
             : corpus.loading
               ? <span class="search-hero__subtitle--placeholder">Loading…</span>
               : community.name}
@@ -283,6 +283,7 @@ function SearchPageInner({ community }: { community: Community }) {
           draftQ={draft.draftQ}
           onDraftQChange={draft.setDraftQ}
           onSubmit={handleSubmit}
+          placeholder={community.copy.searchPlaceholder}
           disabled={results.loading && results.results !== null}
         />
       </section>
@@ -398,6 +399,8 @@ function SearchPageInner({ community }: { community: Community }) {
       {filterableSchemes.length > 0 && (
         <FilterDrawer
           open={drawerOpen}
+          title={community.copy.drawerTitle}
+          countNoun={community.copy.countNoun}
           schemes={filterableSchemes}
           appliedConceptFilters={params.conceptFilters}
           appliedCountryCodes={params.countryCodes}

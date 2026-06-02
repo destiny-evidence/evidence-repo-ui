@@ -1,3 +1,4 @@
+import { DEFAULT_COMMUNITY_SLUG } from "@/services/communities";
 import "./NotFoundPage.css";
 
 interface NotFoundPageProps {
@@ -11,7 +12,7 @@ export function NotFoundPage(_props: NotFoundPageProps) {
       <h1>Page not found</h1>
       <p>
         The page you're looking for doesn't exist.{" "}
-        <a href="/esea">Go to search</a>.
+        <a href={`/${DEFAULT_COMMUNITY_SLUG}`}>Go to search</a>.
       </p>
     </div>
   );
