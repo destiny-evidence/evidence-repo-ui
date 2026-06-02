@@ -29,7 +29,7 @@ const COMMUNITIES: Community[] = [
         title: "SRER 2026 cohort site",
         description:
           "Schedule, readings and onboarding for the SRER review cohort.",
-        href: "https://srer-cohort-2026.netlify.app/",
+        href: "https://srer-cohort-2026.netlify.app",
       },
     ],
   },
