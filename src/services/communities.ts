@@ -20,7 +20,10 @@ const DEFAULT_FEATURES: CommunityFeatures = {
 };
 
 // Shared copy fallbacks; a community overrides only what diverges.
-function buildCopy(name: string, overrides: Partial<CommunityCopy>): CommunityCopy {
+function buildCopy(
+  name: string,
+  overrides: Partial<CommunityCopy>,
+): CommunityCopy {
   return {
     searchPlaceholder: "Search the evidence",
     drawerTitle: "Refine the evidence",
@@ -56,7 +59,7 @@ const COMMUNITIES: Community[] = [
   {
     slug: "hpv",
     name: "HPV Vaccine Delivery",
-    // TODO(#106): placeholder annotation, pending the backend's HPV domain inclusion.
+    // TODO: placeholder annotation, pending the backend's HPV domain inclusion.
     defaultAnnotations: ["domain-inclusion/hpv"],
     vocabularyUrl: requireEnv(
       "VITE_HPV_VOCABULARY_URL",
