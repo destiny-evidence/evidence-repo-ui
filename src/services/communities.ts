@@ -3,6 +3,7 @@ import type {
   CommunityCopy,
   CommunityFeatures,
 } from "@/types/models";
+import { rawSourcePatterns } from "@/services/codingInstitution";
 
 function requireEnv(name: string, value: string | undefined): string {
   if (typeof value !== "string" || value === "") {
@@ -45,6 +46,12 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: ["esea:ImplementationDescriptionScheme"],
     features: { ...DEFAULT_FEATURES },
     copy: buildCopy("Education", { countNoun: "investigations" }),
+    codingInstitution: rawSourcePatterns([
+      [/(^|[^a-z])eef([^a-z]|$)/, "EEF"],
+      [/(^|[^a-z])iiie([^a-z]|$)/, "IIIE"],
+      [/(^|[^a-z])essa([^a-z]|$)/, "ESSA"],
+      [/(^|[^a-z])wwhge([^a-z]|$)/, "WWHGE"],
+    ]),
   },
   {
     slug: "hpv",

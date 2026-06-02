@@ -47,5 +47,6 @@ describe("communities", () => {
     expect(hpv?.copy.countNoun).toBe("references");
     expect(hpv?.copy.corpusDescriptor).toBe("HPV vaccine delivery research");
     expect(hpv?.features.evidenceMap).toBe(true);
+    expect(hpv?.codingInstitution).toBeUndefined();
   });
 });

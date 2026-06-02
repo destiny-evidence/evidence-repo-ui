@@ -11,6 +11,7 @@ import {
   getCachedContext,
   getCachedVocabulary,
 } from "@/services/vocabulary";
+import type { CodingInstitutionConfig } from "@/types/models";
 
 import { generateWorkbook, workbookToArrayBuffer } from "./generate.ts";
 import { streamJsonlFromUrl } from "./jsonlStream.ts";
@@ -46,15 +47,20 @@ export async function exportReferencesToExcel(
   vocabularyUrl: string,
   contextUrl: string,
   filename: string,
+  codingInstitution?: CodingInstitutionConfig,
 ): Promise<void> {
   const references = streamJsonlFromUrl(jsonlUrl);
   const [vocab, context] = await Promise.all([
     getCachedVocabulary(vocabularyUrl),
     getCachedContext(contextUrl),
   ]);
-  const wb = await generateWorkbook(references, {
-    prefixes: context.prefixes,
-    labels: vocab.labels,
-  });
+  const wb = await generateWorkbook(
+    references,
+    {
+      prefixes: context.prefixes,
+      labels: vocab.labels,
+    },
+    codingInstitution,
+  );
   triggerDownload(workbookToArrayBuffer(wb), filename);
 }

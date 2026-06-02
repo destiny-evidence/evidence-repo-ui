@@ -3,7 +3,6 @@
  * structures; field accesses use snake_case to match the wire format.
  */
 
-import { extractLinkedDataCodingInstitution } from "@/services/codingInstitution";
 import {
   extractDoi,
   extractOpenAlexId,
@@ -12,6 +11,7 @@ import {
 import { expandCompactUri } from "@/services/vocabulary";
 import type {
   BibliographicMetadataEnhancement,
+  CodingInstitutionConfig,
   Enhancement,
   LinkedDataEnhancement,
   Reference,
@@ -330,6 +330,7 @@ export function buildInvestigationRow(
   linked: Enhancement & { content: LinkedDataEnhancement },
   investigation: Investigation,
   vocab: ConceptResolver,
+  codingInstitution?: CodingInstitutionConfig,
 ): InvestigationRow {
   const docType = investigation.documentType ?? {};
   const authors = bibliographic?.authorship
@@ -337,7 +338,7 @@ export function buildInvestigationRow(
     : null;
   return {
     reference_id: String(reference.id),
-    source: extractLinkedDataCodingInstitution(reference, linked),
+    source: codingInstitution?.fromLinkedData(reference, linked) ?? null,
     title: bibliographic?.title ?? null,
     authors: authors || null,
     publication_year: bibliographic?.publication_year ?? null,

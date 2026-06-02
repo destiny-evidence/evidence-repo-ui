@@ -255,6 +255,7 @@ function SearchPageInner({ community }: { community: Community }) {
       filename: formatExportFilename(community.slug),
       vocabularyUrl: community.vocabularyUrl,
       contextUrl: community.contextUrl,
+      codingInstitution: community.codingInstitution,
     });
   }
 
@@ -382,7 +383,12 @@ function SearchPageInner({ community }: { community: Community }) {
           )}
 
           {results.results?.references.map((ref) => (
-            <ResultRow key={ref.id} communitySlug={community.slug} reference={ref} />
+            <ResultRow
+              key={ref.id}
+              communitySlug={community.slug}
+              reference={ref}
+              codingInstitution={community.codingInstitution}
+            />
           ))}
         </div>
 

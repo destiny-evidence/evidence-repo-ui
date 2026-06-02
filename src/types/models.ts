@@ -13,6 +13,14 @@ export interface CommunityCopy {
   corpusDescriptor: string;
 }
 
+// Two entry points because the coder is read from different shapes: result rows
+// carry the raw enhancement inline; the detail page and export resolve it via a
+// linked-data enhancement's derived_from chain. See rawSourcePatterns().
+export interface CodingInstitutionConfig {
+  fromReference(reference: Reference): string | null;
+  fromLinkedData(reference: Reference, lde: Enhancement): string | null;
+}
+
 export interface Community {
   slug: string;
   name: string;
@@ -22,6 +30,8 @@ export interface Community {
   filterExcludedSchemes: string[];
   features: CommunityFeatures;
   copy: CommunityCopy;
+  // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
+  codingInstitution?: CodingInstitutionConfig;
 }
 
 export type Visibility = "public" | "restricted" | "hidden";
