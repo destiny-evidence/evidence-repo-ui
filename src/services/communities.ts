@@ -26,9 +26,9 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: ["esea:ImplementationDescriptionScheme"],
     externalResources: [
       {
-        title: "SRER 2026 cohort site",
+        title: "Onboarding toolkit",
         description:
-          "Schedule, readings and onboarding for the SRER review cohort.",
+          "What to do this month, how the taxonomy works in practice, and what your peers are working on.",
         href: "https://srer-cohort-2026.netlify.app",
       },
     ],
