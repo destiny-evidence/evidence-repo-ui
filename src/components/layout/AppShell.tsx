@@ -1,9 +1,25 @@
 import type { ComponentChildren } from "preact";
+import { useEffect, useState } from "preact/hooks";
 import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
 import { FeedbackFAB } from "@/components/feedback/FeedbackFAB";
 import { ResourcesMenu } from "./ResourcesMenu";
+import { URL_CHANGE_EVENT } from "@/services/navigation";
 import "./AppShell.css";
+
+function usePathname(): string {
+  const [pathname, setPathname] = useState(() => window.location.pathname);
+  useEffect(() => {
+    const onChange = () => setPathname(window.location.pathname);
+    window.addEventListener("popstate", onChange);
+    window.addEventListener(URL_CHANGE_EVENT, onChange);
+    return () => {
+      window.removeEventListener("popstate", onChange);
+      window.removeEventListener(URL_CHANGE_EVENT, onChange);
+    };
+  }, []);
+  return pathname;
+}
 
 interface AppShellProps {
   children: ComponentChildren;
@@ -17,6 +33,11 @@ const BRAND_HREF = "/esea";
 export function AppShell({ children }: AppShellProps) {
   const { username, logout } = useAuth();
   const community = useCommunity();
+  const pathname = usePathname();
+  const searchActive =
+    community != null &&
+    (pathname === `/${community.slug}` ||
+      pathname.startsWith(`/${community.slug}/references/`));
   return (
     <div class="app-shell">
       <header class="app-header">
@@ -34,7 +55,7 @@ export function AppShell({ children }: AppShellProps) {
         </a>
         {community?.externalResources && community.externalResources.length > 0 && (
           <nav class="app-nav" aria-label="Primary">
-            <a class="app-nav__link active" href={`/${community.slug}`}>
+            <a class={`app-nav__link${searchActive ? " active" : ""}`} href={`/${community.slug}`}>
               Search
             </a>
             <ResourcesMenu resources={community.externalResources} />
