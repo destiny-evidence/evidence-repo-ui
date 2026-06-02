@@ -24,6 +24,14 @@ const COMMUNITIES: Community[] = [
       import.meta.env.VITE_ESEA_CONTEXT_URL,
     ),
     filterExcludedSchemes: ["esea:ImplementationDescriptionScheme"],
+    externalResources: [
+      {
+        title: "SRER 2026 cohort site",
+        description:
+          "Schedule, readings and onboarding for the SRER review cohort.",
+        href: "https://srer-cohort-2026.netlify.app/",
+      },
+    ],
   },
 ];
 

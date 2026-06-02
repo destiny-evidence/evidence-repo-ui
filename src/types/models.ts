@@ -1,3 +1,9 @@
+export interface ExternalResource {
+  title: string;
+  description: string;
+  href: string;
+}
+
 export interface Community {
   slug: string;
   name: string;
@@ -5,6 +11,7 @@ export interface Community {
   vocabularyUrl: string;
   contextUrl: string;
   filterExcludedSchemes: string[];
+  externalResources?: ExternalResource[];
 }
 
 export type Visibility = "public" | "restricted" | "hidden";

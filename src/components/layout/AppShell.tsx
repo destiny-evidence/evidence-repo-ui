@@ -2,6 +2,7 @@ import type { ComponentChildren } from "preact";
 import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
 import { FeedbackFAB } from "@/components/feedback/FeedbackFAB";
+import { ResourcesMenu } from "./ResourcesMenu";
 import "./AppShell.css";
 
 interface AppShellProps {
@@ -31,6 +32,14 @@ export function AppShell({ children }: AppShellProps) {
             )}
           </span>
         </a>
+        {community?.externalResources && community.externalResources.length > 0 && (
+          <nav class="app-nav" aria-label="Primary">
+            <a class="app-nav__link active" href={`/${community.slug}`}>
+              Search
+            </a>
+            <ResourcesMenu resources={community.externalResources} />
+          </nav>
+        )}
         <div class="app-header__user">
           {username && <span class="app-header__username">{username}</span>}
           <button type="button" class="app-header__signout" onClick={logout}>
