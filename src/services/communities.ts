@@ -55,6 +55,14 @@ const COMMUNITIES: Community[] = [
       [/(^|[^a-z])essa([^a-z]|$)/, "ESSA"],
       [/(^|[^a-z])wwhge([^a-z]|$)/, "WWHGE"],
     ]),
+    externalResources: [
+      {
+        title: "Onboarding toolkit",
+        description:
+          "What to do this month, how the taxonomy works in practice, and what your peers are working on.",
+        href: "https://srer-cohort-2026.netlify.app",
+      },
+    ],
   },
   {
     slug: "hpv",

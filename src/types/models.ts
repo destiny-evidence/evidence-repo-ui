@@ -21,6 +21,12 @@ export interface CodingInstitutionConfig {
   fromLinkedData(reference: Reference, lde: Enhancement): string | null;
 }
 
+export interface ExternalResource {
+  title: string;
+  description: string;
+  href: string;
+}
+
 export interface Community {
   slug: string;
   name: string;
@@ -32,6 +38,7 @@ export interface Community {
   copy: CommunityCopy;
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;
+  externalResources?: ExternalResource[];
 }
 
 export type Visibility = "public" | "restricted" | "hidden";
