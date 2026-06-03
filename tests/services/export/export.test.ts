@@ -6,8 +6,18 @@ import { fileURLToPath } from "node:url";
 import * as XLSX from "xlsx";
 
 import { exportReferencesToExcel } from "@/services/export/export.ts";
+import { rawSourcePatterns } from "@/services/codingInstitution";
 import { _resetContextCache } from "@/services/vocabulary/contextService";
 import { _resetVocabularyCache } from "@/services/vocabulary/vocabularyService";
+
+// esea config: the fixtures are education data, so the source column resolves
+// to coder labels (EEF, ESSA, …) in the snapshots.
+const CODING = rawSourcePatterns([
+  [/(^|[^a-z])eef([^a-z]|$)/, "EEF"],
+  [/(^|[^a-z])iiie([^a-z]|$)/, "IIIE"],
+  [/(^|[^a-z])essa([^a-z]|$)/, "ESSA"],
+  [/(^|[^a-z])wwhge([^a-z]|$)/, "WWHGE"],
+]);
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = resolve(HERE, "fixtures");
@@ -339,6 +349,7 @@ describe.each([
       VOCAB_URL,
       CONTEXT_URL,
       `${stem}.xlsx`,
+      CODING,
     );
 
     expect(captured.blobBytes).not.toBeNull();

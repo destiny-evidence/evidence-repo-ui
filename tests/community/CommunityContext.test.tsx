@@ -29,6 +29,18 @@ describe("useCommunity", () => {
     expect(screen.getByTestId("community")).toHaveTextContent("Education");
   });
 
+  test("resolves the hpv community from /hpv", () => {
+    setPath("/hpv");
+    render(
+      <CommunityProvider>
+        <TestConsumer />
+      </CommunityProvider>,
+    );
+    expect(screen.getByTestId("community")).toHaveTextContent(
+      "HPV Vaccine Delivery",
+    );
+  });
+
   test("updates when the browser fires popstate", () => {
     setPath("/");
     render(

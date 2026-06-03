@@ -1,13 +1,23 @@
 import { describe, test, expect } from "vitest";
-import {
-  resolveCodingInstitution,
-  extractReferenceCodingInstitution,
-  extractLinkedDataCodingInstitution,
-} from "@/services/codingInstitution";
+import { rawSourcePatterns } from "@/services/codingInstitution";
 import type { Enhancement, Reference } from "@/types/models";
 import { linkedDataEnh, makeReference, rawEnh } from "../fixtures";
 
-describe("resolveCodingInstitution", () => {
+// esea-style patterns; the factory itself is community-agnostic.
+const coding = rawSourcePatterns([
+  [/(^|[^a-z])eef([^a-z]|$)/, "EEF"],
+  [/(^|[^a-z])iiie([^a-z]|$)/, "IIIE"],
+  [/(^|[^a-z])essa([^a-z]|$)/, "ESSA"],
+  [/(^|[^a-z])wwhge([^a-z]|$)/, "WWHGE"],
+]);
+
+function refWithRawSource(source: string): Reference {
+  return makeReference({
+    enhancements: [rawEnh("ref-1", { id: "a", source, createdAt: "2024-01-01" })],
+  });
+}
+
+describe("rawSourcePatterns source matching", () => {
   test.each([
     ["eef-eppi-review", "EEF"],
     ["ad_hoc_ingestors.iiie_ingestor@1.0", "IIIE"],
@@ -15,37 +25,25 @@ describe("resolveCodingInstitution", () => {
     ["wwhge-internal", "WWHGE"],
     ["EEF-EPPI-REVIEW", "EEF"],
   ])("maps %s to %s", (input, expected) => {
-    expect(resolveCodingInstitution(input)).toBe(expected);
+    expect(coding.fromReference(refWithRawSource(input))).toBe(expected);
   });
 
   test("returns null for unknown sources", () => {
-    expect(resolveCodingInstitution("openalex")).toBeNull();
-    expect(resolveCodingInstitution("robot")).toBeNull();
+    expect(coding.fromReference(refWithRawSource("openalex"))).toBeNull();
+    expect(coding.fromReference(refWithRawSource("robot"))).toBeNull();
   });
 
   test("does not match patterns embedded in larger words", () => {
-    // "beef" should not match "eef"; "messa" should not match "essa"; etc.
-    expect(resolveCodingInstitution("beef")).toBeNull();
-    expect(resolveCodingInstitution("messaging")).toBeNull();
-  });
-
-  test("returns null for empty/null/undefined", () => {
-    expect(resolveCodingInstitution("")).toBeNull();
-    expect(resolveCodingInstitution(null)).toBeNull();
-    expect(resolveCodingInstitution(undefined)).toBeNull();
+    // "beef" should not match "eef"; "messaging" should not match "essa".
+    expect(coding.fromReference(refWithRawSource("beef"))).toBeNull();
+    expect(coding.fromReference(refWithRawSource("messaging"))).toBeNull();
   });
 });
 
-describe("extractReferenceCodingInstitution", () => {
-  test("returns null when enhancements is null", () => {
-    expect(
-      extractReferenceCodingInstitution(makeReference({ enhancements: [] })),
-    ).toBeNull();
-  });
-
+describe("fromReference", () => {
   test("returns null when no raw enhancement exists", () => {
     expect(
-      extractReferenceCodingInstitution(makeReference({ enhancements: [] })),
+      coding.fromReference(makeReference({ enhancements: [] })),
     ).toBeNull();
   });
 
@@ -64,24 +62,11 @@ describe("extractReferenceCodingInstitution", () => {
         }),
       ],
     });
-    expect(extractReferenceCodingInstitution(ref)).toBe("IIIE");
-  });
-
-  test("returns null when raw source is unknown", () => {
-    const ref = makeReference({
-      enhancements: [
-        rawEnh("ref-1", {
-          id: "a",
-          source: "openalex",
-          createdAt: "2024-01-01",
-        }),
-      ],
-    });
-    expect(extractReferenceCodingInstitution(ref)).toBeNull();
+    expect(coding.fromReference(ref)).toBe("IIIE");
   });
 });
 
-describe("extractLinkedDataCodingInstitution", () => {
+describe("fromLinkedData", () => {
   test("returns null when reference has no enhancements", () => {
     const lde = linkedDataEnh("ref-1", { id: "lde-1", derivedFrom: ["raw-1"] });
     const ref: Reference = {
@@ -90,7 +75,7 @@ describe("extractLinkedDataCodingInstitution", () => {
       identifiers: null,
       enhancements: null,
     };
-    expect(extractLinkedDataCodingInstitution(ref, lde)).toBeNull();
+    expect(coding.fromLinkedData(ref, lde)).toBeNull();
   });
 
   test("returns null when LDE has no derived_from", () => {
@@ -101,7 +86,7 @@ describe("extractLinkedDataCodingInstitution", () => {
         lde,
       ],
     });
-    expect(extractLinkedDataCodingInstitution(ref, lde)).toBeNull();
+    expect(coding.fromLinkedData(ref, lde)).toBeNull();
   });
 
   test("resolves source on raw enhancement matched by derived_from", () => {
@@ -113,7 +98,7 @@ describe("extractLinkedDataCodingInstitution", () => {
         lde,
       ],
     });
-    expect(extractLinkedDataCodingInstitution(ref, lde)).toBe("EEF");
+    expect(coding.fromLinkedData(ref, lde)).toBe("EEF");
   });
 
   test("resolves the provenance of the specific LDE passed in", () => {
@@ -136,8 +121,8 @@ describe("extractLinkedDataCodingInstitution", () => {
         ldeB,
       ],
     });
-    expect(extractLinkedDataCodingInstitution(ref, ldeA)).toBe("EEF");
-    expect(extractLinkedDataCodingInstitution(ref, ldeB)).toBe("IIIE");
+    expect(coding.fromLinkedData(ref, ldeA)).toBe("EEF");
+    expect(coding.fromLinkedData(ref, ldeB)).toBe("IIIE");
   });
 
   test("returns null when derived_from points to a missing enhancement", () => {
@@ -151,7 +136,7 @@ describe("extractLinkedDataCodingInstitution", () => {
         lde,
       ],
     });
-    expect(extractLinkedDataCodingInstitution(ref, lde)).toBeNull();
+    expect(coding.fromLinkedData(ref, lde)).toBeNull();
   });
 
   test("ignores non-raw enhancements with matching id in derived_from", () => {
@@ -179,6 +164,6 @@ describe("extractLinkedDataCodingInstitution", () => {
     };
     const lde = linkedDataEnh("ref-1", { id: "lde-1", derivedFrom: ["bib-1"] });
     const ref = makeReference({ enhancements: [bibEnh, lde] });
-    expect(extractLinkedDataCodingInstitution(ref, lde)).toBeNull();
+    expect(coding.fromLinkedData(ref, lde)).toBeNull();
   });
 });

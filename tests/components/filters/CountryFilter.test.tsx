@@ -111,11 +111,12 @@ describe("CountryFilter", () => {
     expect(franceRow.querySelector(".country-filter__count")).toBeNull();
   });
 
-  test("search with no matches in the aggregation → \"No references for [query]\" message", () => {
+  test("search with no matches in the aggregation → \"No {countNoun} for [query]\" message", () => {
     render(
       <CountryFilter
         state={emptyCountryState()}
         counts={new Map([["DE", 1]])}
+        countNoun="references"
         onChange={vi.fn()}
       />,
     );

@@ -5,6 +5,7 @@ interface SearchBarProps {
   draftQ: string;
   onDraftQChange: (q: string) => void;
   onSubmit: () => void;
+  placeholder?: string;
   disabled?: boolean;
 }
 
@@ -12,6 +13,7 @@ export function SearchBar({
   draftQ,
   onDraftQChange,
   onSubmit,
+  placeholder = "Search the evidence",
   disabled = false,
 }: SearchBarProps) {
   function handleSubmit(e?: Event) {
@@ -29,7 +31,7 @@ export function SearchBar({
           <input
             type="search"
             aria-label="Search query"
-            placeholder="Search the evidence"
+            placeholder={placeholder}
             value={draftQ}
             onInput={(e) => onDraftQChange((e.target as HTMLInputElement).value)}
             disabled={disabled}

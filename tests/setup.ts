@@ -4,6 +4,8 @@ import "@testing-library/jest-dom/vitest";
 
 vi.stubEnv("VITE_ESEA_VOCABULARY_URL", "https://test.example/vocab");
 vi.stubEnv("VITE_ESEA_CONTEXT_URL", "https://test.example/context");
+vi.stubEnv("VITE_HPV_VOCABULARY_URL", "https://test.example/hpv-vocab");
+vi.stubEnv("VITE_HPV_CONTEXT_URL", "https://test.example/hpv-context");
 
 const defaultTokenParsed = () => ({
   name: "Test User",

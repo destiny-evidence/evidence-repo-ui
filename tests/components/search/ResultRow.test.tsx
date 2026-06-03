@@ -1,11 +1,14 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { PILL_CAP, ResultRow } from "@/components/search/ResultRow";
+import { rawSourcePatterns } from "@/services/codingInstitution";
 import {
   abstractEnh,
   bibliographicEnh,
   makeReference,
 } from "../../fixtures";
+
+const CODING = rawSourcePatterns([[/(^|[^a-z])eef([^a-z]|$)/, "EEF"]]);
 
 const vocabState = {
   labels: null as Map<string, string> | null,
@@ -252,7 +255,32 @@ describe("ResultRow", () => {
   });
 
   test("does not render coding institution when no raw enhancement is present", () => {
-    render(<ResultRow communitySlug="esea" reference={makeRef()} />);
+    render(
+      <ResultRow
+        communitySlug="esea"
+        reference={makeRef()}
+        codingInstitution={CODING}
+      />,
+    );
+    expect(screen.queryByTestId("coder-text")).toBeNull();
+  });
+
+  test("does not render coding institution when the community has no config", () => {
+    const ref = makeRef({
+      enhancements: [
+        {
+          id: "raw-1",
+          reference_id: "ref-1",
+          source: "eef-eppi-review",
+          visibility: "public",
+          robot_version: null,
+          derived_from: null,
+          created_at: "2024-01-01",
+          content: { enhancement_type: "raw" },
+        },
+      ],
+    });
+    render(<ResultRow communitySlug="hpv" reference={ref} />);
     expect(screen.queryByTestId("coder-text")).toBeNull();
   });
 
@@ -272,7 +300,11 @@ describe("ResultRow", () => {
       ],
     });
     const { container } = render(
-      <ResultRow communitySlug="esea" reference={ref} />,
+      <ResultRow
+        communitySlug="esea"
+        reference={ref}
+        codingInstitution={CODING}
+      />,
     );
     const coder = screen.getByTestId("coder-text");
     expect(coder).toHaveTextContent("EEF");

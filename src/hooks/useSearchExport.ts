@@ -6,7 +6,7 @@ import {
   type SearchFilters,
 } from "@/services/apiClient";
 import { exportReferencesToExcel } from "@/services/export/export";
-import type { SearchExportRead } from "@/types/models";
+import type { CodingInstitutionConfig, SearchExportRead } from "@/types/models";
 
 export type ExportStatus =
   | "idle"
@@ -22,6 +22,7 @@ export interface StartExportOptions {
   filename: string;
   vocabularyUrl: string;
   contextUrl: string;
+  codingInstitution?: CodingInstitutionConfig;
 }
 
 export interface UseSearchExportResult {
@@ -75,6 +76,7 @@ export function useSearchExport(): UseSearchExportResult {
       filename,
       vocabularyUrl,
       contextUrl,
+      codingInstitution,
     }: StartExportOptions) => {
       runIdRef.current += 1;
       const runId = runIdRef.current;
@@ -106,6 +108,7 @@ export function useSearchExport(): UseSearchExportResult {
             vocabularyUrl,
             contextUrl,
             filename,
+            codingInstitution,
           );
         } catch (err) {
           fail(

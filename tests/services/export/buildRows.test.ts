@@ -6,6 +6,7 @@ import {
   buildInvestigationRow,
   buildOutcomeRows,
 } from "@/services/export/buildRows.ts";
+import { rawSourcePatterns } from "@/services/codingInstitution";
 import type {
   ConceptResolver,
   Finding,
@@ -203,19 +204,20 @@ describe("buildInvestigationRow", () => {
     expect(row.vocabulary).toBe("https://vocab.esea.education/v1");
   });
 
-  // Token-by-token resolver behaviour and edge cases (null derived_from,
-  // unknown sources, non-raw upstream filter) live in
-  // tests/services/codingInstitution.test.ts. Here we just smoke-test
-  // that buildInvestigationRow plumbs the resolved value into row.source.
-  test("source reflects extractLinkedDataCodingInstitution of the linked enhancement", () => {
+  // Resolver behaviour and edge cases live in
+  // tests/services/codingInstitution.test.ts; here we just check the plumbing
+  // into row.source — populated with a config, null without one.
+  test("source reflects the coding-institution config (null when absent)", () => {
     const raw = makeEnh(
       { enhancement_type: "raw" },
       { id: "raw-1", source: "eef-eppi-review" },
     );
     const linked = linkedEnh({});
     const ref = makeRef({ enhancements: [raw, linked] });
-    const row = buildInvestigationRow(ref, null, linked, {}, VOCAB);
-    expect(row.source).toBe("EEF");
+    const coding = rawSourcePatterns([[/(^|[^a-z])eef([^a-z]|$)/, "EEF"]]);
+
+    expect(buildInvestigationRow(ref, null, linked, {}, VOCAB, coding).source).toBe("EEF");
+    expect(buildInvestigationRow(ref, null, linked, {}, VOCAB).source).toBeNull();
   });
 });
 

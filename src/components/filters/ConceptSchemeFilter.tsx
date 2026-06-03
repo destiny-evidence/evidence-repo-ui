@@ -15,6 +15,7 @@ interface ConceptSchemeFilterProps {
   state: ConceptSchemeFilterState;
   counts?: ReadonlyMap<string, number> | null;
   countsLoading?: boolean;
+  countNoun?: string;
   onChange: (next: ConceptSchemeFilterState) => void;
 }
 
@@ -23,6 +24,7 @@ interface ConceptItemProps {
   state: ConceptSchemeFilterState;
   counts: ReadonlyMap<string, number> | null;
   countsLoading: boolean;
+  countNoun: string;
   onChange: (next: ConceptSchemeFilterState) => void;
 }
 
@@ -37,6 +39,7 @@ function ConceptItem({
   state,
   counts,
   countsLoading,
+  countNoun,
   onChange,
 }: ConceptItemProps) {
   const hasDefinition = !!concept.definition;
@@ -72,7 +75,7 @@ function ConceptItem({
   const countNode = showCountBadge && (
     <span
       class={countClass}
-      aria-label={`${formatCount(count)} investigations`}
+      aria-label={`${formatCount(count)} ${countNoun}`}
       tabIndex={hasChildren ? 0 : undefined}
     >
       {formatCount(count)}
@@ -109,6 +112,7 @@ function ConceptItem({
               state={state}
               counts={counts}
               countsLoading={countsLoading}
+              countNoun={countNoun}
               onChange={onChange}
             />
           ))}
@@ -123,6 +127,7 @@ export function ConceptSchemeFilter({
   state,
   counts = null,
   countsLoading = false,
+  countNoun = "results",
   onChange,
 }: ConceptSchemeFilterProps) {
   return (
@@ -134,6 +139,7 @@ export function ConceptSchemeFilter({
           state={state}
           counts={counts}
           countsLoading={countsLoading}
+          countNoun={countNoun}
           onChange={onChange}
         />
       ))}

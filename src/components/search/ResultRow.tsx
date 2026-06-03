@@ -1,5 +1,5 @@
 import { useMemo } from "preact/hooks";
-import type { Reference } from "@/types/models";
+import type { CodingInstitutionConfig, Reference } from "@/types/models";
 import type {
   CodedAnnotation,
   InvestigationData,
@@ -13,7 +13,6 @@ import {
   extractLinkedData,
   formatPagination,
 } from "@/services/referenceUtils";
-import { extractReferenceCodingInstitution } from "@/services/codingInstitution";
 import { parseInvestigation } from "@/services/investigationParser";
 import { conceptsToTags } from "@/services/conceptLabels";
 import { useVocabulary } from "@/hooks/useVocabulary";
@@ -24,6 +23,7 @@ import "./ResultRow.css";
 interface ResultRowProps {
   communitySlug: string;
   reference: Reference;
+  codingInstitution?: CodingInstitutionConfig;
 }
 
 const MAX_AUTHORS_SHOWN = 3;
@@ -66,7 +66,11 @@ function aggregatePillConcepts(
   return out;
 }
 
-export function ResultRow({ communitySlug, reference }: ResultRowProps) {
+export function ResultRow({
+  communitySlug,
+  reference,
+  codingInstitution: codingConfig,
+}: ResultRowProps) {
   const bib = extractBibliographic(reference);
   const doi = extractDoi(reference.identifiers);
   const abstract = extractAbstract(reference)?.abstract ?? null;
@@ -104,7 +108,7 @@ export function ResultRow({ communitySlug, reference }: ResultRowProps) {
   const year = bib?.publication_year !== null && bib?.publication_year !== undefined
     ? String(bib.publication_year)
     : "";
-  const codingInstitution = extractReferenceCodingInstitution(reference);
+  const codingInstitution = codingConfig?.fromReference(reference) ?? null;
 
   const findingsLabel = counts ? String(counts.findings) : "—";
   const estimatesLabel = counts ? String(counts.estimates) : "—";
