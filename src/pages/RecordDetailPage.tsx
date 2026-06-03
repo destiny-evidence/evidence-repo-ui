@@ -7,7 +7,6 @@ import {
   extractLinkedDataEnhancement,
   extractDoi,
 } from "@/services/referenceUtils";
-import { extractLinkedDataCodingInstitution } from "@/services/codingInstitution";
 import {
   parseInvestigation,
   extractIsRetracted,
@@ -94,7 +93,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
   const doi = extractDoi(reference.identifiers);
   const lde = extractLinkedDataEnhancement(reference);
   const codingInstitution = lde
-    ? extractLinkedDataCodingInstitution(reference, lde)
+    ? (community.codingInstitution?.fromLinkedData(reference, lde) ?? null)
     : null;
   const abstract = extractAbstract(reference);
 

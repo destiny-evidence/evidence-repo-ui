@@ -1,3 +1,26 @@
+export interface CommunityFeatures {
+  // No UI yet; reserved so the evidence map can ship behind a flag (#103).
+  evidenceMap: boolean;
+}
+
+// See buildCopy() in services/communities.ts for the shared fallbacks.
+export interface CommunityCopy {
+  searchPlaceholder: string;
+  drawerTitle: string;
+  // Plural noun for a count of evidence items: "investigations" / "references".
+  countNoun: string;
+  // Completes "{N} {countNoun} across {corpusDescriptor}", e.g. "education research".
+  corpusDescriptor: string;
+}
+
+// Two entry points because the coder is read from different shapes: result rows
+// carry the raw enhancement inline; the detail page and export resolve it via a
+// linked-data enhancement's derived_from chain. See rawSourcePatterns().
+export interface CodingInstitutionConfig {
+  fromReference(reference: Reference): string | null;
+  fromLinkedData(reference: Reference, lde: Enhancement): string | null;
+}
+
 export interface ExternalResource {
   title: string;
   description: string;
@@ -11,6 +34,10 @@ export interface Community {
   vocabularyUrl: string;
   contextUrl: string;
   filterExcludedSchemes: string[];
+  features: CommunityFeatures;
+  copy: CommunityCopy;
+  // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
+  codingInstitution?: CodingInstitutionConfig;
   externalResources?: ExternalResource[];
 }
 

@@ -106,6 +106,7 @@ describe("useSearchExport", () => {
       VOCAB_URL,
       CONTEXT_URL,
       "file.xlsx",
+      undefined,
     );
     expect(mockRequest).toHaveBeenCalledWith("phonics", { annotation: ["x"] });
   });

@@ -19,7 +19,7 @@ import {
   extractLinkedDataEnhancement,
   isDict,
 } from "@/services/referenceUtils";
-import type { Reference } from "@/types/models";
+import type { CodingInstitutionConfig, Reference } from "@/types/models";
 
 import type {
   ArmRow,
@@ -113,6 +113,7 @@ function appendSheet<R extends AnyRow>(
 export async function buildAllRows(
   references: ReferenceSource,
   vocab: ConceptResolver,
+  codingInstitution?: CodingInstitutionConfig,
 ): Promise<BuiltRows> {
   const investigation: InvestigationRow[] = [];
   const arms: ArmRow[] = [];
@@ -127,7 +128,14 @@ export async function buildAllRows(
     const findings = (Array.isArray(inv["hasFinding"]) ? inv["hasFinding"] : []) as Finding[];
     const armIds = assignArmIds(findings);
     investigation.push(
-      buildInvestigationRow(reference, bibliographic, linked, inv, vocab),
+      buildInvestigationRow(
+        reference,
+        bibliographic,
+        linked,
+        inv,
+        vocab,
+        codingInstitution,
+      ),
     );
     arms.push(...buildFindingRows(referenceId, findings, armIds, vocab));
     outcomes.push(...buildOutcomeRows(referenceId, findings, armIds, vocab));
@@ -150,8 +158,9 @@ export async function buildAllRows(
 export async function generateWorkbook(
   references: ReferenceSource,
   vocab: ConceptResolver,
+  codingInstitution?: CodingInstitutionConfig,
 ): Promise<XLSX.WorkBook> {
-  const rows = await buildAllRows(references, vocab);
+  const rows = await buildAllRows(references, vocab, codingInstitution);
   const wb = XLSX.utils.book_new();
   appendSheet(wb, SHEET_NAMES.investigation, SHEET_HEADERS.investigation, rows.investigation);
   appendSheet(wb, SHEET_NAMES.arms, SHEET_HEADERS.arms, rows.arms);
