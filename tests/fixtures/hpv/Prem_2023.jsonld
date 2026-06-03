@@ -1,0 +1,58 @@
+{
+  "id": null,
+  "reference_id": "019e8ba6-2bf2-72e1-a7a2-85faaef69e77",
+  "source": "Vocabulary Mapping Robot",
+  "visibility": "public",
+  "robot_version": "1.0.0",
+  "derived_from": [
+    "019e8ba6-2bf3-77bc-bef0-17e0b168ccec"
+  ],
+  "content": {
+    "enhancement_type": "linked_data",
+    "vocabulary_uri": "https://vocab.evidence-repository.org/published/placeholder/1.0/vocabulary.jsonld",
+    "data": {
+      "@context": "https://vocab.evidence-repository.org/published/placeholder/1.0/context.jsonld",
+      "@type": "LinkedDataEnhancement",
+      "hasInvestigation": {
+        "@type": "Investigation",
+        "hasAppliedConcept": [
+          "https://vocab.aliveevidence.org/hpv/Country/CA",
+          "https://vocab.aliveevidence.org/hpv/Country/SV",
+          "https://vocab.aliveevidence.org/hpv/Country/IN",
+          "https://vocab.aliveevidence.org/hpv/Country/VN",
+          "https://vocab.aliveevidence.org/hpv/Country/NG",
+          "https://vocab.aliveevidence.org/hpv/Country/UG",
+          "https://vocab.aliveevidence.org/hpv/Country/US",
+          "https://vocab.aliveevidence.org/hpv/Country/GB",
+          "https://vocab.aliveevidence.org/hpv/Country/NI",
+          "https://vocab.aliveevidence.org/hpv/CountryClassification/HPVV000215",
+          "https://vocab.aliveevidence.org/hpv/WorldBankRegion/HPVV0166",
+          "https://vocab.aliveevidence.org/hpv/WorldBankRegion/HPVV0165",
+          "https://vocab.aliveevidence.org/hpv/WorldBankRegion/HPVV0171",
+          "https://vocab.aliveevidence.org/hpv/WorldBankRegion/HPVV0170",
+          "https://vocab.aliveevidence.org/hpv/TargetPopulation/HPVV0040",
+          "https://vocab.aliveevidence.org/hpv/VaccineSchedule/HPVV0083",
+          "https://vocab.aliveevidence.org/hpv/EquityDimension/HPVV0011",
+          "https://vocab.aliveevidence.org/hpv/CountryClassification/HPVV000216",
+          "https://vocab.aliveevidence.org/hpv/CountryClassification/HPVV000217",
+          "https://vocab.aliveevidence.org/hpv/CountryClassification/HPVV000218",
+          "https://vocab.aliveevidence.org/hpv/WHORegion/HPVV0179",
+          "https://vocab.aliveevidence.org/hpv/WHORegion/HPVV0183",
+          "https://vocab.aliveevidence.org/hpv/WHORegion/HPVV0182",
+          "https://vocab.aliveevidence.org/hpv/WHORegion/HPVV0180",
+          "https://vocab.aliveevidence.org/hpv/WHORegion/HPVV0181",
+          "https://vocab.aliveevidence.org/hpv/WHORegion/HPVV0184",
+          "https://vocab.aliveevidence.org/hpv/UNICEFRegion/HPVV0172",
+          "https://vocab.aliveevidence.org/hpv/UNICEFRegion/HPVV0173",
+          "https://vocab.aliveevidence.org/hpv/UNICEFRegion/HPVV0174",
+          "https://vocab.aliveevidence.org/hpv/UNICEFRegion/HPVV0175",
+          "https://vocab.aliveevidence.org/hpv/UNICEFRegion/HPVV0176",
+          "https://vocab.aliveevidence.org/hpv/UNICEFRegion/HPVV000213",
+          "https://vocab.aliveevidence.org/hpv/UNICEFRegion/HPVV0177",
+          "https://vocab.aliveevidence.org/hpv/UNICEFRegion/HPVV0178"
+        ]
+      }
+    }
+  },
+  "created_at": null
+}
