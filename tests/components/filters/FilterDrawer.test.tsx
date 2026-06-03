@@ -152,7 +152,7 @@ describe("FilterDrawer", () => {
     expect((apply as HTMLButtonElement).disabled).toBe(false);
   });
 
-  test("Show results fires onApply with one sibling-set group per selection", () => {
+  test("Show results fires onApply with one OR-group per scheme", () => {
     const onApply = vi.fn();
     renderDrawer({ onApply });
     fireEvent.click(screen.getByLabelText("Journal Article"));
@@ -162,8 +162,8 @@ describe("FilterDrawer", () => {
     expect(onApply).toHaveBeenCalledTimes(1);
     const applied = onApply.mock.calls[0][0] as AppliedFilters;
     expect(applied.countryCodes).toEqual([]);
-    // Concepts from different schemes → separate sibling-set groups, in
-    // scheme order (Outcome first per TWO_SCHEMES).
+    // Concepts from different schemes → separate groups (AND'd across schemes),
+    // in scheme order (Outcome first per TWO_SCHEMES).
     expect(applied.conceptFilters).toEqual([
       ["https://vocab.esea.education/OutcomeScheme/C00130"],
       [URI_JOURNAL],

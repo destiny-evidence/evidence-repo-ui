@@ -16,7 +16,7 @@ export interface SearchParams {
   endYear: number | undefined;
   sort: SortOption | undefined;
   // One `concept=` URL param per inner array; URIs in an array are OR'd
-  // (must share a sibling set), arrays are AND'd.
+  // (one scheme's selected concepts), arrays are AND'd (across schemes).
   conceptFilters: readonly (readonly string[])[];
   countryCodes: readonly string[];
 }
