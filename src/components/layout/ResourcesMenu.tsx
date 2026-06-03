@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
 import { ChevronDownIcon, ExternalLinkIcon } from "@/components/icons";
 import type { ExternalResource } from "@/types/models";
 import "./ResourcesMenu.css";
@@ -11,6 +11,8 @@ export function ResourcesMenu({ resources }: ResourcesMenuProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const buttonId = useId();
+  const panelId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -33,22 +35,16 @@ export function ResourcesMenu({ resources }: ResourcesMenuProps) {
     };
   }, [open]);
 
-  function toggle(e: MouseEvent) {
-    e.stopPropagation();
-    setOpen((v) => !v);
-  }
-
   return (
     <div class="app-nav__item" ref={containerRef}>
       <button
         ref={buttonRef}
         type="button"
         class="app-nav__link"
-        id="resourcesBtn"
-        aria-haspopup="true"
+        id={buttonId}
         aria-expanded={open ? "true" : "false"}
-        aria-controls="resourcesMenu"
-        onClick={toggle}
+        aria-controls={panelId}
+        onClick={() => setOpen((v) => !v)}
       >
         Resources
         <span class={`app-nav__caret${open ? " app-nav__caret--open" : ""}`} aria-hidden="true">
@@ -57,16 +53,13 @@ export function ResourcesMenu({ resources }: ResourcesMenuProps) {
       </button>
       <div
         class={`resources-menu${open ? " resources-menu--anim" : ""}`}
-        id="resourcesMenu"
-        role="menu"
-        aria-label="Community resources"
+        id={panelId}
         hidden={!open}
       >
         {resources.map((r) => (
           <a
             key={r.href}
             class="resource-link"
-            role="menuitem"
             href={r.href}
             target="_blank"
             rel="noopener noreferrer"

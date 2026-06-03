@@ -53,12 +53,14 @@ export function AppShell({ children }: AppShellProps) {
             )}
           </span>
         </a>
-        {community?.externalResources && community.externalResources.length > 0 && (
+        {community && (
           <nav class="app-nav" aria-label="Primary">
             <a class={`app-nav__link${searchActive ? " active" : ""}`} href={`/${community.slug}`}>
               Search
             </a>
-            <ResourcesMenu resources={community.externalResources} />
+            {community.externalResources && community.externalResources.length > 0 && (
+              <ResourcesMenu resources={community.externalResources} />
+            )}
           </nav>
         )}
         <div class="app-header__user">
