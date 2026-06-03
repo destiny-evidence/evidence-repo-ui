@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { AbstractSection } from "@/components/AbstractSection";
+import { AbstractSection } from "@/components/investigation/AbstractSection";
 import type { AbstractContentEnhancement } from "@/types/models";
 
 function makeAbstract(

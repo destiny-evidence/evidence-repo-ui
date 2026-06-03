@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { InvestigationCard } from "@/components/InvestigationCard";
+import { InvestigationCard } from "@/components/investigation/InvestigationCard";
 
 const DEFAULT_PROPS = {
   title: "Effects of peer tutoring on listening comprehension",

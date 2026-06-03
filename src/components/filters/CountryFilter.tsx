@@ -1,5 +1,5 @@
 import { useMemo, useState } from "preact/hooks";
-import { MagnifierIcon } from "@/components/icons";
+import { MagnifierIcon } from "@/components/shared/icons";
 import { countryName } from "@/utils/country";
 import {
   isSelected,

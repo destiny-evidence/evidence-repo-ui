@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/preact";
 import {
   EffectEstimateCard,
   classifyEstimate,
-} from "@/components/EffectEstimateCard";
-import { makeArm, makeEffectEstimate } from "../fixtures";
+} from "@/components/finding/EffectEstimateCard";
+import { makeArm, makeEffectEstimate } from "../../fixtures";
 
 const intervention = { id: "_:int", name: "Vanguard program" };
 const control = { id: "_:ctrl", description: "Business as usual" };

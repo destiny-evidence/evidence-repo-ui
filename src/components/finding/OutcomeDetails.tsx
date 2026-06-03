@@ -1,9 +1,9 @@
-import { TagGroup } from "./TagGroup";
+import { TagGroup } from "../shared/TagGroup";
 import { SourceEvidenceToggle } from "./SourceEvidenceToggle";
-import { LabeledField } from "./LabeledField";
+import { LabeledField } from "../shared/LabeledField";
 import { conceptsToTags } from "@/services/conceptLabels";
 import type { OutcomeData } from "@/types/investigation";
-import "./LabeledField.css";
+import "../shared/LabeledField.css";
 import "./OutcomeDetails.css";
 
 interface OutcomeDetailsProps {

@@ -1,4 +1,4 @@
-import type { SourceEvidenceEntry } from "@/components/SourceEvidenceToggle";
+import type { SourceEvidenceEntry } from "@/components/finding/SourceEvidenceToggle";
 
 /**
  * Collect SourceEvidenceEntry[] from one annotation or an array of annotations,

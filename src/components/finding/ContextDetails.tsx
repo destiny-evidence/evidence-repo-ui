@@ -1,4 +1,4 @@
-import { TagGroup } from "./TagGroup";
+import { TagGroup } from "../shared/TagGroup";
 import { SourceEvidenceToggle } from "./SourceEvidenceToggle";
 import { evidenceFrom } from "@/services/sourceEvidence";
 import { conceptsToTags } from "@/services/conceptLabels";

@@ -1,5 +1,5 @@
 import type { CodedAnnotation, ResolvedConcept } from "@/types/investigation";
-import type { HierarchicalTag } from "@/components/TagGroup";
+import type { HierarchicalTag } from "@/components/shared/TagGroup";
 
 /**
  * Build a hierarchical tag for a concept, showing the parent (via skos:broader)

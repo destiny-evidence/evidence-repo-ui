@@ -1,8 +1,8 @@
 import { describe, test, expect } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { SharedContextBlock } from "@/components/SharedContextBlock";
+import { SharedContextBlock } from "@/components/investigation/SharedContextBlock";
 import type { SharedContext } from "@/services/findingGroups";
-import { makeSharedContext } from "../fixtures";
+import { makeSharedContext } from "../../fixtures";
 
 function renderBlock(overrides?: Partial<SharedContext>) {
   return render(

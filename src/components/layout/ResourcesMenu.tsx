@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
-import { ChevronDownIcon, ExternalLinkIcon } from "@/components/icons";
+import { ChevronDownIcon, ExternalLinkIcon } from "@/components/shared/icons";
 import type { ExternalResource } from "@/types/models";
 import "./ResourcesMenu.css";
 
