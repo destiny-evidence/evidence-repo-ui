@@ -74,6 +74,17 @@ export interface ReferenceFacetResult {
   countries?: CountryFacetCount[];
 }
 
+export interface CrossFacetCell {
+  row: string;
+  column: string;
+  count: number;
+}
+
+export interface ReferenceCrossFacetResult {
+  total: SearchResultTotal;
+  cells: CrossFacetCell[];
+}
+
 export interface ExternalIdentifier {
   identifier: string | number;
   identifier_type: string | null;

@@ -3,10 +3,12 @@ import { api } from "@/api/client";
 import {
   searchReferences,
   searchReferenceFacets,
+  crossFacets,
   getReference,
 } from "@/services/apiClient";
 import type {
   Reference,
+  ReferenceCrossFacetResult,
   ReferenceFacetResult,
   SearchResult,
 } from "@/types/models";
@@ -195,6 +197,64 @@ describe("searchReferenceFacets", () => {
     };
     mockedGet.mockResolvedValue(result);
     const res = await searchReferenceFacets("x", {}, ["concepts"]);
+    expect(res).toBe(result);
+  });
+});
+
+describe("crossFacets", () => {
+  const result: ReferenceCrossFacetResult = {
+    total: { count: 42, is_lower_bound: false },
+    cells: [{ row: "AFE", column: "ex:Theme", count: 7 }],
+  };
+
+  test("hits the /cross-facets/ endpoint with q, row and column", async () => {
+    mockedGet.mockResolvedValue(result);
+    await crossFacets("phonics", {}, {
+      row: "country_wb_regions",
+      column: "countries",
+    });
+    expect(mockedGet.mock.calls[0][0]).toMatch(
+      /^\/v1\/references\/search\/cross-facets\/\?/,
+    );
+    const params = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]);
+    expect(params.get("q")).toBe("phonics");
+    expect(params.get("row")).toBe("country_wb_regions");
+    expect(params.get("column")).toBe("countries");
+  });
+
+  test("appends vocabulary only when provided", async () => {
+    mockedGet.mockResolvedValue(result);
+    await crossFacets("x", {}, { row: "countries", column: "countries" });
+    expect(
+      new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]).has("vocabulary"),
+    ).toBe(false);
+
+    await crossFacets("x", {}, {
+      row: "https://vocab.example/scheme/Themes",
+      column: "countries",
+      vocabularyUrl: "https://vocab.example/v1/vocabulary.ttl",
+    });
+    expect(
+      new URLSearchParams(mockedGet.mock.calls[1][0].split("?")[1]).get("vocabulary"),
+    ).toBe("https://vocab.example/v1/vocabulary.ttl");
+  });
+
+
+  test("forwards concept and country filters", async () => {
+    mockedGet.mockResolvedValue(result);
+    await crossFacets(
+      "phonics",
+      { conceptFilters: [["ex:A"], ["ex:B"]], countryCodes: ["DE", "FR"] },
+      { row: "countries", column: "country_wb_regions" },
+    );
+    const params = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]);
+    expect(params.getAll("concept")).toEqual(["ex:A", "ex:B"]);
+    expect(params.get("country")).toBe("DE,FR");
+  });
+
+  test("returns the result from api.get", async () => {
+    mockedGet.mockResolvedValue(result);
+    const res = await crossFacets("x", {}, { row: "countries", column: "countries" });
     expect(res).toBe(result);
   });
 });

@@ -1,6 +1,7 @@
 import { api } from "@/api/client";
 import type {
   Reference,
+  ReferenceCrossFacetResult,
   ReferenceFacetResult,
   SearchExportRead,
   SearchResult,
@@ -89,6 +90,22 @@ export async function searchReferenceFacets(
   }
   return api.get<ReferenceFacetResult>(
     `/v1/references/search/facets/?${params.toString()}`,
+  );
+}
+
+// Cross-tabulates two axes over the references matching the search, for evidence
+// maps. Same filters as searchReferences; build `axes` with axisPairToParams.
+export async function crossFacets(
+  query: string | undefined,
+  filters: Pick<SearchFilters, SharedFilterFields>,
+  axes: { row: string; column: string; vocabularyUrl?: string },
+): Promise<ReferenceCrossFacetResult> {
+  const params = buildSharedSearchParams(query, filters);
+  params.set("row", axes.row);
+  params.set("column", axes.column);
+  if (axes.vocabularyUrl) params.set("vocabulary", axes.vocabularyUrl);
+  return api.get<ReferenceCrossFacetResult>(
+    `/v1/references/search/cross-facets/?${params.toString()}`,
   );
 }
 
