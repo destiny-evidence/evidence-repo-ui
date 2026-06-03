@@ -1,0 +1,35 @@
+{
+  "id": null,
+  "reference_id": "019e8b08-21a0-76b8-8abe-5c6313499de5",
+  "source": "Vocabulary Mapping Robot",
+  "visibility": "public",
+  "robot_version": "1.0.0",
+  "derived_from": [
+    "019e8b08-58d3-708a-996a-921ef4797f7d"
+  ],
+  "content": {
+    "enhancement_type": "linked_data",
+    "vocabulary_uri": "https://vocab.evidence-repository.org/published/placeholder/1.0/vocabulary.jsonld",
+    "data": {
+      "@context": "https://vocab.evidence-repository.org/published/placeholder/1.0/context.jsonld",
+      "@type": "LinkedDataEnhancement",
+      "hasInvestigation": {
+        "@type": "Investigation",
+        "hasAppliedConcept": [
+          "https://vocab.aliveevidence.org/hpv/Country/NG",
+          "https://vocab.aliveevidence.org/hpv/WorldBankRegion/HPVV0171",
+          "https://vocab.aliveevidence.org/hpv/WHORegion/HPVV0179",
+          "https://vocab.aliveevidence.org/hpv/UNICEFRegion/HPVV0178",
+          "https://vocab.aliveevidence.org/hpv/StudyDesign/HPVV0148",
+          "https://vocab.aliveevidence.org/hpv/TargetPopulation/HPVV0041",
+          "https://vocab.aliveevidence.org/hpv/TargetPopulation/HPVV000211",
+          "https://vocab.aliveevidence.org/hpv/CountryClassification/HPVV000216",
+          "https://vocab.aliveevidence.org/hpv/StudyDesign/HPVV000257",
+          "https://vocab.aliveevidence.org/hpv/EquityDimension/HPVV000305",
+          "https://vocab.aliveevidence.org/hpv/TargetPopulation/HPVV0043"
+        ]
+      }
+    }
+  },
+  "created_at": null
+}
