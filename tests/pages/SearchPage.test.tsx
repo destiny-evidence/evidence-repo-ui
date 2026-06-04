@@ -475,8 +475,8 @@ describe("SearchPage", () => {
     });
 
     test("selecting a parent concept applies only the parent URI (no cascade)", async () => {
-      // Cascade removed: see destiny-repository#655. Selecting parent matches
-      // docs tagged with the parent URI literally, not its subtree.
+      // Selecting a parent applies only the parent URI — no cascade — matching
+      // docs tagged with it literally, not its subtree.
       mockBoth({ results: makeResult(120, ["r1"]) });
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());

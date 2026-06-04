@@ -1,8 +1,8 @@
 import { describe, test, expect } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { FindingsSection } from "@/components/FindingsSection";
+import { FindingsSection } from "@/components/investigation/FindingsSection";
 import type { FindingData } from "@/types/investigation";
-import { makeFinding } from "../fixtures";
+import { makeFinding } from "../../fixtures";
 
 function renderSection(findings: FindingData[]) {
   return render(

@@ -49,26 +49,25 @@ describe("FilterCard + ConceptSchemeFilter integration", () => {
     expect(screen.getByTestId("groups").textContent).toBe("[]");
 
     fireEvent.click(header);
-    // Cascade was removed (destiny-repository#655) — click the parent and a
-    // child individually to exercise the multi-group emission.
+    // Click a parent and one of its children individually — both should
+    // OR-join into the one scheme group.
     fireEvent.click(screen.getByLabelText("Access to Education"));
     fireEvent.click(screen.getByLabelText("Education Finance"));
     fireEvent.click(header);
 
     expect(header.getAttribute("aria-expanded")).toBe("false");
     expect(screen.getByText("2 selected")).toBeDefined();
-    // Parent + child sit in disjoint sibling-set groups (parent's broader is
-    // the scheme root; child's broader is the parent).
+    // The whole scheme is one sibling set, so parent + child OR-join into a
+    // single group (preorder: Access before its child Education Finance).
     const groups: string[][] = JSON.parse(
       screen.getByTestId("groups").textContent ?? "[]",
     );
     expect(groups).toEqual([
-      [URI_ACCESS],
-      [URI_EDUCATION_FINANCE],
+      [URI_ACCESS, URI_EDUCATION_FINANCE],
     ]);
 
     // Round-trip through the URL — a missing comma-join would split each URI
-    // into its own concept= param and trip the backend's sibling-set rule.
+    // into its own concept= param and AND them instead of OR'ing the scheme.
     const params = makeSearchParams({ conceptFilters: groups });
     const url = "?" + toQueryString(params);
     expect(parseSearchParams(url).conceptFilters).toEqual(groups);

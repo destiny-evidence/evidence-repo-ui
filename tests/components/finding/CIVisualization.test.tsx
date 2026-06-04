@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { render } from "@testing-library/preact";
-import { CIVisualization } from "@/components/CIVisualization";
+import { CIVisualization } from "@/components/finding/CIVisualization";
 
 describe("CIVisualization", () => {
   test("renders nothing when no values provided", () => {

@@ -1,8 +1,8 @@
 import { describe, test, expect } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { FindingCard } from "@/components/FindingCard";
+import { FindingCard } from "@/components/finding/FindingCard";
 import type { FindingData } from "@/types/investigation";
-import { makeArm, makeEffectEstimate, makeRichFinding } from "../fixtures";
+import { makeArm, makeEffectEstimate, makeRichFinding } from "../../fixtures";
 
 function renderCard(opts: { finding?: Partial<FindingData>; isShared?: boolean } = {}) {
   return render(

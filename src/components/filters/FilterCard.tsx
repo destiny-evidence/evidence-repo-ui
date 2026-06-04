@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { useId, useState } from "preact/hooks";
-import { ChevronDownIcon, ChevronRightIcon } from "@/components/icons";
+import { ChevronDownIcon, ChevronRightIcon } from "@/components/common/icons";
 import "./FilterCard.css";
 
 interface FilterCardProps {

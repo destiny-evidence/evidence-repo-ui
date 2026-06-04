@@ -1,7 +1,7 @@
 import { useMemo } from "preact/hooks";
 import { findSharedContext } from "@/services/findingGroups";
 import { SharedContextBlock } from "./SharedContextBlock";
-import { FindingCard } from "./FindingCard";
+import { FindingCard } from "../finding/FindingCard";
 import type { FindingData } from "@/types/investigation";
 import "./FindingsSection.css";
 

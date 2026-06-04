@@ -16,7 +16,7 @@ export interface SearchFilters {
   annotation?: string[];
   sort?: string[];
   // One `concept=` URL param per inner array; URIs in an array are OR'd
-  // (must share a sibling set in the vocab), arrays are AND'd.
+  // (one scheme's selected concepts), arrays are AND'd (across schemes).
   conceptFilters?: readonly (readonly string[])[];
   // ISO-3166 alpha-2 codes; comma-joined into a single `country=` param. The
   // facet endpoint accepts only one OR'd country filter, which this satisfies.
@@ -30,8 +30,8 @@ function isPositiveSafeInt(n: number | undefined): n is number {
 }
 
 // concept and country are always serialised together — one `concept=` per
-// sibling group, one `country=` for the OR'd codes. Extend here when the
-// backend grows another structured filter (e.g. `country_wb_region=`).
+// scheme, one `country=` for the OR'd codes. Extend here when the backend
+// grows another structured filter (e.g. `country_wb_region=`).
 function appendStructuredFilters(
   params: URLSearchParams,
   filters: Pick<SearchFilters, "conceptFilters" | "countryCodes">,
