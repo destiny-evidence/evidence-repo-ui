@@ -98,11 +98,11 @@ export async function searchReferenceFacets(
 export async function crossFacets(
   query: string | undefined,
   filters: Pick<SearchFilters, SharedFilterFields>,
-  axes: { row: string; column: string; vocabularyUrl?: string },
+  axes: { axes: readonly [string, string]; vocabularyUrl?: string },
 ): Promise<ReferenceCrossFacetResult> {
   const params = buildSharedSearchParams(query, filters);
-  params.set("row", axes.row);
-  params.set("column", axes.column);
+  // Repeated `axes=` param, in order — the backend reads it as a 2-tuple.
+  for (const axis of axes.axes) params.append("axes", axis);
   if (axes.vocabularyUrl) params.set("vocabulary", axes.vocabularyUrl);
   return api.get<ReferenceCrossFacetResult>(
     `/v1/references/search/cross-facets/?${params.toString()}`,

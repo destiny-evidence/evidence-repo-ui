@@ -13,8 +13,7 @@ export interface CrossFacetAxisPair {
 }
 
 export interface CrossFacetQueryAxes {
-  row: string;
-  column: string;
+  axes: [string, string];
   vocabularyUrl?: string;
 }
 
@@ -26,12 +25,11 @@ export function axisPairToParams(
   pair: CrossFacetAxisPair,
   vocabularyUrl: string,
 ): CrossFacetQueryAxes {
-  const axes: CrossFacetQueryAxes = {
-    row: axisToken(pair.row),
-    column: axisToken(pair.column),
+  const result: CrossFacetQueryAxes = {
+    axes: [axisToken(pair.row), axisToken(pair.column)],
   };
   if (pair.row.kind === "scheme" || pair.column.kind === "scheme") {
-    axes.vocabularyUrl = vocabularyUrl;
+    result.vocabularyUrl = vocabularyUrl;
   }
-  return axes;
+  return result;
 }

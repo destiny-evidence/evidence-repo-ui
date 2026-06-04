@@ -75,8 +75,7 @@ export interface ReferenceFacetResult {
 }
 
 export interface CrossFacetCell {
-  row: string;
-  column: string;
+  axes: [string, string];
   count: number;
 }
 

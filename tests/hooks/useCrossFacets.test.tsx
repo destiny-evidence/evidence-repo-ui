@@ -42,7 +42,7 @@ function result(
 ): ReferenceCrossFacetResult {
   return {
     total: { count: 99, is_lower_bound: false },
-    cells: cells.map(([row, column, count]) => ({ row, column, count })),
+    cells: cells.map(([a0, a1, count]) => ({ axes: [a0, a1], count })),
   };
 }
 
@@ -62,7 +62,7 @@ describe("useCrossFacets", () => {
 
     expect(hook.current.result?.total.count).toBe(99);
     expect(hook.current.result?.cells).toEqual([
-      { row: "AFE", column: SCHEME, count: 7 },
+      { axes: ["AFE", SCHEME], count: 7 },
     ]);
     expect(mockCrossFacets).toHaveBeenCalledWith(
       "phonics",
@@ -71,8 +71,7 @@ describe("useCrossFacets", () => {
         conceptFilters: [],
       }),
       {
-        row: "country_wb_regions",
-        column: SCHEME,
+        axes: ["country_wb_regions", SCHEME],
         vocabularyUrl: expect.stringMatching(/\.ttl$/),
       },
     );
