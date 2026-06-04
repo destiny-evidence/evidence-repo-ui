@@ -6,6 +6,7 @@ import {
   legendTicks,
   BUBBLE_MAX_RADIUS,
   BUBBLE_MIN_RADIUS,
+  type AxisCategory,
 } from "@/services/evidenceMap";
 import type { CrossFacetCell } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
@@ -18,34 +19,73 @@ function cell(row: string, column: string, count: number): CrossFacetCell {
 // Identity label resolver, overridable per test.
 const ident = (key: string) => key;
 
+// Axis input for buildEvidenceMapModel; defaults derive everything from cells.
+function axisOf(
+  categories: AxisCategory[] = [],
+  labelFor: (key: string) => string = ident,
+) {
+  return { categories, labelFor };
+}
+
 describe("buildEvidenceMapModel", () => {
-  test("derives unique row/column categories from the cells", () => {
+  test("derives row/column categories from the cells when the axis has none", () => {
     const model = buildEvidenceMapModel(
       [cell("r1", "c1", 3), cell("r1", "c2", 5), cell("r2", "c1", 1)],
-      ident,
-      ident,
+      axisOf(),
+      axisOf(),
     );
     expect(model.rows.map((r) => r.key)).toEqual(["r1", "r2"]);
     expect(model.columns.map((c) => c.key)).toEqual(["c1", "c2"]);
   });
 
-  test("resolves rows and columns with their own label functions", () => {
+  test("includes zero-hit categories from the axis, not just cell values", () => {
     const model = buildEvidenceMapModel(
-      [cell("r", "c", 1)],
-      () => "Row label",
-      () => "Column label",
+      [cell("r1", "c1", 3)],
+      axisOf([
+        { key: "r1", label: "Row One" },
+        { key: "r2", label: "Row Two" },
+      ]),
+      axisOf([
+        { key: "c1", label: "Col One" },
+        { key: "c2", label: "Col Two" },
+      ]),
     );
-    expect(model.rows[0].label).toBe("Row label");
-    expect(model.columns[0].label).toBe("Column label");
+    expect(model.rows.map((r) => r.key)).toEqual(["r1", "r2"]);
+    expect(model.columns.map((c) => c.key)).toEqual(["c1", "c2"]);
+    // The zero-hit intersection is empty; the populated one carries its count.
+    expect(model.getCount("r1", "c1")).toBe(3);
+    expect(model.getCount("r2", "c2")).toBeUndefined();
+  });
+
+  test("unions cell keys the axis categories don't enumerate (never drops data)", () => {
+    const model = buildEvidenceMapModel(
+      [cell("rX", "cY", 2)],
+      axisOf([{ key: "r1", label: "Row One" }]),
+      axisOf([{ key: "c1", label: "Col One" }]),
+    );
+    expect(model.rows.map((r) => r.key)).toContain("rX");
+    expect(model.columns.map((c) => c.key)).toContain("cY");
+    expect(model.getCount("rX", "cY")).toBe(2);
+  });
+
+  test("labels categories from the axis, cell-only keys from labelFor", () => {
+    const model = buildEvidenceMapModel(
+      [cell("r1", "cX", 1)],
+      axisOf([{ key: "r1", label: "Row One" }], ident),
+      axisOf([{ key: "c1", label: "Col One" }], (k) => `label:${k}`),
+    );
+    expect(model.rows[0].label).toBe("Row One");
+    expect(model.columns.find((c) => c.key === "cX")?.label).toBe("label:cX");
   });
 
   test("sorts categories by label, not raw key", () => {
-    const labels: Record<string, string> = { "u:b": "Apple", "u:a": "Banana" };
-    const resolve = (k: string) => labels[k] ?? k;
     const model = buildEvidenceMapModel(
       [cell("u:a", "x", 1), cell("u:b", "x", 1)],
-      resolve,
-      resolve,
+      axisOf([
+        { key: "u:b", label: "Apple" },
+        { key: "u:a", label: "Banana" },
+      ]),
+      axisOf(),
     );
     // u:b ("Apple") sorts before u:a ("Banana") despite key order.
     expect(model.rows.map((r) => r.label)).toEqual(["Apple", "Banana"]);
@@ -54,8 +94,8 @@ describe("buildEvidenceMapModel", () => {
   test("looks up counts by pair and returns undefined for empty intersections", () => {
     const model = buildEvidenceMapModel(
       [cell("r1", "c1", 7), cell("r2", "c2", 2)],
-      ident,
-      ident,
+      axisOf(),
+      axisOf(),
     );
     expect(model.getCount("r1", "c1")).toBe(7);
     expect(model.getCount("r2", "c2")).toBe(2);
@@ -65,8 +105,8 @@ describe("buildEvidenceMapModel", () => {
   test("tracks the maximum cell count", () => {
     const model = buildEvidenceMapModel(
       [cell("r1", "c1", 4), cell("r1", "c2", 12), cell("r2", "c1", 9)],
-      ident,
-      ident,
+      axisOf(),
+      axisOf(),
     );
     expect(model.maxCount).toBe(12);
   });
@@ -74,15 +114,15 @@ describe("buildEvidenceMapModel", () => {
   test("sums duplicate (row, column) pairs defensively", () => {
     const model = buildEvidenceMapModel(
       [cell("r1", "c1", 3), cell("r1", "c1", 4)],
-      ident,
-      ident,
+      axisOf(),
+      axisOf(),
     );
     expect(model.getCount("r1", "c1")).toBe(7);
     expect(model.maxCount).toBe(7);
   });
 
-  test("handles no cells", () => {
-    const model = buildEvidenceMapModel([], ident, ident);
+  test("handles no cells and no categories", () => {
+    const model = buildEvidenceMapModel([], axisOf(), axisOf());
     expect(model.rows).toEqual([]);
     expect(model.columns).toEqual([]);
     expect(model.maxCount).toBe(0);
@@ -95,13 +135,28 @@ describe("resolveMapAxis", () => {
   const scheme: ConceptScheme = {
     uri: "https://vocab.esea.education/OutcomeScheme",
     label: "Outcome Scheme",
-    topConcepts: [],
+    topConcepts: [
+      {
+        uri: "https://vocab.esea.education/OutcomeScheme/C1",
+        label: "Access to Education",
+        narrower: [
+          {
+            uri: "https://vocab.esea.education/OutcomeScheme/C2",
+            label: "Enrolment",
+          },
+        ],
+      },
+      {
+        uri: "https://vocab.esea.education/OutcomeScheme/C3",
+        label: "Learning",
+      },
+    ],
   };
   const labels = new Map([
     ["https://vocab.esea.education/OutcomeScheme/C1", "Access to Education"],
   ]);
 
-  test("titles a scheme axis from its vocabulary label", () => {
+  test("titles a scheme axis from its label and lists its concepts (flattened)", () => {
     const axis = resolveMapAxis(
       { kind: "scheme", schemeUri: "https://vocab.esea.education/OutcomeScheme" },
       [scheme],
@@ -109,25 +164,33 @@ describe("resolveMapAxis", () => {
     );
     // schemeDisplayLabel strips the trailing "Scheme".
     expect(axis.title).toBe("Outcome");
+    // Depth-first flatten: a parent, its narrower, then the next top concept.
+    expect(axis.categories.map((c) => c.label)).toEqual([
+      "Access to Education",
+      "Enrolment",
+      "Learning",
+    ]);
     expect(
       axis.labelFor("https://vocab.esea.education/OutcomeScheme/C1"),
     ).toBe("Access to Education");
   });
 
-  test("falls back to the local name when the scheme isn't in the vocabulary", () => {
+  test("falls back to the local name and no categories when the scheme is absent", () => {
     const axis = resolveMapAxis(
       { kind: "scheme", schemeUri: "https://vocab.esea.education/MysteryScheme" },
       [scheme],
       labels,
     );
     expect(axis.title).toBe("MysteryScheme");
+    expect(axis.categories).toEqual([]);
     // Unknown values pass through unchanged.
     expect(axis.labelFor("urn:unknown")).toBe("urn:unknown");
   });
 
-  test("expands a countries axis through Intl", () => {
+  test("expands a countries axis through Intl, with no enumerated categories yet", () => {
     const axis = resolveMapAxis({ kind: "countries" }, null, null);
     expect(axis.title).toBe("Countries");
+    expect(axis.categories).toEqual([]);
     expect(axis.labelFor("FR")).toBe(countryName("FR"));
     expect(axis.labelFor("FR")).not.toBe("FR");
   });

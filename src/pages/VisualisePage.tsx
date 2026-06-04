@@ -137,11 +137,7 @@ function EvidenceMapView({
 
   const model = useMemo(() => {
     if (!result) return null;
-    return buildEvidenceMapModel(
-      result.cells,
-      rowAxis.labelFor,
-      columnAxis.labelFor,
-    );
+    return buildEvidenceMapModel(result.cells, rowAxis, columnAxis);
   }, [result, rowAxis, columnAxis]);
 
   // Rewrite the URL into canonical form (filters + explicit default axes) so a
@@ -155,13 +151,11 @@ function EvidenceMapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonical, community.slug]);
 
-  // Reset clears filters; the load effect re-applies the default axes.
-  function handleReset() {
-    navigate(`/${community.slug}/visualise`);
-  }
-
   const noun = community.copy.countNoun;
-  const hasData = model !== null && model.rows.length > 0;
+  // With scheme axes the categories come from the vocabulary, so a grid renders
+  // (greyed) even at zero results — the over-filtered banner sits above it.
+  const hasGrid =
+    model !== null && model.rows.length > 0 && model.columns.length > 0;
 
   return (
     <div class="evidence-map-view">
@@ -175,46 +169,53 @@ function EvidenceMapView({
         </p>
       ) : !result && loading ? (
         <p class="evidence-map-view__status">Loading…</p>
-      ) : hasData ? (
-        <EvidenceMapGrid
-          rows={model.rows}
-          columns={model.columns}
-          getCount={model.getCount}
-          maxCount={model.maxCount}
-          view={view}
-          countNoun={noun}
-          rowAxisLabel={rowAxis.title}
-          columnAxisLabel={columnAxis.title}
-          total={result ? formatTotal(result.total) : undefined}
-        />
-      ) : result && result.total.count === 0 ? (
-        <div class="evidence-map-view__empty">
-          <p class="evidence-map-view__total">
-            <span class="evidence-map-view__total-count">
-              {formatTotal(result.total)}
-            </span>{" "}
-            {noun}
-          </p>
-          <div class="evidence-map-view__banner" role="status">
-            <WarningIcon />
-            <span class="evidence-map-view__banner-text">
-              No {noun} match the current filters. Please update the filters and
-              try again.
-            </span>
-            <button
-              type="button"
-              class="evidence-map-view__reset"
-              onClick={handleReset}
-            >
-              Reset all
-            </button>
-          </div>
+      ) : !result ? null : result.total.count === 0 ? (
+        // Over-filtered: nothing matches the filters — just the banner.
+        <div class="evidence-map-view__banner" role="status">
+          <WarningIcon />
+          <span class="evidence-map-view__banner-text">
+            No {noun} match the current filters. Please update the filters and
+            try again.
+          </span>
         </div>
-      ) : result ? (
-        <p class="evidence-map-view__status">
-          None of the matching {noun} carry values on both axes.
-        </p>
-      ) : null}
+      ) : (
+        <>
+          {result.cells.length === 0 && (
+            // Distinct from over-filtered: references match, but none carry a
+            // value on both axes — nothing cross-tabulates. The message sits
+            // over the greyed-out grid.
+            <p class="evidence-map-view__note" role="status">
+              <span class="evidence-map-view__note-count">
+                {formatTotal(result.total)}
+              </span>{" "}
+              {noun} match your filters, but none have a value for both{" "}
+              {rowAxis.title} and {columnAxis.title} — nothing to plot on these
+              axes.
+            </p>
+          )}
+          {model && hasGrid ? (
+            <EvidenceMapGrid
+              rows={model.rows}
+              columns={model.columns}
+              getCount={model.getCount}
+              maxCount={model.maxCount}
+              view={view}
+              countNoun={noun}
+              rowAxisLabel={rowAxis.title}
+              columnAxisLabel={columnAxis.title}
+              total={formatTotal(result.total)}
+            />
+          ) : result.cells.length > 0 ? (
+            // Data exists but the vocabulary hasn't supplied categories yet.
+            <p class="evidence-map-view__total">
+              <span class="evidence-map-view__total-count">
+                {formatTotal(result.total)}
+              </span>{" "}
+              {noun}
+            </p>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

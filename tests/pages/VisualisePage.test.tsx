@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/preact";
 import { VisualisePage } from "@/pages/VisualisePage";
 import { makeCommunity } from "../fixtures";
 import type { EvidenceMapAxes, ReferenceCrossFacetResult } from "@/types/models";
+import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 
 const { mockUseCommunity, mockUseCrossFacets, mockUseVocabulary, mockUseUrlParams, mockNavigate } =
   vi.hoisted(() => ({
@@ -42,6 +43,27 @@ const LABELS = new Map<string, string>([
   ["theme:literacy", "Literacy"],
   ["theme:numeracy", "Numeracy"],
 ]);
+
+// Schemes matching AXES so the grid can enumerate zero-hit categories.
+const SCHEMES: ConceptScheme[] = [
+  {
+    uri: "scheme:level",
+    label: "Education Level Scheme",
+    topConcepts: [
+      { uri: "level:primary", label: "Primary" },
+      { uri: "level:secondary", label: "Secondary" },
+    ],
+  },
+  {
+    uri: "scheme:theme",
+    label: "Education Theme Scheme",
+    topConcepts: [
+      { uri: "theme:literacy", label: "Literacy" },
+      { uri: "theme:numeracy", label: "Numeracy" },
+      { uri: "theme:science", label: "Science" },
+    ],
+  },
+];
 
 function crossFacetResult(
   total: number,
@@ -130,6 +152,30 @@ describe("VisualisePage map", () => {
     expect(screen.getByRole("rowheader", { name: "Primary" })).toBeInTheDocument();
   });
 
+  test("renders zero-hit rows and columns from the vocabulary", () => {
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: SCHEMES,
+      loading: false,
+      error: null,
+    });
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(5, [["level:primary", "theme:literacy", 5]]),
+      loading: false,
+      error: null,
+    });
+    render(<VisualisePage />);
+    // Science (column) and Secondary (row) have no cells but still render.
+    expect(
+      screen.getByRole("columnheader", { name: "Science" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("rowheader", { name: "Secondary" }),
+    ).toBeInTheDocument();
+  });
+
   test("toggling to the table view shows counts as text", () => {
     mockUseCrossFacets.mockReturnValue({
       result: crossFacetResult(8, [["level:primary", "theme:literacy", 5]]),
@@ -146,16 +192,53 @@ describe("VisualisePage map", () => {
     ).toBe("5");
   });
 
-  test("shows the over-filtered banner and resets on click when there are no results", () => {
+  test("shows only the no-results banner when over-filtered", () => {
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: SCHEMES,
+      loading: false,
+      error: null,
+    });
     mockUseCrossFacets.mockReturnValue({
       result: crossFacetResult(0, []),
       loading: false,
       error: null,
     });
     render(<VisualisePage />);
-    expect(screen.getByText("0")).toBeInTheDocument();
-    expect(screen.getByText(/No results match/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
-    expect(mockNavigate).toHaveBeenCalledWith("/test/visualise");
+    expect(screen.getByText(/No results match the current filters/i)).toBeInTheDocument();
+    // No reset CTA and no grid — even with schemes available.
+    expect(
+      screen.queryByRole("button", { name: "Reset all" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  test("distinguishes 'no map coverage' (results exist but none on both axes) from over-filtered", () => {
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: SCHEMES,
+      loading: false,
+      error: null,
+    });
+    // References match the filters, but the endpoint returned no cells.
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(7, []),
+      loading: false,
+      error: null,
+    });
+    render(<VisualisePage />);
+    expect(screen.getByText(/none have a value for both/i)).toBeInTheDocument();
+    // Not the over-filtered warning — loosening filters wouldn't help.
+    expect(
+      screen.queryByRole("button", { name: "Reset all" }),
+    ).not.toBeInTheDocument();
+    // The grid still renders (greyed) so the chosen axes stay visible.
+    expect(
+      screen.getByRole("columnheader", { name: "Science" }),
+    ).toBeInTheDocument();
   });
 });
