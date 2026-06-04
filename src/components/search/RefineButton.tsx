@@ -1,5 +1,5 @@
-import { Tooltip } from "@/components/Tooltip";
-import { FilterIcon } from "@/components/icons";
+import { Tooltip } from "@/components/common/Tooltip";
+import { FilterIcon } from "@/components/common/icons";
 import "./RefineButton.css";
 
 interface RefineButtonProps {

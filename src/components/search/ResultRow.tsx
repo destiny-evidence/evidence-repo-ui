@@ -17,7 +17,7 @@ import { parseInvestigation } from "@/services/investigationParser";
 import { conceptsToTags } from "@/services/conceptLabels";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
-import { TagGroup } from "@/components/TagGroup";
+import { TagGroup } from "@/components/common/TagGroup";
 import "./ResultRow.css";
 
 interface ResultRowProps {

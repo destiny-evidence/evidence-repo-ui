@@ -1,9 +1,9 @@
-import { ComparisonRow } from "./ComparisonRow";
-import { InterventionDetails } from "./InterventionDetails";
-import { ContextDetails } from "./ContextDetails";
+import { ComparisonRow } from "../finding/ComparisonRow";
+import { InterventionDetails } from "../finding/InterventionDetails";
+import { ContextDetails } from "../finding/ContextDetails";
 import type { SharedContext } from "@/services/findingGroups";
-import "./ComparisonRow.css";
-import "./InterventionDetails.css";
+import "../finding/ComparisonRow.css";
+import "../finding/InterventionDetails.css";
 import "./SharedContextBlock.css";
 
 interface SharedContextBlockProps {

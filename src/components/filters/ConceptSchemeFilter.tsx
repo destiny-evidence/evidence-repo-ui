@@ -1,4 +1,4 @@
-import { Tooltip } from "../Tooltip";
+import { Tooltip } from "../common/Tooltip";
 import {
   isSelected,
   toggleConcept,

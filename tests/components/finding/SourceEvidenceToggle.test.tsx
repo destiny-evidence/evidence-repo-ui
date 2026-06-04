@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/preact";
 import {
   SourceEvidenceToggle,
   splitPageRef,
-} from "@/components/SourceEvidenceToggle";
+} from "@/components/finding/SourceEvidenceToggle";
 
 describe("splitPageRef", () => {
   test("parses 'Page N:' prefix", () => {

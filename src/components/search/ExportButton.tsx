@@ -1,5 +1,5 @@
 import { useId } from "preact/hooks";
-import { Tooltip } from "@/components/Tooltip";
+import { Tooltip } from "@/components/common/Tooltip";
 import type { ExportStatus } from "@/hooks/useSearchExport";
 import "./ExportButton.css";
 

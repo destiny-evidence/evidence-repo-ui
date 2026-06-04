@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { ArmDataTable } from "@/components/ArmDataTable";
-import { makeArm } from "../fixtures";
+import { ArmDataTable } from "@/components/finding/ArmDataTable";
+import { makeArm } from "../../fixtures";
 
 const intervention = { id: "_:int", name: "Vanguard program" };
 const control = { id: "_:ctrl", description: "Business as usual" };

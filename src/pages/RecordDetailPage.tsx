@@ -14,8 +14,8 @@ import {
 import { useReference } from "@/hooks/useReference";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
-import { InvestigationCard } from "@/components/InvestigationCard";
-import { FindingsSection } from "@/components/FindingsSection";
+import { InvestigationCard } from "@/components/investigation/InvestigationCard";
+import { FindingsSection } from "@/components/investigation/FindingsSection";
 import { NotFoundPage } from "./NotFoundPage";
 import "./RecordDetailPage.css";
 
