@@ -14,36 +14,32 @@ const regions: CrossFacetAxis = { kind: "literal", token: AXIS_REGIONS };
 const scheme: CrossFacetAxis = { kind: "scheme", schemeUri: SCHEME };
 
 describe("axisPairToParams", () => {
-  // A literal axis resolves to its token, a scheme axis to its URI; vocabularyUrl
-  // is attached iff either axis is a scheme.
+  // row→axes[0], column→axes[1]; a literal resolves to its token, a scheme to its
+  // URI; vocabularyUrl is attached iff either axis is a scheme.
   test.each([
     {
       label: "both literal",
       row: regions,
       column: countries,
-      expected: { row: "country_wb_regions", column: "countries" },
+      expected: { axes: ["country_wb_regions", "countries"] },
     },
     {
       label: "row scheme",
       row: scheme,
       column: countries,
-      expected: { row: SCHEME, column: "countries", vocabularyUrl: VOCAB },
+      expected: { axes: [SCHEME, "countries"], vocabularyUrl: VOCAB },
     },
     {
       label: "column scheme",
       row: regions,
       column: scheme,
-      expected: {
-        row: "country_wb_regions",
-        column: SCHEME,
-        vocabularyUrl: VOCAB,
-      },
+      expected: { axes: ["country_wb_regions", SCHEME], vocabularyUrl: VOCAB },
     },
     {
       label: "both schemes",
       row: scheme,
       column: scheme,
-      expected: { row: SCHEME, column: SCHEME, vocabularyUrl: VOCAB },
+      expected: { axes: [SCHEME, SCHEME], vocabularyUrl: VOCAB },
     },
   ])("$label", ({ row, column, expected }) => {
     expect(axisPairToParams({ row, column }, VOCAB)).toEqual(expected);
