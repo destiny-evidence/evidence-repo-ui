@@ -23,7 +23,7 @@ import type {
 } from "@/types/models";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
 import { ViewToggle, type MapView } from "@/components/visualise/ViewToggle";
-import { WarningIcon } from "@/components/icons";
+import { WarningIcon } from "@/components/common/icons";
 import { NotFoundPage } from "./NotFoundPage";
 import "./VisualisePage.css";
 

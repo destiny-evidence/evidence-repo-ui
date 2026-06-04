@@ -3,8 +3,15 @@ import {
   legendTicks,
   type AxisCategory,
 } from "@/services/evidenceMap";
+import { Tooltip } from "../common/Tooltip";
 import type { MapView } from "./ViewToggle";
 import "./EvidenceMapGrid.css";
+
+// Bubble sizing (px). The floor leaves padding around a single-digit count
+// inside the dot; the max sits within the cell's 64px row. Raising the floor
+// trades some size range for legibility.
+const BUBBLE_MAX_RADIUS = 22;
+const BUBBLE_MIN_RADIUS = 11;
 
 interface EvidenceMapGridProps {
   rows: AxisCategory[];
@@ -21,14 +28,10 @@ interface EvidenceMapGridProps {
   onCellClick?: (row: AxisCategory, column: AxisCategory) => void;
 }
 
-// An absent count means no reference carries that (row, column) pair — zero.
-function cellTooltip(
-  rowLabel: string,
-  columnLabel: string,
-  count: number | undefined,
-  countNoun: string,
-): string {
-  return `${rowLabel} · ${columnLabel}: ${(count ?? 0).toLocaleString()} ${countNoun}`;
+// Just the count for now; the row and column are evident from the headers and
+// the dot's position. A line about where clicking navigates will follow.
+function cellTooltip(count: number | undefined, countNoun: string): string {
+  return `${(count ?? 0).toLocaleString()} ${countNoun}`;
 }
 
 export function EvidenceMapGrid({
@@ -64,7 +67,9 @@ export function EvidenceMapGrid({
                       </span>{" "}
                       Columns
                     </span>
-                    <span class="evidence-map__axis-name">{columnAxisLabel}</span>
+                    <span class="evidence-map__axis-name">
+                      {columnAxisLabel}
+                    </span>
                   </span>
                   <span class="evidence-map__axis">
                     <span class="evidence-map__axis-role lg-label">
@@ -78,12 +83,7 @@ export function EvidenceMapGrid({
                 </span>
               </th>
               {columns.map((column) => (
-                <th
-                  key={column.key}
-                  class="evidence-map__col-head"
-                  scope="col"
-                  title={column.label}
-                >
+                <th key={column.key} class="evidence-map__col-head" scope="col">
                   <span class="evidence-map__col-head-label">
                     {column.label}
                   </span>
@@ -107,12 +107,7 @@ export function EvidenceMapGrid({
                       count={count ?? 0}
                       maxCount={maxCount}
                       view={view}
-                      tooltip={cellTooltip(
-                        row.label,
-                        column.label,
-                        count,
-                        countNoun,
-                      )}
+                      tooltip={cellTooltip(count, countNoun)}
                       onClick={
                         onCellClick && !empty
                           ? () => onCellClick(row, column)
@@ -126,7 +121,9 @@ export function EvidenceMapGrid({
           </tbody>
         </table>
       </div>
-      {view === "bubble" && <MapLegend maxCount={maxCount} countNoun={countNoun} />}
+      {view === "bubble" && (
+        <MapLegend maxCount={maxCount} countNoun={countNoun} />
+      )}
     </div>
   );
 }
@@ -141,55 +138,59 @@ interface CellProps {
 }
 
 function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
+  // Bubble radius drives the tooltip/tail anchor (--evidence-map-dot): the dot
+  // is centred in the cell, so the tail points at it rather than the cell edge.
+  const radius =
+    view === "bubble" && !empty
+      ? bubbleRadius(count, maxCount, BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS)
+      : 0;
+
   const inner =
     view === "bubble" ? (
-      <Bubble count={count} maxCount={maxCount} empty={empty} />
+      <Bubble radius={radius} count={count} empty={empty} />
     ) : (
       <span class="evidence-map__count">
         {empty ? "" : count.toLocaleString()}
       </span>
     );
 
+  const content = onClick ? (
+    <button type="button" class="evidence-map__cell-button" onClick={onClick}>
+      {inner}
+    </button>
+  ) : (
+    <span class="evidence-map__cell-inner">{inner}</span>
+  );
+
   return (
-    <td class={`evidence-map__cell${empty ? " is-empty" : ""}`}>
-      {onClick ? (
-        <button
-          type="button"
-          class="evidence-map__cell-button"
-          title={tooltip}
-          onClick={onClick}
-        >
-          {inner}
-        </button>
-      ) : (
-        <div class="evidence-map__cell-inner" title={tooltip}>
-          {inner}
-        </div>
-      )}
+    <td
+      class={`evidence-map__cell${empty ? " is-empty" : ""}`}
+      style={{ "--evidence-map-dot": `${radius}px` }}
+    >
+      <Tooltip text={tooltip}>{content}</Tooltip>
     </td>
   );
 }
 
 function Bubble({
+  radius,
   count,
-  maxCount,
   empty,
 }: {
+  radius: number;
   count: number;
-  maxCount: number;
   empty: boolean;
 }) {
-  // Empty intersections render a faint dashed marker, matching the legend's 0.
   if (empty) {
     return <span class="evidence-map__bubble evidence-map__bubble--empty" />;
   }
-  const diameter = bubbleRadius(count, maxCount) * 2;
+  const diameter = radius * 2;
   return (
     <span
       class="evidence-map__bubble"
       style={{ width: `${diameter}px`, height: `${diameter}px` }}
     >
-      <span class="visually-hidden">{count.toLocaleString()}</span>
+      <span class="evidence-map__bubble-count">{count.toLocaleString()}</span>
     </span>
   );
 }
@@ -204,14 +205,19 @@ function MapLegend({
   const ticks = legendTicks(maxCount);
   if (ticks.length === 0) return null;
   return (
-    <div class="evidence-map__legend" aria-label={`Bubble scale (${countNoun})`}>
+    <div
+      class="evidence-map__legend"
+      aria-label={`Bubble scale (${countNoun})`}
+    >
       <span class="evidence-map__legend-label lg-label">{countNoun}</span>
       <span class="evidence-map__legend-item">
         <span class="evidence-map__bubble evidence-map__bubble--empty" />
         <span class="evidence-map__legend-value">0</span>
       </span>
       {ticks.map((tick) => {
-        const diameter = bubbleRadius(tick, maxCount) * 2;
+        const diameter =
+          bubbleRadius(tick, maxCount, BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS) *
+          2;
         return (
           <span key={tick} class="evidence-map__legend-item">
             <span

@@ -6,8 +6,6 @@ import {
 } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
 
-// A row or column of the map: `key` is the axis value (e.g. a concept URI),
-// `label` its display string.
 export interface AxisCategory {
   key: string;
   label: string;
@@ -16,24 +14,17 @@ export interface AxisCategory {
 export interface EvidenceMapModel {
   rows: AxisCategory[];
   columns: AxisCategory[];
-  // Count for a (row, column) pair, or undefined for an empty intersection —
-  // the backend omits zero cells, so absent means zero.
+  // undefined ⇒ empty intersection; the backend omits zero-count cells.
   getCount(rowKey: string, columnKey: string): number | undefined;
-  // Largest cell count, used to scale bubbles and the legend. 0 when empty.
   maxCount: number;
 }
 
-// The category set + label function for one axis; satisfied by ResolvedAxis.
 type AxisInput = Pick<ResolvedAxis, "categories" | "labelFor">;
 
 /**
- * Build the renderable map model from the cross-facet cells plus each axis's
- * possible categories.
- *
- * Rows and columns are the union of the axis's known categories (every concept
- * in a scheme — so zero-hit values still render) with any keys present only in
- * the cells (defensive: a cell value the vocabulary didn't enumerate is never
- * dropped). Counts and the maximum come from the cells.
+ * Rows and columns are the union of each axis's categories (so zero-hit values
+ * still render) with any keys seen only in the cells (so data is never dropped).
+ * Counts and the maximum come from the cells.
  */
 export function buildEvidenceMapModel(
   cells: readonly CrossFacetCell[],
@@ -51,7 +42,7 @@ export function buildEvidenceMapModel(
     columnKeys.add(columnKey);
     let row = counts.get(rowKey);
     if (!row) counts.set(rowKey, (row = new Map()));
-    // Sum is defensive: the endpoint emits one cell per pair.
+    // Summed defensively; the endpoint emits one cell per pair.
     const next = (row.get(columnKey) ?? 0) + cell.count;
     row.set(columnKey, next);
     if (next > maxCount) maxCount = next;
@@ -65,30 +56,26 @@ export function buildEvidenceMapModel(
   };
 }
 
-// Last path/fragment/CURIE segment of a URI — a readable fallback title for a
-// scheme that isn't present in the loaded vocabulary.
+// Last path/fragment/CURIE segment — a title fallback for a scheme the
+// vocabulary doesn't carry.
 function localName(uri: string): string {
   return uri.split(/[/#:]/).filter(Boolean).pop() ?? uri;
 }
 
 const COUNTRIES_AXIS_TITLE = "Countries";
 
-// A header title, the axis's possible categories, and a per-value label function.
 export interface ResolvedAxis {
   title: string;
-  // Every possible value for the axis (e.g. all concepts in a scheme), so the
-  // grid can render zero-hit rows/columns. Empty when the set isn't enumerable
-  // here (e.g. a countries axis), in which case the grid falls back to the cells.
+  // Every value the axis can take (a scheme's concepts), so the grid renders
+  // zero-hit rows/columns. Empty for a countries axis ⇒ derived from the cells.
   categories: AxisCategory[];
   labelFor: (value: string) => string;
 }
 
 /**
- * Resolve an axis to its header title, possible categories, and per-value label
- * function. Mirrors the filter panel: a concept scheme's title comes from its
- * vocabulary label (via the shared `schemeDisplayLabel`), its categories are the
- * scheme's concepts, and its cell values resolve through the concept `labels`
- * map; a countries axis expands ISO codes through `Intl` (`countryName`).
+ * Resolve an axis to its title, categories, and per-value label function. As in
+ * the filter panel, a scheme's title comes from its vocabulary label; a country
+ * axis expands ISO codes via `Intl`.
  */
 export function resolveMapAxis(
   axis: EvidenceMapAxis,
@@ -96,29 +83,18 @@ export function resolveMapAxis(
   labels: ReadonlyMap<string, string> | null,
 ): ResolvedAxis {
   if (axis.kind === "countries") {
-    // Country values aren't enumerated here; categories fall back to the cells.
-    return {
-      title: axis.label ?? COUNTRIES_AXIS_TITLE,
-      categories: [],
-      labelFor: countryName,
-    };
+    return { title: COUNTRIES_AXIS_TITLE, categories: [], labelFor: countryName };
   }
-  // Scheme URIs are normalized to full IRIs when the vocabulary is parsed, so
-  // this is a direct match; the local-name title is only a fallback for a scheme
-  // the vocabulary doesn't carry.
+  // Scheme URIs are full IRIs after parsing, so this matches directly.
   const scheme = schemes?.find((s) => s.uri === axis.schemeUri);
-  const title = scheme
-    ? schemeDisplayLabel(scheme.label)
-    : (axis.label ?? localName(axis.schemeUri));
   return {
-    title,
+    title: scheme ? schemeDisplayLabel(scheme.label) : localName(axis.schemeUri),
     categories: scheme ? flattenScheme(scheme) : [],
     labelFor: (value) => labels?.get(value) ?? value,
   };
 }
 
-// Every concept in a scheme, flattened across hierarchy depth — the backend
-// treats each as its own axis value regardless of nesting.
+// The backend treats every concept in a scheme as a sibling regardless of depth.
 function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
   const out: AxisCategory[] = [];
   const walk = (concepts: readonly Concept[]) => {
@@ -131,8 +107,6 @@ function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
   return out;
 }
 
-// Union of the axis's known categories (so zero-hit values still appear) with
-// any keys seen only in the cells, sorted by label then key for a stable order.
 function mergeCategories(axis: AxisInput, cellKeys: Set<string>): AxisCategory[] {
   const byKey = new Map<string, AxisCategory>();
   for (const category of axis.categories) byKey.set(category.key, category);
@@ -144,39 +118,25 @@ function mergeCategories(axis: AxisInput, cellKeys: Set<string>): AxisCategory[]
   );
 }
 
-// ── Bubble scaling ─────────────────────────────────────────────────────────
-
-// Largest bubble radius (px); chosen to fit the cell with padding. The minimum
-// keeps the smallest counts visible — a deliberate trade of strict
-// area-proportionality for legibility at the low end.
-export const BUBBLE_MAX_RADIUS = 22;
-export const BUBBLE_MIN_RADIUS = 4;
-
 /**
- * Radius (px) for a bubble representing `count`, scaled so that **area** — not
- * diameter — is proportional to the count (area ∝ r², so r ∝ √count). Returns 0
- * for non-positive counts; clamps positive counts up to BUBBLE_MIN_RADIUS.
+ * Radius (px) for a bubble of `count`, scaled so **area** is proportional to the
+ * count (r ∝ √count). 0 for non-positive counts; positive counts clamp up to
+ * `minRadius` so the smallest stay visible.
  */
 export function bubbleRadius(
   count: number,
   maxCount: number,
-  maxRadius: number = BUBBLE_MAX_RADIUS,
-  minRadius: number = BUBBLE_MIN_RADIUS,
+  minRadius: number,
+  maxRadius: number,
 ): number {
   if (count <= 0 || maxCount <= 0) return 0;
-  const scaled = maxRadius * Math.sqrt(count / maxCount);
-  return Math.max(minRadius, scaled);
+  return Math.max(minRadius, maxRadius * Math.sqrt(count / maxCount));
 }
 
-/**
- * Representative ascending tick values for the bubble legend, always ending at
- * `maxCount`. Returns [] when there's nothing to show (maxCount ≤ 0).
- */
+/** Ascending legend ticks, always ending at `maxCount`; [] when maxCount ≤ 0. */
 export function legendTicks(maxCount: number): number[] {
   if (maxCount <= 0) return [];
-  if (maxCount <= 3) {
-    return Array.from({ length: maxCount }, (_, i) => i + 1);
-  }
+  if (maxCount <= 3) return Array.from({ length: maxCount }, (_, i) => i + 1);
   const low = Math.max(1, Math.round(maxCount / 5));
   const mid = Math.round(maxCount / 2);
   return [...new Set([low, mid, maxCount])].sort((a, b) => a - b);

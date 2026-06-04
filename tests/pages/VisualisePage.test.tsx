@@ -187,9 +187,10 @@ describe("VisualisePage map", () => {
     expect(container.querySelector(".evidence-map__legend")).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Table" }));
     expect(container.querySelector(".evidence-map__legend")).toBeNull();
-    expect(
-      screen.getByTitle("Primary · Literacy: 5 results").textContent,
-    ).toBe("5");
+    // The count is rendered as text only in table view.
+    expect(container.querySelector(".evidence-map__count")?.textContent).toBe(
+      "5",
+    );
   });
 
   test("shows only the no-results banner when over-filtered", () => {

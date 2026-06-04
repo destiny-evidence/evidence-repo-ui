@@ -20,6 +20,19 @@ const COUNTS = new Map<string, number>([
 ]);
 const getCount = (r: string, c: string) => COUNTS.get(`${r}|${c}`);
 
+// The tooltip a cell carries via the shared Tooltip's data-tooltip — the count.
+function tip(count: number): string {
+  return `${count} investigations`;
+}
+
+function cell(container: Element, tooltip: string): HTMLElement {
+  const el = [...container.querySelectorAll<HTMLElement>("[data-tooltip]")].find(
+    (e) => e.getAttribute("data-tooltip") === tooltip,
+  );
+  if (!el) throw new Error(`No cell with tooltip: ${JSON.stringify(tooltip)}`);
+  return el;
+}
+
 function renderGrid(
   view: "bubble" | "table",
   onCellClick?: (row: AxisCategory, column: AxisCategory) => void,
@@ -40,12 +53,13 @@ function renderGrid(
 }
 
 describe("EvidenceMapGrid", () => {
-  test("labels axes, columns and rows, exposing the full label via the header title", () => {
+  test("labels the axes, columns and rows from the supplied categories", () => {
     renderGrid("table");
     expect(screen.getByText("Education level")).toBeInTheDocument();
     expect(screen.getByText("Education theme")).toBeInTheDocument();
-    const header = screen.getByRole("columnheader", { name: "Literacy" });
-    expect(header).toHaveAttribute("title", "Literacy");
+    expect(
+      screen.getByRole("columnheader", { name: "Literacy" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("rowheader", { name: "Primary" }),
     ).toBeInTheDocument();
@@ -53,11 +67,9 @@ describe("EvidenceMapGrid", () => {
 
   test("table view shows counts as text; empty intersections are blank and marked", () => {
     const { container } = renderGrid("table");
-    expect(
-      screen.getByTitle("Primary · Literacy: 12 investigations").textContent,
-    ).toBe("12");
+    expect(cell(container, tip(12)).textContent).toBe("12");
     // Empty intersection: tooltip reports 0, cell renders no number, is-empty set.
-    const empty = screen.getByTitle("Primary · Numeracy: 0 investigations");
+    const empty = cell(container, tip(0));
     expect(empty.textContent).toBe("");
     expect(
       empty.closest(".evidence-map__cell")?.classList.contains("is-empty"),
@@ -106,17 +118,16 @@ describe("EvidenceMapGrid", () => {
 
   test("with a handler, filled cells invoke onCellClick and empty cells stay inert", () => {
     const onCellClick = vi.fn();
-    renderGrid("table", onCellClick);
+    const { container } = renderGrid("table", onCellClick);
 
-    const button = screen.getByTitle("Secondary · Numeracy: 8 investigations");
-    expect(button.tagName).toBe("BUTTON");
-    fireEvent.click(button);
+    const button = cell(container, tip(8)).querySelector("button");
+    expect(button).not.toBeNull();
+    fireEvent.click(button!);
     expect(onCellClick).toHaveBeenCalledWith(
       { key: "lvl:secondary", label: "Secondary" },
       { key: "thm:numeracy", label: "Numeracy" },
     );
 
-    const empty = screen.getByTitle("Primary · Numeracy: 0 investigations");
-    expect(empty.tagName).not.toBe("BUTTON");
+    expect(cell(container, tip(0)).querySelector("button")).toBeNull();
   });
 });

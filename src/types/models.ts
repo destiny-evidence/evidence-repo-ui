@@ -3,13 +3,12 @@ export interface CommunityFeatures {
   evidenceMap: boolean;
 }
 
-// One axis of the evidence map. A "scheme" axis cross-tabulates a concept
-// scheme (`schemeUri` is the full URI the cross-facets endpoint expects); a
-// "countries" axis cross-tabulates ISO country codes. `label` optionally
-// overrides the derived header title (schemes derive theirs from the vocabulary).
+// One axis of the evidence map. A "scheme" axis cross-tabulates a concept scheme
+// (`schemeUri` is the full URI the cross-facets endpoint expects); a "countries"
+// axis cross-tabulates ISO country codes. Header titles are derived, not stored.
 export type EvidenceMapAxis =
-  | { kind: "scheme"; schemeUri: string; label?: string }
-  | { kind: "countries"; label?: string };
+  | { kind: "scheme"; schemeUri: string }
+  | { kind: "countries" };
 
 // A community's evidence-map axis pair: `row` is the y-axis, `column` the x-axis.
 export interface EvidenceMapAxes {

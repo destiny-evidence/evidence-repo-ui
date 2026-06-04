@@ -4,8 +4,6 @@ import {
   resolveMapAxis,
   bubbleRadius,
   legendTicks,
-  BUBBLE_MAX_RADIUS,
-  BUBBLE_MIN_RADIUS,
   type AxisCategory,
 } from "@/services/evidenceMap";
 import type { CrossFacetCell } from "@/types/models";
@@ -191,25 +189,23 @@ describe("resolveMapAxis", () => {
 describe("bubbleRadius", () => {
   test("scales by area: quadrupling the count doubles the radius", () => {
     // minRadius 0 to isolate the area math from the legibility floor.
-    const big = bubbleRadius(16, 16, 20, 0);
-    const quarter = bubbleRadius(4, 16, 20, 0);
-    expect(big).toBe(20);
-    expect(quarter).toBeCloseTo(10);
+    expect(bubbleRadius(16, 16, 0, 20)).toBe(20);
+    expect(bubbleRadius(4, 16, 0, 20)).toBeCloseTo(10);
   });
 
   test("returns 0 for non-positive counts or empty data", () => {
-    expect(bubbleRadius(0, 10)).toBe(0);
-    expect(bubbleRadius(-5, 10)).toBe(0);
-    expect(bubbleRadius(5, 0)).toBe(0);
+    expect(bubbleRadius(0, 10, 4, 20)).toBe(0);
+    expect(bubbleRadius(-5, 10, 4, 20)).toBe(0);
+    expect(bubbleRadius(5, 0, 4, 20)).toBe(0);
   });
 
   test("clamps small positive counts up to the minimum radius", () => {
     // 22 * sqrt(1/10000) ≈ 0.22, well below the floor.
-    expect(bubbleRadius(1, 10000)).toBe(BUBBLE_MIN_RADIUS);
+    expect(bubbleRadius(1, 10000, 4, 22)).toBe(4);
   });
 
-  test("largest count maps to the maximum radius by default", () => {
-    expect(bubbleRadius(50, 50)).toBe(BUBBLE_MAX_RADIUS);
+  test("the largest count maps to the maximum radius", () => {
+    expect(bubbleRadius(50, 50, 4, 22)).toBe(22);
   });
 });
 

@@ -26,38 +26,40 @@
   z-index: 1;
 }
 
-.evidence-map__col-head {
-  top: 0;
+.evidence-map__col-head,
+.evidence-map__row-head {
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-small);
   font-weight: 500;
   color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.evidence-map__col-head {
+  top: 0;
   text-align: center;
   vertical-align: bottom;
-  width: 132px;
+  /* Floor keeps short labels from cramping; ceiling lets a long single word
+     widen its column rather than break mid-word. */
   min-width: 132px;
-  max-width: 132px;
-  border-bottom: 1px solid var(--color-border);
+  max-width: 180px;
   border-left: 1px solid var(--color-border);
 }
 
-/* Wrap freely onto as many lines as the label needs; the column is wide enough
-   that most labels sit on one or two lines. */
+/* Wrap at word boundaries. A word too wide for the column hyphenates (needs
+   <html lang>); failing that the column grows to its max-width — never an
+   arbitrary mid-word break. */
 .evidence-map__col-head-label {
   display: block;
   white-space: normal;
-  overflow-wrap: break-word;
+  -webkit-hyphens: auto;
+  hyphens: auto;
 }
 
 .evidence-map__row-head {
   left: 0;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-small);
-  font-weight: 500;
-  color: var(--color-text-secondary);
   text-align: left;
   white-space: nowrap;
-  border-bottom: 1px solid var(--color-border);
   border-right: 1px solid var(--color-border);
 }
 
@@ -126,6 +128,40 @@
   background: var(--color-bg-row-alt);
 }
 
+/* The shared tooltip wrapper fills the cell so its content stays centred and
+   the bubble anchors to the cell. */
+.evidence-map__cell .tooltip {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* Anchor the bubble just above the dot (centred in the cell, radius in
+   --evidence-map-dot) rather than the cell edge, and shrink the text. */
+.evidence-map__cell .tooltip:hover::after,
+.evidence-map__cell .tooltip:focus-within::after,
+.evidence-map__cell .tooltip:focus-visible::after {
+  white-space: pre-line;
+  font-size: var(--font-size-xs);
+  bottom: calc(50% + var(--evidence-map-dot, 0px) + 8px);
+}
+
+/* Speech-bubble tail: a downward triangle whose apex meets the dot's top edge,
+   base meeting the bubble bottom 8px above. */
+.evidence-map__cell .tooltip:hover::before,
+.evidence-map__cell .tooltip:focus-within::before,
+.evidence-map__cell .tooltip:focus-visible::before {
+  content: "";
+  position: absolute;
+  bottom: calc(50% + var(--evidence-map-dot, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #161b22;
+  z-index: 10;
+}
+
 .evidence-map__cell-inner,
 .evidence-map__cell-button {
   display: flex;
@@ -163,10 +199,19 @@
 
 /* ── Bubbles ── */
 .evidence-map__bubble {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   background: var(--color-accent);
-  opacity: 0.85;
+}
+
+.evidence-map__bubble-count {
+  color: #fff;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .evidence-map__bubble--empty {
