@@ -10,6 +10,7 @@ import type { SharedContext } from "@/services/findingGroups";
 import type {
   AbstractContentEnhancement,
   BibliographicMetadataEnhancement,
+  Community,
   Enhancement,
   LinkedDataEnhancement,
   Reference,
@@ -29,6 +30,32 @@ export function makeSearchParams(
     conceptFilters: [],
     countryCodes: [],
     ...overrides,
+  };
+}
+
+/**
+ * A Community with sane defaults so tests can assert flag-/copy-driven
+ * behaviour without depending on the real registry in services/communities.ts.
+ * `features` and `copy` merge shallowly so callers override just one field.
+ */
+export function makeCommunity(overrides: Partial<Community> = {}): Community {
+  const { features, copy, ...rest } = overrides;
+  return {
+    slug: "test",
+    name: "Test Community",
+    defaultAnnotations: [],
+    vocabularyUrl: "https://vocab.example/v1",
+    contextUrl: "https://vocab.example/ctx",
+    filterExcludedSchemes: [],
+    features: { evidenceMap: false, ...features },
+    copy: {
+      searchPlaceholder: "Search the evidence",
+      drawerTitle: "Refine the evidence",
+      countNoun: "results",
+      corpusDescriptor: "test research",
+      ...copy,
+    },
+    ...rest,
   };
 }
 
