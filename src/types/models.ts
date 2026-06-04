@@ -3,6 +3,22 @@ export interface CommunityFeatures {
   evidenceMap: boolean;
 }
 
+// One axis of the evidence map. A "scheme" axis cross-tabulates a concept
+// scheme (`schemeUri` is the full URI the cross-facets endpoint expects); a
+// "countries" axis cross-tabulates ISO country codes. `label` optionally
+// overrides the derived header title (schemes derive theirs from the vocabulary).
+export type EvidenceMapAxis =
+  | { kind: "scheme"; schemeUri: string; label?: string }
+  | { kind: "countries"; label?: string };
+
+// Default axis pair for a community's evidence map: `row` is the y-axis,
+// `column` the x-axis. Live axis controls (the configure panel) arrive later;
+// until then the map renders from these defaults.
+export interface EvidenceMapAxes {
+  row: EvidenceMapAxis;
+  column: EvidenceMapAxis;
+}
+
 // See buildCopy() in services/communities.ts for the shared fallbacks.
 export interface CommunityCopy {
   searchPlaceholder: string;
@@ -35,6 +51,9 @@ export interface Community {
   contextUrl: string;
   filterExcludedSchemes: string[];
   features: CommunityFeatures;
+  // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
+  // even where features.evidenceMap is on (e.g. before a vocabulary is published).
+  defaultEvidenceMapAxes?: EvidenceMapAxes;
   copy: CommunityCopy;
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;

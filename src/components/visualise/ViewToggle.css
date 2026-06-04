@@ -1,0 +1,34 @@
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  padding: 2px;
+  gap: 2px;
+}
+
+.view-toggle__option {
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 5px 14px;
+  cursor: pointer;
+}
+
+.view-toggle__option:hover {
+  background: var(--color-bg-hover);
+}
+
+.view-toggle__option.active {
+  background: var(--color-accent);
+  color: #ffffff;
+}
+
+.view-toggle__option:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}

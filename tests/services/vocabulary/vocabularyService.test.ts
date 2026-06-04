@@ -138,9 +138,11 @@ describe("buildVocabularyData", () => {
   it("builds concept schemes with uri, label, and top concepts", () => {
     const { schemes } = buildVocabularyData(SAMPLE_VOCABULARY);
 
-    const docType = schemes.find((s) => s.uri === "esea:DocumentTypeScheme");
+    const docType = schemes.find(
+      (s) => s.uri === "https://vocab.esea.education/DocumentTypeScheme",
+    );
     expect(docType).toEqual({
-      uri: "esea:DocumentTypeScheme",
+      uri: "https://vocab.esea.education/DocumentTypeScheme",
       label: "Document Type",
       topConcepts: [
         {
@@ -151,7 +153,9 @@ describe("buildVocabularyData", () => {
     });
 
     // Accepts a single (non-array) skos:hasTopConcept and rdfs:label fallback.
-    const theme = schemes.find((s) => s.uri === "esea:EducationThemeScheme");
+    const theme = schemes.find(
+      (s) => s.uri === "https://vocab.esea.education/EducationThemeScheme",
+    );
     expect(theme?.label).toBe("Education Theme Scheme");
     expect(theme?.topConcepts[0]?.uri).toBe(
       "https://vocab.esea.education/EducationThemeScheme/C00022",
@@ -172,7 +176,9 @@ describe("buildVocabularyData", () => {
 
   it("nests narrower concepts under their broader parent", () => {
     const { schemes } = buildVocabularyData(SAMPLE_VOCABULARY);
-    const theme = schemes.find((s) => s.uri === "esea:EducationThemeScheme");
+    const theme = schemes.find(
+      (s) => s.uri === "https://vocab.esea.education/EducationThemeScheme",
+    );
     const top = theme?.topConcepts[0];
 
     expect(top?.uri).toBe(
