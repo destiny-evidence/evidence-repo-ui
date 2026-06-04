@@ -49,8 +49,8 @@ describe("FilterCard + ConceptSchemeFilter integration", () => {
     expect(screen.getByTestId("groups").textContent).toBe("[]");
 
     fireEvent.click(header);
-    // Click a parent and one of its children individually (cascade was removed,
-    // destiny-repository#655) — both should OR-join into the one scheme group.
+    // Click a parent and one of its children individually — both should
+    // OR-join into the one scheme group.
     fireEvent.click(screen.getByLabelText("Access to Education"));
     fireEvent.click(screen.getByLabelText("Education Finance"));
     fireEvent.click(header);

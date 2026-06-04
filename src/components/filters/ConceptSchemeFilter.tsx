@@ -69,8 +69,10 @@ function ConceptItem({
   const countClass = `concept-scheme-filter__count${
     countsLoading ? " is-updating" : ""
   }${hasChildren ? " concept-scheme-filter__count--parent" : ""}`;
+  // Parent counts are a toggle preview for that concept alone — they don't roll
+  // up children — which is non-obvious enough to spell out on hover.
   const countTooltip = hasChildren
-    ? "Results you'd see if you toggled this concept. Selecting a parent includes all narrower concepts."
+    ? "Results you'd see if you toggled this concept."
     : undefined;
   const countNode = showCountBadge && (
     <span

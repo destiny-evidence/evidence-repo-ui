@@ -114,8 +114,8 @@ describe("toggleConcept", () => {
   });
 
   test("on a parent only adds the parent URI; descendants are not cascaded in", () => {
-    // Cascade was removed: selecting the parent matches docs tagged with the
-    // parent URI literally, not its subtree. See destiny-repository#655.
+    // Toggling a parent adds only the parent URI — no cascade into
+    // descendants; it matches docs tagged with that URI literally.
     const result = toggleConcept(emptyConceptSchemeState(), ACCESS_SUBTREE);
     expect(isSelected(result, URI_ACCESS)).toBe(true);
     expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(false);
@@ -218,7 +218,7 @@ describe("toConceptFilterGroups", () => {
   });
 
   // The whole scheme is one sibling set, so a parent and its descendants
-  // OR-join into a single group rather than AND'ing across depth levels.
+  // OR-join into a single group.
   test("a parent and its descendants collapse into one whole-scheme group", () => {
     const state = conceptSchemeStateFromUris([
       URI_ACCESS,

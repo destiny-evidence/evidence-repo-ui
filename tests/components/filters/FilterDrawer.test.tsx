@@ -171,8 +171,8 @@ describe("FilterDrawer", () => {
   });
 
   test("toggling parent concept emits only the parent URI (no cascade)", () => {
-    // Cascade removed: see destiny-repository#655. Children must be clicked
-    // individually until the backend matches narrower concepts implicitly.
+    // Toggling a parent adds only the parent URI — no cascade — so children
+    // must be clicked individually.
     const onApply = vi.fn();
     renderDrawer({ schemes: [OUTCOME_SCHEME_FIXTURE], onApply });
     fireEvent.click(screen.getByLabelText("Access to Education"));

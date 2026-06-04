@@ -268,7 +268,7 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     ).toBeNull();
   });
 
-  test("wraps a parent concept's count in a Tooltip explaining the parent semantics", () => {
+  test("wraps a parent concept's count in a Tooltip clarifying it's a toggle preview", () => {
     const counts = new Map<string, number>([
       [URI_ACCESS, 774],
       [URI_EDUCATION_FINANCE, 264],
@@ -282,22 +282,26 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
         onChange={vi.fn()}
       />,
     );
-    // Parent ("Access to Education") has children → count wrapped in Tooltip.
+    // Parent ("Access to Education") has children → count wrapped in Tooltip,
+    // and the text no longer claims selecting it rolls up its children.
     const parentCount = container.querySelector(
       ".concept-scheme-filter__count--parent",
     );
     expect(parentCount).not.toBeNull();
-    expect(parentCount?.closest("[data-tooltip]")).not.toBeNull();
+    const tooltip = parentCount?.closest("[data-tooltip]");
+    expect(tooltip).not.toBeNull();
+    expect(tooltip?.getAttribute("data-tooltip")).toBe(
+      "Results you'd see if you toggled this concept.",
+    );
 
     // Leaf ("Education Finance") has no children → bare count, no tooltip.
-    const counts2 = container.querySelectorAll(
-      ".concept-scheme-filter__count",
-    );
-    const leafCount = Array.from(counts2).find(
+    const leafCount = Array.from(
+      container.querySelectorAll(".concept-scheme-filter__count"),
+    ).find(
       (n) => !n.classList.contains("concept-scheme-filter__count--parent"),
     );
     expect(leafCount).toBeDefined();
-    expect(leafCount?.closest('[data-tooltip]')).toBeNull();
+    expect(leafCount?.closest("[data-tooltip]")).toBeNull();
   });
 
   test("applies the is-updating class to counts while loading", () => {
@@ -334,8 +338,8 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
   });
 
   test("clicking an unselected parent selects only the parent URI", () => {
-    // Cascade removed: clicking parent matches docs tagged with the parent
-    // URI literally, not its subtree. See destiny-repository#655.
+    // Clicking a parent adds only the parent URI — no cascade into
+    // descendants; it matches docs tagged with that URI literally.
     const onChange = vi.fn();
     render(
       <ConceptSchemeFilter
