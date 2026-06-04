@@ -1,6 +1,5 @@
 import { describe, test, expect } from "vitest";
 import {
-  buildConceptIndex,
   conceptSchemeStateFromUris,
   emptyConceptSchemeState,
   isEmpty,
@@ -115,8 +114,8 @@ describe("toggleConcept", () => {
   });
 
   test("on a parent only adds the parent URI; descendants are not cascaded in", () => {
-    // Cascade was removed: selecting the parent matches docs tagged with the
-    // parent URI literally, not its subtree. See destiny-repository#655.
+    // Toggling a parent adds only the parent URI — no cascade into
+    // descendants; it matches docs tagged with that URI literally.
     const result = toggleConcept(emptyConceptSchemeState(), ACCESS_SUBTREE);
     expect(isSelected(result, URI_ACCESS)).toBe(true);
     expect(isSelected(result, URI_EDUCATION_FINANCE)).toBe(false);
@@ -174,30 +173,6 @@ describe("toggleConcept", () => {
   });
 });
 
-describe("buildConceptIndex", () => {
-  test("indexes every concept in the scheme by URI", () => {
-    const idx = buildConceptIndex(OUTCOME_SCHEME_FIXTURE);
-    expect(idx.byUri.get(URI_ACCESS)?.label).toBe("Access to Education");
-    expect(idx.byUri.get(URI_EDUCATION_FINANCE)?.label).toBe(
-      "Education Finance",
-    );
-    expect(idx.byUri.get(URI_ENROLMENT)?.label).toBe("Enrolment and Attendance");
-    expect(idx.byUri.get(URI_LEARNING)?.label).toBe(
-      "Educational Outcomes and Learning",
-    );
-    expect(idx.byUri.get(URI_RETURNS)?.label).toBe("Returns to Education");
-  });
-
-  test("maps each non-top concept to its parent and omits top concepts", () => {
-    const idx = buildConceptIndex(OUTCOME_SCHEME_FIXTURE);
-    expect(idx.broader.get(URI_EDUCATION_FINANCE)).toBe(URI_ACCESS);
-    expect(idx.broader.get(URI_ENROLMENT)).toBe(URI_ACCESS);
-    expect(idx.broader.has(URI_ACCESS)).toBe(false);
-    expect(idx.broader.has(URI_LEARNING)).toBe(false);
-    expect(idx.broader.has(URI_RETURNS)).toBe(false);
-  });
-});
-
 describe("toConceptFilterGroups", () => {
   test("returns no groups when state is empty", () => {
     expect(toConceptFilterGroups(emptyConceptSchemeState(), SCHEME)).toEqual([]);
@@ -235,28 +210,27 @@ describe("toConceptFilterGroups", () => {
     ]);
   });
 
-  test("a single narrower concept lands in one group keyed by its parent", () => {
+  test("a single narrower concept lands in one group", () => {
     const state = conceptSchemeStateFromUris([URI_EDUCATION_FINANCE]);
     expect(toConceptFilterGroups(state, OUTCOME_SCHEME_FIXTURE)).toEqual([
       [URI_EDUCATION_FINANCE],
     ]);
   });
 
-  // Parent + descendants can coexist in the state via URL hydration; they
-  // must split into disjoint sibling-set groups or the backend 400s on overlap.
-  test("a fully-selected subtree splits into separate sibling-set groups (parent vs descendants)", () => {
+  // The whole scheme is one sibling set, so a parent and its descendants
+  // OR-join into a single group.
+  test("a parent and its descendants collapse into one whole-scheme group", () => {
     const state = conceptSchemeStateFromUris([
       URI_ACCESS,
       URI_EDUCATION_FINANCE,
       URI_ENROLMENT,
     ]);
     expect(toConceptFilterGroups(state, OUTCOME_SCHEME_FIXTURE)).toEqual([
-      [URI_ACCESS],
-      [URI_EDUCATION_FINANCE, URI_ENROLMENT],
+      [URI_ACCESS, URI_EDUCATION_FINANCE, URI_ENROLMENT],
     ]);
   });
 
-  test("top-level siblings under different parents do NOT mix with the same scheme's children", () => {
+  test("concepts at different depths all OR-join into one preorder group", () => {
     const state = conceptSchemeStateFromUris([
       URI_LEARNING,
       URI_RETURNS,
@@ -264,8 +238,7 @@ describe("toConceptFilterGroups", () => {
     ]);
     // Preorder: Education_Finance (under Access) comes before Learning/Returns.
     expect(toConceptFilterGroups(state, OUTCOME_SCHEME_FIXTURE)).toEqual([
-      [URI_EDUCATION_FINANCE],
-      [URI_LEARNING, URI_RETURNS],
+      [URI_EDUCATION_FINANCE, URI_LEARNING, URI_RETURNS],
     ]);
   });
 });

@@ -47,29 +47,6 @@ export function summary(state: ConceptSchemeFilterState): string {
   return state.size === 0 ? "" : `${state.size} selected`;
 }
 
-// Lookup maps for one scheme, derived from its tree. `byUri` resolves any
-// concept (so we can read a parent's `narrower` to check sibling state);
-// `broader` maps a concept URI to its parent's URI, terminating at top
-// concepts which have no entry.
-export interface ConceptIndex {
-  byUri: ReadonlyMap<string, Concept>;
-  broader: ReadonlyMap<string, string>;
-}
-
-export function buildConceptIndex(scheme: ConceptScheme): ConceptIndex {
-  const byUri = new Map<string, Concept>();
-  const broader = new Map<string, string>();
-  const walk = (concept: Concept, parentUri?: string) => {
-    byUri.set(concept.uri, concept);
-    if (parentUri) broader.set(concept.uri, parentUri);
-    if (concept.narrower) {
-      for (const child of concept.narrower) walk(child, concept.uri);
-    }
-  };
-  for (const top of scheme.topConcepts) walk(top);
-  return { byUri, broader };
-}
-
 export function toggleConcept(
   state: ConceptSchemeFilterState,
   concept: Concept,
@@ -89,29 +66,19 @@ function walkConcepts(concepts: Concept[]): Concept[] {
   return all;
 }
 
-// Buckets selections into sibling-set groups for the backend's `concept=`
-// param: one group per common broader URI, with top concepts keyed by the
-// scheme URI so they share a synthetic root. Auto-rollup can leave a parent
-// + every descendant selected; they land in separate groups (disjoint sibling
-// sets), which is what the backend validates.
+// All of a scheme's selected concepts OR-join into one `concept=` group — the
+// backend treats a whole scheme as one sibling set.
+// Returned in scheme preorder; URIs not in the tree are dropped (stale URLs).
 export function toConceptFilterGroups(
   state: ConceptSchemeFilterState,
   scheme: ConceptScheme,
 ): string[][] {
   if (state.size === 0) return [];
-  const index = buildConceptIndex(scheme);
-  const groups = new Map<string, string[]>();
+  const group: string[] = [];
   for (const concept of walkConcepts(scheme.topConcepts)) {
-    if (!state.has(concept.uri)) continue;
-    const groupKey = index.broader.get(concept.uri) ?? scheme.uri;
-    let group = groups.get(groupKey);
-    if (!group) {
-      group = [];
-      groups.set(groupKey, group);
-    }
-    group.push(concept.uri);
+    if (state.has(concept.uri)) group.push(concept.uri);
   }
-  return Array.from(groups.values());
+  return group.length > 0 ? [group] : [];
 }
 
 function indexConceptUrisByScheme(
