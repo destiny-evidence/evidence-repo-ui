@@ -1,13 +1,13 @@
-import { TagGroup } from "../shared/TagGroup";
+import { TagGroup } from "../common/TagGroup";
 import {
   SourceEvidenceToggle,
   type SourceEvidenceEntry,
 } from "./SourceEvidenceToggle";
-import { LabeledField } from "../shared/LabeledField";
+import { LabeledField } from "../common/LabeledField";
 import { conceptsToTags, toHierarchicalTag } from "@/services/conceptLabels";
 import { evidenceFrom } from "@/services/sourceEvidence";
 import type { InterventionData } from "@/types/investigation";
-import "../shared/LabeledField.css";
+import "../common/LabeledField.css";
 
 interface InterventionDetailsProps {
   intervention: InterventionData;

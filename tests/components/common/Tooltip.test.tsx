@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { render } from "@testing-library/preact";
-import { Tooltip } from "@/components/shared/Tooltip";
+import { Tooltip } from "@/components/common/Tooltip";
 
 describe("Tooltip", () => {
   test("wraps children in a span with data-tooltip when text is set", () => {

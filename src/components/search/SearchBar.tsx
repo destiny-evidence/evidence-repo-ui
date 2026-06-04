@@ -1,4 +1,4 @@
-import { MagnifierIcon } from "@/components/shared/icons";
+import { MagnifierIcon } from "@/components/common/icons";
 import "./SearchBar.css";
 
 interface SearchBarProps {

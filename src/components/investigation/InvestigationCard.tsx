@@ -1,7 +1,7 @@
 import "./InvestigationCard.css";
 import { AbstractSection } from "./AbstractSection";
-import { TagGroup } from "../shared/TagGroup";
-import { WarningIcon, ExternalLinkIcon } from "../shared/icons";
+import { TagGroup } from "../common/TagGroup";
+import { WarningIcon, ExternalLinkIcon } from "../common/icons";
 import type {
   AbstractContentEnhancement,
   Authorship,

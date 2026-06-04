@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { TagGroup } from "@/components/shared/TagGroup";
+import { TagGroup } from "@/components/common/TagGroup";
 
 describe("TagGroup", () => {
   test("renders label and tags", () => {
