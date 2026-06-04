@@ -28,6 +28,18 @@ test("renders not found for invalid community", () => {
   expect(screen.getByText("Page not found")).toBeInTheDocument();
 });
 
+test("shows the Visualise tab and routes to the visualise page when enabled", () => {
+  history.pushState({}, "", "/hpv");
+  render(<App />);
+  expect(screen.getByRole("link", { name: /visualise/i })).toBeInTheDocument();
+
+  history.pushState({}, "", "/hpv/visualise");
+  render(<App />);
+  expect(
+    screen.getByRole("heading", { name: /evidence map/i }),
+  ).toBeInTheDocument();
+});
+
 // Regression test for issue #27 review finding: preact-router intercepts
 // internal anchor clicks and routes via history.pushState without firing
 // popstate or our URL_CHANGE_EVENT. Without bridging that gap, the

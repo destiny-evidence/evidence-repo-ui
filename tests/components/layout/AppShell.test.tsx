@@ -45,4 +45,15 @@ describe("AppShell header", () => {
     renderShell();
     expect(screen.queryByText("Education")).not.toBeInTheDocument();
   });
+
+  test("marks the Visualise tab active on the visualise route", () => {
+    history.replaceState(null, "", "/hpv/visualise");
+    renderShell();
+    expect(
+      screen.getByRole("link", { name: "Visualise" }).classList.contains("active"),
+    ).toBe(true);
+    expect(
+      screen.getByRole("link", { name: "Search" }).classList.contains("active"),
+    ).toBe(false);
+  });
 });

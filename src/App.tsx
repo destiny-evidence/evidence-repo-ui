@@ -3,6 +3,7 @@ import { AuthProvider } from "./auth/AuthContext";
 import { CommunityProvider } from "./community/CommunityContext";
 import { AppShell } from "./components/layout/AppShell";
 import { SearchPage } from "./pages/SearchPage";
+import { VisualisePage } from "./pages/VisualisePage";
 import { RecordDetailPage } from "./pages/RecordDetailPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { URL_CHANGE_EVENT } from "./services/navigation";
@@ -22,6 +23,7 @@ export function App() {
         <AppShell>
           <Router onChange={emitUrlChange}>
             <RecordDetailPage path="/:community/references/:id" />
+            <VisualisePage path="/:community/visualise" />
             <SearchPage path="/:community" />
             <NotFoundPage default />
           </Router>
