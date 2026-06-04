@@ -17,12 +17,11 @@ interface EvidenceMapGridProps {
   columnAxisLabel: string;
   // Preformatted total (e.g. "247"); shown in the corner alongside the axes.
   total?: string;
-  // Cell-click navigation is deferred; when supplied, cells become buttons.
+  // When supplied, cells become clickable buttons.
   onCellClick?: (row: AxisCategory, column: AxisCategory) => void;
 }
 
-// An absent cell means no reference carries that exact (row, column) pair — i.e.
-// zero matches. Phrased that way so the tooltip reads naturally.
+// An absent count means no reference carries that (row, column) pair — zero.
 function cellTooltip(
   rowLabel: string,
   columnLabel: string,
@@ -180,8 +179,7 @@ function Bubble({
   maxCount: number;
   empty: boolean;
 }) {
-  // Empty intersections (zero matches) render a faint dashed marker, matching
-  // the legend's "0" swatch, so the grid reads as a populated matrix.
+  // Empty intersections render a faint dashed marker, matching the legend's 0.
   if (empty) {
     return <span class="evidence-map__bubble evidence-map__bubble--empty" />;
   }

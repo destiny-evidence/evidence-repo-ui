@@ -91,23 +91,15 @@ describe("buildEvidenceMapModel", () => {
     expect(model.rows.map((r) => r.label)).toEqual(["Apple", "Banana"]);
   });
 
-  test("looks up counts by pair and returns undefined for empty intersections", () => {
+  test("looks up counts by pair, reports the maximum, and leaves empties undefined", () => {
     const model = buildEvidenceMapModel(
-      [cell("r1", "c1", 7), cell("r2", "c2", 2)],
+      [cell("r1", "c1", 7), cell("r1", "c2", 12), cell("r2", "c1", 9)],
       axisOf(),
       axisOf(),
     );
     expect(model.getCount("r1", "c1")).toBe(7);
-    expect(model.getCount("r2", "c2")).toBe(2);
-    expect(model.getCount("r1", "c2")).toBeUndefined();
-  });
-
-  test("tracks the maximum cell count", () => {
-    const model = buildEvidenceMapModel(
-      [cell("r1", "c1", 4), cell("r1", "c2", 12), cell("r2", "c1", 9)],
-      axisOf(),
-      axisOf(),
-    );
+    expect(model.getCount("r2", "c1")).toBe(9);
+    expect(model.getCount("r2", "c2")).toBeUndefined();
     expect(model.maxCount).toBe(12);
   });
 

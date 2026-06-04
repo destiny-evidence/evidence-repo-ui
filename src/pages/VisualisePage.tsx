@@ -152,8 +152,8 @@ function EvidenceMapView({
   }, [canonical, community.slug]);
 
   const noun = community.copy.countNoun;
-  // With scheme axes the categories come from the vocabulary, so a grid renders
-  // (greyed) even at zero results — the over-filtered banner sits above it.
+  // Scheme axes draw their categories from the vocabulary, so a greyed grid can
+  // render even when no cells come back (the no-coverage state).
   const hasGrid =
     model !== null && model.rows.length > 0 && model.columns.length > 0;
 

@@ -11,9 +11,7 @@ export type EvidenceMapAxis =
   | { kind: "scheme"; schemeUri: string; label?: string }
   | { kind: "countries"; label?: string };
 
-// Default axis pair for a community's evidence map: `row` is the y-axis,
-// `column` the x-axis. Live axis controls (the configure panel) arrive later;
-// until then the map renders from these defaults.
+// A community's evidence-map axis pair: `row` is the y-axis, `column` the x-axis.
 export interface EvidenceMapAxes {
   row: EvidenceMapAxis;
   column: EvidenceMapAxis;

@@ -40,26 +40,31 @@ function renderGrid(
 }
 
 describe("EvidenceMapGrid", () => {
-  test("labels axes, columns and rows from the supplied categories", () => {
+  test("labels axes, columns and rows, exposing the full label via the header title", () => {
     renderGrid("table");
     expect(screen.getByText("Education level")).toBeInTheDocument();
     expect(screen.getByText("Education theme")).toBeInTheDocument();
-    expect(
-      screen.getByRole("columnheader", { name: "Literacy" }),
-    ).toBeInTheDocument();
+    const header = screen.getByRole("columnheader", { name: "Literacy" });
+    expect(header).toHaveAttribute("title", "Literacy");
     expect(
       screen.getByRole("rowheader", { name: "Primary" }),
     ).toBeInTheDocument();
   });
 
-  test("table view shows counts as text and leaves empty cells blank", () => {
-    renderGrid("table");
+  test("table view shows counts as text; empty intersections are blank and marked", () => {
+    const { container } = renderGrid("table");
     expect(
       screen.getByTitle("Primary · Literacy: 12 investigations").textContent,
     ).toBe("12");
-    // Empty intersection: tooltip reports 0, cell renders no number.
+    // Empty intersection: tooltip reports 0, cell renders no number, is-empty set.
     const empty = screen.getByTitle("Primary · Numeracy: 0 investigations");
     expect(empty.textContent).toBe("");
+    expect(
+      empty.closest(".evidence-map__cell")?.classList.contains("is-empty"),
+    ).toBe(true);
+    expect(
+      container.querySelectorAll(".evidence-map__cell.is-empty").length,
+    ).toBe(1);
   });
 
   test("bubble view draws a sized bubble per filled cell, a dashed marker for empties, plus a legend", () => {
@@ -73,12 +78,6 @@ describe("EvidenceMapGrid", () => {
     expect(filled.length).toBe(3); // 4 cells, 1 empty
     expect(empties.length).toBe(1);
     expect(container.querySelector(".evidence-map__legend")).not.toBeNull();
-  });
-
-  test("exposes the full column label via the header title for long headers", () => {
-    renderGrid("table");
-    const header = screen.getByRole("columnheader", { name: "Literacy" });
-    expect(header).toHaveAttribute("title", "Literacy");
   });
 
   test("shows the total in the corner when supplied", () => {
@@ -98,27 +97,17 @@ describe("EvidenceMapGrid", () => {
     expect(screen.getByText("247")).toBeInTheDocument();
   });
 
-  test("marks empty intersections with the is-empty modifier", () => {
-    const { container } = renderGrid("table");
-    const empty = screen
-      .getByTitle("Primary · Numeracy: 0 investigations")
-      .closest(".evidence-map__cell");
-    expect(empty?.classList.contains("is-empty")).toBe(true);
-    expect(container.querySelectorAll(".evidence-map__cell.is-empty").length).toBe(
-      1,
-    );
-  });
-
-  test("cells are non-interactive when no click handler is supplied", () => {
+  test("cells are non-interactive without a click handler", () => {
     renderGrid("table");
     expect(
       screen.queryByRole("button", { name: /Literacy/ }),
     ).not.toBeInTheDocument();
   });
 
-  test("invokes onCellClick with the row and column for a filled cell", () => {
+  test("with a handler, filled cells invoke onCellClick and empty cells stay inert", () => {
     const onCellClick = vi.fn();
     renderGrid("table", onCellClick);
+
     const button = screen.getByTitle("Secondary · Numeracy: 8 investigations");
     expect(button.tagName).toBe("BUTTON");
     fireEvent.click(button);
@@ -126,11 +115,7 @@ describe("EvidenceMapGrid", () => {
       { key: "lvl:secondary", label: "Secondary" },
       { key: "thm:numeracy", label: "Numeracy" },
     );
-  });
 
-  test("does not make empty cells clickable even with a handler", () => {
-    const onCellClick = vi.fn();
-    renderGrid("table", onCellClick);
     const empty = screen.getByTitle("Primary · Numeracy: 0 investigations");
     expect(empty.tagName).not.toBe("BUTTON");
   });
