@@ -2,10 +2,20 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  /* Take only the room the table needs (no grow → no whitespace under a short
+     table), but shrink within the bounded map column when space is tight so the
+     scroll table can shrink and the legend below stays visible. */
+  flex: 0 1 auto;
+  min-height: 0;
 }
 
 .evidence-map__scroll {
   overflow: auto;
+  /* Fills the grid's available height and scrolls internally; with .evidence-map
+     content-sized it equals the table's natural height (no whitespace), and it
+     shrinks when the column is too short. 70vh caps a huge table on a tall page. */
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: 70vh;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -101,7 +111,7 @@
 }
 
 .evidence-map__axis-role {
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .evidence-map__axis-icon {
@@ -232,6 +242,9 @@
 
 /* ── Legend ── */
 .evidence-map__legend {
+  /* Never shrink: when the grid is squeezed the scroll table absorbs it, so the
+     legend always stays visible just below the table. */
+  flex: none;
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);

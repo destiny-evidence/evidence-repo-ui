@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCrossFacets } from "@/hooks/useCrossFacets";
@@ -82,18 +82,19 @@ export function VisualisePage(_props: VisualisePageProps) {
 
 function VisualisePageInner({ community }: { community: Community }) {
   const defaults = community.defaultEvidenceMapAxes;
-  return (
-    <div class="visualise-page">
-      <h1 class="visualise-page__title">Evidence map</h1>
-      {defaults ? (
-        <EvidenceMapView community={community} defaults={defaults} />
-      ) : (
+  // Configured maps render their own layout (title lives inside the map column
+  // so the config panel can rise into the title's row); the notice doesn't.
+  if (!defaults) {
+    return (
+      <div class="visualise-page">
+        <h1 class="visualise-page__title">Evidence map</h1>
         <p class="visualise-page__notice">
           The evidence map isn’t configured for this community yet.
         </p>
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
+  return <EvidenceMapView community={community} defaults={defaults} />;
 }
 
 function EvidenceMapView({
@@ -109,25 +110,34 @@ function EvidenceMapView({
 
   const vocab = useVocabulary(community.vocabularyUrl);
 
+  // Hold the last resolved vocabulary so a transient empty read during a
+  // refetch can't briefly drop the axis labels / headers back to raw URIs.
+  const lastSchemes = useRef(vocab.schemes);
+  const lastLabels = useRef(vocab.labels);
+  if (vocab.schemes) lastSchemes.current = vocab.schemes;
+  if (vocab.labels) lastLabels.current = vocab.labels;
+  const schemes = vocab.schemes ?? lastSchemes.current;
+  const labels = vocab.labels ?? lastLabels.current;
+
   // Schemes offered as axis options and filter cards — the same set the search
   // drawer filters on (excluded schemes make poor facets and poor axes alike).
   const filterableSchemes = useMemo(
     () =>
-      (vocab.schemes ?? []).filter(
+      (schemes ?? []).filter(
         (s) => !community.filterExcludedSchemes.includes(s.uri),
       ),
-    [vocab.schemes, community.filterExcludedSchemes],
+    [schemes, community.filterExcludedSchemes],
   );
 
   // Header title + per-value label fn per axis — derived from the vocabulary the
   // same way the filter panel names schemes (and via Intl for a country axis).
   const rowAxis = useMemo(
-    () => resolveMapAxis(axes.row, vocab.schemes, vocab.labels),
-    [axes.row, vocab.schemes, vocab.labels],
+    () => resolveMapAxis(axes.row, schemes, labels),
+    [axes.row, schemes, labels],
   );
   const columnAxis = useMemo(
-    () => resolveMapAxis(axes.column, vocab.schemes, vocab.labels),
-    [axes.column, vocab.schemes, vocab.labels],
+    () => resolveMapAxis(axes.column, schemes, labels),
+    [axes.column, schemes, labels],
   );
 
   const axisPair = useMemo<CrossFacetAxisPair>(
@@ -140,6 +150,15 @@ function EvidenceMapView({
 
   const { result, loading, error } = useCrossFacets(params, axisPair);
   const [view, setView] = useState<MapView>("bubble");
+
+  // Flag the docked configure panel on <body> so the global Feedback button can
+  // inset itself out from under it (CSS handles the responsive un-inset). The
+  // region itself is pinned to the viewport (see VisualisePage.css), so the
+  // page doesn't scroll and the sticky header can't rubber-band over the panel.
+  useEffect(() => {
+    document.body.classList.add("visualise-has-panel");
+    return () => document.body.classList.remove("visualise-has-panel");
+  }, []);
 
   const model = useMemo(() => {
     if (!result) return null;
@@ -188,6 +207,7 @@ function EvidenceMapView({
   return (
     <div class="evidence-map-view">
       <div class="evidence-map-view__main">
+        <h1 class="visualise-page__title">Evidence map</h1>
         <div class="evidence-map-view__toolbar">
           <ViewToggle value={view} onChange={setView} />
         </div>

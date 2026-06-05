@@ -42,8 +42,8 @@ function localName(uri: string): string {
   return uri.split(/[/#:]/).filter(Boolean).pop() ?? uri;
 }
 
-// Scheme options (in vocabulary order) + Countries, plus any drafted axis whose
-// scheme isn't in the list yet — so each <select> always has its current value.
+// Concept schemes + Countries, plus any drafted axis whose scheme isn't in the
+// list yet (so each <select> always has its current value), sorted by label.
 function buildAxisOptions(
   schemes: ConceptScheme[],
   drafted: EvidenceMapAxis[],
@@ -57,7 +57,9 @@ function buildAxisOptions(
     const token = axisToken(axis);
     if (!byValue.has(token)) byValue.set(token, localName(token));
   }
-  return [...byValue].map(([value, label]) => ({ value, label }));
+  return [...byValue]
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function axesEqual(a: EvidenceMapAxes, b: EvidenceMapAxes): boolean {
@@ -121,27 +123,32 @@ export function MapConfigPanel({
 
   return (
     <aside class="map-config-panel" aria-label="Configure the evidence map">
+      <header class="map-config-panel__header">
+        <h2 class="map-config-panel__heading">Configure map</h2>
+      </header>
+
       <div class="map-config-panel__body">
-        <section class="map-config-panel__section">
-          <h2 class="map-config-panel__section-title">Axes</h2>
-          <AxisSelect
-            label="Rows (y)"
-            value={axisToken(rowDraft)}
-            options={options}
-            disabledValue={axisToken(columnDraft)}
-            onChange={(token) => setRowDraft(parseAxis(token))}
-          />
+        <div class="map-config-panel__axes">
           <AxisSelect
             label="Columns (x)"
+            icon="↔"
             value={axisToken(columnDraft)}
             options={options}
             disabledValue={axisToken(rowDraft)}
             onChange={(token) => setColumnDraft(parseAxis(token))}
           />
-        </section>
+          <AxisSelect
+            label="Rows (y)"
+            icon="↕"
+            value={axisToken(rowDraft)}
+            options={options}
+            disabledValue={axisToken(columnDraft)}
+            onChange={(token) => setRowDraft(parseAxis(token))}
+          />
+        </div>
 
         <section class="map-config-panel__section">
-          <h2 class="map-config-panel__section-title">Filters</h2>
+          <h3 class="map-config-panel__section-title">Filters</h3>
           <FilterCardList draft={draft} countNoun={countNoun} />
         </section>
       </div>
@@ -169,6 +176,8 @@ export function MapConfigPanel({
 
 interface AxisSelectProps {
   label: string;
+  // Direction glyph mirroring the grid's axis legend (↕ rows, ↔ columns).
+  icon: string;
   value: string;
   options: AxisOption[];
   // The value chosen on the other axis — disabled here to avoid a same-axis map.
@@ -178,6 +187,7 @@ interface AxisSelectProps {
 
 function AxisSelect({
   label,
+  icon,
   value,
   options,
   disabledValue,
@@ -186,9 +196,14 @@ function AxisSelect({
   const id = useId();
   return (
     <div class="map-config-panel__axis">
-      <label class="map-config-panel__axis-label" for={id}>
-        {label}
-      </label>
+      {/* Icon sits outside the <label> so it stays out of the field's
+          accessible name (it's decorative). */}
+      <span class="map-config-panel__axis-label">
+        <span class="map-config-panel__axis-icon" aria-hidden="true">
+          {icon}
+        </span>
+        <label for={id}>{label}</label>
+      </span>
       <select
         id={id}
         class="map-config-panel__axis-select"

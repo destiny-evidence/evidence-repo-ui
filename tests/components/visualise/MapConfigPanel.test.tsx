@@ -75,6 +75,14 @@ describe("MapConfigPanel", () => {
     expect(row.getByRole("option", { name: "Countries" })).toBeInTheDocument();
   });
 
+  test("sorts the dropdown options alphabetically by label", () => {
+    renderPanel();
+    const labels = within(rowSelect())
+      .getAllByRole("option")
+      .map((o) => o.textContent);
+    expect(labels).toEqual(["Countries", "Document type", "Outcome"]);
+  });
+
   test("disables the other axis's current value to prevent a same-axis map", () => {
     renderPanel();
     // Column is Document type, so that option is disabled in the Row dropdown.

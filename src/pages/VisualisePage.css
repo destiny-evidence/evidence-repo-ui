@@ -21,6 +21,12 @@
   margin: 0 0 var(--spacing-lg);
 }
 
+/* Inside the map column the flex gap owns the spacing, so the title doesn't
+   double up its own bottom margin. */
+.evidence-map-view__main .visualise-page__title {
+  margin-bottom: 0;
+}
+
 .visualise-page__notice {
   font-family: var(--font-display);
   font-style: italic;
@@ -30,28 +36,61 @@
   margin: 0;
 }
 
-/* Map canvas on the left, configure panel on the right. align-items:start so
-   the sticky panel can scroll independently of the (often taller) map. */
+/* Full-bleed two-column row in normal flow. The map sits at its natural height
+   on the left; the configure panel docks full-height on the right (sticky, see
+   MapConfigPanel.css). align-items:flex-start keeps the (often shorter) map from
+   stretching. The page only scrolls if the map itself is taller than the panel. */
 .evidence-map-view {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: var(--spacing-xl);
-  align-items: start;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  box-sizing: border-box;
+  display: flex;
+  /* Exactly the viewport below the header, and clipped, so the page never
+     scrolls (sub-pixel rounding of 100vh-header included). The columns stretch
+     to fill it; the map table and the panel body scroll internally, and the map
+     is capped (EvidenceMapGrid.css) so nothing visible is clipped. */
+  height: calc(100vh - var(--header-height));
+  overflow: hidden;
 }
 
 .evidence-map-view__main {
+  flex: 1;
+  /* min-width:0 lets the map's horizontal scroll area shrink rather than widen
+     the whole layout. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  /* min-width:0 lets the grid's horizontal scroll area shrink inside the
-     column instead of forcing the whole layout wider. */
-  min-width: 0;
+  padding: 32px;
+  overflow: hidden;
 }
 
-/* Stack the panel beneath the map once there isn't room for two columns. */
-@media (max-width: 900px) {
+/* Two-column only: inset the global Feedback button out from under the docked
+   panel, and drop .app-main's bottom padding so the (viewport-height) panel and
+   the capped map fit the viewport with no page scroll. */
+@media (min-width: 961px) {
+  body.visualise-has-panel .app-main {
+    padding-bottom: 0;
+  }
+  body.visualise-has-panel .feedback-fab {
+    right: calc(28px + var(--map-panel-width));
+  }
+}
+
+/* Below the threshold the panel un-docks and stacks under the map; natural
+   heights, the page scrolls normally, and the Feedback button stays home. */
+@media (max-width: 960px) {
   .evidence-map-view {
-    grid-template-columns: minmax(0, 1fr);
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+  .evidence-map-view__main {
+    overflow: visible;
   }
 }
 
