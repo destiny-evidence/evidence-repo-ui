@@ -31,15 +31,19 @@ interface EvidenceMapGridProps {
   onCellClick?: (row: AxisCategory, column: AxisCategory) => void;
 }
 
-// Just the count (the row and column are evident from the headers), plus a
-// "click to view" affordance on cells that deep-link into Search.
+// Bubble view shows a compact count, so its tooltip leads with the exact value;
+// table view already shows the count, so its tooltip is only the action line.
+// The action line (second, in bubble view) appears on cells that deep-link.
 function cellTooltip(
   count: number | undefined,
   countNoun: string,
   clickable: boolean,
-): string {
+  view: MapView,
+): string | undefined {
+  const action = `Click to view matching ${countNoun}`;
+  if (view === "table") return clickable ? action : undefined;
   const summary = `${(count ?? 0).toLocaleString()} ${countNoun}`;
-  return clickable ? `${summary} — click to view` : summary;
+  return clickable ? `${summary}\n${action}` : summary;
 }
 
 export function EvidenceMapGrid({
@@ -117,7 +121,7 @@ export function EvidenceMapGrid({
                       count={count ?? 0}
                       maxCount={maxCount}
                       view={view}
-                      tooltip={cellTooltip(count, countNoun, clickable)}
+                      tooltip={cellTooltip(count, countNoun, clickable, view)}
                       onClick={
                         clickable ? () => onCellClick(row, column) : undefined
                       }
@@ -141,7 +145,7 @@ interface CellProps {
   count: number;
   maxCount: number;
   view: MapView;
-  tooltip: string;
+  tooltip: string | undefined;
   onClick?: () => void;
 }
 
@@ -170,19 +174,14 @@ function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
     <span class="evidence-map__cell-inner">{inner}</span>
   );
 
-  // No tooltip on the table view yet — the count is already shown in the cell.
-  // It returns once cells carry a second value beyond the count; the `tooltip`
-  // prop stays wired so that's a one-line change to the condition below.
+  // Tooltip shows in both views; it no-ops when `tooltip` is undefined (a
+  // non-clickable table cell, whose count is already on screen).
   return (
     <td
       class={`evidence-map__cell${empty ? " is-empty" : ""}`}
       style={{ "--evidence-map-dot": `${radius}px` }}
     >
-      {view === "bubble" ? (
-        <Tooltip text={tooltip}>{content}</Tooltip>
-      ) : (
-        content
-      )}
+      <Tooltip text={tooltip}>{content}</Tooltip>
     </td>
   );
 }

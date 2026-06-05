@@ -65,14 +65,34 @@ describe("EvidenceMapGrid", () => {
     );
   });
 
-  test("table view carries no tooltips; bubble view does", () => {
-    const { container } = renderGrid("table");
-    expect(container.querySelectorAll("[data-tooltip]").length).toBe(0);
+  function firstCellTooltip(container: Element): string | null | undefined {
+    return container
+      .querySelector(".evidence-map__cell:not(.is-empty) [data-tooltip]")
+      ?.getAttribute("data-tooltip");
+  }
+
+  test("without a click handler: table cells carry no tooltip, bubble cells show just the count", () => {
+    const table = renderGrid("table");
+    expect(table.container.querySelectorAll("[data-tooltip]").length).toBe(0);
 
     const bubble = renderGrid("bubble");
+    expect(firstCellTooltip(bubble.container)).toBe("12 investigations");
+  });
+
+  test("with a handler: the bubble tooltip leads with the count then the action; the table tooltip is the action only", () => {
+    const bubble = renderGrid("bubble", vi.fn());
+    expect(firstCellTooltip(bubble.container)).toBe(
+      "12 investigations\nClick to view matching investigations",
+    );
+
+    const table = renderGrid("table", vi.fn());
+    expect(firstCellTooltip(table.container)).toBe(
+      "Click to view matching investigations",
+    );
+    // Empty cells stay inert in both views — no action tooltip.
     expect(
-      bubble.container.querySelectorAll("[data-tooltip]").length,
-    ).toBeGreaterThan(0);
+      table.container.querySelector(".evidence-map__cell.is-empty [data-tooltip]"),
+    ).toBeNull();
   });
 
   test("bubble view draws a sized bubble per filled cell, a dashed marker for empties, plus a legend", () => {

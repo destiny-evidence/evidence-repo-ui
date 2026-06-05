@@ -32,7 +32,9 @@
   line-height: 1.4;
   width: max-content;
   max-width: 280px;
-  white-space: normal;
+  /* pre-line honours explicit "\n" in `text` (multi-line tooltips) while still
+     wrapping/collapsing other whitespace; single-line tooltips are unaffected. */
+  white-space: pre-line;
   text-align: left;
   z-index: 10;
   pointer-events: none;

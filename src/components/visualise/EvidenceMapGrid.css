@@ -166,7 +166,9 @@
 .evidence-map__cell .tooltip:focus-visible::after {
   white-space: pre-line;
   font-size: var(--font-size-xs);
-  bottom: calc(50% + var(--evidence-map-dot, 0px) + 8px);
+  bottom: calc(
+    50% + var(--evidence-map-dot, 0px) + var(--evidence-map-tip-lift, 0px) + 8px
+  );
 }
 
 /* Speech-bubble tail: a downward triangle whose apex meets the dot's top edge,
@@ -176,13 +178,21 @@
 .evidence-map__cell .tooltip:focus-visible::before {
   content: "";
   position: absolute;
-  bottom: calc(50% + var(--evidence-map-dot, 0px));
+  bottom: calc(
+    50% + var(--evidence-map-dot, 0px) + var(--evidence-map-tip-lift, 0px)
+  );
   left: 50%;
   transform: translateX(-50%);
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
   border-top: 8px solid #161b22;
   z-index: 10;
+}
+
+/* Table cells have no bubble (--evidence-map-dot is 0), so the tail would land
+   on the centre of the number. Lift it clear of the digits. */
+.evidence-map__table--table .evidence-map__cell {
+  --evidence-map-tip-lift: 14px;
 }
 
 .evidence-map__cell-inner,
