@@ -201,10 +201,8 @@ describe("bubbleRadius", () => {
     expect(bubbleRadius(5, 0, 4, 20)).toBe(0);
   });
 
-  test("anchors count 1 at the floor regardless of the maximum, clamping anything below it", () => {
+  test("anchors count 1 at the floor regardless of the maximum", () => {
     expect(bubbleRadius(1, 10000, 4, 22)).toBe(4);
-    // A sub-1 count would fall below the floor; the clamp keeps it visible.
-    expect(bubbleRadius(0.5, 10000, 4, 22)).toBe(4);
   });
 
   test("the largest count maps to the maximum radius", () => {

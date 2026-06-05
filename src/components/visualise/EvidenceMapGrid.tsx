@@ -8,17 +8,11 @@ import { Tooltip } from "../common/Tooltip";
 import type { MapView } from "./ViewToggle";
 import "./EvidenceMapGrid.css";
 
-// Bubble sizing (px). The floor fits a single-digit label; wider labels grow to
-// fit on their own (labelFitRadius). The max sits within the cell's 64px row.
+// Bubble sizing (px). The floor fits a single-digit label; the max sits within
+// the cell's 64px row. A wide label can't clip: the bubble's CSS floors its
+// width at the rendered text (min-content), so no font math lives here.
 const BUBBLE_MAX_RADIUS = 22;
 const BUBBLE_MIN_RADIUS = 9;
-
-// Smallest radius whose circle clears the label's text without clipping the
-// corners (half the text's diagonal, plus a little padding). ~6px per character
-// tracks the 10px tabular .evidence-map__bubble-count — keep them in sync.
-function labelFitRadius(label: string): number {
-  return Math.hypot(label.length * 6, 10) / 2 + 2;
-}
 
 interface EvidenceMapGridProps {
   rows: AxisCategory[];
@@ -145,21 +139,16 @@ interface CellProps {
 }
 
 function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
-  const label = formatCompact(count);
   // Bubble radius drives the tooltip/tail anchor (--evidence-map-dot): the dot
   // is centred in the cell, so the tail points at it rather than the cell edge.
-  // Floored at whatever the label needs, so a wide count never clips its text.
   const radius =
     view === "bubble" && !empty
-      ? Math.max(
-          bubbleRadius(count, maxCount, BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS),
-          labelFitRadius(label),
-        )
+      ? bubbleRadius(count, maxCount, BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS)
       : 0;
 
   const inner =
     view === "bubble" ? (
-      <Bubble radius={radius} label={label} empty={empty} />
+      <Bubble radius={radius} count={count} empty={empty} />
     ) : (
       <span class="evidence-map__count">
         {empty ? "" : count.toLocaleString()}
@@ -193,23 +182,22 @@ function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
 
 function Bubble({
   radius,
-  label,
+  count,
   empty,
 }: {
   radius: number;
-  label: string;
+  count: number;
   empty: boolean;
 }) {
   if (empty) {
     return <span class="evidence-map__bubble evidence-map__bubble--empty" />;
   }
-  const diameter = radius * 2;
   return (
     <span
       class="evidence-map__bubble"
-      style={{ width: `${diameter}px`, height: `${diameter}px` }}
+      style={{ "--bubble-diameter": `${radius * 2}px` }}
     >
-      <span class="evidence-map__bubble-count">{label}</span>
+      <span class="evidence-map__bubble-count">{formatCompact(count)}</span>
     </span>
   );
 }
