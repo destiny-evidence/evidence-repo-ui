@@ -20,19 +20,6 @@ const COUNTS = new Map<string, number>([
 ]);
 const getCount = (r: string, c: string) => COUNTS.get(`${r}|${c}`);
 
-// The tooltip a cell carries via the shared Tooltip's data-tooltip — the count.
-function tip(count: number): string {
-  return `${count} investigations`;
-}
-
-function cell(container: Element, tooltip: string): HTMLElement {
-  const el = [...container.querySelectorAll<HTMLElement>("[data-tooltip]")].find(
-    (e) => e.getAttribute("data-tooltip") === tooltip,
-  );
-  if (!el) throw new Error(`No cell with tooltip: ${JSON.stringify(tooltip)}`);
-  return el;
-}
-
 function renderGrid(
   view: "bubble" | "table",
   onCellClick?: (row: AxisCategory, column: AxisCategory) => void,
@@ -67,16 +54,25 @@ describe("EvidenceMapGrid", () => {
 
   test("table view shows counts as text; empty intersections are blank and marked", () => {
     const { container } = renderGrid("table");
-    expect(cell(container, tip(12)).textContent).toBe("12");
-    // Empty intersection: tooltip reports 0, cell renders no number, is-empty set.
-    const empty = cell(container, tip(0));
-    expect(empty.textContent).toBe("");
+    expect(screen.getByText("12")).toBeInTheDocument();
+    // Empty intersection: no number rendered, is-empty set, exactly one.
+    const empties = container.querySelectorAll<HTMLElement>(
+      ".evidence-map__cell.is-empty",
+    );
+    expect(empties.length).toBe(1);
+    expect(empties[0].querySelector(".evidence-map__count")?.textContent).toBe(
+      "",
+    );
+  });
+
+  test("table view carries no tooltips; bubble view does", () => {
+    const { container } = renderGrid("table");
+    expect(container.querySelectorAll("[data-tooltip]").length).toBe(0);
+
+    const bubble = renderGrid("bubble");
     expect(
-      empty.closest(".evidence-map__cell")?.classList.contains("is-empty"),
-    ).toBe(true);
-    expect(
-      container.querySelectorAll(".evidence-map__cell.is-empty").length,
-    ).toBe(1);
+      bubble.container.querySelectorAll("[data-tooltip]").length,
+    ).toBeGreaterThan(0);
   });
 
   test("bubble view draws a sized bubble per filled cell, a dashed marker for empties, plus a legend", () => {
@@ -120,7 +116,7 @@ describe("EvidenceMapGrid", () => {
     const onCellClick = vi.fn();
     const { container } = renderGrid("table", onCellClick);
 
-    const button = cell(container, tip(8)).querySelector("button");
+    const button = screen.getByText("8").closest("button");
     expect(button).not.toBeNull();
     fireEvent.click(button!);
     expect(onCellClick).toHaveBeenCalledWith(
@@ -128,6 +124,8 @@ describe("EvidenceMapGrid", () => {
       { key: "thm:numeracy", label: "Numeracy" },
     );
 
-    expect(cell(container, tip(0)).querySelector("button")).toBeNull();
+    // The empty intersection stays inert.
+    const empty = container.querySelector(".evidence-map__cell.is-empty");
+    expect(empty?.querySelector("button")).toBeNull();
   });
 });

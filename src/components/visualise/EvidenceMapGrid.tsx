@@ -162,12 +162,15 @@ function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
     <span class="evidence-map__cell-inner">{inner}</span>
   );
 
+  // No tooltip on the table view yet — the count is already shown in the cell.
+  // It returns once cells carry a second value beyond the count; the `tooltip`
+  // prop stays wired so that's a one-line change to the condition below.
   return (
     <td
       class={`evidence-map__cell${empty ? " is-empty" : ""}`}
       style={{ "--evidence-map-dot": `${radius}px` }}
     >
-      <Tooltip text={tooltip}>{content}</Tooltip>
+      {view === "bubble" ? <Tooltip text={tooltip}>{content}</Tooltip> : content}
     </td>
   );
 }
