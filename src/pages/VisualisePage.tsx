@@ -209,6 +209,9 @@ function EvidenceMapView({
   // render even when no cells come back (the no-coverage state).
   const hasGrid =
     model !== null && model.rows.length > 0 && model.columns.length > 0;
+  // Gate the "click a cell" hint on there being a clickable (non-empty) cell, so
+  // it doesn't mislead in the over-filtered or no-coverage states.
+  const showHint = result !== null && result.cells.length > 0 && hasGrid;
 
   return (
     <div class="evidence-map-view">
@@ -216,6 +219,11 @@ function EvidenceMapView({
         <h1 class="visualise-page__title">Evidence map</h1>
         <div class="evidence-map-view__toolbar">
           <ViewToggle value={view} onChange={setView} />
+          {showHint && (
+            <p class="evidence-map-view__hint">
+              Click a cell to view matching {noun}
+            </p>
+          )}
         </div>
 
         {error ? (

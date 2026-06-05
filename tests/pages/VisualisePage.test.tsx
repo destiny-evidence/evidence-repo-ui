@@ -155,6 +155,10 @@ describe("VisualisePage map", () => {
     // Column/row labels resolved via the vocabulary.
     expect(screen.getByRole("columnheader", { name: "Literacy" })).toBeInTheDocument();
     expect(screen.getByRole("rowheader", { name: "Primary" })).toBeInTheDocument();
+    // The "click a cell" hint accompanies a grid with clickable cells.
+    expect(
+      screen.getByText(/click a cell to view matching/i),
+    ).toBeInTheDocument();
   });
 
   test("renders zero-hit rows and columns from the vocabulary", () => {
@@ -242,6 +246,10 @@ describe("VisualisePage map", () => {
     const banner = container.querySelector(".evidence-map-view__banner");
     expect(banner?.querySelector("button")).toBeNull();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    // No clickable cells, so no hint.
+    expect(
+      screen.queryByText(/click a cell to view matching/i),
+    ).not.toBeInTheDocument();
   });
 
   test("distinguishes 'no map coverage' (results exist but none on both axes) from over-filtered", () => {
@@ -267,5 +275,9 @@ describe("VisualisePage map", () => {
     expect(
       screen.getByRole("columnheader", { name: "Science" }),
     ).toBeInTheDocument();
+    // ...but with no clickable cells, so no hint.
+    expect(
+      screen.queryByText(/click a cell to view matching/i),
+    ).not.toBeInTheDocument();
   });
 });

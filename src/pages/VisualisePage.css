@@ -96,6 +96,13 @@
   gap: var(--spacing-lg);
 }
 
+/* Pinned to the right of the toolbar — the wireframe's top-right hint. */
+.evidence-map-view__hint {
+  margin: 0 0 0 auto;
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+}
+
 .evidence-map-view__total {
   font-size: var(--font-size-body);
   color: var(--color-text-secondary);
