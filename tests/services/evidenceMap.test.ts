@@ -187,10 +187,11 @@ describe("resolveMapAxis", () => {
 });
 
 describe("bubbleRadius", () => {
-  test("scales by area: quadrupling the count doubles the radius", () => {
-    // minRadius 0 to isolate the area math from the legibility floor.
-    expect(bubbleRadius(16, 16, 0, 20)).toBe(20);
-    expect(bubbleRadius(4, 16, 0, 20)).toBeCloseTo(10);
+  test("square-root ramp: count 1 at the floor, max at the ceiling", () => {
+    expect(bubbleRadius(1, 100, 4, 22)).toBeCloseTo(4);
+    expect(bubbleRadius(100, 100, 4, 22)).toBe(22);
+    // (√25 − 1)/(√100 − 1) = 4/9 of the way up the 4→22 range.
+    expect(bubbleRadius(25, 100, 4, 22)).toBeCloseTo(12);
   });
 
   test("returns 0 for non-positive counts or empty data", () => {
@@ -199,13 +200,18 @@ describe("bubbleRadius", () => {
     expect(bubbleRadius(5, 0, 4, 20)).toBe(0);
   });
 
-  test("clamps small positive counts up to the minimum radius", () => {
-    // 22 * sqrt(1/10000) ≈ 0.22, well below the floor.
+  test("anchors count 1 at the floor regardless of the maximum, clamping anything below it", () => {
     expect(bubbleRadius(1, 10000, 4, 22)).toBe(4);
+    // A sub-1 count would fall below the floor; the clamp keeps it visible.
+    expect(bubbleRadius(0.5, 10000, 4, 22)).toBe(4);
   });
 
   test("the largest count maps to the maximum radius", () => {
     expect(bubbleRadius(50, 50, 4, 22)).toBe(22);
+  });
+
+  test("shows the only value at full size when every count is 1", () => {
+    expect(bubbleRadius(1, 1, 4, 22)).toBe(22);
   });
 });
 
@@ -224,5 +230,10 @@ describe("legendTicks", () => {
     expect(ticks[ticks.length - 1]).toBe(24);
     expect([...ticks].sort((a, b) => a - b)).toEqual(ticks);
     expect(new Set(ticks).size).toBe(ticks.length);
+  });
+
+  test("brackets the range: floor, the visual midpoint, and the maximum", () => {
+    expect(legendTicks(355)).toEqual([1, 98, 355]);
+    expect(legendTicks(462)).toEqual([1, 126, 462]);
   });
 });

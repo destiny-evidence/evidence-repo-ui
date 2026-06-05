@@ -73,9 +73,7 @@ export interface ResolvedAxis {
 }
 
 /**
- * Resolve an axis to its title, categories, and per-value label function. As in
- * the filter panel, a scheme's title comes from its vocabulary label; a country
- * axis expands ISO codes via `Intl`.
+ * Resolve an axis to its title, categories, and per-value label function.
  */
 export function resolveMapAxis(
   axis: EvidenceMapAxis,
@@ -119,9 +117,11 @@ function mergeCategories(axis: AxisInput, cellKeys: Set<string>): AxisCategory[]
 }
 
 /**
- * Radius (px) for a bubble of `count`, scaled so **area** is proportional to the
- * count (r ∝ √count). 0 for non-positive counts; positive counts clamp up to
- * `minRadius` so the smallest stay visible.
+ * Radius (px) for a bubble of `count`, on a square-root ramp from `minRadius`
+ * at the smallest count (1) to `maxRadius` at `maxCount`, interpolating on
+ * √count. Anchoring the floor at 1 keeps differences across the lower half visible
+ * while staying close to area-proportional. The in-bubble number carries the
+ * exact value.
  */
 export function bubbleRadius(
   count: number,
@@ -130,14 +130,21 @@ export function bubbleRadius(
   maxRadius: number,
 ): number {
   if (count <= 0 || maxCount <= 0) return 0;
-  return Math.max(minRadius, maxRadius * Math.sqrt(count / maxCount));
+  // One distinct count in play ⇒ no range to map; show it at full size.
+  if (maxCount <= 1) return maxRadius;
+  const fraction = (Math.sqrt(count) - 1) / (Math.sqrt(maxCount) - 1);
+  return Math.max(minRadius, minRadius + (maxRadius - minRadius) * fraction);
 }
 
-/** Ascending legend ticks, always ending at `maxCount`; [] when maxCount ≤ 0. */
+/**
+ * Legend ticks for the square-root ramp: the floor (1), the maximum, and the
+ * count whose bubble sits visually halfway between them (where √count is the
+ * midpoint of √1..√maxCount). Lists every value for tiny maxima; [] when
+ * maxCount ≤ 0.
+ */
 export function legendTicks(maxCount: number): number[] {
   if (maxCount <= 0) return [];
   if (maxCount <= 3) return Array.from({ length: maxCount }, (_, i) => i + 1);
-  const low = Math.max(1, Math.round(maxCount / 5));
-  const mid = Math.round(maxCount / 2);
-  return [...new Set([low, mid, maxCount])].sort((a, b) => a - b);
+  const mid = Math.round(((1 + Math.sqrt(maxCount)) / 2) ** 2);
+  return [1, mid, maxCount];
 }
