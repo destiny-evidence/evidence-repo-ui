@@ -132,8 +132,9 @@ export function bubbleRadius(
   if (count <= 0 || maxCount <= 0) return 0;
   // One distinct count in play ⇒ no range to map; show it at full size.
   if (maxCount <= 1) return maxRadius;
+  // count ≥ 1 ⇒ fraction ≥ 0, so this never falls below minRadius.
   const fraction = (Math.sqrt(count) - 1) / (Math.sqrt(maxCount) - 1);
-  return Math.max(minRadius, minRadius + (maxRadius - minRadius) * fraction);
+  return minRadius + (maxRadius - minRadius) * fraction;
 }
 
 const compactFormatter = new Intl.NumberFormat(undefined, {

@@ -204,9 +204,17 @@
   justify-content: center;
   border-radius: 50%;
   background: var(--color-accent);
+  box-sizing: border-box;
+  /* Square, and never narrower than the label needs: the browser measures the
+     rendered text (min-content), so a wide count grows its own bubble instead
+     of clipping — no font metrics duplicated in JS. */
+  aspect-ratio: 1;
+  width: max(var(--bubble-diameter, 0px), min-content);
 }
 
 .evidence-map__bubble-count {
+  /* Keep the text clear of the circle's curve so corners aren't cramped. */
+  padding-inline: 5px;
   color: #fff;
   font-size: 10px;
   font-weight: 400;
