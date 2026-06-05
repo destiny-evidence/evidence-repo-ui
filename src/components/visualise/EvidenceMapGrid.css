@@ -1,6 +1,10 @@
 .evidence-map {
   display: flex;
   flex-direction: column;
+  /* Left-align so the scroll box hugs the table width instead of stretching to
+     the column (a few-column table otherwise leaves white space inside its
+     border). */
+  align-items: flex-start;
   gap: var(--spacing-md);
   /* Take only the room the table needs (no grow → no whitespace under a short
      table), but shrink within the bounded map column when space is tight so the
@@ -17,6 +21,9 @@
   flex: 1 1 auto;
   min-height: 0;
   max-height: 70vh;
+  /* Hug the table width up to the column width; a wider table scrolls
+     horizontally rather than stretching the box past the viewport. */
+  max-width: 100%;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-bg-surface);
