@@ -740,4 +740,35 @@ describe("SearchPage", () => {
       });
     });
   });
+
+  describe("Back to Visualise link", () => {
+    const linkQuery = { name: /back to visualise/i } as const;
+
+    // Mount on the canonical (param-free) URL so SearchPage's URL rewrite never
+    // fires and clears the history.state under test.
+    async function renderWithState(state: unknown) {
+      history.replaceState(state, "", "/esea");
+      mockBoth({ results: makeResult(5, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() =>
+        expect(screen.getByText("Title r1")).toBeInTheDocument(),
+      );
+    }
+
+    test("renders from history.state set by a map cell deep-link", async () => {
+      const mapUrl = "/esea/visualise?row=scheme%3Alevel&column=scheme%3Atheme";
+      await renderWithState({ backToVisualise: mapUrl });
+      expect(screen.getByRole("link", linkQuery)).toHaveAttribute("href", mapUrl);
+    });
+
+    test("absent without the state (e.g. a shared search URL)", async () => {
+      await renderWithState(null);
+      expect(screen.queryByRole("link", linkQuery)).not.toBeInTheDocument();
+    });
+
+    test("ignores a state URL pointing at a different community", async () => {
+      await renderWithState({ backToVisualise: "/other/visualise?row=a" });
+      expect(screen.queryByRole("link", linkQuery)).not.toBeInTheDocument();
+    });
+  });
 });

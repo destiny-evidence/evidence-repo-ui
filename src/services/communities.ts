@@ -49,7 +49,7 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: [
       "https://vocab.esea.education/ImplementationDescriptionScheme",
     ],
-    features: { ...DEFAULT_FEATURES },
+    features: { ...DEFAULT_FEATURES, evidenceMap: true },
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",

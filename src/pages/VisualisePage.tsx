@@ -6,6 +6,7 @@ import { useVocabulary } from "@/hooks/useVocabulary";
 import {
   parseSearchParams,
   toQueryString,
+  buildSearchUrl,
   type SearchParams,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
@@ -14,6 +15,9 @@ import {
   buildEvidenceMapModel,
   parseAxis,
   resolveMapAxis,
+  cellSearchParams,
+  backToVisualiseState,
+  type AxisCategory,
 } from "@/services/evidenceMap";
 import {
   AXIS_COUNTRIES,
@@ -189,6 +193,17 @@ function EvidenceMapView({
     );
   }
 
+  // Deep-link a cell into Search: the map's filters plus the cell's row and
+  // column applied as filters. Stash the map's own URL in history.state so the
+  // search page can offer a "Back to Visualise" link to exactly this view.
+  function handleCellClick(row: AxisCategory, column: AxisCategory) {
+    const next = cellSearchParams(params, axes, row, column);
+    const mapUrl = `/${community.slug}/visualise?${canonical}`;
+    navigate(buildSearchUrl(community.slug, next), {
+      state: backToVisualiseState(mapUrl),
+    });
+  }
+
   const noun = community.copy.countNoun;
   // Scheme axes draw their categories from the vocabulary, so a greyed grid can
   // render even when no cells come back (the no-coverage state).
@@ -245,6 +260,7 @@ function EvidenceMapView({
                 columnAxisLabel={columnAxis.title}
                 total={formatTotal(result.total)}
                 updating={loading}
+                onCellClick={handleCellClick}
               />
             ) : result.cells.length > 0 ? (
               // Data exists but the vocabulary hasn't supplied categories yet.

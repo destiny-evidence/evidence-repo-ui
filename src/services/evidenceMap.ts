@@ -1,4 +1,9 @@
-import type { CrossFacetCell, EvidenceMapAxis } from "@/types/models";
+import type {
+  CrossFacetCell,
+  EvidenceMapAxes,
+  EvidenceMapAxis,
+} from "@/types/models";
+import type { SearchParams } from "@/services/searchParams";
 import {
   schemeDisplayLabel,
   type Concept,
@@ -174,4 +179,50 @@ export function legendTicks(maxCount: number): number[] {
   if (maxCount <= 3) return Array.from({ length: maxCount }, (_, i) => i + 1);
   const mid = Math.round(((1 + Math.sqrt(maxCount)) / 2) ** 2);
   return [1, mid, maxCount];
+}
+
+/**
+ * Search params for the cell at (row, column): the map's current filters plus
+ * the two axis values applied as filters. A scheme axis contributes a
+ * single-concept filter group (AND'd with any existing groups, mirroring the
+ * cross-facet query); a countries axis contributes a country code. Page resets
+ * to 1 since the result set changes.
+ */
+export function cellSearchParams(
+  base: SearchParams,
+  axes: EvidenceMapAxes,
+  row: AxisCategory,
+  column: AxisCategory,
+): SearchParams {
+  const conceptFilters = [...base.conceptFilters];
+  const countryCodes = [...base.countryCodes];
+  for (const [axis, category] of [
+    [axes.row, row],
+    [axes.column, column],
+  ] as const) {
+    if (axis.kind === "countries") {
+      if (!countryCodes.includes(category.key)) countryCodes.push(category.key);
+    } else {
+      conceptFilters.push([category.key]);
+    }
+  }
+  return { ...base, conceptFilters, countryCodes, page: 1 };
+}
+
+// history.state key set when a cell deep-links into Search; its value is the
+// canonical map URL to return to. State (not a URL param) so a shared/bookmarked
+// search link — where the recipient never came from a map — shows no back link.
+const BACK_TO_VISUALISE = "backToVisualise";
+
+export function backToVisualiseState(mapUrl: string): Record<string, string> {
+  return { [BACK_TO_VISUALISE]: mapUrl };
+}
+
+// Reads the return URL out of an opaque history.state, or null if absent.
+export function backToVisualiseUrl(state: unknown): string | null {
+  if (state && typeof state === "object" && BACK_TO_VISUALISE in state) {
+    const url = (state as Record<string, unknown>)[BACK_TO_VISUALISE];
+    if (typeof url === "string") return url;
+  }
+  return null;
 }

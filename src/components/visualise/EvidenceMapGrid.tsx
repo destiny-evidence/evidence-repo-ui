@@ -31,10 +31,15 @@ interface EvidenceMapGridProps {
   onCellClick?: (row: AxisCategory, column: AxisCategory) => void;
 }
 
-// Just the count for now; the row and column are evident from the headers and
-// the dot's position. A line about where clicking navigates will follow.
-function cellTooltip(count: number | undefined, countNoun: string): string {
-  return `${(count ?? 0).toLocaleString()} ${countNoun}`;
+// Just the count (the row and column are evident from the headers), plus a
+// "click to view" affordance on cells that deep-link into Search.
+function cellTooltip(
+  count: number | undefined,
+  countNoun: string,
+  clickable: boolean,
+): string {
+  const summary = `${(count ?? 0).toLocaleString()} ${countNoun}`;
+  return clickable ? `${summary} — click to view` : summary;
 }
 
 export function EvidenceMapGrid({
@@ -104,6 +109,7 @@ export function EvidenceMapGrid({
                 {columns.map((column) => {
                   const count = getCount(row.key, column.key);
                   const empty = count === undefined || count <= 0;
+                  const clickable = onCellClick !== undefined && !empty;
                   return (
                     <Cell
                       key={column.key}
@@ -111,11 +117,9 @@ export function EvidenceMapGrid({
                       count={count ?? 0}
                       maxCount={maxCount}
                       view={view}
-                      tooltip={cellTooltip(count, countNoun)}
+                      tooltip={cellTooltip(count, countNoun, clickable)}
                       onClick={
-                        onCellClick && !empty
-                          ? () => onCellClick(row, column)
-                          : undefined
+                        clickable ? () => onCellClick(row, column) : undefined
                       }
                     />
                   );

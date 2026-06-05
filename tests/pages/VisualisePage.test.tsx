@@ -181,6 +181,29 @@ describe("VisualisePage map", () => {
     ).toBeInTheDocument();
   });
 
+  test("clicking a cell deep-links into Search with the cell's filters + a back-to-map state", () => {
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(9, [["level:primary", "theme:literacy", 6]]),
+      loading: false,
+      error: null,
+    });
+    const { container } = render(<VisualisePage />);
+    const cellButton = container.querySelector<HTMLButtonElement>(
+      ".evidence-map__cell-button",
+    );
+    expect(cellButton).not.toBeNull();
+    fireEvent.click(cellButton!);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/test?concept=level%3Aprimary&concept=theme%3Aliteracy",
+      {
+        state: {
+          backToVisualise:
+            "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
+        },
+      },
+    );
+  });
+
   test("toggling to the table view shows counts as text", () => {
     mockUseCrossFacets.mockReturnValue({
       result: crossFacetResult(8, [["level:primary", "theme:literacy", 5]]),
