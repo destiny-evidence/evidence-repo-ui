@@ -219,6 +219,30 @@ describe("buildVocabularyData", () => {
       definition: "Peer-reviewed publication.",
     });
   });
+
+  it("maps each concept to its scheme via skos:inScheme", () => {
+    const { inScheme } = buildVocabularyData(SAMPLE_VOCABULARY);
+
+    expect(
+      inScheme.get("https://vocab.esea.education/DocumentTypeScheme/C00008"),
+    ).toBe("esea:DocumentTypeScheme");
+
+    // Concepts with no skos:inScheme are absent (C00022 is a top concept but
+    // carries no inScheme of its own).
+    expect(
+      inScheme.has("https://vocab.esea.education/EducationThemeScheme/C00022"),
+    ).toBe(false);
+  });
+
+  it("reads skos:inScheme directly, even for a concept absent from any scheme tree", () => {
+    // C00002 has skos:inScheme but no scheme tree entry; derive-from-tree would lose it.
+    const { inScheme, schemes } = buildVocabularyData(SAMPLE_VOCABULARY);
+
+    expect(
+      inScheme.get("https://vocab.esea.education/EducationLevelScheme/C00002"),
+    ).toBe("esea:EducationLevelScheme");
+    expect(schemes.some((s) => s.uri === "esea:EducationLevelScheme")).toBe(false);
+  });
 });
 
 describe("fetchVocabulary", () => {

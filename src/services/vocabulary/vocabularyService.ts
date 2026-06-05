@@ -9,6 +9,7 @@ interface JsonLdGraphEntry {
   "skos:prefLabel"?: string;
   "skos:definition"?: string;
   "skos:broader"?: JsonLdRef | JsonLdRef[];
+  "skos:inScheme"?: JsonLdRef | JsonLdRef[];
   "skos:hasTopConcept"?: JsonLdRef | JsonLdRef[];
   "dct:title"?: string;
   "rdfs:label"?: string;
@@ -46,6 +47,7 @@ export interface VocabularyData {
   labels: Map<string, string>;
   broader: Map<string, string>;
   definitions: Map<string, string>;
+  inScheme: Map<string, string>;
   schemes: ConceptScheme[];
 }
 
@@ -119,6 +121,7 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
   const labels = new Map<string, string>();
   const broader = new Map<string, string>();
   const definitions = new Map<string, string>();
+  const inScheme = new Map<string, string>();
   const rawSchemes: RawScheme[] = [];
 
   for (const entry of doc["@graph"] ?? []) {
@@ -138,6 +141,10 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
       const broaderUri = extractFirstRefId(entry["skos:broader"]);
       if (broaderUri) {
         broader.set(id, expand(broaderUri));
+      }
+      const schemeUri = extractFirstRefId(entry["skos:inScheme"]);
+      if (schemeUri) {
+        inScheme.set(entry["@id"], schemeUri);
       }
       continue;
     }
@@ -188,7 +195,7 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
       .filter((c): c is Concept => c !== null),
   }));
 
-  return { labels, broader, definitions, schemes };
+  return { labels, broader, definitions, inScheme, schemes };
 }
 
 /**

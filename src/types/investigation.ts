@@ -103,4 +103,7 @@ export interface InvestigationData {
   documentType?: CodedAnnotation<ResolvedConcept>;
   isRetracted: boolean;
   findings: FindingData[];
+  // Flat investigation-level concept refs (HPV's hasAppliedConcept). Bare URI
+  // strings, no CodingAnnotation wrapper. Empty for vocabularies that omit it.
+  appliedConcepts: ResolvedConcept[];
 }
