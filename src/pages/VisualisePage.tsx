@@ -204,6 +204,20 @@ function EvidenceMapView({
     });
   }
 
+  // The over-filtered banner's inline shortcut — the panel's "Reset all" applied
+  // in one click: default axes, no filters.
+  function handleResetAll() {
+    handleApply({
+      axes: defaults,
+      filters: {
+        conceptFilters: [],
+        countryCodes: [],
+        startYear: undefined,
+        endYear: undefined,
+      },
+    });
+  }
+
   const noun = community.copy.countNoun;
   // Scheme axes draw their categories from the vocabulary, so a greyed grid can
   // render even when no cells come back (the no-coverage state).
@@ -232,18 +246,27 @@ function EvidenceMapView({
           </p>
         ) : !result && loading ? (
           <p class="evidence-map-view__status">Loading…</p>
-        ) : !result ? null : result.total.count === 0 ? (
-          // Over-filtered: nothing matches the filters — just the banner.
-          <div class="evidence-map-view__banner" role="status">
-            <WarningIcon />
-            <span class="evidence-map-view__banner-text">
-              No {noun} match the current filters. Please update the filters and
-              try again.
-            </span>
-          </div>
-        ) : (
+        ) : !result ? null : (
           <>
-            {result.cells.length === 0 && (
+            {result.total.count === 0 ? (
+              // Over-filtered: nothing matches the filters. The greyed grid still
+              // renders below (when the axes' categories are known) so the chosen
+              // axes stay visible, with a "Reset all" shortcut (wireframe #93).
+              <div class="evidence-map-view__banner" role="status">
+                <WarningIcon />
+                <span class="evidence-map-view__banner-text">
+                  No {noun} match the current filters. Please update the filters
+                  and try again.
+                </span>
+                <button
+                  type="button"
+                  class="evidence-map-view__banner-reset"
+                  onClick={handleResetAll}
+                >
+                  Reset all
+                </button>
+              </div>
+            ) : result.cells.length === 0 ? (
               // Distinct from over-filtered: references match, but none carry a
               // value on both axes — nothing cross-tabulates. The message sits
               // over the greyed-out grid.
@@ -255,7 +278,7 @@ function EvidenceMapView({
                 {rowAxis.title} and {columnAxis.title} — nothing to plot on these
                 axes.
               </p>
-            )}
+            ) : null}
             {model && hasGrid ? (
               <EvidenceMapGrid
                 rows={model.rows}
@@ -269,6 +292,7 @@ function EvidenceMapView({
                 total={formatTotal(result.total)}
                 updating={loading}
                 onCellClick={handleCellClick}
+                dimmed={result.total.count === 0}
               />
             ) : result.cells.length > 0 ? (
               // Data exists but the vocabulary hasn't supplied categories yet.

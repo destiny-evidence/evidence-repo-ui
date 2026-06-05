@@ -27,6 +27,8 @@ interface EvidenceMapGridProps {
   total?: string;
   // Dims the grid while a new result is being fetched (the prior grid stays up).
   updating?: boolean;
+  // Dims the grid in the over-filtered state (axes visible, but nothing matches).
+  dimmed?: boolean;
   // When supplied, cells become clickable buttons.
   onCellClick?: (row: AxisCategory, column: AxisCategory) => void;
 }
@@ -57,10 +59,15 @@ export function EvidenceMapGrid({
   columnAxisLabel,
   total,
   updating = false,
+  dimmed = false,
   onCellClick,
 }: EvidenceMapGridProps) {
   return (
-    <div class={`evidence-map${updating ? " is-updating" : ""}`}>
+    <div
+      class={`evidence-map${updating ? " is-updating" : ""}${
+        dimmed ? " is-dimmed" : ""
+      }`}
+    >
       <div class="evidence-map__scroll">
         <table class={`evidence-map__table evidence-map__table--${view}`}>
           <thead>
