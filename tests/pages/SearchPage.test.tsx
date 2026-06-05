@@ -46,31 +46,18 @@ import {
   getSearchExport,
 } from "@/services/apiClient";
 import { useVocabulary } from "@/hooks/useVocabulary";
+import { makeVocabResult } from "../fixtures";
 const mockSearch = vi.mocked(searchReferences);
 const mockRequestExport = vi.mocked(requestSearchExport);
 const mockGetExport = vi.mocked(getSearchExport);
 const mockVocab = vi.mocked(useVocabulary);
 
 function silentVocab(): ReturnType<typeof useVocabulary> {
-  return {
-    labels: null,
-    broader: null,
-    definitions: null,
-    schemes: null,
-    loading: false,
-    error: null,
-  };
+  return makeVocabResult();
 }
 
 function vocabWith(schemes: typeof OUTCOME_SCHEME_FIXTURE[]): ReturnType<typeof useVocabulary> {
-  return {
-    labels: null,
-    broader: null,
-    definitions: null,
-    schemes,
-    loading: false,
-    error: null,
-  };
+  return makeVocabResult({ schemes });
 }
 
 function makeResult(count: number, ids: string[] = [], isLowerBound = false): SearchResult {
@@ -531,14 +518,7 @@ describe("SearchPage", () => {
     });
 
     test("Refine is disabled while vocabulary is loading", async () => {
-      mockVocab.mockReturnValue({
-        labels: null,
-        broader: null,
-        definitions: null,
-        schemes: null,
-        loading: true,
-        error: null,
-      });
+      mockVocab.mockReturnValue(makeVocabResult({ loading: true }));
       mockBoth({ results: makeResult(120, ["r1"]) });
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());

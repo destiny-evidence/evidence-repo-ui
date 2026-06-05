@@ -409,6 +409,8 @@ function SearchPageInner({ community }: { community: Community }) {
               communitySlug={community.slug}
               reference={ref}
               codingInstitution={community.codingInstitution}
+              findingsAndEstimates={community.features.findingsAndEstimates}
+              pillExcludedSchemes={community.pillExcludedSchemes}
             />
           ))}
         </div>

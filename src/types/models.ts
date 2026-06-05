@@ -1,6 +1,8 @@
 export interface CommunityFeatures {
   // No UI yet; reserved so the evidence map can ship behind a flag (#103).
   evidenceMap: boolean;
+  // ESEA studies carry findings/estimates (the stat-badges); HPV references don't.
+  findingsAndEstimates: boolean;
 }
 
 // One axis of the evidence map.
@@ -45,6 +47,9 @@ export interface Community {
   vocabularyUrl: string;
   contextUrl: string;
   filterExcludedSchemes: string[];
+  // Concept schemes dropped from result-card pills (HPV geo). Distinct from
+  // filterExcludedSchemes (drawer): geo stays filterable, just isn't a pill.
+  pillExcludedSchemes: string[];
   features: CommunityFeatures;
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).

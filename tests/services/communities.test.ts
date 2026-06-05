@@ -54,4 +54,26 @@ describe("communities", () => {
     const { DEFAULT_FEATURES } = await import("@/services/communities");
     expect(DEFAULT_FEATURES.evidenceMap).toBe(false);
   });
+
+  it("gates findings/estimates per community (ESEA on, HPV off)", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("esea")?.features.findingsAndEstimates).toBe(true);
+    expect(findCommunity("hpv")?.features.findingsAndEstimates).toBe(false);
+  });
+
+  it("excludes exactly the 5 HPV geo schemes from card pills, none for ESEA", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("esea")?.pillExcludedSchemes).toEqual([]);
+    const hpvExcluded = findCommunity("hpv")?.pillExcludedSchemes ?? [];
+    expect(hpvExcluded).toHaveLength(5);
+    expect(hpvExcluded).toEqual(
+      expect.arrayContaining([
+        "https://vocab.aliveevidence.org/hpv/Country",
+        "https://vocab.aliveevidence.org/hpv/CountryClassification",
+        "https://vocab.aliveevidence.org/hpv/UNICEFRegion",
+        "https://vocab.aliveevidence.org/hpv/WorldBankRegion",
+        "https://vocab.aliveevidence.org/hpv/WHORegion",
+      ]),
+    );
+  });
 });
