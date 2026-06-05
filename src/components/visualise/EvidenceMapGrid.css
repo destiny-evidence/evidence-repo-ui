@@ -228,11 +228,15 @@
   border-radius: 50%;
   background: var(--color-accent);
   box-sizing: border-box;
-  /* Square, and never narrower than the label needs: the browser measures the
-     rendered text (min-content), so a wide count grows its own bubble instead
-     of clipping — no font metrics duplicated in JS. */
+  /* Square, sized to --bubble-diameter but never narrower than the label needs:
+     min-width: min-content lets a wide count grow its own bubble rather than
+     clip — no font metrics duplicated in JS. Keep min-content on its own
+     declaration: an intrinsic keyword inside max() is invalid CSS, so the whole
+     width is dropped and bubbles collapse to their text width (the diameter is
+     then ignored entirely). */
   aspect-ratio: 1;
-  width: max(var(--bubble-diameter, 0px), min-content);
+  width: var(--bubble-diameter, 0px);
+  min-width: min-content;
 }
 
 .evidence-map__bubble-count {
