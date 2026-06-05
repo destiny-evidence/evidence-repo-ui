@@ -20,6 +20,11 @@ vi.mock("@/community/CommunityContext", () => ({
 vi.mock("@/hooks/useCrossFacets", () => ({ useCrossFacets: mockUseCrossFacets }));
 vi.mock("@/hooks/useVocabulary", () => ({ useVocabulary: mockUseVocabulary }));
 vi.mock("@/hooks/useUrlParams", () => ({ useUrlParams: mockUseUrlParams }));
+// The config panel previews the draft via useSearchFacets; keep it inert so
+// these tests don't fire real facet-count fetches.
+vi.mock("@/hooks/useSearchFacets", () => ({
+  useSearchFacets: vi.fn(() => ({ counts: null, loading: false, error: null })),
+}));
 vi.mock("@/services/navigation", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/navigation")>();
   return { ...actual, navigate: mockNavigate };
@@ -207,12 +212,12 @@ describe("VisualisePage map", () => {
       loading: false,
       error: null,
     });
-    render(<VisualisePage />);
+    const { container } = render(<VisualisePage />);
     expect(screen.getByText(/No results match the current filters/i)).toBeInTheDocument();
-    // No reset CTA and no grid — even with schemes available.
-    expect(
-      screen.queryByRole("button", { name: "Reset all" }),
-    ).not.toBeInTheDocument();
+    // The banner carries no inline reset CTA, and no grid renders — even with
+    // schemes available. (The configure panel's own "Reset all" is separate.)
+    const banner = container.querySelector(".evidence-map-view__banner");
+    expect(banner?.querySelector("button")).toBeNull();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
@@ -231,12 +236,10 @@ describe("VisualisePage map", () => {
       loading: false,
       error: null,
     });
-    render(<VisualisePage />);
+    const { container } = render(<VisualisePage />);
     expect(screen.getByText(/none have a value for both/i)).toBeInTheDocument();
     // Not the over-filtered warning — loosening filters wouldn't help.
-    expect(
-      screen.queryByRole("button", { name: "Reset all" }),
-    ).not.toBeInTheDocument();
+    expect(container.querySelector(".evidence-map-view__banner")).toBeNull();
     // The grid still renders (greyed) so the chosen axes stay visible.
     expect(
       screen.getByRole("columnheader", { name: "Science" }),

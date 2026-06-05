@@ -30,10 +30,29 @@
   margin: 0;
 }
 
+/* Map canvas on the left, configure panel on the right. align-items:start so
+   the sticky panel can scroll independently of the (often taller) map. */
 .evidence-map-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--spacing-xl);
+  align-items: start;
+}
+
+.evidence-map-view__main {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  /* min-width:0 lets the grid's horizontal scroll area shrink inside the
+     column instead of forcing the whole layout wider. */
+  min-width: 0;
+}
+
+/* Stack the panel beneath the map once there isn't room for two columns. */
+@media (max-width: 900px) {
+  .evidence-map-view {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .evidence-map-view__toolbar {

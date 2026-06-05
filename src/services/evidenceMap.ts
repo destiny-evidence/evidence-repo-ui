@@ -5,6 +5,18 @@ import {
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
+import { AXIS_COUNTRIES } from "@/services/crossFacets";
+
+// The token written to / read from the URL (and a <select> value) for an axis.
+export function axisToken(axis: EvidenceMapAxis): string {
+  return axis.kind === "countries" ? AXIS_COUNTRIES : axis.schemeUri;
+}
+
+export function parseAxis(token: string): EvidenceMapAxis {
+  return token === AXIS_COUNTRIES
+    ? { kind: "countries" }
+    : { kind: "scheme", schemeUri: token };
+}
 
 export interface AxisCategory {
   key: string;

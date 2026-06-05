@@ -9,7 +9,12 @@ import {
   type SearchParams,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
-import { buildEvidenceMapModel, resolveMapAxis } from "@/services/evidenceMap";
+import {
+  axisToken,
+  buildEvidenceMapModel,
+  parseAxis,
+  resolveMapAxis,
+} from "@/services/evidenceMap";
 import {
   AXIS_COUNTRIES,
   type CrossFacetAxis,
@@ -23,6 +28,8 @@ import type {
 } from "@/types/models";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
 import { ViewToggle, type MapView } from "@/components/visualise/ViewToggle";
+import { MapConfigPanel } from "@/components/visualise/MapConfigPanel";
+import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import { WarningIcon } from "@/components/common/icons";
 import { NotFoundPage } from "./NotFoundPage";
 import "./VisualisePage.css";
@@ -37,17 +44,6 @@ const COLUMN_PARAM = "column";
 // Mirrors SearchPage: render "10,000+" when ES caps the count (is_lower_bound).
 function formatTotal(total: SearchResultTotal): string {
   return `${total.count.toLocaleString()}${total.is_lower_bound ? "+" : ""}`;
-}
-
-// The token written to / read from the URL for an axis.
-function axisToken(axis: EvidenceMapAxis): string {
-  return axis.kind === "countries" ? AXIS_COUNTRIES : axis.schemeUri;
-}
-
-function parseAxis(token: string): EvidenceMapAxis {
-  return token === AXIS_COUNTRIES
-    ? { kind: "countries" }
-    : { kind: "scheme", schemeUri: token };
 }
 
 // Config axis → the shape the cross-facets client/hook expects.
@@ -113,6 +109,16 @@ function EvidenceMapView({
 
   const vocab = useVocabulary(community.vocabularyUrl);
 
+  // Schemes offered as axis options and filter cards — the same set the search
+  // drawer filters on (excluded schemes make poor facets and poor axes alike).
+  const filterableSchemes = useMemo(
+    () =>
+      (vocab.schemes ?? []).filter(
+        (s) => !community.filterExcludedSchemes.includes(s.uri),
+      ),
+    [vocab.schemes, community.filterExcludedSchemes],
+  );
+
   // Header title + per-value label fn per axis — derived from the vocabulary the
   // same way the filter panel names schemes (and via Intl for a country axis).
   const rowAxis = useMemo(
@@ -151,6 +157,28 @@ function EvidenceMapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonical, community.slug]);
 
+  // Commit the panel's drafted axes + filters to the URL; the map re-renders
+  // off the new params (page reset, like the search page).
+  function handleApply({
+    axes: nextAxes,
+    filters,
+  }: {
+    axes: EvidenceMapAxes;
+    filters: AppliedFilters;
+  }) {
+    const nextParams: SearchParams = {
+      ...params,
+      conceptFilters: filters.conceptFilters,
+      countryCodes: filters.countryCodes,
+      startYear: filters.startYear,
+      endYear: filters.endYear,
+      page: 1,
+    };
+    navigate(
+      `/${community.slug}/visualise?${canonicalSearch(nextParams, nextAxes)}`,
+    );
+  }
+
   const noun = community.copy.countNoun;
   // Scheme axes draw their categories from the vocabulary, so a greyed grid can
   // render even when no cells come back (the no-coverage state).
@@ -159,63 +187,82 @@ function EvidenceMapView({
 
   return (
     <div class="evidence-map-view">
-      <div class="evidence-map-view__toolbar">
-        <ViewToggle value={view} onChange={setView} />
+      <div class="evidence-map-view__main">
+        <div class="evidence-map-view__toolbar">
+          <ViewToggle value={view} onChange={setView} />
+        </div>
+
+        {error ? (
+          <p class="evidence-map-view__status" role="alert">
+            Couldn’t load the evidence map.
+          </p>
+        ) : !result && loading ? (
+          <p class="evidence-map-view__status">Loading…</p>
+        ) : !result ? null : result.total.count === 0 ? (
+          // Over-filtered: nothing matches the filters — just the banner.
+          <div class="evidence-map-view__banner" role="status">
+            <WarningIcon />
+            <span class="evidence-map-view__banner-text">
+              No {noun} match the current filters. Please update the filters and
+              try again.
+            </span>
+          </div>
+        ) : (
+          <>
+            {result.cells.length === 0 && (
+              // Distinct from over-filtered: references match, but none carry a
+              // value on both axes — nothing cross-tabulates. The message sits
+              // over the greyed-out grid.
+              <p class="evidence-map-view__note" role="status">
+                <span class="evidence-map-view__note-count">
+                  {formatTotal(result.total)}
+                </span>{" "}
+                {noun} match your filters, but none have a value for both{" "}
+                {rowAxis.title} and {columnAxis.title} — nothing to plot on these
+                axes.
+              </p>
+            )}
+            {model && hasGrid ? (
+              <EvidenceMapGrid
+                rows={model.rows}
+                columns={model.columns}
+                getCount={model.getCount}
+                maxCount={model.maxCount}
+                view={view}
+                countNoun={noun}
+                rowAxisLabel={rowAxis.title}
+                columnAxisLabel={columnAxis.title}
+                total={formatTotal(result.total)}
+              />
+            ) : result.cells.length > 0 ? (
+              // Data exists but the vocabulary hasn't supplied categories yet.
+              <p class="evidence-map-view__total">
+                <span class="evidence-map-view__total-count">
+                  {formatTotal(result.total)}
+                </span>{" "}
+                {noun}
+              </p>
+            ) : null}
+          </>
+        )}
       </div>
 
-      {error ? (
-        <p class="evidence-map-view__status" role="alert">
-          Couldn’t load the evidence map.
-        </p>
-      ) : !result && loading ? (
-        <p class="evidence-map-view__status">Loading…</p>
-      ) : !result ? null : result.total.count === 0 ? (
-        // Over-filtered: nothing matches the filters — just the banner.
-        <div class="evidence-map-view__banner" role="status">
-          <WarningIcon />
-          <span class="evidence-map-view__banner-text">
-            No {noun} match the current filters. Please update the filters and
-            try again.
-          </span>
-        </div>
-      ) : (
-        <>
-          {result.cells.length === 0 && (
-            // Distinct from over-filtered: references match, but none carry a
-            // value on both axes — nothing cross-tabulates. The message sits
-            // over the greyed-out grid.
-            <p class="evidence-map-view__note" role="status">
-              <span class="evidence-map-view__note-count">
-                {formatTotal(result.total)}
-              </span>{" "}
-              {noun} match your filters, but none have a value for both{" "}
-              {rowAxis.title} and {columnAxis.title} — nothing to plot on these
-              axes.
-            </p>
-          )}
-          {model && hasGrid ? (
-            <EvidenceMapGrid
-              rows={model.rows}
-              columns={model.columns}
-              getCount={model.getCount}
-              maxCount={model.maxCount}
-              view={view}
-              countNoun={noun}
-              rowAxisLabel={rowAxis.title}
-              columnAxisLabel={columnAxis.title}
-              total={formatTotal(result.total)}
-            />
-          ) : result.cells.length > 0 ? (
-            // Data exists but the vocabulary hasn't supplied categories yet.
-            <p class="evidence-map-view__total">
-              <span class="evidence-map-view__total-count">
-                {formatTotal(result.total)}
-              </span>{" "}
-              {noun}
-            </p>
-          ) : null}
-        </>
-      )}
+      {/* Persistent across every map state — over-filtered included — so the
+          config that produced the view stays editable (wireframe #93). Keyed on
+          the committed query so it re-hydrates its draft when the URL changes. */}
+      <MapConfigPanel
+        key={canonical}
+        schemes={filterableSchemes}
+        appliedAxes={axes}
+        defaultAxes={defaults}
+        appliedConceptFilters={params.conceptFilters}
+        appliedCountryCodes={params.countryCodes}
+        appliedStartYear={params.startYear}
+        appliedEndYear={params.endYear}
+        params={params}
+        countNoun={noun}
+        onApply={handleApply}
+      />
     </div>
   );
 }

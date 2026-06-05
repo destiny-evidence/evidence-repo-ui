@@ -1,13 +1,16 @@
 import { describe, test, expect } from "vitest";
 import {
+  axisToken,
   buildEvidenceMapModel,
+  parseAxis,
   resolveMapAxis,
   bubbleRadius,
   formatCompact,
   legendTicks,
   type AxisCategory,
 } from "@/services/evidenceMap";
-import type { CrossFacetCell } from "@/types/models";
+import { AXIS_COUNTRIES } from "@/services/crossFacets";
+import type { CrossFacetCell, EvidenceMapAxis } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
 
@@ -245,5 +248,36 @@ describe("legendTicks", () => {
   test("brackets the range: floor, the visual midpoint, and the maximum", () => {
     expect(legendTicks(355)).toEqual([1, 98, 355]);
     expect(legendTicks(462)).toEqual([1, 126, 462]);
+  });
+});
+
+describe("axisToken / parseAxis", () => {
+  const SCHEME: EvidenceMapAxis = {
+    kind: "scheme",
+    schemeUri: "https://vocab.esea.education/EducationLevelScheme",
+  };
+  const COUNTRIES: EvidenceMapAxis = { kind: "countries" };
+
+  test("a scheme axis tokenises to its URI", () => {
+    expect(axisToken(SCHEME)).toBe(SCHEME.schemeUri);
+  });
+
+  test("a countries axis tokenises to the literal countries token", () => {
+    expect(axisToken(COUNTRIES)).toBe(AXIS_COUNTRIES);
+  });
+
+  test("round-trips a scheme axis", () => {
+    expect(parseAxis(axisToken(SCHEME))).toEqual(SCHEME);
+  });
+
+  test("round-trips a countries axis", () => {
+    expect(parseAxis(axisToken(COUNTRIES))).toEqual(COUNTRIES);
+  });
+
+  test("parses any non-countries token as a scheme URI", () => {
+    expect(parseAxis("https://vocab.example/Thing")).toEqual({
+      kind: "scheme",
+      schemeUri: "https://vocab.example/Thing",
+    });
   });
 });
