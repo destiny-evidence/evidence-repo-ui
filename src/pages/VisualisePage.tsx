@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCrossFacets } from "@/hooks/useCrossFacets";
@@ -110,34 +110,25 @@ function EvidenceMapView({
 
   const vocab = useVocabulary(community.vocabularyUrl);
 
-  // Hold the last resolved vocabulary so a transient empty read during a
-  // refetch can't briefly drop the axis labels / headers back to raw URIs.
-  const lastSchemes = useRef(vocab.schemes);
-  const lastLabels = useRef(vocab.labels);
-  if (vocab.schemes) lastSchemes.current = vocab.schemes;
-  if (vocab.labels) lastLabels.current = vocab.labels;
-  const schemes = vocab.schemes ?? lastSchemes.current;
-  const labels = vocab.labels ?? lastLabels.current;
-
   // Schemes offered as axis options and filter cards — the same set the search
   // drawer filters on (excluded schemes make poor facets and poor axes alike).
   const filterableSchemes = useMemo(
     () =>
-      (schemes ?? []).filter(
+      (vocab.schemes ?? []).filter(
         (s) => !community.filterExcludedSchemes.includes(s.uri),
       ),
-    [schemes, community.filterExcludedSchemes],
+    [vocab.schemes, community.filterExcludedSchemes],
   );
 
   // Header title + per-value label fn per axis — derived from the vocabulary the
   // same way the filter panel names schemes (and via Intl for a country axis).
   const rowAxis = useMemo(
-    () => resolveMapAxis(axes.row, schemes, labels),
-    [axes.row, schemes, labels],
+    () => resolveMapAxis(axes.row, vocab.schemes, vocab.labels),
+    [axes.row, vocab.schemes, vocab.labels],
   );
   const columnAxis = useMemo(
-    () => resolveMapAxis(axes.column, schemes, labels),
-    [axes.column, schemes, labels],
+    () => resolveMapAxis(axes.column, vocab.schemes, vocab.labels),
+    [axes.column, vocab.schemes, vocab.labels],
   );
 
   const axisPair = useMemo<CrossFacetAxisPair>(

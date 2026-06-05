@@ -36,10 +36,10 @@
   margin: 0;
 }
 
-/* Full-bleed two-column row in normal flow. The map sits at its natural height
-   on the left; the configure panel docks full-height on the right (sticky, see
-   MapConfigPanel.css). align-items:flex-start keeps the (often shorter) map from
-   stretching. The page only scrolls if the map itself is taller than the panel. */
+/* Full-bleed two-column row pinned to exactly the viewport below the header and
+   clipped, so the page never scrolls (sub-pixel rounding included): the columns
+   stretch to fill it, the map table and panel body scroll internally, and the
+   map is capped (EvidenceMapGrid.css) so nothing visible is clipped. */
 .evidence-map-view {
   width: 100vw;
   position: relative;
@@ -49,10 +49,6 @@
   margin-right: -50vw;
   box-sizing: border-box;
   display: flex;
-  /* Exactly the viewport below the header, and clipped, so the page never
-     scrolls (sub-pixel rounding of 100vh-header included). The columns stretch
-     to fill it; the map table and the panel body scroll internally, and the map
-     is capped (EvidenceMapGrid.css) so nothing visible is clipped. */
   height: calc(100vh - var(--header-height));
   overflow: hidden;
 }

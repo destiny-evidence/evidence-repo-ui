@@ -36,7 +36,6 @@ type ConceptDraft = Map<string, ConceptSchemeFilterState>;
 
 export interface FilterDraft {
   schemes: ConceptScheme[];
-  conceptDraft: ConceptDraft;
   countryDraft: CountryFilterState;
   yearDraft: YearRangeFilterState;
   onSchemeChange: (scheme: ConceptScheme, next: ConceptSchemeFilterState) => void;
@@ -197,7 +196,6 @@ export function useFilterDraft({
 
   return {
     schemes,
-    conceptDraft,
     countryDraft,
     yearDraft,
     onSchemeChange,

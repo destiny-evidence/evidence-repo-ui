@@ -68,9 +68,9 @@ export function buildEvidenceMapModel(
   };
 }
 
-// Last path/fragment/CURIE segment — a title fallback for a scheme the
+// Last path/fragment/CURIE segment — a label fallback for a scheme the
 // vocabulary doesn't carry.
-function localName(uri: string): string {
+export function localName(uri: string): string {
   return uri.split(/[/#:]/).filter(Boolean).pop() ?? uri;
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from "preact/hooks";
 import { FilterCardList } from "./FilterCardList";
+import { FilterActions } from "./FilterActions";
 import { useFilterDraft, type AppliedFilters } from "./useFilterDraft";
 import type { SearchParams } from "@/services/searchParams";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
@@ -110,7 +111,7 @@ function FilterDrawerPanel({
           </div>
           <button
             type="button"
-            class="filter-drawer__btn filter-drawer__btn--cancel"
+            class="filter-actions__btn filter-actions__btn--reset"
             onClick={onCancel}
           >
             Cancel
@@ -121,23 +122,11 @@ function FilterDrawerPanel({
           <FilterCardList draft={draft} countNoun={countNoun} />
         </div>
 
-        <footer class="filter-drawer__footer">
-          <button
-            type="button"
-            class="filter-drawer__btn filter-drawer__btn--reset"
-            onClick={draft.reset}
-          >
-            Reset all
-          </button>
-          <button
-            type="button"
-            class="filter-drawer__btn filter-drawer__btn--apply"
-            onClick={handleApply}
-            disabled={!draft.canApply}
-          >
-            Show results
-          </button>
-        </footer>
+        <FilterActions
+          onReset={draft.reset}
+          onApply={handleApply}
+          applyDisabled={!draft.canApply}
+        />
       </aside>
     </div>
   );

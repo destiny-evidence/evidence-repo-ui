@@ -13,14 +13,11 @@ import type { ComponentProps } from "preact";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import type { EvidenceMapAxes } from "@/types/models";
 import { makeSearchParams } from "../../fixtures";
-import { OUTCOME_SCHEME_FIXTURE } from "../filters/fixtures";
-
-const URI_JOURNAL = "https://vocab.esea.education/DocumentTypeScheme/C00008";
-const DOCUMENT_TYPE_SCHEME: ConceptScheme = {
-  uri: "https://vocab.esea.education/DocumentTypeScheme",
-  label: "Document type",
-  topConcepts: [{ uri: URI_JOURNAL, label: "Journal Article" }],
-};
+import {
+  DOCUMENT_TYPE_SCHEME,
+  OUTCOME_SCHEME_FIXTURE,
+  URI_JOURNAL,
+} from "../filters/fixtures";
 
 const SCHEMES: ConceptScheme[] = [OUTCOME_SCHEME_FIXTURE, DOCUMENT_TYPE_SCHEME];
 

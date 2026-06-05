@@ -1,10 +1,11 @@
 import { useId, useMemo, useState } from "preact/hooks";
 import { FilterCardList } from "@/components/filters/FilterCardList";
+import { FilterActions } from "@/components/filters/FilterActions";
 import {
   useFilterDraft,
   type AppliedFilters,
 } from "@/components/filters/useFilterDraft";
-import { axisToken, parseAxis } from "@/services/evidenceMap";
+import { axisToken, localName, parseAxis } from "@/services/evidenceMap";
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
 import {
   schemeDisplayLabel,
@@ -34,12 +35,6 @@ interface MapConfigPanelProps {
 interface AxisOption {
   value: string;
   label: string;
-}
-
-// Last path/fragment/CURIE segment — a label fallback for a scheme axis whose
-// vocabulary hasn't loaded yet (so its <select> option still reads sensibly).
-function localName(uri: string): string {
-  return uri.split(/[/#:]/).filter(Boolean).pop() ?? uri;
 }
 
 // Concept schemes + Countries, plus any drafted axis whose scheme isn't in the
@@ -153,23 +148,11 @@ export function MapConfigPanel({
         </section>
       </div>
 
-      <footer class="map-config-panel__footer">
-        <button
-          type="button"
-          class="map-config-panel__btn map-config-panel__btn--reset"
-          onClick={handleReset}
-        >
-          Reset all
-        </button>
-        <button
-          type="button"
-          class="map-config-panel__btn map-config-panel__btn--apply"
-          onClick={handleApply}
-          disabled={!canApply}
-        >
-          Show results
-        </button>
-      </footer>
+      <FilterActions
+        onReset={handleReset}
+        onApply={handleApply}
+        applyDisabled={!canApply}
+      />
     </aside>
   );
 }
@@ -198,7 +181,7 @@ function AxisSelect({
     <div class="map-config-panel__axis">
       {/* Icon sits outside the <label> so it stays out of the field's
           accessible name (it's decorative). */}
-      <span class="map-config-panel__axis-label">
+      <span class="map-config-panel__axis-label lg-label">
         <span class="map-config-panel__axis-icon" aria-hidden="true">
           {icon}
         </span>
