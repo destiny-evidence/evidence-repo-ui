@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/preact";
+import { render, screen, fireEvent, within } from "@testing-library/preact";
 import { VisualisePage } from "@/pages/VisualisePage";
 import { makeCommunity } from "../fixtures";
 import type { EvidenceMapAxes, ReferenceCrossFacetResult } from "@/types/models";
@@ -198,7 +198,7 @@ describe("VisualisePage map", () => {
     );
   });
 
-  test("shows only the no-results banner when over-filtered", () => {
+  test("over-filtered: warns with an inline Reset all and still renders the greyed grid", () => {
     mockUseVocabulary.mockReturnValue({
       labels: LABELS,
       broader: null,
@@ -214,11 +214,24 @@ describe("VisualisePage map", () => {
     });
     const { container } = render(<VisualisePage />);
     expect(screen.getByText(/No results match the current filters/i)).toBeInTheDocument();
-    // The banner carries no inline reset CTA, and no grid renders — even with
-    // schemes available. (The configure panel's own "Reset all" is separate.)
-    const banner = container.querySelector(".evidence-map-view__banner");
-    expect(banner?.querySelector("button")).toBeNull();
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    // The greyed-out grid still renders so the chosen axes stay visible, with a 0 total.
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "Science" }),
+    ).toBeInTheDocument();
+    expect(container.querySelector(".evidence-map.is-dimmed")).not.toBeNull();
+
+    // The banner carries an inline "Reset all" (distinct from the panel's own).
+    const banner = container.querySelector<HTMLElement>(
+      ".evidence-map-view__banner",
+    )!;
+    const reset = within(banner).getByRole("button", { name: "Reset all" });
+    mockNavigate.mockClear();
+    fireEvent.click(reset);
+    // One click clears filters and restores the default axes.
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
+    );
   });
 
   test("distinguishes 'no map coverage' (results exist but none on both axes) from over-filtered", () => {

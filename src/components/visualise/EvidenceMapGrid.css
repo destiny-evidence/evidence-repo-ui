@@ -13,8 +13,10 @@
   min-height: 0;
 }
 
-/* Dim while a new result is loading (the prior grid stays up). */
-.evidence-map.is-updating {
+/* Dim while a new result is loading (the prior grid stays up), and in the
+   over-filtered state (the axes stay visible but nothing matches). */
+.evidence-map.is-updating,
+.evidence-map.is-dimmed {
   opacity: 0.5;
   transition: opacity 0.1s;
 }

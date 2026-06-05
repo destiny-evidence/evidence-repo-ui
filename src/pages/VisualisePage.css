@@ -143,3 +143,22 @@
 .evidence-map-view__banner-text {
   font-size: var(--font-size-small);
 }
+
+/* Inline shortcut, pushed to the banner's trailing edge. */
+.evidence-map-view__banner-reset {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.evidence-map-view__banner-reset:hover {
+  color: var(--color-accent-hover);
+}
