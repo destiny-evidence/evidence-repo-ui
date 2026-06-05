@@ -136,6 +136,20 @@ export function bubbleRadius(
   return Math.max(minRadius, minRadius + (maxRadius - minRadius) * fraction);
 }
 
+const compactFormatter = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+});
+
+/**
+ * Compact bubble label (e.g. 1.2K, 12K, 1M) so a count's width stays bounded as
+ * the magnitude grows — otherwise a 5-digit number needs a near-maximum bubble
+ * just to fit, and size stops reading as scale. Counts below 1000 render as-is;
+ * the exact value lives in the tooltip and the table.
+ */
+export function formatCompact(count: number): string {
+  return compactFormatter.format(count);
+}
+
 /**
  * Legend ticks for the square-root ramp: the floor (1), the maximum, and the
  * count whose bubble sits visually halfway between them (where √count is the

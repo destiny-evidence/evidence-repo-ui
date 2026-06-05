@@ -1,5 +1,6 @@
 import {
   bubbleRadius,
+  formatCompact,
   legendTicks,
   type AxisCategory,
 } from "@/services/evidenceMap";
@@ -7,11 +8,17 @@ import { Tooltip } from "../common/Tooltip";
 import type { MapView } from "./ViewToggle";
 import "./EvidenceMapGrid.css";
 
-// Bubble sizing (px). The floor leaves padding around a single-digit count
-// inside the dot; the max sits within the cell's 64px row. Raising the floor
-// trades some size range for legibility.
+// Bubble sizing (px). The floor fits a single-digit label; wider labels grow to
+// fit on their own (labelFitRadius). The max sits within the cell's 64px row.
 const BUBBLE_MAX_RADIUS = 22;
-const BUBBLE_MIN_RADIUS = 11;
+const BUBBLE_MIN_RADIUS = 9;
+
+// Smallest radius whose circle clears the label's text without clipping the
+// corners (half the text's diagonal, plus a little padding). ~6px per character
+// tracks the 10px tabular .evidence-map__bubble-count — keep them in sync.
+function labelFitRadius(label: string): number {
+  return Math.hypot(label.length * 6, 10) / 2 + 2;
+}
 
 interface EvidenceMapGridProps {
   rows: AxisCategory[];
@@ -138,16 +145,21 @@ interface CellProps {
 }
 
 function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
+  const label = formatCompact(count);
   // Bubble radius drives the tooltip/tail anchor (--evidence-map-dot): the dot
   // is centred in the cell, so the tail points at it rather than the cell edge.
+  // Floored at whatever the label needs, so a wide count never clips its text.
   const radius =
     view === "bubble" && !empty
-      ? bubbleRadius(count, maxCount, BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS)
+      ? Math.max(
+          bubbleRadius(count, maxCount, BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS),
+          labelFitRadius(label),
+        )
       : 0;
 
   const inner =
     view === "bubble" ? (
-      <Bubble radius={radius} count={count} empty={empty} />
+      <Bubble radius={radius} label={label} empty={empty} />
     ) : (
       <span class="evidence-map__count">
         {empty ? "" : count.toLocaleString()}
@@ -170,18 +182,22 @@ function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
       class={`evidence-map__cell${empty ? " is-empty" : ""}`}
       style={{ "--evidence-map-dot": `${radius}px` }}
     >
-      {view === "bubble" ? <Tooltip text={tooltip}>{content}</Tooltip> : content}
+      {view === "bubble" ? (
+        <Tooltip text={tooltip}>{content}</Tooltip>
+      ) : (
+        content
+      )}
     </td>
   );
 }
 
 function Bubble({
   radius,
-  count,
+  label,
   empty,
 }: {
   radius: number;
-  count: number;
+  label: string;
   empty: boolean;
 }) {
   if (empty) {
@@ -193,7 +209,7 @@ function Bubble({
       class="evidence-map__bubble"
       style={{ width: `${diameter}px`, height: `${diameter}px` }}
     >
-      <span class="evidence-map__bubble-count">{count.toLocaleString()}</span>
+      <span class="evidence-map__bubble-count">{label}</span>
     </span>
   );
 }

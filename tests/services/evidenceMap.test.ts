@@ -3,6 +3,7 @@ import {
   buildEvidenceMapModel,
   resolveMapAxis,
   bubbleRadius,
+  formatCompact,
   legendTicks,
   type AxisCategory,
 } from "@/services/evidenceMap";
@@ -212,6 +213,17 @@ describe("bubbleRadius", () => {
 
   test("shows the only value at full size when every count is 1", () => {
     expect(bubbleRadius(1, 1, 4, 22)).toBe(22);
+  });
+});
+
+describe("formatCompact", () => {
+  test("leaves counts below 1000 untouched and abbreviates larger ones", () => {
+    expect(formatCompact(7)).toBe("7");
+    expect(formatCompact(355)).toBe("355");
+    expect(formatCompact(1234)).toBe("1.2K");
+    expect(formatCompact(12345)).toBe("12K");
+    expect(formatCompact(99999)).toBe("100K");
+    expect(formatCompact(1000000)).toBe("1M");
   });
 });
 
