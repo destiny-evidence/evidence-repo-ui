@@ -244,6 +244,7 @@ function EvidenceMapView({
                 rowAxisLabel={rowAxis.title}
                 columnAxisLabel={columnAxis.title}
                 total={formatTotal(result.total)}
+                updating={loading}
               />
             ) : result.cells.length > 0 ? (
               // Data exists but the vocabulary hasn't supplied categories yet.

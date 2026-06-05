@@ -13,6 +13,12 @@
   min-height: 0;
 }
 
+/* Dim while a new result is loading (the prior grid stays up). */
+.evidence-map.is-updating {
+  opacity: 0.5;
+  transition: opacity 0.1s;
+}
+
 .evidence-map__scroll {
   overflow: auto;
   /* Fills the grid's available height and scrolls internally; with .evidence-map
