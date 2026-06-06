@@ -61,6 +61,12 @@ describe("communities", () => {
     expect(findCommunity("hpv")?.features.findingsAndEstimates).toBe(false);
   });
 
+  it("gates Excel export per community (ESEA on, HPV off until #127)", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("esea")?.features.exportExcel).toBe(true);
+    expect(findCommunity("hpv")?.features.exportExcel).toBe(false);
+  });
+
   it("excludes exactly the 5 HPV geo schemes from card pills, none for ESEA", async () => {
     const { findCommunity } = await import("@/services/communities");
     expect(findCommunity("esea")?.pillExcludedSchemes).toEqual([]);

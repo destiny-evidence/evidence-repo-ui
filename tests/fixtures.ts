@@ -56,7 +56,7 @@ export function makeCommunity(
     contextUrl: "https://vocab.example/ctx",
     filterExcludedSchemes: [],
     pillExcludedSchemes: [],
-    features: { evidenceMap: false, findingsAndEstimates: true, ...features },
+    features: { evidenceMap: false, findingsAndEstimates: true, exportExcel: true, ...features },
     copy: {
       searchPlaceholder: "Search the evidence",
       drawerTitle: "Refine the evidence",

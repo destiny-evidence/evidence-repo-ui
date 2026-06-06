@@ -356,7 +356,7 @@ function SearchPageInner({ community }: { community: Community }) {
                     {exportAnnouncement}
                   </span>
                 )}
-                {results.results && (
+                {results.results && community.features.exportExcel && (
                   <ExportButton
                     disabled={exportDisabled}
                     status={exportJob.status}

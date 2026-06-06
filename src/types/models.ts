@@ -3,6 +3,8 @@ export interface CommunityFeatures {
   evidenceMap: boolean;
   // ESEA studies carry findings/estimates (the stat-badges); HPV references don't.
   findingsAndEstimates: boolean;
+  // HPV export runs the Education-shaped pipeline today; hide it until #127.
+  exportExcel: boolean;
 }
 
 // One axis of the evidence map.

@@ -18,6 +18,7 @@ function requireEnv(name: string, value: string | undefined): string {
 export const DEFAULT_FEATURES: CommunityFeatures = {
   evidenceMap: false,
   findingsAndEstimates: true,
+  exportExcel: true,
 };
 
 // HPV geo ConceptSchemes dropped from result-card pills (#125): they swamp the
@@ -103,7 +104,12 @@ const COMMUNITIES: Community[] = [
     ),
     filterExcludedSchemes: [],
     pillExcludedSchemes: HPV_GEO_SCHEMES,
-    features: { ...DEFAULT_FEATURES, evidenceMap: true, findingsAndEstimates: false },
+    features: {
+      ...DEFAULT_FEATURES,
+      evidenceMap: true,
+      findingsAndEstimates: false,
+      exportExcel: false,
+    },
     copy: buildCopy("HPV Vaccine Delivery", {
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",

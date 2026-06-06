@@ -555,6 +555,18 @@ describe("SearchPage", () => {
       });
     });
 
+    test("export button hidden on /hpv until HPV Excel export (#127) lands", async () => {
+      history.replaceState(null, "", "/hpv");
+      mockBoth({ results: makeResult(6, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() =>
+        expect(screen.getByText("Title r1")).toBeInTheDocument(),
+      );
+      expect(
+        screen.queryByRole("button", { name: /export to excel/i }),
+      ).toBeNull();
+    });
+
     test("enabled in year-only URL; click POSTs with q=* and the year filter", async () => {
       history.replaceState(null, "", "/esea?start_year=2020");
       mockBoth({ results: makeResult(120, ["r1"]) });
