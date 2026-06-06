@@ -19,6 +19,7 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   evidenceMap: false,
   findingsAndEstimates: true,
   exportExcel: true,
+  countryFacetFilter: true,
 };
 
 // HPV geo ConceptSchemes dropped from result-card pills (#125): they swamp the
@@ -109,6 +110,7 @@ const COMMUNITIES: Community[] = [
       evidenceMap: true,
       findingsAndEstimates: false,
       exportExcel: false,
+      countryFacetFilter: false,
     },
     copy: buildCopy("HPV Vaccine Delivery", {
       countNoun: "references",

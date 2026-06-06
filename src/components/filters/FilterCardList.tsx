@@ -12,6 +12,8 @@ import "./FilterCardList.css";
 interface FilterCardListProps {
   draft: FilterDraft;
   countNoun?: string;
+  // Show the facet-backed country card; off where the `countries` facet is empty (HPV).
+  showCountryFacetFilter?: boolean;
 }
 
 /**
@@ -22,6 +24,7 @@ interface FilterCardListProps {
 export function FilterCardList({
   draft,
   countNoun = "results",
+  showCountryFacetFilter = true,
 }: FilterCardListProps) {
   return (
     <>
@@ -37,19 +40,21 @@ export function FilterCardList({
       >
         <YearRangeFilter state={draft.yearDraft} onChange={draft.setYearDraft} />
       </FilterCard>
-      <FilterCard
-        title="Country"
-        summary={countrySummary(draft.countryDraft)}
-        defaultExpanded
-      >
-        <CountryFilter
-          state={draft.countryDraft}
-          counts={draft.facetCounts?.countries ?? null}
-          countsLoading={draft.facetCountsLoading}
-          countNoun={countNoun}
-          onChange={draft.setCountryDraft}
-        />
-      </FilterCard>
+      {showCountryFacetFilter && (
+        <FilterCard
+          title="Country"
+          summary={countrySummary(draft.countryDraft)}
+          defaultExpanded
+        >
+          <CountryFilter
+            state={draft.countryDraft}
+            counts={draft.facetCounts?.countries ?? null}
+            countsLoading={draft.facetCountsLoading}
+            countNoun={countNoun}
+            onChange={draft.setCountryDraft}
+          />
+        </FilterCard>
+      )}
       {draft.schemes.map((scheme) => {
         const state = draft.conceptStateFor(scheme);
         return (

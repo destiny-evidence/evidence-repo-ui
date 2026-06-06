@@ -5,6 +5,8 @@ export interface CommunityFeatures {
   findingsAndEstimates: boolean;
   // HPV export runs the Education-shaped pipeline today; hide it until #127.
   exportExcel: boolean;
+  // Polished country filter fed by the `countries` search facet; off for HPV until that facet fills.
+  countryFacetFilter: boolean;
 }
 
 // One axis of the evidence map.

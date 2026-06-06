@@ -430,6 +430,7 @@ function SearchPageInner({ community }: { community: Community }) {
           open={drawerOpen}
           title={community.copy.drawerTitle}
           countNoun={community.copy.countNoun}
+          showCountryFacetFilter={community.features.countryFacetFilter}
           schemes={filterableSchemes}
           appliedConceptFilters={params.conceptFilters}
           appliedCountryCodes={params.countryCodes}

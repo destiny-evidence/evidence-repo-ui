@@ -67,6 +67,12 @@ describe("communities", () => {
     expect(findCommunity("hpv")?.features.exportExcel).toBe(false);
   });
 
+  it("gates the facet-backed country filter per community (ESEA on, HPV off)", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("esea")?.features.countryFacetFilter).toBe(true);
+    expect(findCommunity("hpv")?.features.countryFacetFilter).toBe(false);
+  });
+
   it("excludes exactly the 5 HPV geo schemes from card pills, none for ESEA", async () => {
     const { findCommunity } = await import("@/services/communities");
     expect(findCommunity("esea")?.pillExcludedSchemes).toEqual([]);
