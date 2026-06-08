@@ -4,6 +4,7 @@ import {
   legendTicks,
   type AxisCategory,
 } from "@/services/evidenceMap";
+import { useState } from "preact/hooks";
 import { Tooltip } from "../common/Tooltip";
 import type { MapView } from "./ViewToggle";
 import "./EvidenceMapGrid.css";
@@ -47,10 +48,19 @@ export function EvidenceMapGrid({
   total,
   onCellClick,
 }: EvidenceMapGridProps) {
+  // Track the hovered cell so we can highlight its full row and column — a
+  // clear crosshair when the grid grows past a screenful.
+  const [hover, setHover] = useState<{ row: string; column: string } | null>(
+    null,
+  );
+
   return (
     <div class="evidence-map">
       <div class="evidence-map__scroll">
-        <table class={`evidence-map__table evidence-map__table--${view}`}>
+        <table
+          class={`evidence-map__table evidence-map__table--${view}`}
+          onMouseLeave={() => setHover(null)}
+        >
           <thead>
             <tr>
               <th class="evidence-map__corner" scope="col">
@@ -84,7 +94,11 @@ export function EvidenceMapGrid({
                 </span>
               </th>
               {columns.map((column) => (
-                <th key={column.key} class="evidence-map__col-head" scope="col">
+                <th
+                  key={column.key}
+                  class={`evidence-map__col-head${hover?.column === column.key ? " is-active" : ""}`}
+                  scope="col"
+                >
                   <span class="evidence-map__col-head-label">
                     {column.label}
                   </span>
@@ -95,7 +109,10 @@ export function EvidenceMapGrid({
           <tbody>
             {rows.map((row) => (
               <tr key={row.key}>
-                <th class="evidence-map__row-head" scope="row">
+                <th
+                  class={`evidence-map__row-head${hover?.row === row.key ? " is-active" : ""}`}
+                  scope="row"
+                >
                   {row.label}
                 </th>
                 {columns.map((column) => {
@@ -109,6 +126,11 @@ export function EvidenceMapGrid({
                       maxCount={maxCount}
                       view={view}
                       tooltip={cellTooltip(count, countNoun)}
+                      rowActive={hover?.row === row.key}
+                      columnActive={hover?.column === column.key}
+                      onHover={() =>
+                        setHover({ row: row.key, column: column.key })
+                      }
                       onClick={
                         onCellClick && !empty
                           ? () => onCellClick(row, column)
@@ -135,10 +157,23 @@ interface CellProps {
   maxCount: number;
   view: MapView;
   tooltip: string;
+  rowActive: boolean;
+  columnActive: boolean;
+  onHover: () => void;
   onClick?: () => void;
 }
 
-function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
+function Cell({
+  empty,
+  count,
+  maxCount,
+  view,
+  tooltip,
+  rowActive,
+  columnActive,
+  onHover,
+  onClick,
+}: CellProps) {
   // Bubble radius drives the tooltip/tail anchor (--evidence-map-dot): the dot
   // is centred in the cell, so the tail points at it rather than the cell edge.
   const radius =
@@ -166,10 +201,15 @@ function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
   // No tooltip on the table view yet — the count is already shown in the cell.
   // It returns once cells carry a second value beyond the count; the `tooltip`
   // prop stays wired so that's a one-line change to the condition below.
+  const activeClass = `${rowActive ? " is-row-active" : ""}${
+    columnActive ? " is-col-active" : ""
+  }`;
+
   return (
     <td
-      class={`evidence-map__cell${empty ? " is-empty" : ""}`}
+      class={`evidence-map__cell${empty ? " is-empty" : ""}${activeClass}`}
       style={{ "--evidence-map-dot": `${radius}px` }}
+      onMouseEnter={onHover}
     >
       {view === "bubble" ? (
         <Tooltip text={tooltip}>{content}</Tooltip>

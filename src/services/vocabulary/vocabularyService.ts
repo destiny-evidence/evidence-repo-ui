@@ -106,8 +106,8 @@ interface RawScheme {
  * SKOS allows polyhierarchy; `broader` keeps only the first parent and the
  * scheme tree mirrors that single-parent view.
  *
- * All `@id`s are expanded to full IRIs via the document's own `@context` prefix
- * map. The published vocabulary mints concept IDs as absolute IRIs but writes
+ * All `@id`s are expanded to full URIs via the document's own `@context` prefix
+ * map. The published vocabulary mints concept IDs as absolute URIs but writes
  * scheme IDs as compact CURIEs (`esea:…`); expanding here normalizes both so a
  * scheme's `uri` matches the form the cross-facets endpoint and concept URIs use.
  * Falls back to the raw value when no prefix matches (e.g. no `@context`).
@@ -148,7 +148,9 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
       rawSchemes.push({
         uri: id,
         label,
-        topConceptUris: extractAllRefIds(entry["skos:hasTopConcept"]).map(expand),
+        topConceptUris: extractAllRefIds(entry["skos:hasTopConcept"]).map(
+          expand,
+        ),
       });
     }
   }
