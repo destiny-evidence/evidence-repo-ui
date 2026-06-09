@@ -8,6 +8,7 @@ import {
   formatCompact,
   legendTicks,
   cellSearchParams,
+  axisSearchParams,
   backToVisualiseState,
   backToVisualiseUrl,
   type AxisCategory,
@@ -133,7 +134,7 @@ describe("buildEvidenceMapModel", () => {
 });
 
 describe("resolveMapAxis", () => {
-  // Scheme URIs are normalized to full IRIs when the vocabulary is parsed.
+  // Scheme URIs are normalized to full URIs when the vocabulary is parsed.
   const scheme: ConceptScheme = {
     uri: "https://vocab.esea.education/OutcomeScheme",
     label: "Outcome Scheme",
@@ -160,7 +161,10 @@ describe("resolveMapAxis", () => {
 
   test("titles a scheme axis from its label and lists its concepts (flattened)", () => {
     const axis = resolveMapAxis(
-      { kind: "scheme", schemeUri: "https://vocab.esea.education/OutcomeScheme" },
+      {
+        kind: "scheme",
+        schemeUri: "https://vocab.esea.education/OutcomeScheme",
+      },
       [scheme],
       labels,
     );
@@ -172,14 +176,17 @@ describe("resolveMapAxis", () => {
       "Enrolment",
       "Learning",
     ]);
-    expect(
-      axis.labelFor("https://vocab.esea.education/OutcomeScheme/C1"),
-    ).toBe("Access to Education");
+    expect(axis.labelFor("https://vocab.esea.education/OutcomeScheme/C1")).toBe(
+      "Access to Education",
+    );
   });
 
   test("falls back to the local name and no categories when the scheme is absent", () => {
     const axis = resolveMapAxis(
-      { kind: "scheme", schemeUri: "https://vocab.esea.education/MysteryScheme" },
+      {
+        kind: "scheme",
+        schemeUri: "https://vocab.esea.education/MysteryScheme",
+      },
       [scheme],
       labels,
     );
@@ -341,6 +348,21 @@ describe("cellSearchParams", () => {
     expect(next.conceptFilters).toEqual([["scheme-a:x"], ["theme:literacy"]]);
   });
 
+  test("a countries axis appends a new code to the existing filter", () => {
+    const axes: EvidenceMapAxes = {
+      row: { kind: "scheme", schemeUri: "scheme:level" },
+      column: { kind: "countries" },
+    };
+    const next = cellSearchParams(
+      base,
+      axes,
+      { key: "level:primary", label: "Primary" },
+      { key: "DE", label: "Germany" },
+    );
+    // DE is new — added alongside the already-applied FR.
+    expect(next.countryCodes).toEqual(["FR", "DE"]);
+  });
+
   test("does not mutate the base params", () => {
     const axes: EvidenceMapAxes = {
       row: { kind: "scheme", schemeUri: "scheme:level" },
@@ -354,6 +376,55 @@ describe("cellSearchParams", () => {
     );
     expect(base.conceptFilters).toEqual([["scheme-a:x"]]);
     expect(base.countryCodes).toEqual(["FR"]);
+  });
+});
+
+describe("axisSearchParams", () => {
+  const base: SearchParams = {
+    q: "literacy",
+    page: 3,
+    startYear: 2010,
+    endYear: undefined,
+    sort: "newest",
+    conceptFilters: [["scheme-a:x"]],
+    countryCodes: ["FR"],
+  };
+
+  test("a scheme axis adds a single-concept group and resets page", () => {
+    const next = axisSearchParams(
+      base,
+      { kind: "scheme", schemeUri: "scheme:level" },
+      { key: "level:primary", label: "Primary" },
+    );
+    expect(next.conceptFilters).toEqual([["scheme-a:x"], ["level:primary"]]);
+    expect(next.countryCodes).toEqual(["FR"]);
+    expect(next.page).toBe(1);
+    expect(next.q).toBe("literacy");
+  });
+
+  test("a countries axis appends a new, de-duplicated country code", () => {
+    const added = axisSearchParams(
+      base,
+      { kind: "countries" },
+      { key: "DE", label: "Germany" },
+    );
+    expect(added.countryCodes).toEqual(["FR", "DE"]);
+
+    const dupe = axisSearchParams(
+      base,
+      { kind: "countries" },
+      { key: "FR", label: "France" },
+    );
+    expect(dupe.countryCodes).toEqual(["FR"]);
+  });
+
+  test("does not mutate the base params", () => {
+    axisSearchParams(
+      base,
+      { kind: "scheme", schemeUri: "scheme:level" },
+      { key: "level:primary", label: "Primary" },
+    );
+    expect(base.conceptFilters).toEqual([["scheme-a:x"]]);
   });
 });
 

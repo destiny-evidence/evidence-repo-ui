@@ -10,8 +10,8 @@ import { URL_CHANGE_EVENT } from "./services/navigation";
 
 // preact-router intercepts internal <a href="/..."> clicks and updates the
 // URL via history.pushState without firing popstate or our URL_CHANGE_EVENT.
-// Bridging Router onChange into URL_CHANGE_EVENT keeps subscribers
-// (CommunityProvider, useUrlParams) in sync with router-driven navigation.
+// Bridging Router onChange into URL_CHANGE_EVENT keeps our URL subscribers
+// in sync with router-driven navigation.
 function emitUrlChange() {
   window.dispatchEvent(new Event(URL_CHANGE_EVENT));
 }

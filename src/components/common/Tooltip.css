@@ -10,6 +10,16 @@
  *   so it fits inside the available space (see ConceptSchemeFilter.css).
  */
 
+/* Bubble appearance, shared with bespoke tooltips that can't reuse the pseudo
+   (e.g. the evidence map's fixed-positioned header tooltip). */
+:root {
+  --tooltip-bg: #161b22;
+  --tooltip-color: #fff;
+  --tooltip-padding: 12px 14px;
+  --tooltip-line-height: 1.4;
+  --tooltip-max-width: 280px;
+}
+
 .tooltip {
   position: relative;
   display: inline-flex;
@@ -23,15 +33,15 @@
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: #161b22;
-  color: #fff;
-  padding: 12px 14px;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-color);
+  padding: var(--tooltip-padding);
   border-radius: var(--radius-lg);
   font-size: 14px;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: var(--tooltip-line-height);
   width: max-content;
-  max-width: 280px;
+  max-width: var(--tooltip-max-width);
   /* pre-line honours explicit "\n" in `text` (multi-line tooltips) while still
      wrapping/collapsing other whitespace; single-line tooltips are unaffected. */
   white-space: pre-line;

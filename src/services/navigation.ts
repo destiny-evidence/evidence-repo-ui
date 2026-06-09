@@ -13,7 +13,7 @@ export function navigate(
   } else {
     history.pushState(state, "", url);
   }
-  // Our own subscribers (useUrlParams, CommunityContext) listen for this.
+  // Our own subscribers (hooks and providers that track the URL) listen for this.
   window.dispatchEvent(new Event(URL_CHANGE_EVENT));
   // preact-router only re-evaluates its matched route on popstate (or its own
   // anchor-click / route() navigations) — it ignores manual pushState. Without

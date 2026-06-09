@@ -16,6 +16,7 @@ import {
   parseAxis,
   resolveMapAxis,
   cellSearchParams,
+  axisSearchParams,
   backToVisualiseState,
   type AxisCategory,
 } from "@/services/evidenceMap";
@@ -54,6 +55,15 @@ function formatTotal(total: SearchResultTotal): string {
 function toCrossFacetAxis(axis: EvidenceMapAxis): CrossFacetAxis {
   return axis.kind === "countries"
     ? { kind: "literal", token: AXIS_COUNTRIES }
+    : { kind: "scheme", schemeUri: axis.schemeUri };
+}
+
+// Inverse of toCrossFacetAxis — recover the config axis from the pair the hook
+// reports a result was fetched for. (This page only ever produces the COUNTRIES
+// literal, so every literal maps back to a countries axis.)
+function fromCrossFacetAxis(axis: CrossFacetAxis): EvidenceMapAxis {
+  return axis.kind === "literal"
+    ? { kind: "countries" }
     : { kind: "scheme", schemeUri: axis.schemeUri };
 }
 
@@ -124,17 +134,6 @@ function EvidenceMapView({
     [vocab.schemes, community.filterExcludedSchemes],
   );
 
-  // Header title + per-value label fn per axis — derived from the vocabulary the
-  // same way the filter panel names schemes (and via Intl for a country axis).
-  const rowAxis = useMemo(
-    () => resolveMapAxis(axes.row, vocab.schemes, vocab.labels),
-    [axes.row, vocab.schemes, vocab.labels],
-  );
-  const columnAxis = useMemo(
-    () => resolveMapAxis(axes.column, vocab.schemes, vocab.labels),
-    [axes.column, vocab.schemes, vocab.labels],
-  );
-
   const axisPair = useMemo<CrossFacetAxisPair>(
     () => ({
       row: toCrossFacetAxis(axes.row),
@@ -143,8 +142,35 @@ function EvidenceMapView({
     [axes],
   );
 
-  const { result, loading, error } = useCrossFacets(params, axisPair);
+  const { result, resultAxes, loading, error } = useCrossFacets(params, axisPair);
   const [view, setView] = useState<MapView>("bubble");
+
+  // Resolve labels against the axes `result` was fetched for, not the URL's:
+  // during an axis change the URL (and `axes`) flips immediately but `result`
+  // still holds the previous axes' cells, so pairing those cells with the new
+  // axes' label functions would briefly render raw URIs. Falls back to the URL
+  // axes before the first result lands.
+  const displayAxes = useMemo<EvidenceMapAxes>(
+    () =>
+      resultAxes
+        ? {
+            row: fromCrossFacetAxis(resultAxes.row),
+            column: fromCrossFacetAxis(resultAxes.column),
+          }
+        : axes,
+    [resultAxes, axes],
+  );
+
+  // Header title + per-value label fn per axis — derived from the vocabulary the
+  // same way the filter panel names schemes (and via Intl for a country axis).
+  const rowAxis = useMemo(
+    () => resolveMapAxis(displayAxes.row, vocab.schemes, vocab.labels),
+    [displayAxes.row, vocab.schemes, vocab.labels],
+  );
+  const columnAxis = useMemo(
+    () => resolveMapAxis(displayAxes.column, vocab.schemes, vocab.labels),
+    [displayAxes.column, vocab.schemes, vocab.labels],
+  );
 
   // Flag the docked configure panel on <body> so the global Feedback button can
   // inset itself out from under it (CSS handles the responsive un-inset). The
@@ -197,7 +223,22 @@ function EvidenceMapView({
   // column applied as filters. Stash the map's own URL in history.state so the
   // search page can offer a "Back to Visualise" link to exactly this view.
   function handleCellClick(row: AxisCategory, column: AxisCategory) {
-    const next = cellSearchParams(params, axes, row, column);
+    deepLinkToSearch(cellSearchParams(params, axes, row, column));
+  }
+
+  // Same deep-link, but filtered by a single axis category (a row/column header
+  // click) rather than both.
+  function handleRowClick(row: AxisCategory) {
+    deepLinkToSearch(axisSearchParams(params, axes.row, row));
+  }
+
+  function handleColumnClick(column: AxisCategory) {
+    deepLinkToSearch(axisSearchParams(params, axes.column, column));
+  }
+
+  // Navigate into Search with the given params, stashing the map's own URL in
+  // history.state so the search page can offer a "Back to Visualise" link.
+  function deepLinkToSearch(next: SearchParams) {
     const mapUrl = `/${community.slug}/visualise?${canonical}`;
     navigate(buildSearchUrl(community.slug, next), {
       state: backToVisualiseState(mapUrl),
@@ -291,7 +332,23 @@ function EvidenceMapView({
                 columnAxisLabel={columnAxis.title}
                 total={formatTotal(result.total)}
                 updating={loading}
-                onCellClick={handleCellClick}
+                // While refetching, the grid still shows the prior result but
+                // params/axes are already the new ones — a stale-cell click would
+                // mix old keys with new axes. Disable clicks until the fetch lands.
+                onCellClick={loading ? undefined : handleCellClick}
+                // Headers deep-link by a single axis. Disabled while refetching
+                // (stale keys) and in the over-filtered state, where adding a
+                // filter to a 0-result set is pointless.
+                onRowClick={
+                  loading || result.total.count === 0
+                    ? undefined
+                    : handleRowClick
+                }
+                onColumnClick={
+                  loading || result.total.count === 0
+                    ? undefined
+                    : handleColumnClick
+                }
                 dimmed={result.total.count === 0}
               />
             ) : result.cells.length > 0 ? (
