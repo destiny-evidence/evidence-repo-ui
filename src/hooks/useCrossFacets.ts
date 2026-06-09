@@ -33,6 +33,10 @@ export function useCrossFacets(
   axes: CrossFacetAxisPair,
 ): {
   result: ReferenceCrossFacetResult | null;
+  // The axes the current `result` was fetched for. While a refetch is in flight
+  // these stay on the previous axes (with `result`), so a caller resolving cell
+  // values never pairs stale cells with the new axes' label functions.
+  resultAxes: CrossFacetAxisPair | null;
   loading: boolean;
   error: Error | null;
 } {
@@ -43,7 +47,11 @@ export function useCrossFacets(
     community?.slug ?? "",
     community?.defaultAnnotations ?? [],
   );
-  const [result, setResult] = useState<ReferenceCrossFacetResult | null>(null);
+  // result and its axes move together so they can't drift apart mid-fetch.
+  const [data, setData] = useState<{
+    result: ReferenceCrossFacetResult;
+    axes: CrossFacetAxisPair;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -66,12 +74,12 @@ export function useCrossFacets(
       axisPairToParams(axes, toTurtleUrl(community.vocabularyUrl)),
     )
       .then((r) => {
-        if (!cancelled) setResult(r);
+        if (!cancelled) setData({ result: r, axes });
       })
       .catch((e) => {
         if (cancelled) return;
         setError(e);
-        setResult(null);
+        setData(null);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -83,7 +91,13 @@ export function useCrossFacets(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  if (!community) return { result: null, loading: false, error: null };
+  if (!community)
+    return { result: null, resultAxes: null, loading: false, error: null };
 
-  return { result, loading, error };
+  return {
+    result: data?.result ?? null,
+    resultAxes: data?.axes ?? null,
+    loading,
+    error,
+  };
 }

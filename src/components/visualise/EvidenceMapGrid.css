@@ -232,6 +232,20 @@
   background: var(--color-bg-row-alt);
 }
 
+/* ── Row / column hover crosshair ── */
+.evidence-map__cell.is-row-active,
+.evidence-map__cell.is-col-active {
+  background: var(--color-accent-light);
+}
+
+/* Highlight the headers of the hovered row and column so the crosshair reads
+   even when the intersecting cell is scrolled far from its labels. */
+.evidence-map__row-head.is-active,
+.evidence-map__col-head.is-active {
+  background: var(--color-accent-light);
+  color: var(--color-text-primary);
+}
+
 /* The shared tooltip wrapper fills the cell so its content stays centred and
    the bubble anchors to the cell. */
 .evidence-map__cell .tooltip {

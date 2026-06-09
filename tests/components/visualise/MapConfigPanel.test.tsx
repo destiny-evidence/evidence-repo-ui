@@ -153,6 +153,28 @@ describe("MapConfigPanel", () => {
     expect(showResults().disabled).toBe(true);
   });
 
+  test("Reset all restores the community default axes, not the applied axes", () => {
+    // defaults != applied, so the assertion can only pass if handleReset reads
+    // defaultAxes (the base case where the two are equal can't tell them apart).
+    renderPanel({
+      defaultAxes: AXES,
+      appliedAxes: {
+        row: { kind: "countries" },
+        column: { kind: "scheme", schemeUri: OUTCOME_SCHEME_FIXTURE.uri },
+      },
+    });
+    // Hydrated from appliedAxes.
+    expect(rowSelect().value).toBe(AXIS_COUNTRIES);
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
+
+    // Landed on the community defaults, not back on the applied axes.
+    expect(rowSelect().value).toBe(axisToken(AXES.row));
+    expect(columnSelect().value).toBe(axisToken(AXES.column));
+    // Defaults differ from applied, so the reset draft is dirty.
+    expect(showResults().disabled).toBe(false);
+  });
+
   test("hydrates the axis drafts from appliedAxes (independent of defaults)", () => {
     renderPanel({
       appliedAxes: {

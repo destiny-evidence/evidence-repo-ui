@@ -134,7 +134,7 @@ describe("buildEvidenceMapModel", () => {
 });
 
 describe("resolveMapAxis", () => {
-  // Scheme URIs are normalized to full IRIs when the vocabulary is parsed.
+  // Scheme URIs are normalized to full URIs when the vocabulary is parsed.
   const scheme: ConceptScheme = {
     uri: "https://vocab.esea.education/OutcomeScheme",
     label: "Outcome Scheme",
@@ -161,7 +161,10 @@ describe("resolveMapAxis", () => {
 
   test("titles a scheme axis from its label and lists its concepts (flattened)", () => {
     const axis = resolveMapAxis(
-      { kind: "scheme", schemeUri: "https://vocab.esea.education/OutcomeScheme" },
+      {
+        kind: "scheme",
+        schemeUri: "https://vocab.esea.education/OutcomeScheme",
+      },
       [scheme],
       labels,
     );
@@ -173,14 +176,17 @@ describe("resolveMapAxis", () => {
       "Enrolment",
       "Learning",
     ]);
-    expect(
-      axis.labelFor("https://vocab.esea.education/OutcomeScheme/C1"),
-    ).toBe("Access to Education");
+    expect(axis.labelFor("https://vocab.esea.education/OutcomeScheme/C1")).toBe(
+      "Access to Education",
+    );
   });
 
   test("falls back to the local name and no categories when the scheme is absent", () => {
     const axis = resolveMapAxis(
-      { kind: "scheme", schemeUri: "https://vocab.esea.education/MysteryScheme" },
+      {
+        kind: "scheme",
+        schemeUri: "https://vocab.esea.education/MysteryScheme",
+      },
       [scheme],
       labels,
     );
