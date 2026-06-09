@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/preact";
+import { render, screen, fireEvent, within } from "@testing-library/preact";
 import { VisualisePage } from "@/pages/VisualisePage";
 import { makeCommunity } from "../fixtures";
 import type { EvidenceMapAxes, ReferenceCrossFacetResult } from "@/types/models";
@@ -20,6 +20,11 @@ vi.mock("@/community/CommunityContext", () => ({
 vi.mock("@/hooks/useCrossFacets", () => ({ useCrossFacets: mockUseCrossFacets }));
 vi.mock("@/hooks/useVocabulary", () => ({ useVocabulary: mockUseVocabulary }));
 vi.mock("@/hooks/useUrlParams", () => ({ useUrlParams: mockUseUrlParams }));
+// The config panel previews the draft via useSearchFacets; keep it inert so
+// these tests don't fire real facet-count fetches.
+vi.mock("@/hooks/useSearchFacets", () => ({
+  useSearchFacets: vi.fn(() => ({ counts: null, loading: false, error: null })),
+}));
 vi.mock("@/services/navigation", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/navigation")>();
   return { ...actual, navigate: mockNavigate };
@@ -150,6 +155,10 @@ describe("VisualisePage map", () => {
     // Column/row labels resolved via the vocabulary.
     expect(screen.getByRole("columnheader", { name: "Literacy" })).toBeInTheDocument();
     expect(screen.getByRole("rowheader", { name: "Primary" })).toBeInTheDocument();
+    // The "click a cell" hint accompanies a grid with clickable cells.
+    expect(
+      screen.getByText(/click a cell to view matching/i),
+    ).toBeInTheDocument();
   });
 
   test("renders zero-hit rows and columns from the vocabulary", () => {
@@ -176,6 +185,29 @@ describe("VisualisePage map", () => {
     ).toBeInTheDocument();
   });
 
+  test("clicking a cell deep-links into Search with the cell's filters + a back-to-map state", () => {
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(9, [["level:primary", "theme:literacy", 6]]),
+      loading: false,
+      error: null,
+    });
+    const { container } = render(<VisualisePage />);
+    const cellButton = container.querySelector<HTMLButtonElement>(
+      ".evidence-map__cell-button",
+    );
+    expect(cellButton).not.toBeNull();
+    fireEvent.click(cellButton!);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/test?concept=level%3Aprimary&concept=theme%3Aliteracy",
+      {
+        state: {
+          backToVisualise:
+            "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
+        },
+      },
+    );
+  });
+
   test("toggling to the table view shows counts as text", () => {
     mockUseCrossFacets.mockReturnValue({
       result: crossFacetResult(8, [["level:primary", "theme:literacy", 5]]),
@@ -193,7 +225,12 @@ describe("VisualisePage map", () => {
     );
   });
 
-  test("shows only the no-results banner when over-filtered", () => {
+  test("over-filtered: warns with an inline Reset all and still renders the greyed grid", () => {
+    // Distinct from the fixture default so the assertion proves the banner uses
+    // the live countNoun rather than passing by coincidence.
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({ copy: { countNoun: "investigations" } }),
+    );
     mockUseVocabulary.mockReturnValue({
       labels: LABELS,
       broader: null,
@@ -207,13 +244,32 @@ describe("VisualisePage map", () => {
       loading: false,
       error: null,
     });
-    render(<VisualisePage />);
-    expect(screen.getByText(/No results match the current filters/i)).toBeInTheDocument();
-    // No reset CTA and no grid — even with schemes available.
+    const { container } = render(<VisualisePage />);
     expect(
-      screen.queryByRole("button", { name: "Reset all" }),
+      screen.getByText(/No investigations match the current filters/i),
+    ).toBeInTheDocument();
+    // The greyed-out grid still renders so the chosen axes stay visible, with a 0 total.
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "Science" }),
+    ).toBeInTheDocument();
+    expect(container.querySelector(".evidence-map.is-dimmed")).not.toBeNull();
+    // No clickable cells, so no hint.
+    expect(
+      screen.queryByText(/click a cell to view matching/i),
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+
+    // The banner carries an inline "Reset all" (distinct from the panel's own).
+    const banner = container.querySelector<HTMLElement>(
+      ".evidence-map-view__banner",
+    )!;
+    const reset = within(banner).getByRole("button", { name: "Reset all" });
+    mockNavigate.mockClear();
+    fireEvent.click(reset);
+    // One click clears filters and restores the default axes.
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
+    );
   });
 
   test("distinguishes 'no map coverage' (results exist but none on both axes) from over-filtered", () => {
@@ -231,15 +287,17 @@ describe("VisualisePage map", () => {
       loading: false,
       error: null,
     });
-    render(<VisualisePage />);
+    const { container } = render(<VisualisePage />);
     expect(screen.getByText(/none have a value for both/i)).toBeInTheDocument();
     // Not the over-filtered warning — loosening filters wouldn't help.
-    expect(
-      screen.queryByRole("button", { name: "Reset all" }),
-    ).not.toBeInTheDocument();
+    expect(container.querySelector(".evidence-map-view__banner")).toBeNull();
     // The grid still renders (greyed) so the chosen axes stay visible.
     expect(
       screen.getByRole("columnheader", { name: "Science" }),
     ).toBeInTheDocument();
+    // ...but with no clickable cells, so no hint.
+    expect(
+      screen.queryByText(/click a cell to view matching/i),
+    ).not.toBeInTheDocument();
   });
 });

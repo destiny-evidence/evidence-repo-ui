@@ -17,8 +17,10 @@ import type { ComponentProps } from "preact";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { makeSearchParams } from "../../fixtures";
 import {
+  DOCUMENT_TYPE_SCHEME,
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,
+  URI_JOURNAL,
   URI_LEARNING,
 } from "./fixtures";
 
@@ -51,13 +53,6 @@ beforeEach(() => {
     error: null,
   });
 });
-
-const URI_JOURNAL = "https://vocab.esea.education/DocumentTypeScheme/C00008";
-const DOCUMENT_TYPE_SCHEME: ConceptScheme = {
-  uri: "https://vocab.esea.education/DocumentTypeScheme",
-  label: "Document type",
-  topConcepts: [{ uri: URI_JOURNAL, label: "Journal Article" }],
-};
 
 const TWO_SCHEMES: ConceptScheme[] = [
   OUTCOME_SCHEME_FIXTURE,

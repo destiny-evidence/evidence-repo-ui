@@ -1,0 +1,103 @@
+/* Docked full-height to the right of the map region: it stretches to the
+   region (which is the viewport height below the header) and its body scrolls
+   internally, keeping Reset / Show results pinned. The region clips, so the
+   page can't scroll and there's no fixed/sticky element for the header to
+   rubber-band over. */
+.map-config-panel {
+  flex: none;
+  width: var(--map-panel-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-surface);
+  border-left: 1px solid var(--color-border);
+}
+
+/* Below the two-column threshold the panel un-docks and flows under the map. */
+@media (max-width: 960px) {
+  .map-config-panel {
+    width: auto;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+.map-config-panel__header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-inset);
+}
+
+.map-config-panel__heading,
+.map-config-panel__section-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-tertiary);
+}
+
+.map-config-panel__body {
+  flex: 1;
+  /* min-height:0 lets this flex child shrink below its content so it scrolls
+     within the fixed-height panel, keeping the footer (Reset / Show results)
+     pinned and visible rather than pushed off the bottom. */
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-config-panel__axes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.map-config-panel__axis {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.map-config-panel__section {
+  border-top: 1px solid var(--color-border);
+}
+
+.map-config-panel__section-title {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-inset);
+}
+
+/* Composes .lg-label (mono caps), like the map's corner axis key; this rule
+   only adds the icon + label row layout. */
+.map-config-panel__axis-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-config-panel__axis-icon {
+  font-weight: 700;
+}
+
+.map-config-panel__axis-select {
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) 10px;
+  cursor: pointer;
+}
+
+.map-config-panel__axis-select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* Footer (Reset all / Show results) is the shared FilterActions component. */
