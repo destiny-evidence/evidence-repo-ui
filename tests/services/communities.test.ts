@@ -50,7 +50,7 @@ describe("communities", () => {
     expect(hpv?.codingInstitution).toBeUndefined();
   });
 
-  it("opts every feature out by default, leaving communities to enable them", async () => {
+  it("opts evidence-map out by default, leaving communities to enable it", async () => {
     const { DEFAULT_FEATURES } = await import("@/services/communities");
     expect(DEFAULT_FEATURES.evidenceMap).toBe(false);
   });
