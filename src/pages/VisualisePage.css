@@ -80,6 +80,16 @@
 /* Below the threshold the panel un-docks and stacks under the map; natural
    heights, the page scrolls normally, and the Feedback button stays home. */
 @media (max-width: 960px) {
+  /* Drop the full-bleed breakout: in stacked flow the page scrolls, so a
+     vertical scrollbar appears and 100vw (which counts the scrollbar) overhangs
+     by ~half its width each side. app-main's width ≈ the viewport here anyway. */
+  .visualise-page,
+  .evidence-map-view {
+    width: 100%;
+    left: auto;
+    right: auto;
+    margin-inline: 0;
+  }
   .evidence-map-view {
     display: block;
     height: auto;

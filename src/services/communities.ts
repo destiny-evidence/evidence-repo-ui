@@ -15,7 +15,7 @@ function requireEnv(name: string, value: string | undefined): string {
   return value;
 }
 
-const DEFAULT_FEATURES: CommunityFeatures = {
+export const DEFAULT_FEATURES: CommunityFeatures = {
   evidenceMap: false,
 };
 

@@ -53,6 +53,15 @@ function toCrossFacetAxis(axis: EvidenceMapAxis): CrossFacetAxis {
     : { kind: "scheme", schemeUri: axis.schemeUri };
 }
 
+// Inverse of toCrossFacetAxis — recover the config axis from the pair the hook
+// reports a result was fetched for. (This page only ever produces the COUNTRIES
+// literal, so every literal maps back to a countries axis.)
+function fromCrossFacetAxis(axis: CrossFacetAxis): EvidenceMapAxis {
+  return axis.kind === "literal"
+    ? { kind: "countries" }
+    : { kind: "scheme", schemeUri: axis.schemeUri };
+}
+
 // The map's axes come from the URL when present (so a link reproduces the view),
 // otherwise the community defaults.
 function resolveAxes(search: string, defaults: EvidenceMapAxes): EvidenceMapAxes {
@@ -120,17 +129,6 @@ function EvidenceMapView({
     [vocab.schemes, community.filterExcludedSchemes],
   );
 
-  // Header title + per-value label fn per axis — derived from the vocabulary the
-  // same way the filter panel names schemes (and via Intl for a country axis).
-  const rowAxis = useMemo(
-    () => resolveMapAxis(axes.row, vocab.schemes, vocab.labels),
-    [axes.row, vocab.schemes, vocab.labels],
-  );
-  const columnAxis = useMemo(
-    () => resolveMapAxis(axes.column, vocab.schemes, vocab.labels),
-    [axes.column, vocab.schemes, vocab.labels],
-  );
-
   const axisPair = useMemo<CrossFacetAxisPair>(
     () => ({
       row: toCrossFacetAxis(axes.row),
@@ -139,8 +137,35 @@ function EvidenceMapView({
     [axes],
   );
 
-  const { result, loading, error } = useCrossFacets(params, axisPair);
+  const { result, resultAxes, loading, error } = useCrossFacets(params, axisPair);
   const [view, setView] = useState<MapView>("bubble");
+
+  // Resolve labels against the axes `result` was fetched for, not the URL's:
+  // during an axis change the URL (and `axes`) flips immediately but `result`
+  // still holds the previous axes' cells, so pairing those cells with the new
+  // axes' label functions would briefly render raw URIs. Falls back to the URL
+  // axes before the first result lands.
+  const displayAxes = useMemo<EvidenceMapAxes>(
+    () =>
+      resultAxes
+        ? {
+            row: fromCrossFacetAxis(resultAxes.row),
+            column: fromCrossFacetAxis(resultAxes.column),
+          }
+        : axes,
+    [resultAxes, axes],
+  );
+
+  // Header title + per-value label fn per axis — derived from the vocabulary the
+  // same way the filter panel names schemes (and via Intl for a country axis).
+  const rowAxis = useMemo(
+    () => resolveMapAxis(displayAxes.row, vocab.schemes, vocab.labels),
+    [displayAxes.row, vocab.schemes, vocab.labels],
+  );
+  const columnAxis = useMemo(
+    () => resolveMapAxis(displayAxes.column, vocab.schemes, vocab.labels),
+    [displayAxes.column, vocab.schemes, vocab.labels],
+  );
 
   // Flag the docked configure panel on <body> so the global Feedback button can
   // inset itself out from under it (CSS handles the responsive un-inset). The
