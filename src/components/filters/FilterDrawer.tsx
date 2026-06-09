@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "preact/hooks";
+import { Drawer } from "@/components/common/Drawer";
 import { FilterCardList } from "./FilterCardList";
 import { FilterActions } from "./FilterActions";
 import { useFilterDraft, type AppliedFilters } from "./useFilterDraft";
@@ -52,36 +52,6 @@ function FilterDrawerPanel({
     appliedEndYear,
     params,
   });
-  const panelRef = useRef<HTMLElement>(null);
-  const previousFocusRef = useRef<Element | null>(document.activeElement);
-  const titleId = useId();
-
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, []);
-
-  useEffect(() => {
-    panelRef.current?.focus();
-    return () => {
-      const target = previousFocusRef.current;
-      if (target instanceof HTMLElement) target.focus();
-    };
-  }, []);
-
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onCancel();
-      }
-    }
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onCancel]);
 
   function handleApply() {
     const applied = draft.buildApplied();
@@ -89,45 +59,37 @@ function FilterDrawerPanel({
   }
 
   return (
-    <div class="filter-drawer" role="presentation">
-      <div class="filter-drawer__backdrop" aria-hidden="true" />
-      <aside
-        ref={panelRef}
-        class="filter-drawer__panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-      >
-        <header class="filter-drawer__header">
-          <div class="filter-drawer__heading">
-            <h2 id={titleId} class="filter-drawer__title">
-              {title}
-            </h2>
-            {/* "*" is the browse-mode sentinel — don't echo it as a query. */}
-            {params.q !== "" && params.q !== "*" && (
-              <p class="filter-drawer__subtitle">Searching for “{params.q}”</p>
-            )}
-          </div>
-          <button
-            type="button"
-            class="filter-actions__btn filter-actions__btn--reset"
-            onClick={onCancel}
-          >
-            Cancel
-          </button>
-        </header>
-
-        <div class="filter-drawer__body">
-          <FilterCardList draft={draft} countNoun={countNoun} />
-        </div>
-
+    <Drawer
+      open
+      block="filter-drawer"
+      title={title}
+      // "*" is the browse-mode sentinel — don't echo it as a query.
+      subtitle={
+        params.q !== "" && params.q !== "*" ? (
+          <p class="drawer__subtitle filter-drawer__subtitle">
+            Searching for “{params.q}”
+          </p>
+        ) : undefined
+      }
+      headerAction={
+        <button
+          type="button"
+          class="filter-actions__btn filter-actions__btn--reset"
+          onClick={onCancel}
+        >
+          Cancel
+        </button>
+      }
+      footer={
         <FilterActions
           onReset={draft.reset}
           onApply={handleApply}
           applyDisabled={!draft.canApply}
         />
-      </aside>
-    </div>
+      }
+      onClose={onCancel}
+    >
+      <FilterCardList draft={draft} countNoun={countNoun} />
+    </Drawer>
   );
 }

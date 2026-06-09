@@ -24,6 +24,10 @@ import { RefineButton } from "@/components/search/RefineButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
 import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
+import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
+import { AiSummaryDrawer } from "@/components/ai-summary/AiSummaryDrawer";
+import { AiSummaryMiniChip } from "@/components/ai-summary/AiSummaryMiniChip";
+import { useAiSummary } from "@/hooks/useAiSummary";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
 import { totalSelectedCount as totalSelectedYearCount } from "@/components/filters/yearRangeFilterState";
@@ -142,6 +146,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const corpus = useCorpusTotal();
   const results = useSearch(params);
   const exportJob = useSearchExport();
+  const ai = useAiSummary();
 
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
   // shared cache, so the Refine button is almost always ready by the time
@@ -272,6 +277,26 @@ function SearchPageInner({ community }: { community: Community }) {
     });
   }
 
+  // Context shown in the AI-summary drawer. The query stands in for the
+  // intersecting terms until the evidence map deep-links explicit row/column
+  // labels here.
+  const aiSummariesEnabled = community.features.aiSummaries;
+  const aiContext = {
+    terms: params.q !== "" && params.q !== "*" ? [params.q] : [],
+    count: results.results?.total.count ?? 0,
+  };
+
+  function handleGenerateSummary() {
+    if (ai.minimized) {
+      ai.open();
+      return;
+    }
+    ai.generate({
+      terms: aiContext.terms.map((name) => ({ name })),
+      referenceIds: results.results?.references.map((ref) => ref.id) ?? [],
+    });
+  }
+
   // Page size comes from the API response (page.count) so the UI stays in
   // sync if the backend ever changes its fixed page size. Math.max guards
   // against page.count = 0 to avoid divide-by-zero / Infinity totalPages.
@@ -309,6 +334,10 @@ function SearchPageInner({ community }: { community: Community }) {
           disabled={results.loading && results.results !== null}
         />
       </section>
+
+      {aiSummariesEnabled && hasResults && (
+        <AiSummaryButton onClick={handleGenerateSummary} />
+      )}
 
       <section class="search-results">
         {showMetaBar && (
@@ -422,6 +451,13 @@ function SearchPageInner({ community }: { community: Community }) {
           />
         )}
       </section>
+
+      {aiSummariesEnabled && (
+        <>
+          <AiSummaryDrawer ai={ai} context={aiContext} />
+          <AiSummaryMiniChip ai={ai} />
+        </>
+      )}
 
       {filterableSchemes.length > 0 && (
         <FilterDrawer

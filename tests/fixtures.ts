@@ -11,6 +11,8 @@ import type {
   AbstractContentEnhancement,
   BibliographicMetadataEnhancement,
   Community,
+  CommunityCopy,
+  CommunityFeatures,
   Enhancement,
   LinkedDataEnhancement,
   Reference,
@@ -38,7 +40,12 @@ export function makeSearchParams(
  * behaviour without depending on the real registry in services/communities.ts.
  * `features` and `copy` merge shallowly so callers override just one field.
  */
-export function makeCommunity(overrides: Partial<Community> = {}): Community {
+type CommunityOverrides = Partial<Omit<Community, "features" | "copy">> & {
+  features?: Partial<CommunityFeatures>;
+  copy?: Partial<CommunityCopy>;
+};
+
+export function makeCommunity(overrides: CommunityOverrides = {}): Community {
   const { features, copy, ...rest } = overrides;
   return {
     slug: "test",
@@ -47,7 +54,7 @@ export function makeCommunity(overrides: Partial<Community> = {}): Community {
     vocabularyUrl: "https://vocab.example/v1",
     contextUrl: "https://vocab.example/ctx",
     filterExcludedSchemes: [],
-    features: { evidenceMap: false, ...features },
+    features: { evidenceMap: false, aiSummaries: false, ...features },
     copy: {
       searchPlaceholder: "Search the evidence",
       drawerTitle: "Refine the evidence",

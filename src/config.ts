@@ -9,6 +9,15 @@ export const MATOMO_CONTAINER_URL = import.meta.env.VITE_MATOMO_CONTAINER_URL;
 export const FEEDBACK_FORM_URL: string | undefined =
   import.meta.env.VITE_FEEDBACK_FORM_URL;
 
+// Where "Flag this summary" sends accuracy reports (a Google Form for now).
+export const AI_SUMMARY_FLAG_FORM_URL: string | undefined =
+  import.meta.env.VITE_AI_SUMMARY_FLAG_FORM_URL;
+
+// Base URL of the evidence-summariser service. Absent until the service is
+// deployed; the summariser client falls back to placeholder data without it.
+export const SUMMARISER_BASE: string | undefined =
+  import.meta.env.VITE_SUMMARISER_BASE;
+
 const VOCAB_PROXY_TARGET = import.meta.env.VITE_VOCAB_PROXY_TARGET;
 
 /**

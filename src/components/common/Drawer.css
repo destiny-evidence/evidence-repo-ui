@@ -1,0 +1,96 @@
+.drawer {
+  position: fixed;
+  inset: 0;
+  /* Above AppShell header (100) and FeedbackFAB (200) — a modal must
+     cover everything else on the page. */
+  z-index: 1000;
+}
+
+.drawer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(22, 27, 34, 0.4);
+  animation: drawer-fade 0.18s ease;
+}
+
+/* Width is left to the consumer's `${block}__panel` companion class. */
+.drawer__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-bg-surface);
+  border-left: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  animation: drawer-slide 0.24s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.drawer__panel:focus {
+  outline: none;
+}
+
+@keyframes drawer-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes drawer-slide {
+  from {
+    transform: translateX(28px);
+    opacity: 0.4;
+  }
+}
+
+.drawer__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.drawer__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.drawer__titlerow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.drawer__title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.drawer__subtitle {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+  /* Break unbroken strings (pasted URLs) so they don't overflow the panel. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Padding is left to the consumer's `${block}__body` companion class. */
+.drawer__body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer__panel,
+  .drawer__backdrop {
+    animation: none;
+  }
+}

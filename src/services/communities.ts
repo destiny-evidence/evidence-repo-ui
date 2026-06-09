@@ -17,6 +17,7 @@ function requireEnv(name: string, value: string | undefined): string {
 
 export const DEFAULT_FEATURES: CommunityFeatures = {
   evidenceMap: false,
+  aiSummaries: false,
 };
 
 // Shared copy fallbacks; a community overrides only what diverges.
@@ -90,7 +91,7 @@ const COMMUNITIES: Community[] = [
       import.meta.env.VITE_HPV_CONTEXT_URL,
     ),
     filterExcludedSchemes: [],
-    features: { ...DEFAULT_FEATURES, evidenceMap: true },
+    features: { ...DEFAULT_FEATURES, evidenceMap: true, aiSummaries: true },
     copy: buildCopy("HPV Vaccine Delivery", {
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",

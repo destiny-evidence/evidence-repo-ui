@@ -1,73 +1,12 @@
-.filter-drawer {
-  position: fixed;
-  inset: 0;
-  /* Above AppShell header (100) and FeedbackFAB (200) — a modal must
-     cover everything else on the page. */
-  z-index: 1000;
-}
-
-.filter-drawer__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(22, 27, 34, 0.4);
-}
+/* Shell styles (panel chrome, header, backdrop, animations) live in the shared
+   Drawer (components/common/Drawer.css). Only filter-specific overrides remain. */
 
 .filter-drawer__panel {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
   width: min(420px, 100vw);
-  background: var(--color-bg-surface);
-  border-left: 1px solid var(--color-border);
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  flex-direction: column;
-}
-
-.filter-drawer__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.filter-drawer__heading {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.filter-drawer__title {
-  margin: 0;
-  font-size: var(--font-size-xl);
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.filter-drawer__subtitle {
-  margin: 0;
-  font-size: var(--font-size-small);
-  color: var(--color-text-tertiary);
-  /* Break unbroken strings (pasted URLs) so they don't overflow the panel. */
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.filter-drawer__panel:focus {
-  outline: none;
 }
 
 .filter-drawer__body {
-  flex: 1;
-  overflow-y: auto;
   padding: var(--spacing-sm) 0;
   display: flex;
   flex-direction: column;
 }
-
-/* Footer (Reset all / Show results) and the header's Cancel button both use the
-   shared .filter-actions__btn styles. */
