@@ -93,12 +93,18 @@ export function resolveMapAxis(
   labels: ReadonlyMap<string, string> | null,
 ): ResolvedAxis {
   if (axis.kind === "countries") {
-    return { title: COUNTRIES_AXIS_TITLE, categories: [], labelFor: countryName };
+    return {
+      title: COUNTRIES_AXIS_TITLE,
+      categories: [],
+      labelFor: countryName,
+    };
   }
-  // Scheme URIs are full IRIs after parsing, so this matches directly.
+  // Scheme URIs are full URIs after parsing, so this matches directly.
   const scheme = schemes?.find((s) => s.uri === axis.schemeUri);
   return {
-    title: scheme ? schemeDisplayLabel(scheme.label) : localName(axis.schemeUri),
+    title: scheme
+      ? schemeDisplayLabel(scheme.label)
+      : localName(axis.schemeUri),
     categories: scheme ? flattenScheme(scheme) : [],
     labelFor: (value) => labels?.get(value) ?? value,
   };
@@ -117,7 +123,10 @@ function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
   return out;
 }
 
-function mergeCategories(axis: AxisInput, cellKeys: Set<string>): AxisCategory[] {
+function mergeCategories(
+  axis: AxisInput,
+  cellKeys: Set<string>,
+): AxisCategory[] {
   const byKey = new Map<string, AxisCategory>();
   for (const category of axis.categories) byKey.set(category.key, category);
   for (const key of cellKeys) {
