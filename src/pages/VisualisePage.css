@@ -21,6 +21,12 @@
   margin: 0 0 var(--spacing-lg);
 }
 
+/* Inside the map column the flex gap owns the spacing, so the title doesn't
+   double up its own bottom margin. */
+.evidence-map-view__main .visualise-page__title {
+  margin-bottom: 0;
+}
+
 .visualise-page__notice {
   font-family: var(--font-display);
   font-style: italic;
@@ -30,16 +36,81 @@
   margin: 0;
 }
 
+/* Full-bleed two-column row pinned to exactly the viewport below the header and
+   clipped, so the page never scrolls (sub-pixel rounding included): the columns
+   stretch to fill it, the map table and panel body scroll internally, and the
+   map is capped (EvidenceMapGrid.css) so nothing visible is clipped. */
 .evidence-map-view {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  box-sizing: border-box;
+  display: flex;
+  height: calc(100vh - var(--header-height));
+  overflow: hidden;
+}
+
+.evidence-map-view__main {
+  flex: 1;
+  /* min-width:0 lets the map's horizontal scroll area shrink rather than widen
+     the whole layout. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  padding: 32px;
+  overflow: hidden;
+}
+
+/* Two-column only: inset the global Feedback button out from under the docked
+   panel, and drop .app-main's bottom padding so the (viewport-height) panel and
+   the capped map fit the viewport with no page scroll. */
+@media (min-width: 961px) {
+  body.visualise-has-panel .app-main {
+    padding-bottom: 0;
+  }
+  body.visualise-has-panel .feedback-fab {
+    right: calc(28px + var(--map-panel-width));
+  }
+}
+
+/* Below the threshold the panel un-docks and stacks under the map; natural
+   heights, the page scrolls normally, and the Feedback button stays home. */
+@media (max-width: 960px) {
+  /* Drop the full-bleed breakout: in stacked flow the page scrolls, so a
+     vertical scrollbar appears and 100vw (which counts the scrollbar) overhangs
+     by ~half its width each side. app-main's width ≈ the viewport here anyway. */
+  .visualise-page,
+  .evidence-map-view {
+    width: 100%;
+    left: auto;
+    right: auto;
+    margin-inline: 0;
+  }
+  .evidence-map-view {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+  .evidence-map-view__main {
+    overflow: visible;
+  }
 }
 
 .evidence-map-view__toolbar {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
+}
+
+/* Pinned to the right of the toolbar — the wireframe's top-right hint. */
+.evidence-map-view__hint {
+  margin: 0 0 0 auto;
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
 }
 
 .evidence-map-view__total {
@@ -88,4 +159,23 @@
 
 .evidence-map-view__banner-text {
   font-size: var(--font-size-small);
+}
+
+/* Inline shortcut, pushed to the banner's trailing edge. */
+.evidence-map-view__banner-reset {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.evidence-map-view__banner-reset:hover {
+  color: var(--color-accent-hover);
 }

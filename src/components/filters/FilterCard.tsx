@@ -1,5 +1,5 @@
 import type { ComponentChildren } from "preact";
-import { useId, useState } from "preact/hooks";
+import { useId, useRef, useState } from "preact/hooks";
 import { ChevronDownIcon, ChevronRightIcon } from "@/components/common/icons";
 import "./FilterCard.css";
 
@@ -12,15 +12,30 @@ interface FilterCardProps {
 
 export function FilterCard({ title, summary, defaultExpanded = false, children }: FilterCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const cardRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const showSummary = !!summary;
 
+  function toggle() {
+    const next = !expanded;
+    setExpanded(next);
+    // When opening, reveal the freshly-shown content if it sits below the fold
+    // of a scrollable container (the map config panel / the drawer body). Wait
+    // a frame so the panel has expanded before measuring; block:"nearest" keeps
+    // the move minimal and the header in view.
+    if (next) {
+      requestAnimationFrame(() => {
+        cardRef.current?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
+      });
+    }
+  }
+
   return (
-    <div class="filter-card">
+    <div class="filter-card" ref={cardRef}>
       <button
         class="filter-card__header"
         type="button"
-        onClick={() => setExpanded(!expanded)}
+        onClick={toggle}
         aria-expanded={expanded}
         aria-controls={panelId}
       >

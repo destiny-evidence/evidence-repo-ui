@@ -15,7 +15,7 @@ function requireEnv(name: string, value: string | undefined): string {
   return value;
 }
 
-const DEFAULT_FEATURES: CommunityFeatures = {
+export const DEFAULT_FEATURES: CommunityFeatures = {
   evidenceMap: false,
 };
 
@@ -49,7 +49,7 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: [
       "https://vocab.esea.education/ImplementationDescriptionScheme",
     ],
-    features: { ...DEFAULT_FEATURES },
+    features: { ...DEFAULT_FEATURES, evidenceMap: true },
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",

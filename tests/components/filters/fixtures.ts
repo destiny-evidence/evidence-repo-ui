@@ -44,3 +44,14 @@ export const OUTCOME_SCHEME_FIXTURE: ConceptScheme = {
     },
   ],
 };
+
+export const URI_JOURNAL =
+  "https://vocab.esea.education/DocumentTypeScheme/C00008";
+
+// A single-concept scheme, useful alongside OUTCOME_SCHEME_FIXTURE for asserting
+// cross-scheme behaviour (one OR-group per scheme).
+export const DOCUMENT_TYPE_SCHEME: ConceptScheme = {
+  uri: "https://vocab.esea.education/DocumentTypeScheme",
+  label: "Document type",
+  topConcepts: [{ uri: URI_JOURNAL, label: "Journal Article" }],
+};
