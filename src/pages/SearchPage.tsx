@@ -119,8 +119,13 @@ function SearchPageInner({ community }: { community: Community }) {
   // Set when a map cell deep-linked here (see VisualisePage). Confined to this
   // community's visualise route so a stale state entry can't render a bad link.
   const backUrl = backToVisualiseUrl(useHistoryState());
+  // Match the route exactly, then the query string — not a `startsWith` prefix,
+  // which would also accept sibling routes like `/{slug}/visualise-elsewhere`.
+  const visualisePath = `/${community.slug}/visualise`;
   const visualiseBackUrl =
-    backUrl?.startsWith(`/${community.slug}/visualise`) ? backUrl : null;
+    backUrl === visualisePath || backUrl?.startsWith(`${visualisePath}?`)
+      ? backUrl
+      : null;
 
   // Canonicalize once: if URL query string doesn't match the canonical form,
   // silently rewrite via replaceState. Keyed on canonicalQs so it runs per divergence.

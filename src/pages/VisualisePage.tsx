@@ -291,7 +291,10 @@ function EvidenceMapView({
                 columnAxisLabel={columnAxis.title}
                 total={formatTotal(result.total)}
                 updating={loading}
-                onCellClick={handleCellClick}
+                // While refetching, the grid still shows the prior result but
+                // params/axes are already the new ones — a stale-cell click would
+                // mix old keys with new axes. Disable clicks until the fetch lands.
+                onCellClick={loading ? undefined : handleCellClick}
                 dimmed={result.total.count === 0}
               />
             ) : result.cells.length > 0 ? (

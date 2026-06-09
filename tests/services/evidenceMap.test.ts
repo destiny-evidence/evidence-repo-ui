@@ -341,6 +341,21 @@ describe("cellSearchParams", () => {
     expect(next.conceptFilters).toEqual([["scheme-a:x"], ["theme:literacy"]]);
   });
 
+  test("a countries axis appends a new code to the existing filter", () => {
+    const axes: EvidenceMapAxes = {
+      row: { kind: "scheme", schemeUri: "scheme:level" },
+      column: { kind: "countries" },
+    };
+    const next = cellSearchParams(
+      base,
+      axes,
+      { key: "level:primary", label: "Primary" },
+      { key: "DE", label: "Germany" },
+    );
+    // DE is new — added alongside the already-applied FR.
+    expect(next.countryCodes).toEqual(["FR", "DE"]);
+  });
+
   test("does not mutate the base params", () => {
     const axes: EvidenceMapAxes = {
       row: { kind: "scheme", schemeUri: "scheme:level" },

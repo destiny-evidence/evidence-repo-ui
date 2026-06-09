@@ -48,6 +48,17 @@ function cellTooltip(
   return clickable ? `${summary}\n${action}` : summary;
 }
 
+// The button's only visible content is the count, so a screen reader would
+// announce just "5, button". Spell out the cell's coordinates and the action.
+function cellAriaLabel(
+  count: number,
+  countNoun: string,
+  rowLabel: string,
+  columnLabel: string,
+): string {
+  return `${rowLabel}, ${columnLabel}: ${count.toLocaleString()} ${countNoun}. View matching ${countNoun}.`;
+}
+
 export function EvidenceMapGrid({
   rows,
   columns,
@@ -129,6 +140,16 @@ export function EvidenceMapGrid({
                       maxCount={maxCount}
                       view={view}
                       tooltip={cellTooltip(count, countNoun, clickable, view)}
+                      ariaLabel={
+                        clickable
+                          ? cellAriaLabel(
+                              count ?? 0,
+                              countNoun,
+                              row.label,
+                              column.label,
+                            )
+                          : undefined
+                      }
                       onClick={
                         clickable ? () => onCellClick(row, column) : undefined
                       }
@@ -153,10 +174,19 @@ interface CellProps {
   maxCount: number;
   view: MapView;
   tooltip: string | undefined;
+  ariaLabel: string | undefined;
   onClick?: () => void;
 }
 
-function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
+function Cell({
+  empty,
+  count,
+  maxCount,
+  view,
+  tooltip,
+  ariaLabel,
+  onClick,
+}: CellProps) {
   // Bubble radius drives the tooltip/tail anchor (--evidence-map-dot): the dot
   // is centred in the cell, so the tail points at it rather than the cell edge.
   const radius =
@@ -174,7 +204,12 @@ function Cell({ empty, count, maxCount, view, tooltip, onClick }: CellProps) {
     );
 
   const content = onClick ? (
-    <button type="button" class="evidence-map__cell-button" onClick={onClick}>
+    <button
+      type="button"
+      class="evidence-map__cell-button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+    >
       {inner}
     </button>
   ) : (
