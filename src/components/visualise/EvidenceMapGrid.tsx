@@ -136,7 +136,7 @@ export function EvidenceMapGrid({
         >
           <thead>
             <tr>
-              <th class="evidence-map__corner" scope="col">
+              <th class="evidence-map__corner" role="presentation">
                 {total !== undefined && (
                   <span class="evidence-map__total">
                     <span class="evidence-map__total-count">{total}</span>{" "}

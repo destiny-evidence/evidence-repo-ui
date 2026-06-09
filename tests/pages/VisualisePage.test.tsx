@@ -226,6 +226,11 @@ describe("VisualisePage map", () => {
   });
 
   test("over-filtered: warns with an inline Reset all and still renders the greyed grid", () => {
+    // Distinct from the fixture default so the assertion proves the banner uses
+    // the live countNoun rather than passing by coincidence.
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({ copy: { countNoun: "investigations" } }),
+    );
     mockUseVocabulary.mockReturnValue({
       labels: LABELS,
       broader: null,
@@ -240,7 +245,9 @@ describe("VisualisePage map", () => {
       error: null,
     });
     const { container } = render(<VisualisePage />);
-    expect(screen.getByText(/No results match the current filters/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/No investigations match the current filters/i),
+    ).toBeInTheDocument();
     // The greyed-out grid still renders so the chosen axes stay visible, with a 0 total.
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(
