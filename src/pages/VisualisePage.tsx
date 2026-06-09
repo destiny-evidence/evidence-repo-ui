@@ -16,6 +16,7 @@ import {
   parseAxis,
   resolveMapAxis,
   cellSearchParams,
+  axisSearchParams,
   backToVisualiseState,
   type AxisCategory,
 } from "@/services/evidenceMap";
@@ -197,7 +198,22 @@ function EvidenceMapView({
   // column applied as filters. Stash the map's own URL in history.state so the
   // search page can offer a "Back to Visualise" link to exactly this view.
   function handleCellClick(row: AxisCategory, column: AxisCategory) {
-    const next = cellSearchParams(params, axes, row, column);
+    deepLinkToSearch(cellSearchParams(params, axes, row, column));
+  }
+
+  // Same deep-link, but filtered by a single axis category (a row/column header
+  // click) rather than both.
+  function handleRowClick(row: AxisCategory) {
+    deepLinkToSearch(axisSearchParams(params, axes.row, row));
+  }
+
+  function handleColumnClick(column: AxisCategory) {
+    deepLinkToSearch(axisSearchParams(params, axes.column, column));
+  }
+
+  // Navigate into Search with the given params, stashing the map's own URL in
+  // history.state so the search page can offer a "Back to Visualise" link.
+  function deepLinkToSearch(next: SearchParams) {
     const mapUrl = `/${community.slug}/visualise?${canonical}`;
     navigate(buildSearchUrl(community.slug, next), {
       state: backToVisualiseState(mapUrl),
@@ -295,6 +311,19 @@ function EvidenceMapView({
                 // params/axes are already the new ones — a stale-cell click would
                 // mix old keys with new axes. Disable clicks until the fetch lands.
                 onCellClick={loading ? undefined : handleCellClick}
+                // Headers deep-link by a single axis. Disabled while refetching
+                // (stale keys) and in the over-filtered state, where adding a
+                // filter to a 0-result set is pointless.
+                onRowClick={
+                  loading || result.total.count === 0
+                    ? undefined
+                    : handleRowClick
+                }
+                onColumnClick={
+                  loading || result.total.count === 0
+                    ? undefined
+                    : handleColumnClick
+                }
                 dimmed={result.total.count === 0}
               />
             ) : result.cells.length > 0 ? (

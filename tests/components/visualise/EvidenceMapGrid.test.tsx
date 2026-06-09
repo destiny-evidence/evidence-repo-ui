@@ -148,4 +148,59 @@ describe("EvidenceMapGrid", () => {
     const empty = container.querySelector(".evidence-map__cell.is-empty");
     expect(empty?.querySelector("button")).toBeNull();
   });
+
+  test("headers are plain text without header click handlers", () => {
+    renderGrid("table");
+    expect(
+      screen.queryByRole("button", { name: /view matching/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("with header handlers, clicking a column or row header deep-links by that axis", () => {
+    const onRowClick = vi.fn();
+    const onColumnClick = vi.fn();
+    render(
+      <EvidenceMapGrid
+        rows={rows}
+        columns={columns}
+        getCount={getCount}
+        maxCount={12}
+        view="table"
+        countNoun="investigations"
+        rowAxisLabel="Education level"
+        columnAxisLabel="Education theme"
+        onRowClick={onRowClick}
+        onColumnClick={onColumnClick}
+      />,
+    );
+
+    const columnButton = screen.getByRole("button", {
+      name: "Literacy: view matching investigations.",
+    });
+    fireEvent.click(columnButton);
+    expect(onColumnClick).toHaveBeenCalledWith({
+      key: "thm:literacy",
+      label: "Literacy",
+    });
+
+    // Hovering shows the action tooltip for sighted users; leaving hides it.
+    fireEvent.mouseEnter(columnButton);
+    expect(
+      screen.getByText("Click to view matching investigations"),
+    ).toBeInTheDocument();
+    fireEvent.mouseLeave(columnButton);
+    expect(
+      screen.queryByText("Click to view matching investigations"),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Secondary: view matching investigations.",
+      }),
+    );
+    expect(onRowClick).toHaveBeenCalledWith({
+      key: "lvl:secondary",
+      label: "Secondary",
+    });
+  });
 });

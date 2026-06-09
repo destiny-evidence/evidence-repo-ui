@@ -8,6 +8,7 @@ import {
   formatCompact,
   legendTicks,
   cellSearchParams,
+  axisSearchParams,
   backToVisualiseState,
   backToVisualiseUrl,
   type AxisCategory,
@@ -369,6 +370,55 @@ describe("cellSearchParams", () => {
     );
     expect(base.conceptFilters).toEqual([["scheme-a:x"]]);
     expect(base.countryCodes).toEqual(["FR"]);
+  });
+});
+
+describe("axisSearchParams", () => {
+  const base: SearchParams = {
+    q: "literacy",
+    page: 3,
+    startYear: 2010,
+    endYear: undefined,
+    sort: "newest",
+    conceptFilters: [["scheme-a:x"]],
+    countryCodes: ["FR"],
+  };
+
+  test("a scheme axis adds a single-concept group and resets page", () => {
+    const next = axisSearchParams(
+      base,
+      { kind: "scheme", schemeUri: "scheme:level" },
+      { key: "level:primary", label: "Primary" },
+    );
+    expect(next.conceptFilters).toEqual([["scheme-a:x"], ["level:primary"]]);
+    expect(next.countryCodes).toEqual(["FR"]);
+    expect(next.page).toBe(1);
+    expect(next.q).toBe("literacy");
+  });
+
+  test("a countries axis appends a new, de-duplicated country code", () => {
+    const added = axisSearchParams(
+      base,
+      { kind: "countries" },
+      { key: "DE", label: "Germany" },
+    );
+    expect(added.countryCodes).toEqual(["FR", "DE"]);
+
+    const dupe = axisSearchParams(
+      base,
+      { kind: "countries" },
+      { key: "FR", label: "France" },
+    );
+    expect(dupe.countryCodes).toEqual(["FR"]);
+  });
+
+  test("does not mutate the base params", () => {
+    axisSearchParams(
+      base,
+      { kind: "scheme", schemeUri: "scheme:level" },
+      { key: "level:primary", label: "Primary" },
+    );
+    expect(base.conceptFilters).toEqual([["scheme-a:x"]]);
   });
 });
 

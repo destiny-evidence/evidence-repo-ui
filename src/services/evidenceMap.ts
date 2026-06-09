@@ -183,10 +183,8 @@ export function legendTicks(maxCount: number): number[] {
 
 /**
  * Search params for the cell at (row, column): the map's current filters plus
- * the two axis values applied as filters. A scheme axis contributes a
- * single-concept filter group (AND'd with any existing groups, mirroring the
- * cross-facet query); a countries axis contributes a country code. Page resets
- * to 1 since the result set changes.
+ * both axis values applied as filters (see applyAxisFilter). Page resets to 1
+ * since the result set changes.
  */
 export function cellSearchParams(
   base: SearchParams,
@@ -194,19 +192,42 @@ export function cellSearchParams(
   row: AxisCategory,
   column: AxisCategory,
 ): SearchParams {
-  const conceptFilters = [...base.conceptFilters];
-  const countryCodes = [...base.countryCodes];
+  let next = base;
   for (const [axis, category] of [
     [axes.row, row],
     [axes.column, column],
   ] as const) {
-    if (axis.kind === "countries") {
-      if (!countryCodes.includes(category.key)) countryCodes.push(category.key);
-    } else {
-      conceptFilters.push([category.key]);
-    }
+    next = applyAxisFilter(next, axis, category);
   }
-  return { ...base, conceptFilters, countryCodes, page: 1 };
+  return { ...next, page: 1 };
+}
+
+/**
+ * Search params for a single axis header: the map's current filters plus that
+ * one axis value applied as a filter. Powers the clickable row/column headers,
+ * which deep-link into Search filtered by just that category.
+ */
+export function axisSearchParams(
+  base: SearchParams,
+  axis: EvidenceMapAxis,
+  category: AxisCategory,
+): SearchParams {
+  return { ...applyAxisFilter(base, axis, category), page: 1 };
+}
+
+// Applies one axis value as a filter: a scheme axis contributes a single-concept
+// filter group (AND'd with any existing groups, mirroring the cross-facet
+// query); a countries axis contributes a country code.
+function applyAxisFilter(
+  base: SearchParams,
+  axis: EvidenceMapAxis,
+  category: AxisCategory,
+): SearchParams {
+  if (axis.kind === "countries") {
+    if (base.countryCodes.includes(category.key)) return base;
+    return { ...base, countryCodes: [...base.countryCodes, category.key] };
+  }
+  return { ...base, conceptFilters: [...base.conceptFilters, [category.key]] };
 }
 
 // history.state key set when a cell deep-links into Search; its value is the

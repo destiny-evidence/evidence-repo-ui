@@ -88,6 +88,85 @@
   border-right: 1px solid var(--color-border);
 }
 
+/* Clickable header: the whole cell shades on hover, the affordance spanning the
+   cell even though the click target is the label. */
+.evidence-map__col-head--clickable:hover,
+.evidence-map__col-head--clickable:focus-within,
+.evidence-map__row-head--clickable:hover,
+.evidence-map__row-head--clickable:focus-within {
+  background: var(--color-accent-light);
+}
+
+/* Underline the label to mark the header as a link through to Search. */
+.evidence-map__col-head--clickable .evidence-map__col-head-label,
+.evidence-map__row-head--clickable .evidence-map__row-head-label {
+  text-decoration: underline;
+  text-decoration-color: var(--color-text-tertiary);
+  text-underline-offset: 2px;
+}
+
+/* The clickable label: a button wrapping just the text. Sized to the text —
+   block in a column head so it keeps the centred, wrapping/hyphenating label;
+   inline in a row head so it hugs the left-aligned text. */
+.evidence-map__col-head .evidence-map__head-link,
+.evidence-map__row-head .evidence-map__head-link {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+
+.evidence-map__col-head .evidence-map__head-link {
+  display: block;
+  width: 100%;
+}
+
+.evidence-map__row-head .evidence-map__head-link {
+  display: inline-block;
+}
+
+.evidence-map__head-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* The header tooltip: a fixed-positioned bubble (JS sets left/top from the
+   hovered header) so it escapes the scroll box and the map column's overflow,
+   which clip any in-cell pseudo-element. It sits above the text; --tail-x keeps
+   the tail over the text when the bubble is clamped to the viewport edge. */
+.evidence-map__head-tip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 1000;
+  pointer-events: none;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-color);
+  padding: var(--tooltip-padding);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-xs);
+  line-height: var(--tooltip-line-height);
+  width: max-content;
+  max-width: var(--tooltip-max-width);
+  white-space: pre-line;
+  text-align: left;
+  box-shadow: var(--shadow-md);
+}
+
+.evidence-map__head-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: calc(50% + var(--tail-x, 0px));
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--tooltip-bg);
+}
+
 /* ── Corner: total + axis key ── */
 .evidence-map__corner {
   top: 0;
@@ -187,7 +266,7 @@
   transform: translateX(-50%);
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 8px solid #161b22;
+  border-top: 8px solid var(--tooltip-bg);
   z-index: 10;
 }
 
