@@ -16,7 +16,7 @@ export function AiSummaryButton({ onClick, disabled }: AiSummaryButtonProps) {
         disabled={disabled}
       >
         <span>Generate AI summary</span>
-        <span class="beta">BETA</span>
+        <span class="ai-beta">BETA</span>
       </button>
     </div>
   );

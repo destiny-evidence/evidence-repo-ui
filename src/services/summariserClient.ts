@@ -60,6 +60,7 @@ async function submitAndPoll(
     { method: "POST", body: JSON.stringify(request) },
     signal,
   );
+  if (!submit.ok) throw new Error(`Summary request failed (${submit.status}).`);
   const submitJson = await submit.json();
   if (submit.status === 200) return submitJson as SummariseResponse;
 
@@ -68,6 +69,7 @@ async function submitAndPoll(
   for (;;) {
     await wait(POLL_INTERVAL_MS, signal);
     const res = await summariserFetch(`/jobs/${jobId}`, {}, signal);
+    if (!res.ok) throw new Error(`Summary status check failed (${res.status}).`);
     const job = await res.json();
     if (job.status === "done") return job.result as SummariseResponse;
     if (job.status === "failed") throw new Error(job.error || "Summary failed.");

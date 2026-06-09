@@ -279,11 +279,14 @@ function SearchPageInner({ community }: { community: Community }) {
 
   // Context shown in the AI-summary drawer. The query stands in for the
   // intersecting terms until the evidence map deep-links explicit row/column
-  // labels here.
+  // labels here. Until an all-references source exists, a summary covers only
+  // the references on the current page, so the count reflects that rather than
+  // the full intersection total.
   const aiSummariesEnabled = community.features.aiSummaries;
+  const aiReferenceIds = results.results?.references.map((ref) => ref.id) ?? [];
   const aiContext = {
     terms: params.q !== "" && params.q !== "*" ? [params.q] : [],
-    count: results.results?.total.count ?? 0,
+    count: aiReferenceIds.length,
   };
 
   function handleGenerateSummary() {
@@ -293,7 +296,7 @@ function SearchPageInner({ community }: { community: Community }) {
     }
     ai.generate({
       terms: aiContext.terms.map((name) => ({ name })),
-      referenceIds: results.results?.references.map((ref) => ref.id) ?? [],
+      referenceIds: aiReferenceIds,
     });
   }
 

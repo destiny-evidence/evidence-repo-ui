@@ -37,6 +37,9 @@ interface SummaryBodyProps {
 /**
  * Renders the narrative prose with footnote markers linking to a numbered
  * "Claims & sources" list. Clicking a footnote scrolls to and flashes its claim.
+ *
+ * `summary.contradictions` is intentionally not rendered in this minimal
+ * version; surfacing conflicting findings is a follow-up.
  */
 export function SummaryBody({ summary, papers }: SummaryBodyProps) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -64,6 +67,7 @@ export function SummaryBody({ summary, papers }: SummaryBodyProps) {
                     key={n}
                     class="ai-fn"
                     href="#"
+                    aria-label={`Jump to claim ${n}`}
                     onClick={(e) => {
                       e.preventDefault();
                       jumpToClaim(n);

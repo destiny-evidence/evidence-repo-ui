@@ -65,6 +65,17 @@ describe("AiSummaryDrawer", () => {
     expect(claim?.classList.contains("is-flash")).toBe(true);
   });
 
+  test("surfaces a note when some papers couldn't be read", () => {
+    const ai = makeAi({
+      result: {
+        ...MOCK_SUMMARY,
+        extraction_errors: [{ paper: "x", error: "unreadable" }],
+      },
+    });
+    render(<AiSummaryDrawer ai={ai} context={context} />);
+    expect(screen.getByText(/1 paper couldn't be read/i)).toBeDefined();
+  });
+
   test("flag link points at the configured form and opens in a new tab", () => {
     render(<AiSummaryDrawer ai={makeAi()} context={context} />);
     const link = screen.getByRole("link", { name: /flag this summary/i });

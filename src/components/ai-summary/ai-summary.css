@@ -32,7 +32,7 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-.beta {
+.ai-beta {
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
@@ -42,7 +42,7 @@
   border-radius: 2px;
   padding: 2px 4px;
 }
-.gen-btn .beta {
+.gen-btn .ai-beta {
   background: rgba(255, 255, 255, 0.22);
 }
 
@@ -138,6 +138,11 @@
 .ai-error {
   font-size: var(--font-size-body);
   color: var(--color-danger);
+}
+.ai-extraction-note {
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+  margin: 0 0 var(--spacing-md);
 }
 .ai-spinner {
   flex: 0 0 auto;

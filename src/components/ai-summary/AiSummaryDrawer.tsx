@@ -34,7 +34,7 @@ export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
       open={ai.drawerOpen}
       block="ai-drawer"
       title={title}
-      titleAdornment={<span class="beta">BETA</span>}
+      titleAdornment={<span class="ai-beta">BETA</span>}
       subtitle={<ContextChips terms={context.terms} count={context.count} />}
       headerAction={
         <button
@@ -70,6 +70,13 @@ export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
       {ai.status === "done" && ai.result && (
         <>
           <Disclaimer />
+          {ai.result.extraction_errors.length > 0 && (
+            <p class="ai-extraction-note">
+              {pluralPapers(ai.result.extraction_errors.length)} couldn't be read
+              and {ai.result.extraction_errors.length === 1 ? "was" : "were"} left
+              out of this summary.
+            </p>
+          )}
           <SummaryBody
             summary={ai.result.summary}
             papers={ai.result.papers}
