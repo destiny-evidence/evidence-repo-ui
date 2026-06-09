@@ -1,4 +1,5 @@
 import { proxyVocabUrl } from "@/config";
+import { expandCompactUri, extractPrefixes } from "./contextService";
 
 type JsonLdRef = string | { "@id": string };
 
@@ -29,6 +30,16 @@ export interface ConceptScheme {
   uri: string;
   label: string;
   topConcepts: Concept[];
+}
+
+/**
+ * Display form of a SKOS scheme label: "Document Type Scheme" → "Document Type".
+ * The trailing "Scheme" word is implementation detail of the SKOS model and
+ * noise to the reader. Shared by the filter drawer and the evidence map so both
+ * name schemes the same way.
+ */
+export function schemeDisplayLabel(label: string): string {
+  return label.replace(/\s+Scheme$/i, "");
 }
 
 export interface VocabularyData {
@@ -94,8 +105,17 @@ interface RawScheme {
  *
  * SKOS allows polyhierarchy; `broader` keeps only the first parent and the
  * scheme tree mirrors that single-parent view.
+ *
+ * All `@id`s are expanded to full URIs via the document's own `@context` prefix
+ * map. The published vocabulary mints concept IDs as absolute URIs but writes
+ * scheme IDs as compact CURIEs (`esea:…`); expanding here normalizes both so a
+ * scheme's `uri` matches the form the cross-facets endpoint and concept URIs use.
+ * Falls back to the raw value when no prefix matches (e.g. no `@context`).
  */
 export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
+  const prefixes = extractPrefixes(doc as Record<string, unknown>);
+  const expand = (uri: string): string => expandCompactUri(uri, prefixes);
+
   const labels = new Map<string, string>();
   const broader = new Map<string, string>();
   const definitions = new Map<string, string>();
@@ -103,20 +123,21 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
 
   for (const entry of doc["@graph"] ?? []) {
     if (!entry["@id"]) continue;
+    const id = expand(entry["@id"]);
     const types = Array.isArray(entry["@type"])
       ? entry["@type"]
       : [entry["@type"]];
 
     if (types.includes(SKOS_CONCEPT)) {
       if (entry["skos:prefLabel"]) {
-        labels.set(entry["@id"], entry["skos:prefLabel"]);
+        labels.set(id, entry["skos:prefLabel"]);
       }
       if (entry["skos:definition"]) {
-        definitions.set(entry["@id"], entry["skos:definition"]);
+        definitions.set(id, entry["skos:definition"]);
       }
       const broaderUri = extractFirstRefId(entry["skos:broader"]);
       if (broaderUri) {
-        broader.set(entry["@id"], broaderUri);
+        broader.set(id, expand(broaderUri));
       }
       continue;
     }
@@ -125,9 +146,11 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
       const label = entry["dct:title"] ?? entry["rdfs:label"];
       if (!label) continue;
       rawSchemes.push({
-        uri: entry["@id"],
+        uri: id,
         label,
-        topConceptUris: extractAllRefIds(entry["skos:hasTopConcept"]),
+        topConceptUris: extractAllRefIds(entry["skos:hasTopConcept"]).map(
+          expand,
+        ),
       });
     }
   }

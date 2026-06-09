@@ -1,0 +1,273 @@
+.evidence-map {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.evidence-map__scroll {
+  overflow: auto;
+  max-height: 70vh;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+}
+
+.evidence-map__table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* ── Headers ── */
+.evidence-map__corner,
+.evidence-map__col-head,
+.evidence-map__row-head {
+  background: var(--color-bg-inset);
+  position: sticky;
+  z-index: 1;
+}
+
+.evidence-map__col-head,
+.evidence-map__row-head {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.evidence-map__col-head {
+  top: 0;
+  text-align: center;
+  vertical-align: bottom;
+  /* Floor keeps short labels from cramping; ceiling lets a long single word
+     widen its column rather than break mid-word. */
+  min-width: 132px;
+  max-width: 180px;
+  border-left: 1px solid var(--color-border);
+}
+
+/* Wrap at word boundaries. A word too wide for the column hyphenates (needs
+   <html lang>); failing that the column grows to its max-width — never an
+   arbitrary mid-word break. */
+.evidence-map__col-head-label {
+  display: block;
+  white-space: normal;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
+.evidence-map__row-head {
+  left: 0;
+  text-align: left;
+  white-space: nowrap;
+  border-right: 1px solid var(--color-border);
+}
+
+/* ── Corner: total + axis key ── */
+.evidence-map__corner {
+  top: 0;
+  left: 0;
+  z-index: 2;
+  padding: var(--spacing-md);
+  vertical-align: bottom;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+}
+
+.evidence-map__total {
+  display: block;
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.evidence-map__total-count {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.evidence-map__axis-key {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.evidence-map__axis {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.evidence-map__axis-role {
+  color: var(--color-text-muted);
+}
+
+.evidence-map__axis-icon {
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+}
+
+.evidence-map__axis-name {
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* ── Cells ── */
+.evidence-map__cell {
+  padding: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.evidence-map__cell.is-empty {
+  background: var(--color-bg-row-alt);
+}
+
+/* ── Row / column hover crosshair ── */
+.evidence-map__cell.is-row-active,
+.evidence-map__cell.is-col-active {
+  background: var(--color-accent-light);
+}
+
+/* Highlight the headers of the hovered row and column so the crosshair reads
+   even when the intersecting cell is scrolled far from its labels. */
+.evidence-map__row-head.is-active,
+.evidence-map__col-head.is-active {
+  background: var(--color-accent-light);
+  color: var(--color-text-primary);
+}
+
+/* The shared tooltip wrapper fills the cell so its content stays centred and
+   the bubble anchors to the cell. */
+.evidence-map__cell .tooltip {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* Anchor the bubble just above the dot (centred in the cell, radius in
+   --evidence-map-dot) rather than the cell edge, and shrink the text. */
+.evidence-map__cell .tooltip:hover::after,
+.evidence-map__cell .tooltip:focus-within::after,
+.evidence-map__cell .tooltip:focus-visible::after {
+  white-space: pre-line;
+  font-size: var(--font-size-xs);
+  bottom: calc(50% + var(--evidence-map-dot, 0px) + 8px);
+}
+
+/* Speech-bubble tail: a downward triangle whose apex meets the dot's top edge,
+   base meeting the bubble bottom 8px above. */
+.evidence-map__cell .tooltip:hover::before,
+.evidence-map__cell .tooltip:focus-within::before,
+.evidence-map__cell .tooltip:focus-visible::before {
+  content: "";
+  position: absolute;
+  bottom: calc(50% + var(--evidence-map-dot, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #161b22;
+  z-index: 10;
+}
+
+.evidence-map__cell-inner,
+.evidence-map__cell-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 64px;
+  box-sizing: border-box;
+  padding: var(--spacing-xs);
+}
+
+.evidence-map__cell-button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.evidence-map__cell-button:hover {
+  background: var(--color-accent-light);
+}
+
+.evidence-map__cell-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.evidence-map__count {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+}
+
+/* ── Bubbles ── */
+.evidence-map__bubble {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-sizing: border-box;
+  /* Square, sized to --bubble-diameter but never narrower than the label needs:
+     min-width: min-content lets a wide count grow its own bubble rather than
+     clip — no font metrics duplicated in JS. Keep min-content on its own
+     declaration: an intrinsic keyword inside max() is invalid CSS, so the whole
+     width is dropped and bubbles collapse to their text width (the diameter is
+     then ignored entirely). */
+  aspect-ratio: 1;
+  width: var(--bubble-diameter, 0px);
+  min-width: min-content;
+}
+
+.evidence-map__bubble-count {
+  /* Keep the text clear of the circle's curve so corners aren't cramped. */
+  padding-inline: 5px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.evidence-map__bubble--empty {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+  border: 1px dashed var(--color-border-strong);
+  opacity: 1;
+}
+
+/* ── Legend ── */
+.evidence-map__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: 0 var(--spacing-sm);
+}
+
+.evidence-map__legend-label {
+  margin-right: var(--spacing-xs);
+}
+
+.evidence-map__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.evidence-map__legend-value {
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+}

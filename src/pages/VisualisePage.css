@@ -1,6 +1,14 @@
+/* Full-bleed: break out of .app-main's centred max-width to use the viewport
+   width, since the matrix benefits from horizontal room. */
 .visualise-page {
-  padding: 48px 32px 36px;
-  text-align: center;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  box-sizing: border-box;
+  padding: 32px;
 }
 
 .visualise-page__title {
@@ -10,14 +18,74 @@
   line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--color-text-primary);
-  margin: 0 0 4px;
+  margin: 0 0 var(--spacing-lg);
 }
 
-.visualise-page__lede {
+.visualise-page__notice {
   font-family: var(--font-display);
   font-style: italic;
   font-size: 16px;
   font-weight: 300;
   color: var(--color-text-tertiary);
   margin: 0;
+}
+
+.evidence-map-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.evidence-map-view__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.evidence-map-view__total {
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.evidence-map-view__total-count {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.evidence-map-view__status {
+  font-size: var(--font-size-body);
+  color: var(--color-text-tertiary);
+  margin: var(--spacing-md) 0;
+}
+
+/* Neutral info note — "results exist but none on both axes", not a filter warning. */
+.evidence-map-view__note {
+  margin: 0;
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-inset);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.evidence-map-view__note-count {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.evidence-map-view__banner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-warning);
+  background: var(--color-warning-light);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+}
+
+.evidence-map-view__banner-text {
+  font-size: var(--font-size-small);
 }

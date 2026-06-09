@@ -3,6 +3,17 @@ export interface CommunityFeatures {
   evidenceMap: boolean;
 }
 
+// One axis of the evidence map.
+export type EvidenceMapAxis =
+  | { kind: "scheme"; schemeUri: string }
+  | { kind: "countries" };
+
+// A community's evidence-map axis pair: `row` is the y-axis, `column` the x-axis.
+export interface EvidenceMapAxes {
+  row: EvidenceMapAxis;
+  column: EvidenceMapAxis;
+}
+
 // See buildCopy() in services/communities.ts for the shared fallbacks.
 export interface CommunityCopy {
   searchPlaceholder: string;
@@ -35,6 +46,9 @@ export interface Community {
   contextUrl: string;
   filterExcludedSchemes: string[];
   features: CommunityFeatures;
+  // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
+  // even where features.evidenceMap is on (e.g. before a vocabulary is published).
+  defaultEvidenceMapAxes?: EvidenceMapAxes;
   copy: CommunityCopy;
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;

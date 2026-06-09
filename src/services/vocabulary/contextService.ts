@@ -9,7 +9,7 @@ export interface ContextPrefixes {
  * String-valued entries are prefix mappings; object-valued entries
  * (property definitions) and @-prefixed keys are skipped.
  */
-function extractPrefixes(doc: Record<string, unknown>): Map<string, string> {
+export function extractPrefixes(doc: Record<string, unknown>): Map<string, string> {
   const ctx = doc["@context"];
   if (typeof ctx !== "object" || ctx === null) return new Map();
 

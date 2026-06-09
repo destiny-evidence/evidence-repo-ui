@@ -46,8 +46,20 @@ const COMMUNITIES: Community[] = [
       "VITE_ESEA_CONTEXT_URL",
       import.meta.env.VITE_ESEA_CONTEXT_URL,
     ),
-    filterExcludedSchemes: ["esea:ImplementationDescriptionScheme"],
+    filterExcludedSchemes: [
+      "https://vocab.esea.education/ImplementationDescriptionScheme",
+    ],
     features: { ...DEFAULT_FEATURES },
+    defaultEvidenceMapAxes: {
+      row: {
+        kind: "scheme",
+        schemeUri: "https://vocab.esea.education/EducationLevelScheme",
+      },
+      column: {
+        kind: "scheme",
+        schemeUri: "https://vocab.esea.education/EducationThemeScheme",
+      },
+    },
     copy: buildCopy("Education", { countNoun: "investigations" }),
     codingInstitution: rawSourcePatterns([
       [/(^|[^a-z])eef([^a-z]|$)/, "EEF"],

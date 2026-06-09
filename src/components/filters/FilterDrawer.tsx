@@ -28,7 +28,10 @@ import {
   yearRangeFromParams,
   type YearRangeFilterState,
 } from "./yearRangeFilterState";
-import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
+import {
+  schemeDisplayLabel,
+  type ConceptScheme,
+} from "@/services/vocabulary/vocabularyService";
 import "./FilterDrawer.css";
 
 export interface AppliedFilters {
@@ -89,14 +92,6 @@ function conceptFiltersEqual(
   const seen = new Set(a.map(canon));
   for (const g of b) if (!seen.has(canon(g))) return false;
   return true;
-}
-
-// Scheme labels arrive from the vocabulary as e.g. "Document Type Scheme" —
-// the trailing word is implementation detail of the SKOS model and noise to
-// the reader. Strip it (case-insensitive, only as a trailing whole word) for
-// display in the drawer.
-function schemeDisplayLabel(label: string): string {
-  return label.replace(/\s+Scheme$/i, "");
 }
 
 // Gates hook execution on `open` — users who never refine don't fetch facets.
