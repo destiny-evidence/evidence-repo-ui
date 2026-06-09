@@ -9,7 +9,9 @@ import {
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
+import { backToVisualiseUrl } from "@/services/evidenceMap";
 import { useUrlParams } from "@/hooks/useUrlParams";
+import { useHistoryState } from "@/hooks/useHistoryState";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
@@ -113,6 +115,17 @@ function SearchPageInner({ community }: { community: Community }) {
   const search = useUrlParams();
   const params = parseSearchParams(search);
   const canonicalQs = toQueryString(params);
+
+  // Set when a map cell deep-linked here (see VisualisePage). Confined to this
+  // community's visualise route so a stale state entry can't render a bad link.
+  const backUrl = backToVisualiseUrl(useHistoryState());
+  // Match the route exactly, then the query string — not a `startsWith` prefix,
+  // which would also accept sibling routes like `/{slug}/visualise-elsewhere`.
+  const visualisePath = `/${community.slug}/visualise`;
+  const visualiseBackUrl =
+    backUrl === visualisePath || backUrl?.startsWith(`${visualisePath}?`)
+      ? backUrl
+      : null;
 
   // Canonicalize once: if URL query string doesn't match the canonical form,
   // silently rewrite via replaceState. Keyed on canonicalQs so it runs per divergence.
@@ -271,6 +284,14 @@ function SearchPageInner({ community }: { community: Community }) {
 
   return (
     <div class="search-page">
+      {visualiseBackUrl && (
+        <a class="search-page__back" href={visualiseBackUrl}>
+          <span class="search-page__back-arrow" aria-hidden="true">
+            ←
+          </span>
+          Back to Visualise
+        </a>
+      )}
       <section class="search-hero">
         <h1 class="search-hero__title">Search the evidence</h1>
         <p class="search-hero__subtitle">

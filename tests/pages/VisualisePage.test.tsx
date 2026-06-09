@@ -155,6 +155,10 @@ describe("VisualisePage map", () => {
     // Column/row labels resolved via the vocabulary.
     expect(screen.getByRole("columnheader", { name: "Literacy" })).toBeInTheDocument();
     expect(screen.getByRole("rowheader", { name: "Primary" })).toBeInTheDocument();
+    // The "click a cell" hint accompanies a grid with clickable cells.
+    expect(
+      screen.getByText(/click a cell to view matching/i),
+    ).toBeInTheDocument();
   });
 
   test("renders zero-hit rows and columns from the vocabulary", () => {
@@ -181,6 +185,29 @@ describe("VisualisePage map", () => {
     ).toBeInTheDocument();
   });
 
+  test("clicking a cell deep-links into Search with the cell's filters + a back-to-map state", () => {
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(9, [["level:primary", "theme:literacy", 6]]),
+      loading: false,
+      error: null,
+    });
+    const { container } = render(<VisualisePage />);
+    const cellButton = container.querySelector<HTMLButtonElement>(
+      ".evidence-map__cell-button",
+    );
+    expect(cellButton).not.toBeNull();
+    fireEvent.click(cellButton!);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/test?concept=level%3Aprimary&concept=theme%3Aliteracy",
+      {
+        state: {
+          backToVisualise:
+            "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
+        },
+      },
+    );
+  });
+
   test("toggling to the table view shows counts as text", () => {
     mockUseCrossFacets.mockReturnValue({
       result: crossFacetResult(8, [["level:primary", "theme:literacy", 5]]),
@@ -199,6 +226,11 @@ describe("VisualisePage map", () => {
   });
 
   test("over-filtered: warns with an inline Reset all and still renders the greyed grid", () => {
+    // Distinct from the fixture default so the assertion proves the banner uses
+    // the live countNoun rather than passing by coincidence.
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({ copy: { countNoun: "investigations" } }),
+    );
     mockUseVocabulary.mockReturnValue({
       labels: LABELS,
       broader: null,
@@ -213,13 +245,19 @@ describe("VisualisePage map", () => {
       error: null,
     });
     const { container } = render(<VisualisePage />);
-    expect(screen.getByText(/No results match the current filters/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/No investigations match the current filters/i),
+    ).toBeInTheDocument();
     // The greyed-out grid still renders so the chosen axes stay visible, with a 0 total.
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(
       screen.getByRole("columnheader", { name: "Science" }),
     ).toBeInTheDocument();
     expect(container.querySelector(".evidence-map.is-dimmed")).not.toBeNull();
+    // No clickable cells, so no hint.
+    expect(
+      screen.queryByText(/click a cell to view matching/i),
+    ).not.toBeInTheDocument();
 
     // The banner carries an inline "Reset all" (distinct from the panel's own).
     const banner = container.querySelector<HTMLElement>(
@@ -257,5 +295,9 @@ describe("VisualisePage map", () => {
     expect(
       screen.getByRole("columnheader", { name: "Science" }),
     ).toBeInTheDocument();
+    // ...but with no clickable cells, so no hint.
+    expect(
+      screen.queryByText(/click a cell to view matching/i),
+    ).not.toBeInTheDocument();
   });
 });

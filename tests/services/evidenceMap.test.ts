@@ -7,10 +7,19 @@ import {
   bubbleRadius,
   formatCompact,
   legendTicks,
+  cellSearchParams,
+  axisSearchParams,
+  backToVisualiseState,
+  backToVisualiseUrl,
   type AxisCategory,
 } from "@/services/evidenceMap";
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
-import type { CrossFacetCell, EvidenceMapAxis } from "@/types/models";
+import type {
+  CrossFacetCell,
+  EvidenceMapAxis,
+  EvidenceMapAxes,
+} from "@/types/models";
+import type { SearchParams } from "@/services/searchParams";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
 
@@ -285,5 +294,151 @@ describe("axisToken / parseAxis", () => {
       kind: "scheme",
       schemeUri: "https://vocab.example/Thing",
     });
+  });
+});
+
+describe("cellSearchParams", () => {
+  const base: SearchParams = {
+    q: "literacy",
+    page: 3,
+    startYear: 2010,
+    endYear: undefined,
+    sort: "newest",
+    conceptFilters: [["scheme-a:x"]],
+    countryCodes: ["FR"],
+  };
+
+  test("scheme×scheme adds a single-concept group per axis and resets page", () => {
+    const axes: EvidenceMapAxes = {
+      row: { kind: "scheme", schemeUri: "scheme:level" },
+      column: { kind: "scheme", schemeUri: "scheme:theme" },
+    };
+    const next = cellSearchParams(
+      base,
+      axes,
+      { key: "level:primary", label: "Primary" },
+      { key: "theme:literacy", label: "Literacy" },
+    );
+    expect(next.conceptFilters).toEqual([
+      ["scheme-a:x"],
+      ["level:primary"],
+      ["theme:literacy"],
+    ]);
+    expect(next.countryCodes).toEqual(["FR"]);
+    expect(next.page).toBe(1);
+    // Other params are carried through untouched.
+    expect(next.q).toBe("literacy");
+    expect(next.sort).toBe("newest");
+    expect(next.startYear).toBe(2010);
+  });
+
+  test("a countries axis contributes a country code, de-duplicated", () => {
+    const axes: EvidenceMapAxes = {
+      row: { kind: "countries" },
+      column: { kind: "scheme", schemeUri: "scheme:theme" },
+    };
+    const next = cellSearchParams(
+      base,
+      axes,
+      { key: "FR", label: "France" },
+      { key: "theme:literacy", label: "Literacy" },
+    );
+    // FR was already applied — not duplicated.
+    expect(next.countryCodes).toEqual(["FR"]);
+    expect(next.conceptFilters).toEqual([["scheme-a:x"], ["theme:literacy"]]);
+  });
+
+  test("a countries axis appends a new code to the existing filter", () => {
+    const axes: EvidenceMapAxes = {
+      row: { kind: "scheme", schemeUri: "scheme:level" },
+      column: { kind: "countries" },
+    };
+    const next = cellSearchParams(
+      base,
+      axes,
+      { key: "level:primary", label: "Primary" },
+      { key: "DE", label: "Germany" },
+    );
+    // DE is new — added alongside the already-applied FR.
+    expect(next.countryCodes).toEqual(["FR", "DE"]);
+  });
+
+  test("does not mutate the base params", () => {
+    const axes: EvidenceMapAxes = {
+      row: { kind: "scheme", schemeUri: "scheme:level" },
+      column: { kind: "countries" },
+    };
+    cellSearchParams(
+      base,
+      axes,
+      { key: "level:primary", label: "Primary" },
+      { key: "DE", label: "Germany" },
+    );
+    expect(base.conceptFilters).toEqual([["scheme-a:x"]]);
+    expect(base.countryCodes).toEqual(["FR"]);
+  });
+});
+
+describe("axisSearchParams", () => {
+  const base: SearchParams = {
+    q: "literacy",
+    page: 3,
+    startYear: 2010,
+    endYear: undefined,
+    sort: "newest",
+    conceptFilters: [["scheme-a:x"]],
+    countryCodes: ["FR"],
+  };
+
+  test("a scheme axis adds a single-concept group and resets page", () => {
+    const next = axisSearchParams(
+      base,
+      { kind: "scheme", schemeUri: "scheme:level" },
+      { key: "level:primary", label: "Primary" },
+    );
+    expect(next.conceptFilters).toEqual([["scheme-a:x"], ["level:primary"]]);
+    expect(next.countryCodes).toEqual(["FR"]);
+    expect(next.page).toBe(1);
+    expect(next.q).toBe("literacy");
+  });
+
+  test("a countries axis appends a new, de-duplicated country code", () => {
+    const added = axisSearchParams(
+      base,
+      { kind: "countries" },
+      { key: "DE", label: "Germany" },
+    );
+    expect(added.countryCodes).toEqual(["FR", "DE"]);
+
+    const dupe = axisSearchParams(
+      base,
+      { kind: "countries" },
+      { key: "FR", label: "France" },
+    );
+    expect(dupe.countryCodes).toEqual(["FR"]);
+  });
+
+  test("does not mutate the base params", () => {
+    axisSearchParams(
+      base,
+      { kind: "scheme", schemeUri: "scheme:level" },
+      { key: "level:primary", label: "Primary" },
+    );
+    expect(base.conceptFilters).toEqual([["scheme-a:x"]]);
+  });
+});
+
+describe("back-to-visualise history state", () => {
+  test("round-trips the map URL", () => {
+    const url = "/edu/visualise?q=x&row=a&column=b";
+    expect(backToVisualiseUrl(backToVisualiseState(url))).toBe(url);
+  });
+
+  test("returns null for absent or malformed state", () => {
+    expect(backToVisualiseUrl(null)).toBeNull();
+    expect(backToVisualiseUrl(undefined)).toBeNull();
+    expect(backToVisualiseUrl({})).toBeNull();
+    expect(backToVisualiseUrl({ backToVisualise: 42 })).toBeNull();
+    expect(backToVisualiseUrl("just a string")).toBeNull();
   });
 });

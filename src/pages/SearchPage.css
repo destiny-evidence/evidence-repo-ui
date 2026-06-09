@@ -3,6 +3,27 @@
   padding: 0 var(--spacing-lg) var(--spacing-xl);
 }
 
+.search-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--spacing-md);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.search-page__back:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+}
+
+.search-page__back-arrow {
+  font-size: 16px;
+  line-height: 1;
+}
+
 .search-hero {
   padding: 48px 32px 36px;
   text-align: center;

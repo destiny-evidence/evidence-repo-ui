@@ -6,6 +6,7 @@ import { useVocabulary } from "@/hooks/useVocabulary";
 import {
   parseSearchParams,
   toQueryString,
+  buildSearchUrl,
   type SearchParams,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
@@ -14,6 +15,10 @@ import {
   buildEvidenceMapModel,
   parseAxis,
   resolveMapAxis,
+  cellSearchParams,
+  axisSearchParams,
+  backToVisualiseState,
+  type AxisCategory,
 } from "@/services/evidenceMap";
 import {
   AXIS_COUNTRIES,
@@ -214,6 +219,32 @@ function EvidenceMapView({
     );
   }
 
+  // Deep-link a cell into Search: the map's filters plus the cell's row and
+  // column applied as filters. Stash the map's own URL in history.state so the
+  // search page can offer a "Back to Visualise" link to exactly this view.
+  function handleCellClick(row: AxisCategory, column: AxisCategory) {
+    deepLinkToSearch(cellSearchParams(params, axes, row, column));
+  }
+
+  // Same deep-link, but filtered by a single axis category (a row/column header
+  // click) rather than both.
+  function handleRowClick(row: AxisCategory) {
+    deepLinkToSearch(axisSearchParams(params, axes.row, row));
+  }
+
+  function handleColumnClick(column: AxisCategory) {
+    deepLinkToSearch(axisSearchParams(params, axes.column, column));
+  }
+
+  // Navigate into Search with the given params, stashing the map's own URL in
+  // history.state so the search page can offer a "Back to Visualise" link.
+  function deepLinkToSearch(next: SearchParams) {
+    const mapUrl = `/${community.slug}/visualise?${canonical}`;
+    navigate(buildSearchUrl(community.slug, next), {
+      state: backToVisualiseState(mapUrl),
+    });
+  }
+
   // The over-filtered banner's inline shortcut — the panel's "Reset all" applied
   // in one click: default axes, no filters.
   function handleResetAll() {
@@ -233,6 +264,9 @@ function EvidenceMapView({
   // render even when no cells come back (the no-coverage state).
   const hasGrid =
     model !== null && model.rows.length > 0 && model.columns.length > 0;
+  // Gate the "click a cell" hint on there being a clickable (non-empty) cell, so
+  // it doesn't mislead in the over-filtered or no-coverage states.
+  const showHint = result !== null && result.cells.length > 0 && hasGrid;
 
   return (
     <div class="evidence-map-view">
@@ -240,6 +274,11 @@ function EvidenceMapView({
         <h1 class="visualise-page__title">Evidence map</h1>
         <div class="evidence-map-view__toolbar">
           <ViewToggle value={view} onChange={setView} />
+          {showHint && (
+            <p class="evidence-map-view__hint">
+              Click a cell to view matching {noun}
+            </p>
+          )}
         </div>
 
         {error ? (
@@ -293,6 +332,23 @@ function EvidenceMapView({
                 columnAxisLabel={columnAxis.title}
                 total={formatTotal(result.total)}
                 updating={loading}
+                // While refetching, the grid still shows the prior result but
+                // params/axes are already the new ones — a stale-cell click would
+                // mix old keys with new axes. Disable clicks until the fetch lands.
+                onCellClick={loading ? undefined : handleCellClick}
+                // Headers deep-link by a single axis. Disabled while refetching
+                // (stale keys) and in the over-filtered state, where adding a
+                // filter to a 0-result set is pointless.
+                onRowClick={
+                  loading || result.total.count === 0
+                    ? undefined
+                    : handleRowClick
+                }
+                onColumnClick={
+                  loading || result.total.count === 0
+                    ? undefined
+                    : handleColumnClick
+                }
                 dimmed={result.total.count === 0}
               />
             ) : result.cells.length > 0 ? (
