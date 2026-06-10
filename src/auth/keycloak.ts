@@ -18,10 +18,27 @@ keycloak.onTokenExpired = () => {
   keycloak.updateToken(30).catch(() => keycloak.login());
 };
 
-export async function initKeycloak(): Promise<void> {
-  await keycloak.init({
-    onLoad: "login-required",
+// Communities that allow self-service registration: visitors land on a
+// Sign in / Create account screen instead of being forced straight to login.
+const SELF_SIGNUP_COMMUNITIES = new Set(["hpv"]);
+
+function allowsSelfSignup(): boolean {
+  const slug = window.location.pathname.split("/").filter(Boolean)[0];
+  return slug !== undefined && SELF_SIGNUP_COMMUNITIES.has(slug);
+}
+
+export async function initKeycloak(): Promise<boolean> {
+  return keycloak.init({
+    onLoad: allowsSelfSignup() ? "check-sso" : "login-required",
     pkceMethod: "S256",
     checkLoginIframe: false,
   });
+}
+
+export function login(): void {
+  keycloak.login();
+}
+
+export function register(): void {
+  keycloak.register();
 }

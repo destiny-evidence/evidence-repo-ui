@@ -1,7 +1,7 @@
 import { render } from "preact";
 import { App } from "./App";
 import { initMatomo } from "./analytics/matomo";
-import { AuthError, Loading } from "./auth/AuthGate";
+import { AuthError, Landing, Loading } from "./auth/AuthGate";
 import { initKeycloak } from "./auth/keycloak";
 import { MATOMO_CONTAINER_URL } from "./config";
 import "./styles/reset.css";
@@ -16,7 +16,9 @@ render(<Loading />, root);
 initMatomo(MATOMO_CONTAINER_URL);
 
 initKeycloak()
-  .then(() => render(<App />, root))
+  .then((authenticated) =>
+    render(authenticated ? <App /> : <Landing />, root),
+  )
   .catch((err) => {
     console.error("Authentication initialization failed", err);
     render(<AuthError />, root);
