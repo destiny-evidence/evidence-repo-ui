@@ -24,9 +24,9 @@ interface ResultRowProps {
   communitySlug: string;
   reference: Reference;
   codingInstitution?: CodingInstitutionConfig;
-  // ESEA shows finding/estimate stat-badges; HPV (false) hides them.
+  // When false, hides the finding/estimate stat-badges.
   findingsAndEstimates?: boolean;
-  // Concept schemes whose members are dropped from pills (HPV geo).
+  // Concept schemes whose members are dropped from pills (e.g. geo).
   pillExcludedSchemes?: readonly string[];
 }
 

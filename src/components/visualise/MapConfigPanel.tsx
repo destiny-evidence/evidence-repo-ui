@@ -29,7 +29,7 @@ interface MapConfigPanelProps {
   // Drives the facet-count preview (q / annotations live here).
   params: SearchParams;
   countNoun?: string;
-  // Hide the facet-backed Country card where the `countries` facet is empty (HPV);
+  // Hide the facet-backed Country card where the `countries` facet is empty;
   // the Country concept-scheme card still renders from `schemes`.
   showCountryFacetFilter?: boolean;
   onApply: (next: { axes: EvidenceMapAxes; filters: AppliedFilters }) => void;

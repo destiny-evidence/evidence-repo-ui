@@ -12,7 +12,7 @@ import "./FilterCardList.css";
 interface FilterCardListProps {
   draft: FilterDraft;
   countNoun?: string;
-  // Show the facet-backed country card; off where the `countries` facet is empty (HPV).
+  // Show the facet-backed country card; off where the `countries` facet is empty.
   showCountryFacetFilter?: boolean;
 }
 
