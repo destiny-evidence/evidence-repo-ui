@@ -75,6 +75,13 @@ export interface SearchResult {
   references: Reference[];
 }
 
+// Matching reference ids for a search, in result order, capped at the backend's
+// result window (`total.is_lower_bound` flags truncation).
+export interface ReferenceIdSearchResult {
+  total: SearchResultTotal;
+  reference_ids: string[];
+}
+
 export interface ConceptFacetCount {
   concept: string;
   count: number;

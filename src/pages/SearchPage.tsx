@@ -5,7 +5,7 @@ import {
   parseSearchParams,
   toQueryString,
   buildSearchUrl,
-  toExportSearchQuery,
+  toUnpaginatedSearchQuery,
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
@@ -263,7 +263,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const exportAnnouncement = exportAnnouncementFor(exportJob.status);
 
   function handleExport() {
-    const { query, filters } = toExportSearchQuery(
+    const { query, filters } = toUnpaginatedSearchQuery(
       params,
       community.defaultAnnotations,
     );
@@ -279,14 +279,12 @@ function SearchPageInner({ community }: { community: Community }) {
 
   // Context shown in the AI-summary drawer. The query stands in for the
   // intersecting terms until the evidence map deep-links explicit row/column
-  // labels here. Until an all-references source exists, a summary covers only
-  // the references on the current page, so the count reflects that rather than
-  // the full intersection total.
+  // labels here. The summary covers every matching reference (gathered by the
+  // hook from the ids endpoint), so the count is the full intersection total.
   const aiSummariesEnabled = community.features.aiSummaries;
-  const aiReferenceIds = results.results?.references.map((ref) => ref.id) ?? [];
   const aiContext = {
     terms: params.q !== "" && params.q !== "*" ? [params.q] : [],
-    count: aiReferenceIds.length,
+    count: results.results?.total.count ?? 0,
   };
 
   function handleGenerateSummary() {
@@ -294,9 +292,14 @@ function SearchPageInner({ community }: { community: Community }) {
       ai.open();
       return;
     }
+    const { query, filters } = toUnpaginatedSearchQuery(
+      params,
+      community.defaultAnnotations,
+    );
     ai.generate({
       terms: aiContext.terms.map((name) => ({ name })),
-      referenceIds: aiReferenceIds,
+      query,
+      filters,
     });
   }
 

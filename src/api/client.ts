@@ -13,9 +13,9 @@ export class ApiError extends Error {
 
 async function request<T>(
   endpoint: string,
-  options: { method?: string; body?: unknown } = {},
+  options: { method?: string; body?: unknown; signal?: AbortSignal } = {},
 ): Promise<T> {
-  const { method = "GET", body } = options;
+  const { method = "GET", body, signal } = options;
 
   try {
     await keycloak.updateToken(30);
@@ -36,6 +36,7 @@ async function request<T>(
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
+    signal,
   });
 
   if (!response.ok) {
@@ -54,7 +55,8 @@ async function request<T>(
 }
 
 export const api = {
-  get: <T>(endpoint: string) => request<T>(endpoint),
+  get: <T>(endpoint: string, signal?: AbortSignal) =>
+    request<T>(endpoint, { signal }),
   post: <T>(endpoint: string, body: unknown) =>
     request<T>(endpoint, { method: "POST", body }),
   put: <T>(endpoint: string, body: unknown) =>

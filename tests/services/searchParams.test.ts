@@ -3,7 +3,7 @@ import {
   parseSearchParams,
   toQueryString,
   buildSearchUrl,
-  toExportSearchQuery,
+  toUnpaginatedSearchQuery,
 } from "@/services/searchParams";
 import { makeSearchParams } from "../fixtures";
 
@@ -281,26 +281,26 @@ describe("buildSearchUrl", () => {
   });
 });
 
-describe("toExportSearchQuery", () => {
+describe("toUnpaginatedSearchQuery", () => {
   test("no concept or country, non-empty q → existing behaviour preserved", () => {
     const p = makeSearchParams({ q: "phonics" });
-    expect(toExportSearchQuery(p, ["dom-x"]).query).toBe("phonics");
+    expect(toUnpaginatedSearchQuery(p, ["dom-x"]).query).toBe("phonics");
   });
 
   test("no concept or country, empty q → '*' substitution", () => {
-    expect(toExportSearchQuery(makeSearchParams(), ["dom-x"]).query).toBe("*");
+    expect(toUnpaginatedSearchQuery(makeSearchParams(), ["dom-x"]).query).toBe("*");
   });
 
   test("country filters travel as structured filter, not embedded in query", () => {
     const p = makeSearchParams({ q: "phonics", countryCodes: ["DE", "FR"] });
-    const out = toExportSearchQuery(p, ["dom-x"]);
+    const out = toUnpaginatedSearchQuery(p, ["dom-x"]);
     expect(out.query).toBe("phonics");
     expect(out.filters.countryCodes).toEqual(["DE", "FR"]);
   });
 
   test("country filters with empty q → '*' query, codes on filters", () => {
     const p = makeSearchParams({ countryCodes: ["DE"] });
-    const out = toExportSearchQuery(p, ["dom-x"]);
+    const out = toUnpaginatedSearchQuery(p, ["dom-x"]);
     expect(out.query).toBe("*");
     expect(out.filters.countryCodes).toEqual(["DE"]);
   });
@@ -310,7 +310,7 @@ describe("toExportSearchQuery", () => {
       q: "phonics",
       conceptFilters: [["https://x/A"]],
     });
-    const out = toExportSearchQuery(p, ["dom-x"]);
+    const out = toUnpaginatedSearchQuery(p, ["dom-x"]);
     expect(out.query).toBe("phonics");
     expect(out.filters.conceptFilters).toEqual([["https://x/A"]]);
   });
@@ -323,7 +323,7 @@ describe("toExportSearchQuery", () => {
       sort: "newest",
       countryCodes: ["DE"],
     });
-    expect(toExportSearchQuery(p, ["dom-x"]).filters).toEqual({
+    expect(toUnpaginatedSearchQuery(p, ["dom-x"]).filters).toEqual({
       startYear: 2010,
       endYear: 2024,
       annotation: ["dom-x"],

@@ -3,6 +3,7 @@ import type {
   Reference,
   ReferenceCrossFacetResult,
   ReferenceFacetResult,
+  ReferenceIdSearchResult,
   SearchExportRead,
   SearchResult,
 } from "@/types/models";
@@ -73,6 +74,22 @@ export async function searchReferences(
   if (isPositiveSafeInt(filters.page)) params.set("page", String(filters.page));
   for (const s of filters.sort ?? []) params.append("sort", s);
   return api.get<SearchResult>(`/v1/references/search/?${params.toString()}`);
+}
+
+// All matching reference ids for a query, without pagination or reference data.
+// Accepts the same filters as searchReferences (minus page); the backend caps
+// the result at its result window and flags truncation via total.is_lower_bound.
+export async function searchReferenceIds(
+  query: string | undefined,
+  filters: Omit<SearchFilters, "page"> = {},
+  signal?: AbortSignal,
+): Promise<ReferenceIdSearchResult> {
+  const params = buildSharedSearchParams(query, filters);
+  for (const s of filters.sort ?? []) params.append("sort", s);
+  return api.get<ReferenceIdSearchResult>(
+    `/v1/references/search/ids/?${params.toString()}`,
+    signal,
+  );
 }
 
 export async function searchReferenceFacets(

@@ -4,12 +4,17 @@ import { renderHook, act, waitFor } from "@testing-library/preact";
 vi.mock("@/services/summariserClient", () => ({
   requestSummary: vi.fn(),
 }));
+vi.mock("@/services/apiClient", () => ({
+  searchReferenceIds: vi.fn(),
+}));
 
 import { requestSummary } from "@/services/summariserClient";
-import { useAiSummary } from "@/hooks/useAiSummary";
+import { searchReferenceIds } from "@/services/apiClient";
+import { useAiSummary, type AiSummaryInput } from "@/hooks/useAiSummary";
 import { MOCK_SUMMARY } from "@/services/summariserMock";
 
 const mockRequest = vi.mocked(requestSummary);
+const mockIds = vi.mocked(searchReferenceIds);
 
 /** A promise plus its resolve/reject, so a test can drive completion timing. */
 function deferred<T>() {
@@ -22,10 +27,22 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-const req = { terms: [{ name: "Afghanistan" }], referenceIds: ["a", "b"] };
+const input: AiSummaryInput = {
+  terms: [{ name: "Afghanistan" }],
+  query: "afghanistan",
+  filters: { annotation: ["domain-inclusion/hpv"] },
+};
+
+function resolveIds(reference_ids: string[]) {
+  mockIds.mockResolvedValue({
+    total: { count: reference_ids.length, is_lower_bound: false },
+    reference_ids,
+  });
+}
 
 beforeEach(() => {
   mockRequest.mockReset();
+  mockIds.mockReset();
 });
 
 describe("useAiSummary", () => {
@@ -36,44 +53,44 @@ describe("useAiSummary", () => {
     expect(result.current.minimized).toBe(false);
   });
 
-  test("generate opens the drawer, then resolves to the result", async () => {
-    const d = deferred<typeof MOCK_SUMMARY>();
-    mockRequest.mockReturnValue(d.promise);
+  test("gathers ids then summarises them, opening the drawer", async () => {
+    resolveIds(["a", "b", "c"]);
+    mockRequest.mockResolvedValue(MOCK_SUMMARY);
 
     const { result } = renderHook(() => useAiSummary());
-    act(() => result.current.generate(req));
+    act(() => result.current.generate(input));
 
     expect(result.current.status).toBe("generating");
     expect(result.current.drawerOpen).toBe(true);
 
-    await act(async () => {
-      d.resolve(MOCK_SUMMARY);
-      await d.promise;
-    });
-
-    expect(result.current.status).toBe("done");
+    await waitFor(() => expect(result.current.status).toBe("done"));
     expect(result.current.result).toBe(MOCK_SUMMARY);
-    expect(result.current.drawerOpen).toBe(true);
+
+    // ids endpoint queried with the search descriptor; its ids feed the summary.
+    expect(mockIds).toHaveBeenCalledWith(
+      input.query,
+      input.filters,
+      expect.anything(),
+    );
+    expect(mockRequest).toHaveBeenCalledWith(
+      { terms: input.terms, referenceIds: ["a", "b", "c"] },
+      expect.anything(),
+    );
   });
 
   test("run in background hides the drawer but keeps the result on completion", async () => {
-    const d = deferred<typeof MOCK_SUMMARY>();
-    mockRequest.mockReturnValue(d.promise);
+    resolveIds(["a"]);
+    mockRequest.mockResolvedValue(MOCK_SUMMARY);
 
     const { result } = renderHook(() => useAiSummary());
-    act(() => result.current.generate(req));
+    act(() => result.current.generate(input));
     act(() => result.current.runInBackground());
 
     expect(result.current.minimized).toBe(true);
     expect(result.current.drawerOpen).toBe(false);
 
-    await act(async () => {
-      d.resolve(MOCK_SUMMARY);
-      await d.promise;
-    });
-
+    await waitFor(() => expect(result.current.status).toBe("done"));
     // Still minimized → drawer stays closed, but the result is ready.
-    expect(result.current.status).toBe("done");
     expect(result.current.minimized).toBe(true);
     expect(result.current.drawerOpen).toBe(false);
 
@@ -82,11 +99,12 @@ describe("useAiSummary", () => {
   });
 
   test("dismiss aborts and a late resolution does not revive state", async () => {
+    resolveIds(["a"]);
     const d = deferred<typeof MOCK_SUMMARY>();
     mockRequest.mockReturnValue(d.promise);
 
     const { result } = renderHook(() => useAiSummary());
-    act(() => result.current.generate(req));
+    act(() => result.current.generate(input));
     act(() => result.current.dismiss());
 
     expect(result.current.status).toBe("idle");
@@ -96,24 +114,29 @@ describe("useAiSummary", () => {
       await d.promise;
     });
 
-    // The stale request resolved, but the run guard kept us idle.
     expect(result.current.status).toBe("idle");
     expect(result.current.result).toBeNull();
   });
 
-  test("surfaces an error message when the request rejects", async () => {
-    const d = deferred<typeof MOCK_SUMMARY>();
-    mockRequest.mockReturnValue(d.promise);
+  test("surfaces an error message when the summary request rejects", async () => {
+    resolveIds(["a"]);
+    mockRequest.mockRejectedValue(new Error("boom"));
 
     const { result } = renderHook(() => useAiSummary());
-    act(() => result.current.generate(req));
-
-    await act(async () => {
-      d.reject(new Error("boom"));
-      await d.promise.catch(() => undefined);
-    });
+    act(() => result.current.generate(input));
 
     await waitFor(() => expect(result.current.status).toBe("error"));
     expect(result.current.errorMessage).toBe("boom");
+  });
+
+  test("surfaces an error when gathering ids fails", async () => {
+    mockIds.mockRejectedValue(new Error("ids down"));
+
+    const { result } = renderHook(() => useAiSummary());
+    act(() => result.current.generate(input));
+
+    await waitFor(() => expect(result.current.status).toBe("error"));
+    expect(result.current.errorMessage).toBe("ids down");
+    expect(mockRequest).not.toHaveBeenCalled();
   });
 });

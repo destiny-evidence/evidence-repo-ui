@@ -715,7 +715,7 @@ describe("SearchPage", () => {
 
     test("facet URL → Export passes concept filter through to requestSearchExport", async () => {
       // SearchPage-layer integration: catches stale params at the call site,
-      // which the unit tests on toExportSearchQuery in isolation cannot.
+      // which the unit tests on toUnpaginatedSearchQuery in isolation cannot.
       history.replaceState(
         null,
         "",

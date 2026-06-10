@@ -94,9 +94,10 @@ export function buildSearchUrl(communitySlug: string, params: SearchParams): str
 }
 
 // Maps a SearchParams + community annotations to the query/filters shape the
-// export endpoint expects. Substitutes "*" for an empty browse-mode query
-// so the backend's `min_length=1` constraint is satisfied.
-export function toExportSearchQuery(
+// whole-result-set endpoints expect (export, reference-id search) — i.e. minus
+// pagination. Substitutes "*" for an empty browse-mode query so the backend's
+// `min_length=1` constraint is satisfied.
+export function toUnpaginatedSearchQuery(
   params: SearchParams,
   annotations: string[] | undefined,
 ): { query: string; filters: Omit<SearchFilters, "page"> } {
