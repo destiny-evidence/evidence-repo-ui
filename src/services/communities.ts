@@ -18,7 +18,8 @@ function requireEnv(name: string, value: string | undefined): string {
 export const DEFAULT_FEATURES: CommunityFeatures = {
   evidenceMap: false,
   findingsAndEstimates: true,
-  exportExcel: true,
+  // Off until a community's Excel export is built — the export is Education-shaped today.
+  exportExcel: false,
   countryFacetFilter: true,
 };
 
@@ -63,7 +64,7 @@ const COMMUNITIES: Community[] = [
       "https://vocab.esea.education/ImplementationDescriptionScheme",
     ],
     pillExcludedSchemes: [],
-    features: { ...DEFAULT_FEATURES, evidenceMap: true },
+    features: { ...DEFAULT_FEATURES, evidenceMap: true, exportExcel: true },
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",
@@ -109,7 +110,6 @@ const COMMUNITIES: Community[] = [
       ...DEFAULT_FEATURES,
       evidenceMap: true,
       findingsAndEstimates: false,
-      exportExcel: false,
       countryFacetFilter: false,
     },
     defaultEvidenceMapAxes: {

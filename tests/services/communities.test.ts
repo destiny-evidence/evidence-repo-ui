@@ -55,6 +55,11 @@ describe("communities", () => {
     expect(DEFAULT_FEATURES.evidenceMap).toBe(false);
   });
 
+  it("opts Excel export out by default, leaving communities to enable it", async () => {
+    const { DEFAULT_FEATURES } = await import("@/services/communities");
+    expect(DEFAULT_FEATURES.exportExcel).toBe(false);
+  });
+
   it("gates findings/estimates per community (ESEA on, HPV off)", async () => {
     const { findCommunity } = await import("@/services/communities");
     expect(findCommunity("esea")?.features.findingsAndEstimates).toBe(true);
