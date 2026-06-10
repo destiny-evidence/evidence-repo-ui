@@ -91,11 +91,6 @@
   border-radius: 20px;
   padding: 2px 10px;
 }
-.ai-cross {
-  color: var(--color-text-tertiary);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-mono-sm);
-}
 .ai-pill {
   font-family: var(--font-mono);
   font-size: var(--font-size-mono-sm);

@@ -28,6 +28,7 @@ import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
 import { AiSummaryDrawer } from "@/components/ai-summary/AiSummaryDrawer";
 import { AiSummaryMiniChip } from "@/components/ai-summary/AiSummaryMiniChip";
 import { useAiSummary } from "@/hooks/useAiSummary";
+import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
 import { totalSelectedCount as totalSelectedYearCount } from "@/components/filters/yearRangeFilterState";
@@ -277,13 +278,15 @@ function SearchPageInner({ community }: { community: Community }) {
     });
   }
 
-  // Context shown in the AI-summary drawer. The query stands in for the
-  // intersecting terms until the evidence map deep-links explicit row/column
-  // labels here. The summary covers every matching reference (gathered by the
-  // hook from the ids endpoint), so the count is the full intersection total.
+  // Context shown in the AI-summary drawer and sent to the summariser as the
+  // terms to frame the summary around. A summary can be generated from any
+  // search, so the terms are the current free-text query plus any applied
+  // concept filters (a map cell arrives here with those filters pre-applied).
+  // The count is the full matching total — the hook summarises every reference
+  // the ids endpoint returns, not just the current page.
   const aiSummariesEnabled = community.features.aiSummaries;
   const aiContext = {
-    terms: params.q !== "" && params.q !== "*" ? [params.q] : [],
+    terms: deriveSummaryTerms(params, vocab.labels),
     count: results.results?.total.count ?? 0,
   };
 

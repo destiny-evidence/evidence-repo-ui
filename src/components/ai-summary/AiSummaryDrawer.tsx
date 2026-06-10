@@ -1,4 +1,3 @@
-import { Fragment } from "preact";
 import { Drawer } from "@/components/common/Drawer";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
 import type { UseAiSummaryResult } from "@/hooks/useAiSummary";
@@ -29,6 +28,11 @@ export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
         ? "Summary unavailable"
         : "AI summary";
 
+  // Closing should never abort an in-flight job — only the explicit "Cancel"
+  // does. While generating, close drops it to the background chip; once there's
+  // nothing running, close clears the finished summary.
+  const handleClose = ai.status === "generating" ? ai.runInBackground : ai.dismiss;
+
   return (
     <Drawer
       open={ai.drawerOpen}
@@ -42,14 +46,14 @@ export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
           class="ai-iconbtn"
           aria-label="Close"
           title="Close"
-          onClick={ai.dismiss}
+          onClick={handleClose}
         >
           ✕
         </button>
       }
       footer={<DrawerFooter ai={ai} />}
       closeOnBackdrop
-      onClose={ai.dismiss}
+      onClose={handleClose}
     >
       {ai.status === "generating" && (
         <div class="ai-loading">
@@ -91,14 +95,9 @@ function ContextChips({ terms, count }: AiSummaryContext) {
   return (
     <div class="ai-ctx">
       {terms.map((term, i) => (
-        <Fragment key={i}>
-          {i > 0 && (
-            <span class="ai-cross" aria-hidden="true">
-              ×
-            </span>
-          )}
-          <span class="ai-term">{term}</span>
-        </Fragment>
+        <span key={i} class="ai-term">
+          {term}
+        </span>
       ))}
       <span class="ai-pill">
         {count} {count === 1 ? "result" : "results"}

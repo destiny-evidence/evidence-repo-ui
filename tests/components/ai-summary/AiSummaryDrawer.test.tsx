@@ -98,4 +98,28 @@ describe("AiSummaryDrawer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Run in background" }));
     expect(ai.runInBackground).toHaveBeenCalledTimes(1);
   });
+
+  test("closing while generating backgrounds the job rather than aborting it", () => {
+    const ai = makeAi({ status: "generating", result: null });
+    render(<AiSummaryDrawer ai={ai} context={context} />);
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(ai.runInBackground).toHaveBeenCalledTimes(1);
+    expect(ai.dismiss).not.toHaveBeenCalled();
+  });
+
+  test("explicit Cancel while generating aborts the job", () => {
+    const ai = makeAi({ status: "generating", result: null });
+    render(<AiSummaryDrawer ai={ai} context={context} />);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(ai.dismiss).toHaveBeenCalledTimes(1);
+    expect(ai.runInBackground).not.toHaveBeenCalled();
+  });
+
+  test("closing a finished summary dismisses it", () => {
+    const ai = makeAi();
+    render(<AiSummaryDrawer ai={ai} context={context} />);
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(ai.dismiss).toHaveBeenCalledTimes(1);
+    expect(ai.runInBackground).not.toHaveBeenCalled();
+  });
 });
