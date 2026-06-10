@@ -140,7 +140,8 @@ function DrawerFooter({ ai }: { ai: UseAiSummaryResult }) {
     );
   }
 
-  if (!AI_SUMMARY_FLAG_FORM_URL) return null;
+  // Flagging only applies to a produced summary — not the error state.
+  if (ai.status !== "done" || !AI_SUMMARY_FLAG_FORM_URL) return null;
   return (
     <footer class="ai-drawer__footer">
       <a

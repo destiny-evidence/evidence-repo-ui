@@ -83,6 +83,17 @@ describe("AiSummaryDrawer", () => {
     expect(link.getAttribute("target")).toBe("_blank");
   });
 
+  test("does not offer the flag link in the error state", () => {
+    render(
+      <AiSummaryDrawer
+        ai={makeAi({ status: "error", result: null, errorMessage: "boom" })}
+        context={context}
+      />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("boom");
+    expect(screen.queryByRole("link", { name: /flag this summary/i })).toBeNull();
+  });
+
   test("shows a loading state with Cancel and Run in background while generating", () => {
     render(
       <AiSummaryDrawer ai={makeAi({ status: "generating", result: null })} context={context} />,
