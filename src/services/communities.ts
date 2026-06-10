@@ -112,6 +112,16 @@ const COMMUNITIES: Community[] = [
       exportExcel: false,
       countryFacetFilter: false,
     },
+    defaultEvidenceMapAxes: {
+      row: {
+        kind: "scheme",
+        schemeUri: "https://vocab.aliveevidence.org/hpv/TargetPopulation",
+      },
+      column: {
+        kind: "scheme",
+        schemeUri: "https://vocab.aliveevidence.org/hpv/DeliveryActor",
+      },
+    },
     copy: buildCopy("HPV Vaccine Delivery", {
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
