@@ -144,7 +144,7 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
       }
       const schemeUri = extractFirstRefId(entry["skos:inScheme"]);
       if (schemeUri) {
-        inScheme.set(entry["@id"], schemeUri);
+        inScheme.set(id, expand(schemeUri));
       }
       continue;
     }

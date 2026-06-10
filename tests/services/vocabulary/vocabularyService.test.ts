@@ -225,7 +225,7 @@ describe("buildVocabularyData", () => {
 
     expect(
       inScheme.get("https://vocab.esea.education/DocumentTypeScheme/C00008"),
-    ).toBe("esea:DocumentTypeScheme");
+    ).toBe("https://vocab.esea.education/DocumentTypeScheme");
 
     // Concepts with no skos:inScheme are absent (C00022 is a top concept but
     // carries no inScheme of its own).
@@ -240,7 +240,7 @@ describe("buildVocabularyData", () => {
 
     expect(
       inScheme.get("https://vocab.esea.education/EducationLevelScheme/C00002"),
-    ).toBe("esea:EducationLevelScheme");
+    ).toBe("https://vocab.esea.education/EducationLevelScheme");
     expect(schemes.some((s) => s.uri === "esea:EducationLevelScheme")).toBe(false);
   });
 });
