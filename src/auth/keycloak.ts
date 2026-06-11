@@ -25,8 +25,18 @@ function allowsSelfSignup(): boolean {
 }
 
 export async function initKeycloak(): Promise<boolean> {
+  const selfSignup = allowsSelfSignup();
+  // Self-signup communities are an open front door. check-sso detects an
+  // existing session via a hidden iframe — so a logged-in user skips the
+  // landing — without the full-page Keycloak bounce a plain check-sso does.
+  // silentCheckSsoFallback:false keeps cookie-restricted browsers from
+  // bouncing too: they just see the landing and click Sign in once.
   return keycloak.init({
-    onLoad: allowsSelfSignup() ? "check-sso" : "login-required",
+    onLoad: selfSignup ? "check-sso" : "login-required",
+    ...(selfSignup && {
+      silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
+      silentCheckSsoFallback: false,
+    }),
     pkceMethod: "S256",
     checkLoginIframe: false,
   });
