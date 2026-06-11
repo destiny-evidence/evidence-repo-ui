@@ -59,6 +59,7 @@ export function makeCommunity(
     features: {
       evidenceMap: false,
       aiSummaries: false,
+      selfSignup: false,
       findingsAndEstimates: true,
       exportExcel: true,
       countryFacetFilter: true,

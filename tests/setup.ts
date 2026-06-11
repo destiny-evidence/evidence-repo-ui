@@ -6,6 +6,9 @@ vi.stubEnv("VITE_ESEA_VOCABULARY_URL", "https://test.example/vocab");
 vi.stubEnv("VITE_ESEA_CONTEXT_URL", "https://test.example/context");
 vi.stubEnv("VITE_HPV_VOCABULARY_URL", "https://test.example/hpv-vocab");
 vi.stubEnv("VITE_HPV_CONTEXT_URL", "https://test.example/hpv-context");
+vi.stubEnv("VITE_KEYCLOAK_URL", "https://kc.test.example");
+vi.stubEnv("VITE_KEYCLOAK_REALM", "test-realm");
+vi.stubEnv("VITE_KEYCLOAK_CLIENT_ID", "test-client");
 
 const defaultTokenParsed = () => ({
   name: "Test User",
@@ -28,6 +31,8 @@ vi.mock("@/auth/keycloak", () => {
   return {
     keycloak,
     initKeycloak: vi.fn().mockResolvedValue(undefined),
+    login: vi.fn(),
+    register: vi.fn(),
   };
 });
 

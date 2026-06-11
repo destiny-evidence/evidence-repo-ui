@@ -16,7 +16,8 @@
   text-align: center;
 }
 
-.auth-gate__retry {
+.auth-gate__retry,
+.auth-gate__button {
   font-size: var(--font-size-base);
   color: var(--color-text);
   background: transparent;
@@ -26,7 +27,24 @@
   cursor: pointer;
 }
 
-.auth-gate__retry:hover {
+.auth-gate__retry:hover,
+.auth-gate__button:hover {
   color: var(--color-primary);
   border-color: var(--color-primary);
+}
+
+.auth-gate__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.auth-gate__button--primary {
+  color: var(--color-bg);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.auth-gate__button--primary:hover {
+  color: var(--color-bg);
+  opacity: 0.9;
 }

@@ -3,6 +3,8 @@ export interface CommunityFeatures {
   evidenceMap: boolean;
   // Gates the "Generate AI summary" entry point and its drawer.
   aiSummaries: boolean;
+  // Offer a Sign in / Create account choice on entry instead of forcing login.
+  selfSignup: boolean;
   // Whether result cards show finding/estimate stat-badges.
   findingsAndEstimates: boolean;
   // Whether the Excel export button is shown.
