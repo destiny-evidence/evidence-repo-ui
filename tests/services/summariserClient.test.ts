@@ -42,11 +42,8 @@ afterEach(() => {
 });
 
 describe("requestSummary", () => {
-  test("returns placeholder data without hitting the network when no base is set", async () => {
-    vi.useFakeTimers();
-    const pending = requestSummary(request);
-    await vi.advanceTimersByTimeAsync(3000);
-    await expect(pending).resolves.toBe(MOCK_SUMMARY);
+  test("throws without hitting the network when no base is configured", async () => {
+    await expect(requestSummary(request)).rejects.toThrow(/not configured/i);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

@@ -29,6 +29,7 @@ import { AiSummaryDrawer } from "@/components/ai-summary/AiSummaryDrawer";
 import { AiSummaryMiniChip } from "@/components/ai-summary/AiSummaryMiniChip";
 import { useAiSummary } from "@/hooks/useAiSummary";
 import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
+import { SUMMARISER_BASE } from "@/config";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
 import { totalSelectedCount as totalSelectedYearCount } from "@/components/filters/yearRangeFilterState";
@@ -284,7 +285,10 @@ function SearchPageInner({ community }: { community: Community }) {
   // concept filters (a map cell arrives here with those filters pre-applied).
   // The count is the full matching total — the hook summarises every reference
   // the ids endpoint returns, not just the current page.
-  const aiSummariesEnabled = community.features.aiSummaries;
+  // Also requires a configured summariser so users never see placeholder data:
+  // unset VITE_SUMMARISER_BASE ⇒ the feature stays hidden.
+  const aiSummariesEnabled =
+    community.features.aiSummaries && Boolean(SUMMARISER_BASE);
   const aiContext = {
     terms: deriveSummaryTerms(params, vocab.labels),
     count: results.results?.total.count ?? 0,

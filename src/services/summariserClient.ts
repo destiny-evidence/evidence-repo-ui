@@ -1,13 +1,8 @@
 import { SUMMARISER_BASE } from "@/config";
 import { keycloak } from "@/auth/keycloak";
 import type { SummariseResponse, SummaryRequest } from "./summariser";
-import { MOCK_SUMMARY } from "./summariserMock";
 
 export type { SummariseResponse, SummaryRequest } from "./summariser";
-
-// Stand-in latency so the loading and run-in-background states are exercised
-// while the service returns placeholder data.
-const MOCK_DELAY_MS = 2500;
 
 // How often to poll a running job, and how long before giving up.
 const POLL_INTERVAL_MS = 5000;
@@ -33,17 +28,16 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
 /**
  * Request a summary for the references at an intersection.
  *
- * Without `VITE_SUMMARISER_BASE` configured (the current default), this resolves
- * to placeholder data after a short delay. Once the service is deployed, set the
- * base URL to exercise the real submit-and-poll path below.
+ * Requires `VITE_SUMMARISER_BASE`; the UI only surfaces the feature when it's
+ * configured, so an unset base here is a programming error rather than a
+ * user-facing path.
  */
 export async function requestSummary(
   request: SummaryRequest,
   signal?: AbortSignal,
 ): Promise<SummariseResponse> {
   if (!SUMMARISER_BASE) {
-    await wait(MOCK_DELAY_MS, signal);
-    return MOCK_SUMMARY;
+    throw new Error("Summariser is not configured (VITE_SUMMARISER_BASE).");
   }
   return submitAndPoll(request, signal);
 }
