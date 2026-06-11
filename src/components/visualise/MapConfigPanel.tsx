@@ -45,12 +45,15 @@ interface AxisOption {
 function buildAxisOptions(
   schemes: ConceptScheme[],
   drafted: EvidenceMapAxis[],
+  includeCountries: boolean,
 ): AxisOption[] {
   const byValue = new Map<string, string>();
   for (const scheme of schemes) {
     byValue.set(scheme.uri, schemeDisplayLabel(scheme.label));
   }
-  byValue.set(AXIS_COUNTRIES, "Countries");
+  // Only offer Countries where the facet is populated; against an empty
+  // country facet the cross-facet query for that axis fails.
+  if (includeCountries) byValue.set(AXIS_COUNTRIES, "Countries");
   for (const axis of drafted) {
     const token = axisToken(axis);
     if (!byValue.has(token)) byValue.set(token, localName(token));
@@ -101,8 +104,8 @@ export function MapConfigPanel({
   });
 
   const options = useMemo(
-    () => buildAxisOptions(schemes, [rowDraft, columnDraft]),
-    [schemes, rowDraft, columnDraft],
+    () => buildAxisOptions(schemes, [rowDraft, columnDraft], showCountryFacetFilter),
+    [schemes, rowDraft, columnDraft, showCountryFacetFilter],
   );
 
   const draftAxes: EvidenceMapAxes = { row: rowDraft, column: columnDraft };

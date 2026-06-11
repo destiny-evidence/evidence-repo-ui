@@ -72,6 +72,20 @@ describe("MapConfigPanel", () => {
     expect(row.getByRole("option", { name: "Countries" })).toBeInTheDocument();
   });
 
+  test("omits the Countries axis option where the country facet is unsupported", () => {
+    renderPanel({ showCountryFacetFilter: false });
+    // Scheme axes are still offered...
+    const row = within(rowSelect());
+    expect(row.getByRole("option", { name: "Outcome" })).toBeInTheDocument();
+    expect(row.getByRole("option", { name: "Document type" })).toBeInTheDocument();
+    // ...but Countries is gone: with an empty country facet a Countries-axis
+    // map issues a cross-facet query against a missing facet and fails.
+    expect(row.queryByRole("option", { name: "Countries" })).toBeNull();
+    expect(
+      within(columnSelect()).queryByRole("option", { name: "Countries" }),
+    ).toBeNull();
+  });
+
   test("sorts the dropdown options alphabetically by label", () => {
     renderPanel();
     const labels = within(rowSelect())
