@@ -56,9 +56,48 @@ describe("communities", () => {
     expect(findCommunity("esea")?.features.aiSummaries).toBe(false);
   });
 
-  it("opts every feature out by default, leaving communities to enable them", async () => {
+  it("opts evidence-map and AI summaries out by default, leaving communities to enable them", async () => {
     const { DEFAULT_FEATURES } = await import("@/services/communities");
     expect(DEFAULT_FEATURES.evidenceMap).toBe(false);
     expect(DEFAULT_FEATURES.aiSummaries).toBe(false);
+  });
+
+  it("opts Excel export out by default, leaving communities to enable it", async () => {
+    const { DEFAULT_FEATURES } = await import("@/services/communities");
+    expect(DEFAULT_FEATURES.exportExcel).toBe(false);
+  });
+
+  it("gates findings/estimates per community (ESEA on, HPV off)", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("esea")?.features.findingsAndEstimates).toBe(true);
+    expect(findCommunity("hpv")?.features.findingsAndEstimates).toBe(false);
+  });
+
+  it("gates Excel export per community (ESEA on, HPV off until #127)", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("esea")?.features.exportExcel).toBe(true);
+    expect(findCommunity("hpv")?.features.exportExcel).toBe(false);
+  });
+
+  it("gates the facet-backed country filter per community (ESEA on, HPV off)", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("esea")?.features.countryFacetFilter).toBe(true);
+    expect(findCommunity("hpv")?.features.countryFacetFilter).toBe(false);
+  });
+
+  it("excludes exactly the 5 HPV geo schemes from card pills, none for ESEA", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("esea")?.pillExcludedSchemes).toEqual([]);
+    const hpvExcluded = findCommunity("hpv")?.pillExcludedSchemes ?? [];
+    expect(hpvExcluded).toHaveLength(5);
+    expect(hpvExcluded).toEqual(
+      expect.arrayContaining([
+        "https://vocab.aliveevidence.org/hpv/Country",
+        "https://vocab.aliveevidence.org/hpv/CountryClassification",
+        "https://vocab.aliveevidence.org/hpv/UNICEFRegion",
+        "https://vocab.aliveevidence.org/hpv/WorldBankRegion",
+        "https://vocab.aliveevidence.org/hpv/WHORegion",
+      ]),
+    );
   });
 });

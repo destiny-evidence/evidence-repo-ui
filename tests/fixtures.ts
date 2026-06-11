@@ -18,6 +18,7 @@ import type {
   Reference,
 } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
+import type { VocabularyResult } from "@/hooks/useVocabulary";
 
 /** SearchParams with all-undefined filters and no facets — override per test. */
 export function makeSearchParams(
@@ -40,12 +41,12 @@ export function makeSearchParams(
  * behaviour without depending on the real registry in services/communities.ts.
  * `features` and `copy` merge shallowly so callers override just one field.
  */
-type CommunityOverrides = Partial<Omit<Community, "features" | "copy">> & {
-  features?: Partial<CommunityFeatures>;
-  copy?: Partial<CommunityCopy>;
-};
-
-export function makeCommunity(overrides: CommunityOverrides = {}): Community {
+export function makeCommunity(
+  overrides: Partial<Omit<Community, "features" | "copy">> & {
+    features?: Partial<CommunityFeatures>;
+    copy?: Partial<CommunityCopy>;
+  } = {},
+): Community {
   const { features, copy, ...rest } = overrides;
   return {
     slug: "test",
@@ -54,7 +55,15 @@ export function makeCommunity(overrides: CommunityOverrides = {}): Community {
     vocabularyUrl: "https://vocab.example/v1",
     contextUrl: "https://vocab.example/ctx",
     filterExcludedSchemes: [],
-    features: { evidenceMap: false, aiSummaries: false, ...features },
+    pillExcludedSchemes: [],
+    features: {
+      evidenceMap: false,
+      aiSummaries: false,
+      findingsAndEstimates: true,
+      exportExcel: true,
+      countryFacetFilter: true,
+      ...features,
+    },
     copy: {
       searchPlaceholder: "Search the evidence",
       drawerTitle: "Refine the evidence",
@@ -63,6 +72,26 @@ export function makeCommunity(overrides: CommunityOverrides = {}): Community {
       ...copy,
     },
     ...rest,
+  };
+}
+
+/**
+ * A useVocabulary() result, all-null/idle by default — override per test.
+ * The one place to extend when VocabularyResult grows a field, so adding a
+ * field doesn't ripple to every test that mocks the hook.
+ */
+export function makeVocabResult(
+  overrides: Partial<VocabularyResult> = {},
+): VocabularyResult {
+  return {
+    labels: null,
+    broader: null,
+    definitions: null,
+    inScheme: null,
+    schemes: null,
+    loading: false,
+    error: null,
+    ...overrides,
   };
 }
 

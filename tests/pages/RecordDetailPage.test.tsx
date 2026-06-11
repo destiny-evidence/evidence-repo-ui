@@ -2,7 +2,7 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { RecordDetailPage } from "@/pages/RecordDetailPage";
 import { CommunityProvider } from "@/community/CommunityContext";
-import { makeReference } from "../fixtures";
+import { makeReference, makeVocabResult } from "../fixtures";
 
 function renderRecordDetail(id: string) {
   return render(
@@ -36,14 +36,7 @@ const mockLabels = new Map([
 beforeEach(() => {
   vi.clearAllMocks();
   history.replaceState(null, "", "/esea");
-  mockUseVocabulary.mockReturnValue({
-    labels: null,
-    broader: null,
-    definitions: null,
-    schemes: null,
-    loading: false,
-    error: null,
-  });
+  mockUseVocabulary.mockReturnValue(makeVocabResult());
   mockUseContextPrefixes.mockReturnValue({
     context: null,
     loading: false,
@@ -107,14 +100,7 @@ describe("RecordDetailPage", () => {
       loading: false,
       error: null,
     });
-    mockUseVocabulary.mockReturnValue({
-      labels: mockLabels,
-      broader: new Map(),
-      definitions: new Map(),
-      schemes: [],
-      loading: false,
-      error: null,
-    });
+    mockUseVocabulary.mockReturnValue(makeVocabResult({ labels: mockLabels }));
     mockUseContextPrefixes.mockReturnValue({
       context: { prefixes: PREFIXES },
       loading: false,
@@ -180,14 +166,9 @@ describe("RecordDetailPage", () => {
       loading: false,
       error: null,
     });
-    mockUseVocabulary.mockReturnValue({
-      labels: null,
-      broader: null,
-      definitions: null,
-      schemes: null,
-      loading: false,
-      error: new Error("Network failure"),
-    });
+    mockUseVocabulary.mockReturnValue(
+      makeVocabResult({ error: new Error("Network failure") }),
+    );
     mockUseContextPrefixes.mockReturnValue({
       context: null,
       loading: false,

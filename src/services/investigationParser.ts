@@ -262,6 +262,18 @@ function resolveConceptRef(
   return { uri, label: labels.get(uri) };
 }
 
+function parseAppliedConcepts(
+  investigation: Dict,
+  prefixes: Map<string, string>,
+  labels: Map<string, string>,
+): ResolvedConcept[] {
+  const raw = investigation["hasAppliedConcept"];
+  const items = Array.isArray(raw) ? raw : [];
+  return items
+    .map((v) => resolveConceptRef(v, prefixes, labels))
+    .filter((c): c is ResolvedConcept => c !== undefined);
+}
+
 function parseArm(node: Dict): ArmData {
   const numField = (key: string) => resolveNumericValue(node[key]);
   return {
@@ -447,5 +459,6 @@ export function parseInvestigation(
     ),
     isRetracted: investigation["isRetracted"] === true,
     findings: parseFindings(investigation, prefixes, labels),
+    appliedConcepts: parseAppliedConcepts(investigation, prefixes, labels),
   };
 }

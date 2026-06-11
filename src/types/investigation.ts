@@ -77,7 +77,7 @@ export interface EffectEstimateData {
   // Provenance, e.g. "Computed from summary statistics".
   estimateSource?: ResolvedConcept;
   baselineAdjusted?: boolean;
-  // ESEA context types this as xsd:string with values "yes" / "no".
+  // Typed as xsd:string with values "yes" / "no" in some vocabularies.
   clusteringAdjusted?: string;
   derivedFromIds?: string[];
 }
@@ -103,4 +103,7 @@ export interface InvestigationData {
   documentType?: CodedAnnotation<ResolvedConcept>;
   isRetracted: boolean;
   findings: FindingData[];
+  // Flat investigation-level concept refs (hasAppliedConcept). Bare URI
+  // strings, no CodingAnnotation wrapper. Empty for vocabularies that omit it.
+  appliedConcepts: ResolvedConcept[];
 }

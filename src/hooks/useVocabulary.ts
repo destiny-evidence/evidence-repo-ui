@@ -5,14 +5,19 @@ import type {
   VocabularyData,
 } from "@/services/vocabulary/vocabularyService";
 
-export function useVocabulary(vocabularyUrl: string | undefined): {
+export interface VocabularyResult {
   labels: Map<string, string> | null;
   broader: Map<string, string> | null;
   definitions: Map<string, string> | null;
+  inScheme: Map<string, string> | null;
   schemes: ConceptScheme[] | null;
   loading: boolean;
   error: Error | null;
-} {
+}
+
+export function useVocabulary(
+  vocabularyUrl: string | undefined,
+): VocabularyResult {
   const [data, setData] = useState<VocabularyData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -42,6 +47,7 @@ export function useVocabulary(vocabularyUrl: string | undefined): {
     labels: data?.labels ?? null,
     broader: data?.broader ?? null,
     definitions: data?.definitions ?? null,
+    inScheme: data?.inScheme ?? null,
     schemes: data?.schemes ?? null,
     loading,
     error,
