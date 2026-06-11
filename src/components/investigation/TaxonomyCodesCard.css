@@ -1,0 +1,26 @@
+.taxonomy-codes-card__title {
+  margin: 0;
+}
+.taxonomy-codes-card__group {
+  margin-top: var(--spacing-md);
+}
+.taxonomy-codes-card__scheme {
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--spacing-sm);
+}
+summary.taxonomy-codes-card__scheme {
+  cursor: pointer;
+}
+.taxonomy-codes-card__subgroup {
+  margin-top: var(--spacing-sm);
+}
+.taxonomy-codes-card__subheading {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-xs);
+}
+.taxonomy-codes-card__vocab-note {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-md);
+}
