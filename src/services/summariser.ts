@@ -65,11 +65,22 @@ export interface ExtractionError {
   error: string;
 }
 
+/** Why a requested reference was dropped before summarisation. */
+export type SkipReason = "no_full_text" | "download_failed" | "not_pdf";
+
+export interface SkippedReference {
+  reference_id: string;
+  reason: SkipReason;
+}
+
 export interface SummariseResponse {
   kind: "summary";
   summary: SummaryBlock;
   papers: PaperMeta[];
+  /** Papers fetched but whose text couldn't be parsed. */
   extraction_errors: ExtractionError[];
+  /** References dropped before summarisation (no full text, non-PDF, or failed download). */
+  skipped_references: SkippedReference[];
   terms: TermInfo[];
 }
 

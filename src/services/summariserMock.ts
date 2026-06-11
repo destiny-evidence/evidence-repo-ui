@@ -9,6 +9,9 @@ export const MOCK_SUMMARY: SummariseResponse = {
   kind: "summary",
   terms: [{ name: "Afghanistan" }, { name: "Cost-effectiveness" }],
   extraction_errors: [],
+  skipped_references: [
+    { reference_id: "0196b1a0-0000-7000-8000-000000000099", reason: "no_full_text" },
+  ],
   papers: [
     {
       paper: "anwari-2019",

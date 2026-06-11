@@ -68,15 +68,31 @@ describe("AiSummaryDrawer", () => {
     expect(claim?.classList.contains("is-flash")).toBe(true);
   });
 
-  test("surfaces a note when some papers couldn't be read", () => {
+  test("coverage note reports usable references and lists those left out", () => {
     const ai = makeAi({
       result: {
         ...MOCK_SUMMARY,
+        papers: MOCK_SUMMARY.papers, // 5 summarised
+        skipped_references: [
+          { reference_id: "r1", reason: "no_full_text" },
+          { reference_id: "r2", reason: "no_full_text" },
+        ],
         extraction_errors: [{ paper: "x", error: "unreadable" }],
       },
     });
     render(<AiSummaryDrawer ai={ai} context={context} />);
-    expect(screen.getByText(/1 paper couldn't be read/i)).toBeDefined();
+    // 5 summarised + 2 no-full-text + 1 unreadable = 8 total.
+    const note = screen.getByText(/Based on 5 of 8 references/i);
+    expect(note.textContent).toMatch(/2 had no full text available/i);
+    expect(note.textContent).toMatch(/1 couldn't be read/i);
+  });
+
+  test("coverage note reads cleanly at full coverage", () => {
+    const ai = makeAi({
+      result: { ...MOCK_SUMMARY, skipped_references: [], extraction_errors: [] },
+    });
+    render(<AiSummaryDrawer ai={ai} context={context} />);
+    expect(screen.getByText(/Based on 5 references\./i)).toBeDefined();
   });
 
   test("flag link points at the configured form and opens in a new tab", () => {

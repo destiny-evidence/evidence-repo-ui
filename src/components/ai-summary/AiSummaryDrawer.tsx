@@ -2,6 +2,7 @@ import { Drawer } from "@/components/common/Drawer";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
 import type { UseAiSummaryResult } from "@/hooks/useAiSummary";
 import type { SearchResultTotal } from "@/types/models";
+import type { SkipReason, SummariseResponse } from "@/services/summariser";
 import { formatTotal } from "@/utils/searchTotal";
 import { SummaryBody } from "./renderSummary";
 import "./ai-summary.css";
@@ -18,9 +19,11 @@ interface AiSummaryDrawerProps {
   context: AiSummaryContext;
 }
 
-function pluralPapers(n: number): string {
-  return `${n} ${n === 1 ? "paper" : "papers"}`;
-}
+const SKIP_REASON_TEXT: Record<SkipReason, string> = {
+  no_full_text: "had no full text available",
+  not_pdf: "were not in PDF format",
+  download_failed: "couldn't be downloaded",
+};
 
 export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
   const title =
@@ -77,20 +80,41 @@ export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
       {ai.status === "done" && ai.result && (
         <>
           <Disclaimer />
-          {ai.result.extraction_errors.length > 0 && (
-            <p class="ai-extraction-note">
-              {pluralPapers(ai.result.extraction_errors.length)} couldn't be read
-              and {ai.result.extraction_errors.length === 1 ? "was" : "were"} left
-              out of this summary.
-            </p>
-          )}
           <SummaryBody
             summary={ai.result.summary}
             papers={ai.result.papers}
           />
+          <CoverageNote result={ai.result} />
         </>
       )}
     </Drawer>
+  );
+}
+
+// How many references the summary actually drew on, and which were left out.
+function CoverageNote({ result }: { result: SummariseResponse }) {
+  const used = result.papers.length;
+
+  const reasonCounts = new Map<SkipReason, number>();
+  for (const ref of result.skipped_references) {
+    reasonCounts.set(ref.reason, (reasonCounts.get(ref.reason) ?? 0) + 1);
+  }
+  const clauses = [...reasonCounts].map(
+    ([reason, n]) => `${n} ${SKIP_REASON_TEXT[reason]}`,
+  );
+  if (result.extraction_errors.length > 0) {
+    clauses.push(`${result.extraction_errors.length} couldn't be read`);
+  }
+
+  const leftOut = result.skipped_references.length + result.extraction_errors.length;
+  const total = used + leftOut;
+
+  return (
+    <p class="ai-coverage">
+      {leftOut === 0
+        ? `Based on ${total} ${total === 1 ? "reference" : "references"}.`
+        : `Based on ${used} of ${total} references. ${clauses.join("; ")} — left out of this summary.`}
+    </p>
   );
 }
 
