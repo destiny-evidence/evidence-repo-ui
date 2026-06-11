@@ -1,24 +1,7 @@
 import { Fragment } from "preact";
 import { useRef } from "preact/hooks";
+import { ExternalLinkIcon } from "@/components/common/icons";
 import type { PaperMeta, SummaryBlock } from "@/services/summariser";
-
-const EXT_ICON = (
-  <svg
-    width="11"
-    height="11"
-    viewBox="0 0 12 12"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M4 2H2v8h8V8" />
-    <path d="M7 2h3v3" />
-    <path d="M10 2 6 6" />
-  </svg>
-);
 
 function citation(papers: PaperMeta[], paperId: string): string {
   const paper = papers.find((p) => p.paper === paperId);
@@ -103,7 +86,7 @@ export function SummaryBody({ summary, papers }: SummaryBodyProps) {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          DOI {EXT_ICON}
+                          DOI <ExternalLinkIcon size={11} />
                         </a>
                       )}
                     </div>

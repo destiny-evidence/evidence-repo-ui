@@ -1,4 +1,5 @@
 import { Drawer } from "@/components/common/Drawer";
+import { WarningIcon } from "@/components/common/icons";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
 import type { UseAiSummaryResult } from "@/hooks/useAiSummary";
 import type { SearchResultTotal } from "@/types/models";
@@ -136,11 +137,7 @@ function ContextChips({ terms, count }: AiSummaryContext) {
 function Disclaimer() {
   return (
     <div class="ai-disclaimer">
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path d="M10 2 19 17H1L10 2Z" />
-        <rect x="9" y="8" width="2" height="5" fill="#fff" />
-        <rect x="9" y="14" width="2" height="2" fill="#fff" />
-      </svg>
+      <WarningIcon size={16} />
       <span>
         AI-generated from the papers at this intersection. Quotes are extracted
         verbatim — verify against the sources before using in synthesis.
