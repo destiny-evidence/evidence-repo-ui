@@ -117,11 +117,11 @@ const COMMUNITIES: Community[] = [
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",
-        schemeUri: "https://vocab.aliveevidence.org/hpv/TargetPopulation",
+        schemeUri: "https://vocab.aliveevidence.org/hpv/WHORegion",
       },
       column: {
         kind: "scheme",
-        schemeUri: "https://vocab.aliveevidence.org/hpv/DeliveryActor",
+        schemeUri: "https://vocab.aliveevidence.org/hpv/ThematicFocusPrimary",
       },
     },
     copy: buildCopy("HPV Vaccine Delivery", {

@@ -78,6 +78,20 @@ describe("communities", () => {
     expect(findCommunity("hpv")?.features.countryFacetFilter).toBe(false);
   });
 
+  it("defaults HPV's evidence map to WHO Region rows x Thematic Focus — Primary columns", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("hpv")?.defaultEvidenceMapAxes).toEqual({
+      row: {
+        kind: "scheme",
+        schemeUri: "https://vocab.aliveevidence.org/hpv/WHORegion",
+      },
+      column: {
+        kind: "scheme",
+        schemeUri: "https://vocab.aliveevidence.org/hpv/ThematicFocusPrimary",
+      },
+    });
+  });
+
   it("declares exactly the 5 HPV geographic schemes, none for ESEA", async () => {
     const { findCommunity } = await import("@/services/communities");
     expect(findCommunity("esea")?.geographicSchemes).toEqual([]);
