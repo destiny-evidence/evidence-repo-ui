@@ -12,6 +12,8 @@ interface FilterDrawerProps {
   open: boolean;
   title?: string;
   countNoun?: string;
+  // Show the facet-backed country card; off where the `countries` facet is empty.
+  showCountryFacetFilter?: boolean;
   schemes: ConceptScheme[];
   appliedConceptFilters: readonly (readonly string[])[];
   appliedCountryCodes: readonly string[];
@@ -35,6 +37,7 @@ type FilterDrawerPanelProps = Omit<FilterDrawerProps, "open">;
 function FilterDrawerPanel({
   title = "Refine the evidence",
   countNoun = "results",
+  showCountryFacetFilter = true,
   schemes,
   appliedConceptFilters,
   appliedCountryCodes,
@@ -119,7 +122,11 @@ function FilterDrawerPanel({
         </header>
 
         <div class="filter-drawer__body">
-          <FilterCardList draft={draft} countNoun={countNoun} />
+          <FilterCardList
+            draft={draft}
+            countNoun={countNoun}
+            showCountryFacetFilter={showCountryFacetFilter}
+          />
         </div>
 
         <FilterActions

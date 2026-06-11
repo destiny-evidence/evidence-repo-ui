@@ -30,8 +30,11 @@ test("renders not found for invalid community", () => {
 
 test("shows the Visualise tab and routes to the visualise page when enabled", () => {
   history.pushState({}, "", "/hpv");
-  render(<App />);
+  const { unmount } = render(<App />);
   expect(screen.getByRole("link", { name: /visualise/i })).toBeInTheDocument();
+  // VisualisePage canonicalizes the URL (HPV default axes) via a replace-navigate
+  // on mount; unmount first so a stale App doesn't pick it up and double-render.
+  unmount();
 
   history.pushState({}, "", "/hpv/visualise");
   render(<App />);

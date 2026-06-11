@@ -24,10 +24,16 @@ interface ResultRowProps {
   communitySlug: string;
   reference: Reference;
   codingInstitution?: CodingInstitutionConfig;
+  // When false, hides the finding/estimate stat-badges.
+  findingsAndEstimates?: boolean;
+  // Concept schemes whose members are dropped from pills (e.g. geo).
+  pillExcludedSchemes?: readonly string[];
 }
 
 const MAX_AUTHORS_SHOWN = 3;
 export const PILL_CAP = 8;
+// Stable default so the pill useMemo isn't busted by a fresh [] each render.
+const NO_PILL_EXCLUSIONS: readonly string[] = [];
 
 function formatAuthors(authors: { display_name: string }[]): string {
   if (authors.length === 0) return "";
@@ -70,6 +76,8 @@ export function ResultRow({
   communitySlug,
   reference,
   codingInstitution: codingConfig,
+  findingsAndEstimates = true,
+  pillExcludedSchemes = NO_PILL_EXCLUSIONS,
 }: ResultRowProps) {
   const bib = extractBibliographic(reference);
   const doi = extractDoi(reference.identifiers);
@@ -80,7 +88,9 @@ export function ResultRow({
   const rawContext = linkedData?.data?.["@context"];
   const contextUrl = typeof rawContext === "string" ? rawContext : undefined;
 
-  const { labels, definitions } = useVocabulary(linkedData?.vocabulary_uri);
+  const { labels, definitions, inScheme } = useVocabulary(
+    linkedData?.vocabulary_uri,
+  );
   const { context } = useContextPrefixes(contextUrl);
 
   const pillTags = useMemo(() => {
@@ -90,7 +100,17 @@ export function ResultRow({
       context.prefixes,
       labels,
     );
-    const concepts = aggregatePillConcepts(investigation);
+    // Some communities carry flat investigation-level hasAppliedConcept; others
+    // build pills from the documentType/findings walk. The two shapes are disjoint.
+    const sourced =
+      investigation.appliedConcepts.length > 0
+        ? investigation.appliedConcepts.map((value) => ({ value }))
+        : aggregatePillConcepts(investigation);
+    const excluded = new Set(pillExcludedSchemes);
+    const concepts =
+      excluded.size === 0
+        ? sourced
+        : sourced.filter((a) => !excluded.has(inScheme?.get(a.value.uri) ?? ""));
     // Flat pills (no parent breadcrumb) — pass an empty `broader` map.
     // Definitions still drive the hover tooltip.
     return conceptsToTags(
@@ -99,7 +119,7 @@ export function ResultRow({
       new Map(),
       definitions ?? new Map(),
     );
-  }, [linkedData, labels, definitions, context]);
+  }, [linkedData, labels, definitions, inScheme, context, pillExcludedSchemes]);
 
   const title = bib?.title ?? reference.id;
   const authors = bib?.authorship ? formatAuthors(bib.authorship) : "";
@@ -161,12 +181,16 @@ export function ResultRow({
             DOI ↗
           </a>
         )}
-        <span class="stat-badge">
-          <span class="stat-num">{findingsLabel}</span> findings
-        </span>
-        <span class="stat-badge">
-          <span class="stat-num">{estimatesLabel}</span> estimates
-        </span>
+        {findingsAndEstimates && (
+          <>
+            <span class="stat-badge">
+              <span class="stat-num">{findingsLabel}</span> findings
+            </span>
+            <span class="stat-badge">
+              <span class="stat-num">{estimatesLabel}</span> estimates
+            </span>
+          </>
+        )}
         {codingInstitution && (
           <span class="row-coder" data-testid="coder-text">
             {codingInstitution}

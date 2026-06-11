@@ -370,6 +370,7 @@ function EvidenceMapView({
       <MapConfigPanel
         key={canonical}
         schemes={filterableSchemes}
+        showCountryFacetFilter={community.features.countryFacetFilter}
         appliedAxes={axes}
         defaultAxes={defaults}
         appliedConceptFilters={params.conceptFilters}

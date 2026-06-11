@@ -29,6 +29,9 @@ interface MapConfigPanelProps {
   // Drives the facet-count preview (q / annotations live here).
   params: SearchParams;
   countNoun?: string;
+  // Hide the facet-backed Country card where the `countries` facet is empty;
+  // the Country concept-scheme card still renders from `schemes`.
+  showCountryFacetFilter?: boolean;
   onApply: (next: { axes: EvidenceMapAxes; filters: AppliedFilters }) => void;
 }
 
@@ -80,6 +83,7 @@ export function MapConfigPanel({
   appliedEndYear,
   params,
   countNoun = "results",
+  showCountryFacetFilter = true,
   onApply,
 }: MapConfigPanelProps) {
   const [rowDraft, setRowDraft] = useState<EvidenceMapAxis>(appliedAxes.row);
@@ -144,7 +148,11 @@ export function MapConfigPanel({
 
         <section class="map-config-panel__section">
           <h3 class="map-config-panel__section-title">Filters</h3>
-          <FilterCardList draft={draft} countNoun={countNoun} />
+          <FilterCardList
+            draft={draft}
+            countNoun={countNoun}
+            showCountryFacetFilter={showCountryFacetFilter}
+          />
         </section>
       </div>
 

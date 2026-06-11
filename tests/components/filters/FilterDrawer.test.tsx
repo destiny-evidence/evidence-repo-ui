@@ -100,6 +100,16 @@ describe("FilterDrawer", () => {
     ).toBeDefined();
   });
 
+  test("shows the dedicated Country card by default", () => {
+    renderDrawer();
+    expect(screen.getByText("Country")).toBeInTheDocument();
+  });
+
+  test("hides the dedicated Country card when showCountryFacetFilter is false", () => {
+    renderDrawer({ showCountryFacetFilter: false });
+    expect(screen.queryByText("Country")).toBeNull();
+  });
+
   test("shows a subtitle nudge with the current query when params.q is set", () => {
     const { container } = renderDrawer({
       params: makeSearchParams({ q: "phonics" }),
