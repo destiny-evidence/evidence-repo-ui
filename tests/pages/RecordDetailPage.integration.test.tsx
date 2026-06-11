@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/preact";
 import { RecordDetailPage } from "@/pages/RecordDetailPage";
 import { CommunityProvider } from "@/community/CommunityContext";
 import { makeReference, makeVocabResult } from "../fixtures";
+import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 
 function renderRecordDetail(id: string) {
   return render(
@@ -32,6 +33,11 @@ const PREFIXES = new Map([
 const mockLabels = new Map([
   ["https://vocab.esea.education/C00008", "Journal Article"],
 ]);
+
+const HPV_COUNTRY = "https://vocab.aliveevidence.org/hpv/Country";
+// A non-geographic (topical) scheme. Deliberately a placeholder, not a real HPV
+// scheme, so it can't read as standing in for a specific concept or map axis.
+const NON_GEO_SCHEME = "https://vocab.aliveevidence.org/hpv/NonGeoScheme";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -204,5 +210,179 @@ describe("RecordDetailPage", () => {
     expect(screen.getByText("Bibliographic Only")).toBeDefined();
     expect(screen.getByText("Jones, K. (2023)")).toBeDefined();
     expect(screen.queryByText("Doc Type")).toBeNull();
+  });
+
+  test("HPV record renders the Taxonomy codes card, geo first and expanded, no findings", () => {
+    history.replaceState(null, "", "/hpv");
+    mockUseReference.mockReturnValue({
+      reference: makeReference({
+        bibliographic: { title: "HPV ref" },
+        investigation: {
+          hasAppliedConcept: [
+            { "@id": NON_GEO_SCHEME + "/concept" },
+            { "@id": HPV_COUNTRY + "/KE" },
+          ],
+        },
+      }),
+      loading: false,
+      error: null,
+    });
+    const schemes: ConceptScheme[] = [
+      {
+        uri: NON_GEO_SCHEME,
+        label: "Topical Focus",
+        topConcepts: [{ uri: NON_GEO_SCHEME + "/concept", label: "Sample Concept" }],
+      },
+      {
+        uri: HPV_COUNTRY,
+        label: "Country",
+        topConcepts: [{ uri: HPV_COUNTRY + "/KE", label: "Kenya" }],
+      },
+    ];
+    mockUseVocabulary.mockReturnValue(
+      makeVocabResult({
+        labels: new Map([
+          [NON_GEO_SCHEME + "/concept", "Sample Concept"],
+          [HPV_COUNTRY + "/KE", "Kenya"],
+        ]),
+        inScheme: new Map([
+          [NON_GEO_SCHEME + "/concept", NON_GEO_SCHEME],
+          [HPV_COUNTRY + "/KE", HPV_COUNTRY],
+        ]),
+        schemes,
+      }),
+    );
+    mockUseContextPrefixes.mockReturnValue({
+      context: { prefixes: new Map() },
+      loading: false,
+      error: null,
+    });
+
+    renderRecordDetail("abc");
+    expect(
+      screen.getByRole("heading", { name: "Taxonomy codes" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Topical Focus" }),
+    ).toBeInTheDocument(); // topical
+    expect(
+      screen.getByRole("heading", { name: "Country" }),
+    ).toBeInTheDocument(); // geo, expanded (1 code, below roll-up threshold)
+    expect(screen.getByText("Kenya")).toBeInTheDocument(); // geo member listed, not rolled up
+    expect(screen.getByText("Sample Concept")).toBeInTheDocument(); // topical member
+    expect(screen.queryByText("Finding 1")).toBeNull();
+  });
+
+  test("ESEA record (no appliedConcepts) renders no Taxonomy codes card", () => {
+    history.replaceState(null, "", "/esea");
+    mockUseReference.mockReturnValue({
+      reference: makeReference({
+        bibliographic: { title: "ESEA ref" },
+        investigation: { hasFinding: [] },
+      }),
+      loading: false,
+      error: null,
+    });
+    renderRecordDetail("abc");
+    expect(screen.getByText("ESEA ref")).toBeInTheDocument();
+    expect(screen.queryByText("Taxonomy codes")).toBeNull();
+  });
+
+  // Data-gated, not community-gated: any community with applied concepts gets the
+  // card. ESEA has none today; that's data, not a gate.
+  test("ESEA record with appliedConcepts renders the card too (data-gated, not community-gated)", () => {
+    history.replaceState(null, "", "/esea");
+    const ESEA_SCHEME = "https://vocab.esea.education/EducationTheme";
+    mockUseReference.mockReturnValue({
+      reference: makeReference({
+        bibliographic: { title: "ESEA coded ref" },
+        investigation: {
+          hasAppliedConcept: [{ "@id": ESEA_SCHEME + "/concept" }],
+        },
+      }),
+      loading: false,
+      error: null,
+    });
+    const schemes: ConceptScheme[] = [
+      {
+        uri: ESEA_SCHEME,
+        label: "Education Theme",
+        topConcepts: [{ uri: ESEA_SCHEME + "/concept", label: "Numeracy" }],
+      },
+    ];
+    mockUseVocabulary.mockReturnValue(
+      makeVocabResult({
+        labels: new Map([[ESEA_SCHEME + "/concept", "Numeracy"]]),
+        inScheme: new Map([[ESEA_SCHEME + "/concept", ESEA_SCHEME]]),
+        schemes,
+      }),
+    );
+    mockUseContextPrefixes.mockReturnValue({
+      context: { prefixes: new Map() },
+      loading: false,
+      error: null,
+    });
+    renderRecordDetail("abc");
+    expect(
+      screen.getByRole("heading", { name: "Taxonomy codes" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Numeracy")).toBeInTheDocument();
+  });
+
+  test("HPV bibliographic-only record (no codes) renders no Taxonomy codes card", () => {
+    history.replaceState(null, "", "/hpv");
+    mockUseReference.mockReturnValue({
+      reference: makeReference({ bibliographic: { title: "Shell" } }),
+      loading: false,
+      error: null,
+    });
+    renderRecordDetail("abc");
+    expect(screen.getByText("Shell")).toBeInTheDocument();
+    expect(screen.queryByText("Taxonomy codes")).toBeNull();
+  });
+
+  test("HPV record with context-only failure resolves labels and shows no raw-identifier note", () => {
+    history.replaceState(null, "", "/hpv");
+    mockUseReference.mockReturnValue({
+      reference: makeReference({
+        bibliographic: { title: "HPV ctx-fail ref" },
+        investigation: {
+          hasAppliedConcept: [{ "@id": NON_GEO_SCHEME + "/concept" }],
+        },
+      }),
+      loading: false,
+      error: null,
+    });
+    const schemes: ConceptScheme[] = [
+      {
+        uri: NON_GEO_SCHEME,
+        label: "Topical Focus",
+        topConcepts: [{ uri: NON_GEO_SCHEME + "/concept", label: "Sample Concept" }],
+      },
+    ];
+    mockUseVocabulary.mockReturnValue(
+      makeVocabResult({
+        labels: new Map([[NON_GEO_SCHEME + "/concept", "Sample Concept"]]),
+        inScheme: new Map([[NON_GEO_SCHEME + "/concept", NON_GEO_SCHEME]]),
+        schemes,
+        // vocab loaded fine — only context (prefixes) fails below
+      }),
+    );
+    mockUseContextPrefixes.mockReturnValue({
+      context: null,
+      loading: false,
+      error: new Error("context fetch failed"),
+    });
+
+    renderRecordDetail("abc");
+    // HPV concepts are full URIs, so they resolve without the context/prefixes.
+    expect(
+      screen.getByRole("heading", { name: "Taxonomy codes" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Sample Concept")).toBeInTheDocument();
+    // Context-only failure must NOT trip the card's raw-identifier note.
+    expect(
+      screen.queryByText(/codes are shown as raw identifiers/),
+    ).toBeNull();
   });
 });
