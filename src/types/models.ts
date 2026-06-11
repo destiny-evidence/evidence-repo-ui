@@ -1,6 +1,8 @@
 export interface CommunityFeatures {
   // No UI yet; reserved so the evidence map can ship behind a flag (#103).
   evidenceMap: boolean;
+  // Offer a Sign in / Create account choice on entry instead of forcing login.
+  selfSignup: boolean;
 }
 
 // One axis of the evidence map.

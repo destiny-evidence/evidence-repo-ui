@@ -1,5 +1,6 @@
 import Keycloak from "keycloak-js";
 import { KEYCLOAK_CLIENT_ID, KEYCLOAK_REALM, KEYCLOAK_URL } from "@/config";
+import { findCommunity } from "@/services/communities";
 
 function requireEnv(name: string, value: string | undefined): string {
   if (!value) {
@@ -18,13 +19,9 @@ keycloak.onTokenExpired = () => {
   keycloak.updateToken(30).catch(() => keycloak.login());
 };
 
-// Communities that allow self-service registration: visitors land on a
-// Sign in / Create account screen instead of being forced straight to login.
-const SELF_SIGNUP_COMMUNITIES = new Set(["hpv"]);
-
 function allowsSelfSignup(): boolean {
   const slug = window.location.pathname.split("/").filter(Boolean)[0];
-  return slug !== undefined && SELF_SIGNUP_COMMUNITIES.has(slug);
+  return slug !== undefined && !!findCommunity(slug)?.features.selfSignup;
 }
 
 export async function initKeycloak(): Promise<boolean> {
