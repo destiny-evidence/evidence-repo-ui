@@ -24,8 +24,8 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   countryFacetFilter: true,
 };
 
-// HPV geo ConceptSchemes dropped from result-card pills (#125): they swamp the
-// pill cap and geo has dedicated filters. Full scheme URIs to match inScheme.
+// The HPV geographic ConceptSchemes (country + regional/classification). Full scheme
+// URIs to match inScheme.
 const HPV_GEO_SCHEMES = [
   "https://vocab.aliveevidence.org/hpv/Country",
   "https://vocab.aliveevidence.org/hpv/CountryClassification",
@@ -64,7 +64,7 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: [
       "https://vocab.esea.education/ImplementationDescriptionScheme",
     ],
-    pillExcludedSchemes: [],
+    geographicSchemes: [],
     features: { ...DEFAULT_FEATURES, evidenceMap: true, exportExcel: true },
     defaultEvidenceMapAxes: {
       row: {
@@ -106,7 +106,7 @@ const COMMUNITIES: Community[] = [
       import.meta.env.VITE_HPV_CONTEXT_URL,
     ),
     filterExcludedSchemes: [],
-    pillExcludedSchemes: HPV_GEO_SCHEMES,
+    geographicSchemes: HPV_GEO_SCHEMES,
     features: {
       ...DEFAULT_FEATURES,
       evidenceMap: true,

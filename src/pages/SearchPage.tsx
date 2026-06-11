@@ -410,7 +410,7 @@ function SearchPageInner({ community }: { community: Community }) {
               reference={ref}
               codingInstitution={community.codingInstitution}
               findingsAndEstimates={community.features.findingsAndEstimates}
-              pillExcludedSchemes={community.pillExcludedSchemes}
+              pillExcludedSchemes={community.geographicSchemes}
             />
           ))}
         </div>

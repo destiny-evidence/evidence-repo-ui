@@ -53,9 +53,10 @@ export interface Community {
   vocabularyUrl: string;
   contextUrl: string;
   filterExcludedSchemes: string[];
-  // Concept schemes dropped from result-card pills (e.g. geo). Distinct from
-  // filterExcludedSchemes (drawer): geo stays filterable, just isn't a pill.
-  pillExcludedSchemes: string[];
+  // Geographic concept schemes (country + regional/classification): excluded from
+  // result-card pills and deprioritized on the detail page. Distinct from
+  // filterExcludedSchemes — geo stays filterable in the drawer, it just isn't a pill.
+  geographicSchemes: string[];
   features: CommunityFeatures;
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).

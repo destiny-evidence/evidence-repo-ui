@@ -78,12 +78,12 @@ describe("communities", () => {
     expect(findCommunity("hpv")?.features.countryFacetFilter).toBe(false);
   });
 
-  it("excludes exactly the 5 HPV geo schemes from card pills, none for ESEA", async () => {
+  it("declares exactly the 5 HPV geographic schemes, none for ESEA", async () => {
     const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("esea")?.pillExcludedSchemes).toEqual([]);
-    const hpvExcluded = findCommunity("hpv")?.pillExcludedSchemes ?? [];
-    expect(hpvExcluded).toHaveLength(5);
-    expect(hpvExcluded).toEqual(
+    expect(findCommunity("esea")?.geographicSchemes).toEqual([]);
+    const hpvGeo = findCommunity("hpv")?.geographicSchemes ?? [];
+    expect(hpvGeo).toHaveLength(5);
+    expect(hpvGeo).toEqual(
       expect.arrayContaining([
         "https://vocab.aliveevidence.org/hpv/Country",
         "https://vocab.aliveevidence.org/hpv/CountryClassification",
