@@ -9,9 +9,16 @@
 }
 .taxonomy-codes-card__subgroup {
   margin-top: var(--spacing-sm);
+  /* Indent each nesting level so sub-categories read as inside their scheme;
+     nests compound (a 3-level scheme indents twice). Schemes with direct pills
+     have no sub-group, so they stay flush. */
+  padding-left: var(--spacing-md);
 }
 .taxonomy-codes-card__subheading {
   font-size: var(--font-size-sm);
+  /* Below the scheme eyebrow's 600 (and override h4's bold default) so the
+     scheme reads as the parent and the sub-category as subordinate. */
+  font-weight: 500;
   color: var(--color-text-secondary);
   margin: 0 0 var(--spacing-xs);
 }
@@ -19,4 +26,32 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin: 0 0 var(--spacing-md);
+}
+/* Roll-up toggle: looks like a tag pill (same border/radius/size as
+   .tag-group__tag) but is an interactive disclosure with a chevron. */
+.taxonomy-codes-card__rollup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: transparent;
+  border: 1px solid var(--color-border-tag);
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500; /* match .tag-group__tag-child so it reads as a pill */
+  padding: 2px 8px;
+  color: inherit;
+  cursor: pointer;
+}
+.taxonomy-codes-card__rollup:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.taxonomy-codes-card__rollup-arrow {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.7;
+}
+.taxonomy-codes-card__rollup-panel {
+  margin-top: var(--spacing-sm);
 }

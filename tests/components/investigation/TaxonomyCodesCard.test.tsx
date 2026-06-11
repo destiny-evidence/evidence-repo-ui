@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { render, screen } from "@testing-library/preact";
+import { render, screen, fireEvent } from "@testing-library/preact";
 import { TaxonomyCodesCard } from "@/components/investigation/TaxonomyCodesCard";
 import type { TaxonomyGroup } from "@/services/taxonomyCodesUtils";
 
@@ -103,17 +103,54 @@ describe("TaxonomyCodesCard", () => {
     expect(screen.getByText("Uganda")).toBeInTheDocument();
   });
 
-  test("rolls a flooded group up to a single 'Multiple …' pill, hiding members", () => {
-    render(<TaxonomyCodesCard groups={[flooded]} />);
+  test("collapses a flooded group by default: a 'Multiple … (count)' toggle, members in a hidden panel", () => {
+    const { container } = render(<TaxonomyCodesCard groups={[flooded]} />);
     expect(
       screen.getByRole("heading", { name: "Country" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Multiple countries")).toBeInTheDocument();
-    expect(screen.queryByText("Kenya")).toBeNull();
-    expect(screen.queryByText("Uganda")).toBeNull();
+    const toggle = screen.getByRole("button", { name: /Multiple countries/ });
+    expect(toggle.textContent).toMatch(/Multiple countries \(24\)/);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    const panel = container.querySelector<HTMLElement>(
+      ".taxonomy-codes-card__rollup-panel",
+    );
+    expect(panel?.hidden).toBe(true);
   });
 
-  test("rolls a flooded topical scheme up too (geo-agnostic), pluralizing its label", () => {
+  test("expands a flooded group on click, revealing its members", () => {
+    const { container } = render(<TaxonomyCodesCard groups={[flooded]} />);
+    const toggle = screen.getByRole("button", { name: /Multiple countries/ });
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    const panel = container.querySelector<HTMLElement>(
+      ".taxonomy-codes-card__rollup-panel",
+    );
+    expect(panel?.hidden).toBe(false);
+    expect(screen.getByText("Kenya")).toBeInTheDocument();
+    expect(screen.getByText("Uganda")).toBeInTheDocument();
+  });
+
+  test("collapses a flooded group again on a second click", () => {
+    const { container } = render(<TaxonomyCodesCard groups={[flooded]} />);
+    const toggle = screen.getByRole("button", { name: /Multiple countries/ });
+    fireEvent.click(toggle);
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    const panel = container.querySelector<HTMLElement>(
+      ".taxonomy-codes-card__rollup-panel",
+    );
+    expect(panel?.hidden).toBe(true);
+  });
+
+  test("the rollup toggle's aria-controls points at a panel present in the DOM while collapsed", () => {
+    render(<TaxonomyCodesCard groups={[flooded]} />);
+    const toggle = screen.getByRole("button", { name: /Multiple countries/ });
+    const controlsId = toggle.getAttribute("aria-controls");
+    expect(controlsId).toBeTruthy();
+    expect(document.getElementById(controlsId!)).not.toBeNull();
+  });
+
+  test("rolls a flooded topical scheme up too (geo-agnostic), pluralizing its label with a count", () => {
     const floodedTopical: TaxonomyGroup = {
       schemeUri: "s:outcome",
       schemeLabel: "Outcome",
@@ -123,8 +160,11 @@ describe("TaxonomyCodesCard", () => {
       nodes: [{ uri: "x", label: "Some outcome", applied: true, children: [] }],
     };
     render(<TaxonomyCodesCard groups={[floodedTopical]} />);
-    expect(screen.getByText("Multiple outcomes")).toBeInTheDocument();
-    expect(screen.queryByText("Some outcome")).toBeNull();
+    const toggle = screen.getByRole("button", { name: /Multiple outcomes/ });
+    expect(toggle.textContent).toMatch(/Multiple outcomes \(15\)/);
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText("Some outcome")).toBeInTheDocument();
   });
 
   test("shows the vocab-unavailable note when flagged", () => {

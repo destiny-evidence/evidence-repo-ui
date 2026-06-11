@@ -1,5 +1,7 @@
+import { useId, useState } from "preact/hooks";
 import { TagGroup } from "../common/TagGroup";
 import type { HierarchicalTag } from "../common/TagGroup";
+import { ChevronDownIcon, ChevronRightIcon } from "@/components/common/icons";
 import type { TaxonomyGroup, TaxoNode } from "@/services/taxonomyCodesUtils";
 import "./TaxonomyCodesCard.css";
 
@@ -55,6 +57,40 @@ function pluralLower(label: string): string {
   return `${lower}s`;
 }
 
+// A flooded scheme (appliedCount > threshold) collapses to a count toggle so it
+// reads as a summary, not a literal code; its members live in an always-mounted
+// panel revealed on click. Button + hidden panel (not a native <details>), to
+// match the FilterCard disclosure pattern and keep aria-controls stable.
+function RolledUpGroup({ group }: { group: TaxonomyGroup }) {
+  const [expanded, setExpanded] = useState(false);
+  const panelId = useId();
+  return (
+    <>
+      <button
+        type="button"
+        class="taxonomy-codes-card__rollup"
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <span class="taxonomy-codes-card__rollup-label">
+          Multiple {pluralLower(group.schemeLabel)} ({group.appliedCount})
+        </span>
+        <span class="taxonomy-codes-card__rollup-arrow" aria-hidden="true">
+          {expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+        </span>
+      </button>
+      <div
+        id={panelId}
+        class="taxonomy-codes-card__rollup-panel"
+        hidden={!expanded}
+      >
+        <Nodes nodes={group.nodes} />
+      </div>
+    </>
+  );
+}
+
 function SchemeBlock({ group }: { group: TaxonomyGroup }) {
   return (
     <section class="taxonomy-codes-card__group">
@@ -62,7 +98,7 @@ function SchemeBlock({ group }: { group: TaxonomyGroup }) {
         {group.schemeLabel}
       </h3>
       {group.rolledUp ? (
-        <TagGroup tags={[{ label: `Multiple ${pluralLower(group.schemeLabel)}` }]} />
+        <RolledUpGroup group={group} />
       ) : (
         <Nodes nodes={group.nodes} />
       )}
