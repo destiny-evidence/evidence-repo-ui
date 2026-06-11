@@ -90,6 +90,35 @@ describe("parseInvestigation", () => {
     expect(parseInvestigation(data, PREFIXES, LABELS).isRetracted).toBe(false);
   });
 
+  test("resolves hasAppliedConcept bare URI strings into concepts", () => {
+    const data = makeData({
+      hasAppliedConcept: [
+        "https://vocab.esea.education/C00086",
+        "https://vocab.esea.education/C00122",
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.appliedConcepts).toEqual([
+      { uri: "https://vocab.esea.education/C00086", label: "Cooperative Learning" },
+      { uri: "https://vocab.esea.education/C00122", label: "Curriculum" },
+    ]);
+  });
+
+  test("returns empty appliedConcepts when hasAppliedConcept is absent", () => {
+    const result = parseInvestigation(makeData({}), PREFIXES, LABELS);
+    expect(result.appliedConcepts).toEqual([]);
+  });
+
+  test("resolves an applied concept with no known label to undefined label", () => {
+    const data = makeData({
+      hasAppliedConcept: ["https://vocab.esea.education/C99999"],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.appliedConcepts).toEqual([
+      { uri: "https://vocab.esea.education/C99999", label: undefined },
+    ]);
+  });
+
   test("extractIsRetracted returns true when set", () => {
     const data = makeData({ isRetracted: true });
     expect(extractIsRetracted(data)).toBe(true);

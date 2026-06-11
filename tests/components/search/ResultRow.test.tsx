@@ -6,6 +6,7 @@ import {
   abstractEnh,
   bibliographicEnh,
   makeReference,
+  makeVocabResult,
 } from "../../fixtures";
 
 const CODING = rawSourcePatterns([[/(^|[^a-z])eef([^a-z]|$)/, "EEF"]]);
@@ -14,19 +15,20 @@ const vocabState = {
   labels: null as Map<string, string> | null,
   broader: null as Map<string, string> | null,
   definitions: null as Map<string, string> | null,
+  inScheme: null as Map<string, string> | null,
 };
 const contextState = {
   context: null as { prefixes: Map<string, string> } | null,
 };
 
 vi.mock("@/hooks/useVocabulary", () => ({
-  useVocabulary: () => ({
-    labels: vocabState.labels,
-    broader: vocabState.broader,
-    definitions: vocabState.definitions,
-    loading: false,
-    error: null,
-  }),
+  useVocabulary: () =>
+    makeVocabResult({
+      labels: vocabState.labels,
+      broader: vocabState.broader,
+      definitions: vocabState.definitions,
+      inScheme: vocabState.inScheme,
+    }),
 }));
 
 vi.mock("@/hooks/useContextPrefixes", () => ({
@@ -41,6 +43,7 @@ beforeEach(() => {
   vocabState.labels = null;
   vocabState.broader = null;
   vocabState.definitions = null;
+  vocabState.inScheme = null;
   contextState.context = null;
 });
 
@@ -351,5 +354,68 @@ describe("ResultRow", () => {
     render(<ResultRow communitySlug="esea" reference={ref} />);
     expect(screen.getByText(/FULL INTACT ABSTRACT BODY/)).toBeInTheDocument();
     expect(screen.queryByText("TRUNCATED TAIL")).toBeNull();
+  });
+
+  test("omits the findings/estimates stat-badges when findingsAndEstimates is false", () => {
+    const { container } = render(
+      <ResultRow
+        communitySlug="hpv"
+        reference={makeRef()}
+        findingsAndEstimates={false}
+      />,
+    );
+    expect(container.querySelectorAll(".stat-badge")).toHaveLength(0);
+    expect(container.querySelector(".row-right")).not.toHaveTextContent(
+      /findings|estimates/,
+    );
+  });
+
+  test("sources pills from hasAppliedConcept when present (HPV shape)", () => {
+    const study = "https://vocab.aliveevidence.org/hpv/StudyDesign/HPVV0148";
+    vocabState.labels = new Map([[study, "Cohort study"]]);
+    vocabState.broader = new Map();
+    vocabState.definitions = new Map();
+    vocabState.inScheme = new Map();
+    contextState.context = { prefixes: new Map() };
+
+    const ref = makeRef({ investigation: { hasAppliedConcept: [study] } });
+    render(
+      <ResultRow
+        communitySlug="hpv"
+        reference={ref}
+        findingsAndEstimates={false}
+      />,
+    );
+    expect(screen.queryByText("Cohort study")).not.toBeNull();
+  });
+
+  test("drops applied concepts whose scheme is in pillExcludedSchemes", () => {
+    const country = "https://vocab.aliveevidence.org/hpv/Country/NG";
+    const study = "https://vocab.aliveevidence.org/hpv/StudyDesign/HPVV0148";
+    vocabState.labels = new Map([
+      [country, "Nigeria"],
+      [study, "Cohort study"],
+    ]);
+    vocabState.broader = new Map();
+    vocabState.definitions = new Map();
+    vocabState.inScheme = new Map([
+      [country, "https://vocab.aliveevidence.org/hpv/Country"],
+      [study, "https://vocab.aliveevidence.org/hpv/StudyDesign"],
+    ]);
+    contextState.context = { prefixes: new Map() };
+
+    const ref = makeRef({
+      investigation: { hasAppliedConcept: [country, study] },
+    });
+    render(
+      <ResultRow
+        communitySlug="hpv"
+        reference={ref}
+        findingsAndEstimates={false}
+        pillExcludedSchemes={["https://vocab.aliveevidence.org/hpv/Country"]}
+      />,
+    );
+    expect(screen.queryByText("Cohort study")).not.toBeNull();
+    expect(screen.queryByText("Nigeria")).toBeNull();
   });
 });

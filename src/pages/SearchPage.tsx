@@ -356,7 +356,7 @@ function SearchPageInner({ community }: { community: Community }) {
                     {exportAnnouncement}
                   </span>
                 )}
-                {results.results && (
+                {results.results && community.features.exportExcel && (
                   <ExportButton
                     disabled={exportDisabled}
                     status={exportJob.status}
@@ -409,6 +409,8 @@ function SearchPageInner({ community }: { community: Community }) {
               communitySlug={community.slug}
               reference={ref}
               codingInstitution={community.codingInstitution}
+              findingsAndEstimates={community.features.findingsAndEstimates}
+              pillExcludedSchemes={community.pillExcludedSchemes}
             />
           ))}
         </div>
@@ -428,6 +430,7 @@ function SearchPageInner({ community }: { community: Community }) {
           open={drawerOpen}
           title={community.copy.drawerTitle}
           countNoun={community.copy.countNoun}
+          showCountryFacetFilter={community.features.countryFacetFilter}
           schemes={filterableSchemes}
           appliedConceptFilters={params.conceptFilters}
           appliedCountryCodes={params.countryCodes}

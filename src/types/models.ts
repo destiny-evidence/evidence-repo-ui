@@ -1,6 +1,12 @@
 export interface CommunityFeatures {
   // No UI yet; reserved so the evidence map can ship behind a flag (#103).
   evidenceMap: boolean;
+  // Whether result cards show finding/estimate stat-badges.
+  findingsAndEstimates: boolean;
+  // Whether the Excel export button is shown.
+  exportExcel: boolean;
+  // Whether the facet-backed country filter card is shown; needs a populated `countries` facet.
+  countryFacetFilter: boolean;
 }
 
 // One axis of the evidence map.
@@ -45,6 +51,9 @@ export interface Community {
   vocabularyUrl: string;
   contextUrl: string;
   filterExcludedSchemes: string[];
+  // Concept schemes dropped from result-card pills (e.g. geo). Distinct from
+  // filterExcludedSchemes (drawer): geo stays filterable, just isn't a pill.
+  pillExcludedSchemes: string[];
   features: CommunityFeatures;
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).

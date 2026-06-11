@@ -17,7 +17,21 @@ function requireEnv(name: string, value: string | undefined): string {
 
 export const DEFAULT_FEATURES: CommunityFeatures = {
   evidenceMap: false,
+  findingsAndEstimates: true,
+  // Off until a community's Excel export is built — the export is Education-shaped today.
+  exportExcel: false,
+  countryFacetFilter: true,
 };
+
+// HPV geo ConceptSchemes dropped from result-card pills (#125): they swamp the
+// pill cap and geo has dedicated filters. Full scheme URIs to match inScheme.
+const HPV_GEO_SCHEMES = [
+  "https://vocab.aliveevidence.org/hpv/Country",
+  "https://vocab.aliveevidence.org/hpv/CountryClassification",
+  "https://vocab.aliveevidence.org/hpv/UNICEFRegion",
+  "https://vocab.aliveevidence.org/hpv/WorldBankRegion",
+  "https://vocab.aliveevidence.org/hpv/WHORegion",
+];
 
 // Shared copy fallbacks; a community overrides only what diverges.
 function buildCopy(
@@ -49,7 +63,8 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: [
       "https://vocab.esea.education/ImplementationDescriptionScheme",
     ],
-    features: { ...DEFAULT_FEATURES, evidenceMap: true },
+    pillExcludedSchemes: [],
+    features: { ...DEFAULT_FEATURES, evidenceMap: true, exportExcel: true },
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",
@@ -90,7 +105,23 @@ const COMMUNITIES: Community[] = [
       import.meta.env.VITE_HPV_CONTEXT_URL,
     ),
     filterExcludedSchemes: [],
-    features: { ...DEFAULT_FEATURES, evidenceMap: true },
+    pillExcludedSchemes: HPV_GEO_SCHEMES,
+    features: {
+      ...DEFAULT_FEATURES,
+      evidenceMap: true,
+      findingsAndEstimates: false,
+      countryFacetFilter: false,
+    },
+    defaultEvidenceMapAxes: {
+      row: {
+        kind: "scheme",
+        schemeUri: "https://vocab.aliveevidence.org/hpv/TargetPopulation",
+      },
+      column: {
+        kind: "scheme",
+        schemeUri: "https://vocab.aliveevidence.org/hpv/DeliveryActor",
+      },
+    },
     copy: buildCopy("HPV Vaccine Delivery", {
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
