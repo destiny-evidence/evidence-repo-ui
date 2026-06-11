@@ -29,8 +29,8 @@ import type {
   Community,
   EvidenceMapAxes,
   EvidenceMapAxis,
-  SearchResultTotal,
 } from "@/types/models";
+import { formatTotal } from "@/utils/searchTotal";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
 import { ViewToggle, type MapView } from "@/components/visualise/ViewToggle";
 import { MapConfigPanel } from "@/components/visualise/MapConfigPanel";
@@ -45,11 +45,6 @@ interface VisualisePageProps {
 
 const ROW_PARAM = "row";
 const COLUMN_PARAM = "column";
-
-// Mirrors SearchPage: render "10,000+" when ES caps the count (is_lower_bound).
-function formatTotal(total: SearchResultTotal): string {
-  return `${total.count.toLocaleString()}${total.is_lower_bound ? "+" : ""}`;
-}
 
 // Config axis → the shape the cross-facets client/hook expects.
 function toCrossFacetAxis(axis: EvidenceMapAxis): CrossFacetAxis {

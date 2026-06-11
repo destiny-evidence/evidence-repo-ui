@@ -69,7 +69,7 @@ function FilterDrawerPanel({
       // "*" is the browse-mode sentinel — don't echo it as a query.
       subtitle={
         params.q !== "" && params.q !== "*" ? (
-          <p class="drawer__subtitle filter-drawer__subtitle">
+          <p class="drawer__subtitle">
             Searching for “{params.q}”
           </p>
         ) : undefined

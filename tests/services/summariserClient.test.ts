@@ -100,9 +100,10 @@ describe("requestSummary", () => {
       await assertion;
     });
 
-    test("throws when the submit is rejected (e.g. a reference has no full text)", async () => {
+    test("surfaces the error detail when the submit is rejected (e.g. no full text)", async () => {
       fetchMock.mockResolvedValue(response({ detail: "no_full_text" }, 422));
-      await expect(requestSummary(request)).rejects.toThrow(/422/);
+      // The status and the service's `detail` both reach the error message.
+      await expect(requestSummary(request)).rejects.toThrow(/422.*no_full_text/);
     });
   });
 });

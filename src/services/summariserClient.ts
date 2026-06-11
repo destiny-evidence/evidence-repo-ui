@@ -17,12 +17,31 @@ class AbortError extends DOMException {
 function wait(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(new AbortError());
-    const id = setTimeout(resolve, ms);
-    signal?.addEventListener("abort", () => {
+    let id: ReturnType<typeof setTimeout>;
+    const onAbort = () => {
       clearTimeout(id);
       reject(new AbortError());
-    });
+    };
+    id = setTimeout(() => {
+      // Drop the listener once the wait resolves, so a long poll loop doesn't
+      // accumulate one per interval on the shared signal.
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
+}
+
+// Surface the service's error `detail` (a string, or a {error|message} object)
+// so the UI's error state is specific rather than a bare status code.
+async function summaryError(res: Response, fallback: string): Promise<Error> {
+  const body = await res.json().catch(() => null);
+  const detail = body?.detail;
+  const message =
+    typeof detail === "string" ? detail : (detail?.message ?? detail?.error);
+  return new Error(
+    message ? `${fallback} (${res.status}): ${message}` : `${fallback} (${res.status}).`,
+  );
 }
 
 /**
@@ -69,17 +88,19 @@ async function submitAndPoll(
     },
     signal,
   );
-  if (!submit.ok) throw new Error(`Summary request failed (${submit.status}).`);
+  if (!submit.ok) throw await summaryError(submit, "Summary request failed");
   const submitJson = await submit.json();
   if (submit.status === 200) return submitJson as SummariseResponse;
 
-  const jobId: string = submitJson.job_id;
+  const jobId = submitJson.job_id;
+  if (typeof jobId !== "string") {
+    throw new Error("Summary job response is missing a job_id.");
+  }
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   for (;;) {
     await wait(POLL_INTERVAL_MS, signal);
     const res = await summariserFetch(`/jobs/${jobId}`, {}, signal);
-    if (!res.ok)
-      throw new Error(`Summary status check failed (${res.status}).`);
+    if (!res.ok) throw await summaryError(res, "Summary status check failed");
     const job = await res.json();
     if (job.status === "done") return job.result as SummariseResponse;
     if (job.status === "failed")
@@ -93,6 +114,9 @@ async function summariserFetch(
   init: RequestInit,
   signal?: AbortSignal,
 ): Promise<Response> {
+  // A failed refresh proceeds with the current token rather than throwing (as
+  // api/client does): a stale/expired token just yields a 401, which surfaces
+  // as the drawer's error state instead of an unhandled rejection.
   await keycloak.updateToken(30).catch(() => undefined);
   // Attaches the bearer token; callers set Content-Type when they send a body.
   return fetch(`${SUMMARISER_BASE}${path}`, {

@@ -1,14 +1,16 @@
 import { Drawer } from "@/components/common/Drawer";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
 import type { UseAiSummaryResult } from "@/hooks/useAiSummary";
+import type { SearchResultTotal } from "@/types/models";
+import { formatTotal } from "@/utils/searchTotal";
 import { SummaryBody } from "./renderSummary";
 import "./ai-summary.css";
 
 export interface AiSummaryContext {
   /** Intersecting term labels shown as chips. */
   terms: string[];
-  /** Number of papers feeding the summary. */
-  count: number;
+  /** Papers feeding the summary (the full match total, may be a lower bound). */
+  count: SearchResultTotal;
 }
 
 interface AiSummaryDrawerProps {
@@ -59,8 +61,9 @@ export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
         <div class="ai-loading">
           <span class="ai-spinner" />
           <span>
-            Summarising {pluralPapers(context.count)}… this can take several
-            minutes. You can keep working — use “Run in background”.
+            Summarising {formatTotal(context.count)}{" "}
+            {context.count.count === 1 ? "paper" : "papers"}… this can take
+            several minutes. You can keep working — use “Run in background”.
           </span>
         </div>
       )}
@@ -100,7 +103,7 @@ function ContextChips({ terms, count }: AiSummaryContext) {
         </span>
       ))}
       <span class="ai-pill">
-        {count} {count === 1 ? "result" : "results"}
+        {formatTotal(count)} {count.count === 1 ? "result" : "results"}
       </span>
     </div>
   );

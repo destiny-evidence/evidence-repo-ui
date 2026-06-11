@@ -116,17 +116,17 @@ describe("FilterDrawer", () => {
     });
     // Bind on the class and the query value, not the surrounding wording —
     // the prose around the query is expected to iterate.
-    const subtitle = container.querySelector(".filter-drawer__subtitle");
+    const subtitle = container.querySelector(".drawer__subtitle");
     expect(subtitle).not.toBeNull();
     expect(subtitle?.textContent).toContain("phonics");
   });
 
   test("hides the subtitle nudge in browse mode (empty q or '*')", () => {
     const { rerender, container } = renderDrawer();
-    expect(container.querySelector(".filter-drawer__subtitle")).toBeNull();
+    expect(container.querySelector(".drawer__subtitle")).toBeNull();
 
     rerender({ params: makeSearchParams({ q: "*" }) });
-    expect(container.querySelector(".filter-drawer__subtitle")).toBeNull();
+    expect(container.querySelector(".drawer__subtitle")).toBeNull();
   });
 
   test("strips a trailing ' Scheme' from the scheme label", () => {

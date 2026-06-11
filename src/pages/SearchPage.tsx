@@ -30,6 +30,7 @@ import { AiSummaryMiniChip } from "@/components/ai-summary/AiSummaryMiniChip";
 import { useAiSummary } from "@/hooks/useAiSummary";
 import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
 import { SUMMARISER_BASE } from "@/config";
+import { formatTotal } from "@/utils/searchTotal";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
 import { totalSelectedCount as totalSelectedYearCount } from "@/components/filters/yearRangeFilterState";
@@ -38,13 +39,6 @@ import "./SearchPage.css";
 
 interface SearchPageProps {
   path?: string;
-}
-
-// ES caps deep pagination at 10k; when the true count exceeds that, the
-// backend returns is_lower_bound=true and count=10000. Render "10,000+" so
-// the UI doesn't understate the corpus size.
-function formatTotal(total: { count: number; is_lower_bound: boolean }): string {
-  return `${total.count.toLocaleString()}${total.is_lower_bound ? "+" : ""}`;
 }
 
 // 10k is destiny-repository's max_result_window; deep pagination + exports
@@ -291,7 +285,7 @@ function SearchPageInner({ community }: { community: Community }) {
     community.features.aiSummaries && Boolean(SUMMARISER_BASE);
   const aiContext = {
     terms: deriveSummaryTerms(params, vocab.labels),
-    count: results.results?.total.count ?? 0,
+    count: results.results?.total ?? { count: 0, is_lower_bound: false },
   };
 
   function handleGenerateSummary() {

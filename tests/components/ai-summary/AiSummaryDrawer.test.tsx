@@ -24,7 +24,10 @@ function makeAi(overrides: Partial<UseAiSummaryResult> = {}): UseAiSummaryResult
   };
 }
 
-const context = { terms: ["Afghanistan", "Cost-effectiveness"], count: 15 };
+const context = {
+  terms: ["Afghanistan", "Cost-effectiveness"],
+  count: { count: 15, is_lower_bound: false },
+};
 
 beforeEach(() => {
   // jsdom doesn't implement scrollIntoView.
