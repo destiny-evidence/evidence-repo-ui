@@ -18,13 +18,19 @@ export interface TaxoNode {
 export interface TaxonomyGroup {
   schemeUri: string;
   schemeLabel: string;
+  // drives ordering only (geo first); not a collapse/summary signal
   isGeo: boolean;
-  collapsedByDefault: boolean;
+  // appliedCount > ROLLUP_THRESHOLD: render one "Multiple …" summary pill
+  // instead of every member. Scheme-agnostic; only Country floods today.
+  rolledUp: boolean;
   appliedCount: number;
   nodes: TaxoNode[];
 }
 
 const OTHER_SCHEME_URI = "__other_codes__";
+
+// Largest block the mockup lists in full (Age = 10 pills); past it, summarize.
+const ROLLUP_THRESHOLD = 10;
 
 // Keep only branches that reach an applied concept; ancestors of an applied
 // node are retained (applied: false) so they can render as sub-headings.
@@ -110,15 +116,15 @@ export function groupAppliedConcepts(
       schemeUri: scheme.uri,
       schemeLabel: schemeDisplayLabel(scheme.label),
       isGeo,
-      collapsedByDefault: isGeo,
+      rolledUp: appliedInScheme.size > ROLLUP_THRESHOLD,
       appliedCount: appliedInScheme.size,
       nodes,
       order: idx,
     });
   });
 
-  // Topical (isGeo false) before geo; within each, published-vocab order.
-  ordered.sort((a, b) => Number(a.isGeo) - Number(b.isGeo) || a.order - b.order);
+  // Geo (isGeo true) before topical; within each, published-vocab order.
+  ordered.sort((a, b) => Number(b.isGeo) - Number(a.isGeo) || a.order - b.order);
   const result: TaxonomyGroup[] = ordered.map(({ order: _order, ...g }) => g);
 
   if (unknown.size > 0) {
@@ -126,7 +132,8 @@ export function groupAppliedConcepts(
       schemeUri: OTHER_SCHEME_URI,
       schemeLabel: "Other codes",
       isGeo: false,
-      collapsedByDefault: false,
+      // never rolled up: this is the drift surface, must stay fully visible
+      rolledUp: false,
       appliedCount: unknown.size,
       nodes: [...unknown].map((uri) => ({
         uri,

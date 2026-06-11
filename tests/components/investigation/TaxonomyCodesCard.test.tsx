@@ -7,7 +7,7 @@ const topical: TaxonomyGroup = {
   schemeUri: "s:study",
   schemeLabel: "Study Design",
   isGeo: false,
-  collapsedByDefault: false,
+  rolledUp: false,
   appliedCount: 1,
   nodes: [
     {
@@ -22,8 +22,19 @@ const geo: TaxonomyGroup = {
   schemeUri: "s:country",
   schemeLabel: "Country",
   isGeo: true,
-  collapsedByDefault: true,
+  rolledUp: false,
   appliedCount: 2,
+  nodes: [
+    { uri: "ke", label: "Kenya", applied: true, children: [] },
+    { uri: "ug", label: "Uganda", applied: true, children: [] },
+  ],
+};
+const flooded: TaxonomyGroup = {
+  schemeUri: "s:country",
+  schemeLabel: "Country",
+  isGeo: true,
+  rolledUp: true,
+  appliedCount: 24,
   nodes: [
     { uri: "ke", label: "Kenya", applied: true, children: [] },
     { uri: "ug", label: "Uganda", applied: true, children: [] },
@@ -56,7 +67,7 @@ describe("TaxonomyCodesCard", () => {
       schemeUri: "s:study",
       schemeLabel: "Study Design",
       isGeo: false,
-      collapsedByDefault: false,
+      rolledUp: false,
       appliedCount: 2,
       nodes: [
         {
@@ -82,13 +93,38 @@ describe("TaxonomyCodesCard", () => {
     expect(screen.getByText("Cluster RCT")).toBeInTheDocument(); // applied child, not dropped
   });
 
-  test("renders a geo group as a collapsed details with a count summary", () => {
+  test("renders a geo group expanded (no <details>) listing its members", () => {
     const { container } = render(<TaxonomyCodesCard groups={[geo]} />);
-    const details = container.querySelector("details");
-    expect(details).not.toBeNull();
-    expect(details!.open).toBe(false);
-    expect(screen.getByText("Country (2)")).toBeInTheDocument();
+    expect(container.querySelector("details")).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Country" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Kenya")).toBeInTheDocument();
+    expect(screen.getByText("Uganda")).toBeInTheDocument();
+  });
+
+  test("rolls a flooded group up to a single 'Multiple …' pill, hiding members", () => {
+    render(<TaxonomyCodesCard groups={[flooded]} />);
+    expect(
+      screen.getByRole("heading", { name: "Country" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Multiple countries")).toBeInTheDocument();
+    expect(screen.queryByText("Kenya")).toBeNull();
+    expect(screen.queryByText("Uganda")).toBeNull();
+  });
+
+  test("rolls a flooded topical scheme up too (geo-agnostic), pluralizing its label", () => {
+    const floodedTopical: TaxonomyGroup = {
+      schemeUri: "s:outcome",
+      schemeLabel: "Outcome",
+      isGeo: false,
+      rolledUp: true,
+      appliedCount: 15,
+      nodes: [{ uri: "x", label: "Some outcome", applied: true, children: [] }],
+    };
+    render(<TaxonomyCodesCard groups={[floodedTopical]} />);
+    expect(screen.getByText("Multiple outcomes")).toBeInTheDocument();
+    expect(screen.queryByText("Some outcome")).toBeNull();
   });
 
   test("shows the vocab-unavailable note when flagged", () => {

@@ -45,22 +45,27 @@ function Nodes({ nodes }: { nodes: TaxoNode[] }) {
   );
 }
 
+// "Country" → "countries". Lower-cased plural for the roll-up summary pill.
+// Already-plural / sibilant labels are left alone; only the geo Country scheme
+// floods past the threshold today, so the y→ies case is the one that matters.
+function pluralLower(label: string): string {
+  const lower = label.toLowerCase();
+  if (lower.endsWith("s")) return lower;
+  if (lower.endsWith("y")) return `${lower.slice(0, -1)}ies`;
+  return `${lower}s`;
+}
+
 function SchemeBlock({ group }: { group: TaxonomyGroup }) {
-  const body = <Nodes nodes={group.nodes} />;
-  if (group.collapsedByDefault) {
-    return (
-      <details class="taxonomy-codes-card__group">
-        <summary class="taxonomy-codes-card__scheme">
-          {group.schemeLabel} ({group.appliedCount})
-        </summary>
-        {body}
-      </details>
-    );
-  }
   return (
     <section class="taxonomy-codes-card__group">
-      <h3 class="taxonomy-codes-card__scheme">{group.schemeLabel}</h3>
-      {body}
+      <h3 class="taxonomy-codes-card__scheme lg-section-label">
+        {group.schemeLabel}
+      </h3>
+      {group.rolledUp ? (
+        <TagGroup tags={[{ label: `Multiple ${pluralLower(group.schemeLabel)}` }]} />
+      ) : (
+        <Nodes nodes={group.nodes} />
+      )}
     </section>
   );
 }
@@ -72,7 +77,7 @@ export function TaxonomyCodesCard({
   if (groups.length === 0) return null;
   return (
     <article class="taxonomy-codes-card lg-card">
-      <h2 class="taxonomy-codes-card__title">Taxonomy codes</h2>
+      <h2 class="taxonomy-codes-card__title lg-kicker">Taxonomy codes</h2>
       {vocabUnavailable && (
         <p class="taxonomy-codes-card__vocab-note" role="status">
           Vocabulary unavailable — codes are shown as raw identifiers.
