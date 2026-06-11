@@ -5,7 +5,9 @@
 /* ── Generate button (above results) ──────────────────────── */
 .gen-row {
   max-width: 960px;
-  margin: var(--spacing-md) auto;
+  /* The search hero already pads 36px below the search bar; pull up so the
+     button lands at the design's ~16px gap instead of stacking both. */
+  margin: calc(var(--spacing-md) - 36px) auto var(--spacing-md);
   display: flex;
   justify-content: flex-end;
 }
