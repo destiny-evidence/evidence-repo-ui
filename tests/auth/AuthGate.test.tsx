@@ -1,11 +1,33 @@
-import { describe, test, expect, vi } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { AuthError, Loading } from "@/auth/AuthGate";
+import { AuthError, Landing, Loading } from "@/auth/AuthGate";
+import { login, register } from "@/auth/keycloak";
 
 describe("AuthGate", () => {
   test("Loading shows the signing-in message", () => {
     render(<Loading />);
     expect(screen.getByText("Signing you in…")).toBeInTheDocument();
+  });
+
+  describe("Landing", () => {
+    beforeEach(() => {
+      vi.mocked(login).mockClear();
+      vi.mocked(register).mockClear();
+    });
+
+    test("Sign in triggers keycloak login", () => {
+      render(<Landing />);
+      screen.getByRole("button", { name: "Sign in" }).click();
+      expect(login).toHaveBeenCalledOnce();
+      expect(register).not.toHaveBeenCalled();
+    });
+
+    test("Create account triggers keycloak registration", () => {
+      render(<Landing />);
+      screen.getByRole("button", { name: "Create account" }).click();
+      expect(register).toHaveBeenCalledOnce();
+      expect(login).not.toHaveBeenCalled();
+    });
   });
 
   test("AuthError shows the failure message and a retry button", () => {
