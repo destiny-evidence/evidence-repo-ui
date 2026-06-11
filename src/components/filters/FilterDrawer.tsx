@@ -12,7 +12,7 @@ interface FilterDrawerProps {
   open: boolean;
   title?: string;
   countNoun?: string;
-  // Show the facet-backed country card; off where the `countries` facet is empty (HPV).
+  // Show the facet-backed country card; off where the `countries` facet is empty.
   showCountryFacetFilter?: boolean;
   schemes: ConceptScheme[];
   appliedConceptFilters: readonly (readonly string[])[];

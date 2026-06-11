@@ -100,8 +100,8 @@ export function ResultRow({
       context.prefixes,
       labels,
     );
-    // HPV carries flat hasAppliedConcept; ESEA builds pills from the
-    // documentType/findings walk. The two shapes are disjoint.
+    // Some communities carry flat investigation-level hasAppliedConcept; others
+    // build pills from the documentType/findings walk. The two shapes are disjoint.
     const sourced =
       investigation.appliedConcepts.length > 0
         ? investigation.appliedConcepts.map((value) => ({ value }))

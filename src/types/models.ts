@@ -1,11 +1,11 @@
 export interface CommunityFeatures {
   // No UI yet; reserved so the evidence map can ship behind a flag (#103).
   evidenceMap: boolean;
-  // ESEA studies carry findings/estimates (the stat-badges); HPV references don't.
+  // Whether result cards show finding/estimate stat-badges.
   findingsAndEstimates: boolean;
-  // HPV export runs the Education-shaped pipeline today; hide it until #127.
+  // Whether the Excel export button is shown.
   exportExcel: boolean;
-  // Polished country filter fed by the `countries` search facet; off for HPV until that facet fills.
+  // Whether the facet-backed country filter card is shown; needs a populated `countries` facet.
   countryFacetFilter: boolean;
 }
 
@@ -51,7 +51,7 @@ export interface Community {
   vocabularyUrl: string;
   contextUrl: string;
   filterExcludedSchemes: string[];
-  // Concept schemes dropped from result-card pills (HPV geo). Distinct from
+  // Concept schemes dropped from result-card pills (e.g. geo). Distinct from
   // filterExcludedSchemes (drawer): geo stays filterable, just isn't a pill.
   pillExcludedSchemes: string[];
   features: CommunityFeatures;
