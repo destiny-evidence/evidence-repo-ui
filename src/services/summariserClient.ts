@@ -48,16 +48,31 @@ export async function requestSummary(
   return submitAndPoll(request, signal);
 }
 
-// Provisional: the reference-id request contract is finalised in
-// futureevidence/ai-evidence-summariser#1. Guarded by SUMMARISER_BASE so it
-// stays inert until the service is live.
+// POST /summarise takes form fields — repeated `reference_ids` and `terms`
+// (each "name" or "name:description") — and returns either a cached result (200)
+// or a job to poll (202).
 async function submitAndPoll(
   request: SummaryRequest,
   signal?: AbortSignal,
 ): Promise<SummariseResponse> {
+  // The endpoint reads FastAPI Form fields; URLSearchParams form-encodes them,
+  // with repeated keys mapping to list fields.
+  const body = new URLSearchParams();
+  for (const id of request.referenceIds) body.append("reference_ids", id);
+  for (const term of request.terms) {
+    body.append(
+      "terms",
+      term.description ? `${term.name}:${term.description}` : term.name,
+    );
+  }
+
   const submit = await summariserFetch(
     "/summarise",
-    { method: "POST", body: JSON.stringify(request) },
+    {
+      method: "POST",
+      body,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    },
     signal,
   );
   if (!submit.ok) throw new Error(`Summary request failed (${submit.status}).`);
@@ -69,10 +84,12 @@ async function submitAndPoll(
   for (;;) {
     await wait(POLL_INTERVAL_MS, signal);
     const res = await summariserFetch(`/jobs/${jobId}`, {}, signal);
-    if (!res.ok) throw new Error(`Summary status check failed (${res.status}).`);
+    if (!res.ok)
+      throw new Error(`Summary status check failed (${res.status}).`);
     const job = await res.json();
     if (job.status === "done") return job.result as SummariseResponse;
-    if (job.status === "failed") throw new Error(job.error || "Summary failed.");
+    if (job.status === "failed")
+      throw new Error(job.error || "Summary failed.");
     if (Date.now() > deadline) throw new Error("Summary timed out.");
   }
 }
@@ -83,11 +100,11 @@ async function summariserFetch(
   signal?: AbortSignal,
 ): Promise<Response> {
   await keycloak.updateToken(30).catch(() => undefined);
+  // Attaches the bearer token; callers set Content-Type when they send a body.
   return fetch(`${SUMMARISER_BASE}${path}`, {
     ...init,
     signal,
     headers: {
-      "Content-Type": "application/json",
       ...(keycloak.token ? { Authorization: `Bearer ${keycloak.token}` } : {}),
       ...init.headers,
     },
