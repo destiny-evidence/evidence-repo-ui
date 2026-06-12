@@ -17,6 +17,7 @@ function requireEnv(name: string, value: string | undefined): string {
 
 export const DEFAULT_FEATURES: CommunityFeatures = {
   evidenceMap: false,
+  aiSummaries: false,
   selfSignup: false,
   findingsAndEstimates: true,
   // Off until a community's Excel export is built — the export is Education-shaped today.
@@ -110,6 +111,7 @@ const COMMUNITIES: Community[] = [
     features: {
       ...DEFAULT_FEATURES,
       evidenceMap: true,
+      aiSummaries: true,
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,

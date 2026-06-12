@@ -50,9 +50,16 @@ describe("communities", () => {
     expect(hpv?.codingInstitution).toBeUndefined();
   });
 
-  it("opts evidence-map out by default, leaving communities to enable it", async () => {
+  it("enables AI summaries only for HPV", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("hpv")?.features.aiSummaries).toBe(true);
+    expect(findCommunity("esea")?.features.aiSummaries).toBe(false);
+  });
+
+  it("opts evidence-map and AI summaries out by default, leaving communities to enable them", async () => {
     const { DEFAULT_FEATURES } = await import("@/services/communities");
     expect(DEFAULT_FEATURES.evidenceMap).toBe(false);
+    expect(DEFAULT_FEATURES.aiSummaries).toBe(false);
   });
 
   it("opts Excel export out by default, leaving communities to enable it", async () => {

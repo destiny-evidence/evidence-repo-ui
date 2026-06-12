@@ -123,6 +123,25 @@ resource "github_actions_environment_variable" "vite_feedback_form_url" {
   value         = var.feedback_form_url
 }
 
+# Empty in environments where the summariser isn't deployed yet, which keeps the
+# AI summaries feature hidden (the UI gates on this being set).
+resource "github_actions_environment_variable" "vite_summariser_base" {
+  count         = var.summariser_base != "" ? 1 : 0
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_SUMMARISER_BASE"
+  value         = var.summariser_base
+}
+
+# Empty until the accuracy-flag form exists; the UI hides the flag link without it.
+resource "github_actions_environment_variable" "vite_ai_summary_flag_form_url" {
+  count         = var.ai_summary_flag_form_url != "" ? 1 : 0
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_AI_SUMMARY_FLAG_FORM_URL"
+  value         = var.ai_summary_flag_form_url
+}
+
 resource "github_actions_environment_variable" "vite_esea_vocabulary_url" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment

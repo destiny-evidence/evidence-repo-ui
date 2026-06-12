@@ -1,6 +1,8 @@
 export interface CommunityFeatures {
   // No UI yet; reserved so the evidence map can ship behind a flag (#103).
   evidenceMap: boolean;
+  // Gates the "Generate AI summary" entry point and its drawer.
+  aiSummaries: boolean;
   // Offer a Sign in / Create account choice on entry instead of forcing login.
   selfSignup: boolean;
   // Whether result cards show finding/estimate stat-badges.
@@ -82,6 +84,13 @@ export interface SearchResult {
   total: SearchResultTotal;
   page: SearchResultPage;
   references: Reference[];
+}
+
+// Matching reference ids for a search, in result order, capped at the backend's
+// result window (`total.is_lower_bound` flags truncation).
+export interface ReferenceIdSearchResult {
+  total: SearchResultTotal;
+  reference_ids: string[];
 }
 
 export interface ConceptFacetCount {

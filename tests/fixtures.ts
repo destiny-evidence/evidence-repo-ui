@@ -58,6 +58,7 @@ export function makeCommunity(
     pillExcludedSchemes: [],
     features: {
       evidenceMap: false,
+      aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: true,
       exportExcel: true,

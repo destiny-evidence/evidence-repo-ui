@@ -106,6 +106,18 @@ variable "feedback_form_url" {
   default     = "https://forms.gle/zH9fsNZk8BApTaVj9"
 }
 
+variable "summariser_base" {
+  description = "Base URL of the evidence-summariser service; empty hides the AI summaries feature"
+  type        = string
+  default     = ""
+}
+
+variable "ai_summary_flag_form_url" {
+  description = "Google Form URL for flagging an AI summary's accuracy; empty hides the flag link"
+  type        = string
+  default     = ""
+}
+
 variable "esea_vocabulary_url" {
   description = "URL of the ESEA community's published SKOS vocabulary (.jsonld) — used to resolve concept labels in exports and other vocabulary-driven features"
   type        = string

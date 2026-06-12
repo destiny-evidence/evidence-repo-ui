@@ -5,7 +5,7 @@ import {
   parseSearchParams,
   toQueryString,
   buildSearchUrl,
-  toExportSearchQuery,
+  toUnpaginatedSearchQuery,
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
@@ -24,6 +24,13 @@ import { RefineButton } from "@/components/search/RefineButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
 import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
+import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
+import { AiSummaryDrawer } from "@/components/ai-summary/AiSummaryDrawer";
+import { AiSummaryMiniChip } from "@/components/ai-summary/AiSummaryMiniChip";
+import { useAiSummary } from "@/hooks/useAiSummary";
+import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
+import { SUMMARISER_BASE } from "@/config";
+import { formatTotal } from "@/utils/searchTotal";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
 import { totalSelectedCount as totalSelectedYearCount } from "@/components/filters/yearRangeFilterState";
@@ -34,16 +41,12 @@ interface SearchPageProps {
   path?: string;
 }
 
-// ES caps deep pagination at 10k; when the true count exceeds that, the
-// backend returns is_lower_bound=true and count=10000. Render "10,000+" so
-// the UI doesn't understate the corpus size.
-function formatTotal(total: { count: number; is_lower_bound: boolean }): string {
-  return `${total.count.toLocaleString()}${total.is_lower_bound ? "+" : ""}`;
-}
-
 // 10k is destiny-repository's max_result_window; deep pagination + exports
 // past that are explicitly out of scope. Mirrors the search backend cap.
 const EXPORT_MAX_RESULTS = 10000;
+
+// The summariser accepts at most 50 references per request (1–50).
+const MAX_SUMMARY_REFERENCES = 50;
 
 // Maps the useVocabulary() result to the SearchBar `refine` prop. Returns
 // undefined when there are no facets to offer (empty schemes) so the Refine
@@ -142,6 +145,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const corpus = useCorpusTotal();
   const results = useSearch(params);
   const exportJob = useSearchExport();
+  const ai = useAiSummary();
 
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
   // shared cache, so the Refine button is almost always ready by the time
@@ -258,7 +262,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const exportAnnouncement = exportAnnouncementFor(exportJob.status);
 
   function handleExport() {
-    const { query, filters } = toExportSearchQuery(
+    const { query, filters } = toUnpaginatedSearchQuery(
       params,
       community.defaultAnnotations,
     );
@@ -269,6 +273,45 @@ function SearchPageInner({ community }: { community: Community }) {
       vocabularyUrl: community.vocabularyUrl,
       contextUrl: community.contextUrl,
       codingInstitution: community.codingInstitution,
+    });
+  }
+
+  // The AI-summary entry point. Requires a configured summariser so users never
+  // see placeholder data: unset VITE_SUMMARISER_BASE ⇒ the feature stays hidden.
+  const aiSummariesEnabled =
+    community.features.aiSummaries && Boolean(SUMMARISER_BASE);
+
+  // Terms framing the summary: the free-text query plus any applied concept
+  // filters (a map cell arrives here with those filters pre-applied).
+  const aiTerms = deriveSummaryTerms(params, vocab.labels);
+  const aiTotal = results.results?.total ?? { count: 0, is_lower_bound: false };
+  // The summariser accepts 1–50 references and at least one term; gate here so
+  // the user gets a clear reason rather than a server error.
+  const aiDisabledReason =
+    aiTerms.length === 0
+      ? "Search or filter by a term to summarise."
+      : aiTotal.count > MAX_SUMMARY_REFERENCES
+        ? `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references — refine your search.`
+        : undefined;
+
+  function handleGenerateSummary() {
+    if (ai.minimized) {
+      ai.open();
+      return;
+    }
+    const { query, filters } = toUnpaginatedSearchQuery(
+      params,
+      community.defaultAnnotations,
+    );
+    // Snapshot the display context now so a later search can't make it drift.
+    ai.generate({
+      query,
+      filters,
+      context: {
+        terms: aiTerms,
+        count: aiTotal,
+        countNoun: community.copy.countNoun,
+      },
     });
   }
 
@@ -309,6 +352,14 @@ function SearchPageInner({ community }: { community: Community }) {
           disabled={results.loading && results.results !== null}
         />
       </section>
+
+      {aiSummariesEnabled && hasResults && (
+        <AiSummaryButton
+          onClick={handleGenerateSummary}
+          disabled={aiDisabledReason !== undefined}
+          disabledReason={aiDisabledReason}
+        />
+      )}
 
       <section class="search-results">
         {showMetaBar && (
@@ -424,6 +475,13 @@ function SearchPageInner({ community }: { community: Community }) {
           />
         )}
       </section>
+
+      {aiSummariesEnabled && (
+        <>
+          <AiSummaryDrawer ai={ai} />
+          <AiSummaryMiniChip ai={ai} />
+        </>
+      )}
 
       {filterableSchemes.length > 0 && (
         <FilterDrawer
