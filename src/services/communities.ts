@@ -25,8 +25,8 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   countryFacetFilter: true,
 };
 
-// HPV geo ConceptSchemes dropped from result-card pills (#125): they swamp the
-// pill cap and geo has dedicated filters. Full scheme URIs to match inScheme.
+// The HPV geographic ConceptSchemes (country + regional/classification). Full scheme
+// URIs to match inScheme.
 const HPV_GEO_SCHEMES = [
   "https://vocab.aliveevidence.org/hpv/Country",
   "https://vocab.aliveevidence.org/hpv/CountryClassification",
@@ -66,6 +66,7 @@ const COMMUNITIES: Community[] = [
       "https://vocab.esea.education/ImplementationDescriptionScheme",
     ],
     pillExcludedSchemes: [],
+    geographicSchemes: [],
     features: { ...DEFAULT_FEATURES, evidenceMap: true, exportExcel: true },
     defaultEvidenceMapAxes: {
       row: {
@@ -108,6 +109,7 @@ const COMMUNITIES: Community[] = [
     ),
     filterExcludedSchemes: [],
     pillExcludedSchemes: HPV_GEO_SCHEMES,
+    geographicSchemes: HPV_GEO_SCHEMES,
     features: {
       ...DEFAULT_FEATURES,
       evidenceMap: true,
@@ -119,11 +121,11 @@ const COMMUNITIES: Community[] = [
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",
-        schemeUri: "https://vocab.aliveevidence.org/hpv/TargetPopulation",
+        schemeUri: "https://vocab.aliveevidence.org/hpv/WHORegion",
       },
       column: {
         kind: "scheme",
-        schemeUri: "https://vocab.aliveevidence.org/hpv/DeliveryActor",
+        schemeUri: "https://vocab.aliveevidence.org/hpv/ThematicFocusPrimary",
       },
     },
     copy: buildCopy("HPV Vaccine Delivery", {

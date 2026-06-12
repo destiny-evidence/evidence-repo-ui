@@ -1,0 +1,19 @@
+/* Typography for the title (.lg-kicker) and scheme headings (.lg-section-label)
+   comes from the shared label utilities; this file owns only card-local spacing. */
+/* Separate the card from the one above it, matching the findings section's
+   margin-top (the detail-page container has no inter-card gap of its own). */
+.taxonomy-codes-card {
+  margin-top: var(--spacing-md);
+}
+.taxonomy-codes-card__title {
+  margin: 0 0 var(--spacing-sm);
+}
+/* .lg-section-label already spaces each scheme heading from the block above. */
+.taxonomy-codes-card__scheme {
+  margin: var(--spacing-md) 0 var(--spacing-sm);
+}
+.taxonomy-codes-card__vocab-note {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-md);
+}

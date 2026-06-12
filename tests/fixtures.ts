@@ -56,6 +56,7 @@ export function makeCommunity(
     contextUrl: "https://vocab.example/ctx",
     filterExcludedSchemes: [],
     pillExcludedSchemes: [],
+    geographicSchemes: [],
     features: {
       evidenceMap: false,
       aiSummaries: false,
