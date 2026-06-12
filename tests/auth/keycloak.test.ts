@@ -46,4 +46,10 @@ describe("initKeycloak onLoad selection", () => {
     await (await realInitKeycloak())();
     expect(initSpy.mock.calls[0][0].onLoad).toBe("login-required");
   });
+
+  test("requests the ai_summary.writer.all optional scope so the role can land in the token", async () => {
+    setPathname("/hpv");
+    await (await realInitKeycloak())();
+    expect(initSpy.mock.calls[0][0].scope).toBe("ai_summary.writer.all");
+  });
 });
