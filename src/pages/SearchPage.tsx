@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
+import { useAuth } from "@/auth/AuthContext";
 import type { Community } from "@/types/models";
 import {
   parseSearchParams,
@@ -278,8 +279,10 @@ function SearchPageInner({ community }: { community: Community }) {
 
   // The AI-summary entry point. Requires a configured summariser so users never
   // see placeholder data: unset VITE_SUMMARISER_BASE ⇒ the feature stays hidden.
+  // The ai_summary.writer role gates it per-user (#145).
+  const { aiSummaryWriter } = useAuth();
   const aiSummariesEnabled =
-    community.features.aiSummaries && Boolean(SUMMARISER_BASE);
+    community.features.aiSummaries && Boolean(SUMMARISER_BASE) && aiSummaryWriter;
 
   // Terms framing the summary: the free-text query plus any applied concept
   // filters (a map cell arrives here with those filters pre-applied).

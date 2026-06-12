@@ -5,6 +5,8 @@ import { keycloak } from "./keycloak";
 interface AuthState {
   authenticated: boolean;
   username: string | undefined;
+  /** Token carries the ai_summary.writer realm role (gates AI summaries). */
+  aiSummaryWriter: boolean;
   logout: () => void;
 }
 
@@ -15,6 +17,13 @@ function readUsername(): string | undefined {
     | { name?: string; preferred_username?: string; email?: string }
     | undefined;
   return token?.name ?? token?.preferred_username ?? token?.email;
+}
+
+function hasRealmRole(role: string): boolean {
+  const token = keycloak.tokenParsed as
+    | { realm_access?: { roles?: string[] } }
+    | undefined;
+  return token?.realm_access?.roles?.includes(role) ?? false;
 }
 
 export function AuthProvider({ children }: { children: ComponentChildren }) {
@@ -36,6 +45,7 @@ export function AuthProvider({ children }: { children: ComponentChildren }) {
   const value: AuthState = {
     authenticated: !!keycloak.authenticated,
     username: readUsername(),
+    aiSummaryWriter: hasRealmRole("ai_summary.writer"),
     logout: () => keycloak.logout(),
   };
 

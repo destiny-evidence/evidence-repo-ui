@@ -37,6 +37,9 @@ export async function initKeycloak(): Promise<boolean> {
       silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
       silentCheckSsoFallback: false,
     }),
+    // Optional scope; the ai_summary.writer role only lands in the token when
+    // requested. Users without the role just don't get it granted.
+    scope: "ai_summary.writer.all",
     pkceMethod: "S256",
     checkLoginIframe: false,
   });

@@ -2,6 +2,7 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/preact";
 import { SearchPage } from "@/pages/SearchPage";
 import { CommunityProvider } from "@/community/CommunityContext";
+import { AuthProvider } from "@/auth/AuthContext";
 import type { SearchResult } from "@/types/models";
 import {
   OUTCOME_SCHEME_FIXTURE,
@@ -12,9 +13,11 @@ import {
 
 function renderSearchPage() {
   return render(
-    <CommunityProvider>
-      <SearchPage />
-    </CommunityProvider>,
+    <AuthProvider>
+      <CommunityProvider>
+        <SearchPage />
+      </CommunityProvider>
+    </AuthProvider>,
   );
 }
 
