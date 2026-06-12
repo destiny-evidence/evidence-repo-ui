@@ -18,19 +18,12 @@ export interface TaxoNode {
 export interface TaxonomyGroup {
   schemeUri: string;
   schemeLabel: string;
-  // drives ordering only (geo first); not a collapse/summary signal
+  // drives ordering only (geo first)
   isGeo: boolean;
-  // appliedCount > ROLLUP_THRESHOLD: render one "Multiple …" summary pill
-  // instead of every member. Scheme-agnostic; only Country floods today.
-  rolledUp: boolean;
-  appliedCount: number;
   nodes: TaxoNode[];
 }
 
 const OTHER_SCHEME_URI = "__other_codes__";
-
-// Largest block the mockup lists in full (Age = 10 pills); past it, summarize.
-const ROLLUP_THRESHOLD = 10;
 
 // Keep only branches that reach an applied concept; ancestors of an applied
 // node are retained (applied: false) so they can render as sub-headings.
@@ -116,8 +109,6 @@ export function groupAppliedConcepts(
       schemeUri: scheme.uri,
       schemeLabel: schemeDisplayLabel(scheme.label),
       isGeo,
-      rolledUp: appliedInScheme.size > ROLLUP_THRESHOLD,
-      appliedCount: appliedInScheme.size,
       nodes,
       order: idx,
     });
@@ -132,9 +123,6 @@ export function groupAppliedConcepts(
       schemeUri: OTHER_SCHEME_URI,
       schemeLabel: "Other codes",
       isGeo: false,
-      // never rolled up: this is the drift surface, must stay fully visible
-      rolledUp: false,
-      appliedCount: unknown.size,
       nodes: [...unknown].map((uri) => ({
         uri,
         label: labelOf.get(uri) ?? uri,

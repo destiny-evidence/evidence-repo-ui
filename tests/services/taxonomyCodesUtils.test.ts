@@ -58,7 +58,7 @@ const GEO = [COUNTRY];
 const applied = (...uris: string[]) =>
   uris.map((uri) => ({ uri, label: undefined }));
 
-// A single-scheme fixture with `n` leaf codes, for exercising the roll-up threshold.
+// A single-scheme fixture with `n` leaf codes.
 const schemeWithCodes = (uri: string, label: string, n: number) => {
   const codes = Array.from({ length: n }, (_, i) => `${uri}#${i}`);
   const scheme: ConceptScheme = {
@@ -75,7 +75,7 @@ describe("groupAppliedConcepts", () => {
     expect(groupAppliedConcepts([], inScheme, schemes, GEO)).toEqual([]);
   });
 
-  test("orders geo first then topical; small groups are not rolled up", () => {
+  test("orders geo first then topical", () => {
     const g = groupAppliedConcepts(
       applied("tp:21plus", "c:KE", "c:UG"),
       inScheme,
@@ -83,12 +83,8 @@ describe("groupAppliedConcepts", () => {
       GEO,
     );
     expect(g.map((x) => x.schemeLabel)).toEqual(["Country", "Target Population"]);
-    const country = g[0];
-    expect(country.isGeo).toBe(true);
-    expect(country.appliedCount).toBe(2);
-    expect(country.rolledUp).toBe(false);
+    expect(g[0].isGeo).toBe(true);
     expect(g[1].isGeo).toBe(false);
-    expect(g[1].rolledUp).toBe(false);
   });
 
   test("strips a trailing 'Scheme' from the label", () => {
@@ -135,49 +131,20 @@ describe("groupAppliedConcepts", () => {
       schemes,
       GEO,
     );
-    expect(g[g.length - 1]).toMatchObject({
-      schemeLabel: "Other codes",
-      appliedCount: 1,
-    });
-  });
-
-  test("rolls up any group with more than 10 applied codes, geo or not", () => {
-    const { codes, scheme, inScheme } = schemeWithCodes(
-      TARGET,
-      "Target Population",
-      11,
-    );
-    const [g] = groupAppliedConcepts(applied(...codes), inScheme, [scheme], GEO);
-    expect(g.isGeo).toBe(false);
-    expect(g.appliedCount).toBe(11);
-    expect(g.rolledUp).toBe(true);
-  });
-
-  test("does not roll up a group sitting exactly at the threshold of 10", () => {
-    const { codes, scheme, inScheme } = schemeWithCodes(
-      TARGET,
-      "Target Population",
-      10,
-    );
-    const [g] = groupAppliedConcepts(applied(...codes), inScheme, [scheme], GEO);
-    expect(g.appliedCount).toBe(10);
-    expect(g.rolledUp).toBe(false);
-  });
-
-  test("rolls up the geo Country scheme once it floods past the threshold", () => {
-    const { codes, scheme, inScheme } = schemeWithCodes(COUNTRY, "Country", 12);
-    const [g] = groupAppliedConcepts(applied(...codes), inScheme, [scheme], GEO);
-    expect(g.isGeo).toBe(true);
-    expect(g.rolledUp).toBe(true);
-  });
-
-  test("never rolls up the 'Other codes' bucket, so drift stays visible", () => {
-    const { codes, inScheme } = schemeWithCodes("https://v/unknown", "X", 12);
-    const g = groupAppliedConcepts(applied(...codes), inScheme, schemes, GEO);
     const other = g[g.length - 1];
     expect(other.schemeLabel).toBe("Other codes");
-    expect(other.appliedCount).toBe(12);
-    expect(other.rolledUp).toBe(false);
+    expect(other.nodes).toHaveLength(1);
+  });
+
+  test("lists every member of a large group (no summarization)", () => {
+    const { codes, scheme, inScheme } = schemeWithCodes(
+      COUNTRY,
+      "Country",
+      30,
+    );
+    const [g] = groupAppliedConcepts(applied(...codes), inScheme, [scheme], GEO);
+    expect(g.isGeo).toBe(true);
+    expect(g.nodes).toHaveLength(30);
   });
 
   test("appends applied concepts absent from the scheme tree as flat nodes", () => {
