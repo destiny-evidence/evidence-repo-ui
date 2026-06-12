@@ -8,41 +8,19 @@ interface TaxonomyCodesCardProps {
   vocabUnavailable?: boolean;
 }
 
-// Split one nesting level into chips (applied concepts) and sub-heading blocks
-// (non-applied ancestors). An applied node's own children are hoisted up to its
-// level, so a coded parent and its coded child both render — neither is dropped.
-function partition(nodes: readonly TaxoNode[]): {
-  tags: HierarchicalTag[];
-  subheadings: TaxoNode[];
-} {
+// Flatten a scheme's pruned tree into one tag per coded concept, carrying its
+// immediate ancestor's label as a breadcrumb (rendered "Parent › Child" inline,
+// matching the findings cards). Non-applied ancestors are not tags themselves;
+// they only supply the breadcrumb for their coded descendants.
+function flatten(nodes: readonly TaxoNode[], parent?: string): HierarchicalTag[] {
   const tags: HierarchicalTag[] = [];
-  const subheadings: TaxoNode[] = [];
   for (const n of nodes) {
     if (n.applied) {
-      tags.push({ label: n.label, definition: n.definition });
-      const hoisted = partition(n.children);
-      tags.push(...hoisted.tags);
-      subheadings.push(...hoisted.subheadings);
-    } else {
-      subheadings.push(n);
+      tags.push({ label: n.label, definition: n.definition, parent });
     }
+    tags.push(...flatten(n.children, n.label));
   }
-  return { tags, subheadings };
-}
-
-function Nodes({ nodes }: { nodes: TaxoNode[] }) {
-  const { tags, subheadings } = partition(nodes);
-  return (
-    <>
-      {tags.length > 0 && <TagGroup tags={tags} />}
-      {subheadings.map((a) => (
-        <div key={a.uri} class="taxonomy-codes-card__subgroup">
-          <h4 class="taxonomy-codes-card__subheading">{a.label}</h4>
-          <Nodes nodes={a.children} />
-        </div>
-      ))}
-    </>
-  );
+  return tags;
 }
 
 function SchemeBlock({ group }: { group: TaxonomyGroup }) {
@@ -51,7 +29,7 @@ function SchemeBlock({ group }: { group: TaxonomyGroup }) {
       <h3 class="taxonomy-codes-card__scheme lg-section-label">
         {group.schemeLabel}
       </h3>
-      <Nodes nodes={group.nodes} />
+      <TagGroup tags={flatten(group.nodes)} />
     </section>
   );
 }

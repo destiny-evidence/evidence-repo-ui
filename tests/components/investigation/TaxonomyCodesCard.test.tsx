@@ -43,11 +43,11 @@ describe("TaxonomyCodesCard", () => {
     expect(
       screen.getByRole("heading", { name: "Study Design" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Quantitative")).toBeInTheDocument(); // sub-heading
+    expect(screen.getByText("Quantitative")).toBeInTheDocument(); // breadcrumb parent
     expect(screen.getByText("RCT")).toBeInTheDocument(); // applied tag
   });
 
-  test("renders applied descendants of an applied node (does not drop them)", () => {
+  test("renders nested concepts inline as breadcrumbs, not indented sub-headings", () => {
     const nested: TaxonomyGroup = {
       schemeUri: "s:study",
       schemeLabel: "Study Design",
@@ -70,10 +70,16 @@ describe("TaxonomyCodesCard", () => {
         },
       ],
     };
-    render(<TaxonomyCodesCard groups={[nested]} />);
-    expect(screen.getByText("Quantitative")).toBeInTheDocument(); // ancestor sub-heading
-    expect(screen.getByText("RCT")).toBeInTheDocument(); // applied parent
-    expect(screen.getByText("Cluster RCT")).toBeInTheDocument(); // applied child, not dropped
+    const { container } = render(<TaxonomyCodesCard groups={[nested]} />);
+    // hierarchy is inlined like the findings cards: no indented sub-heading blocks
+    expect(container.querySelector(".taxonomy-codes-card__subgroup")).toBeNull();
+    expect(container.querySelector(".taxonomy-codes-card__subheading")).toBeNull();
+    // each coded concept is a pill carrying its immediate ancestor as a breadcrumb
+    const tags = [...container.querySelectorAll(".tag-group__tag")].map(
+      (t) => t.textContent,
+    );
+    expect(tags).toContain("Quantitative › RCT"); // non-applied ancestor as breadcrumb
+    expect(tags).toContain("RCT › Cluster RCT"); // applied child not dropped
   });
 
   test("renders a geo group expanded (no <details>) listing its members", () => {
