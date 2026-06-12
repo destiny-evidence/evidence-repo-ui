@@ -9,12 +9,19 @@ import { AiSummaryDrawer } from "@/components/ai-summary/AiSummaryDrawer";
 import type { UseAiSummaryResult } from "@/hooks/useAiSummary";
 import { MOCK_SUMMARY } from "@/services/summariserMock";
 
+const context = {
+  terms: ["Afghanistan", "Cost-effectiveness"],
+  count: { count: 15, is_lower_bound: false },
+  countNoun: "references",
+};
+
 function makeAi(overrides: Partial<UseAiSummaryResult> = {}): UseAiSummaryResult {
   return {
     status: "done",
     minimized: false,
     result: MOCK_SUMMARY,
     errorMessage: null,
+    context,
     drawerOpen: true,
     generate: vi.fn(),
     open: vi.fn(),
@@ -23,11 +30,6 @@ function makeAi(overrides: Partial<UseAiSummaryResult> = {}): UseAiSummaryResult
     ...overrides,
   };
 }
-
-const context = {
-  terms: ["Afghanistan", "Cost-effectiveness"],
-  count: { count: 15, is_lower_bound: false },
-};
 
 beforeEach(() => {
   // jsdom doesn't implement scrollIntoView.
@@ -38,17 +40,17 @@ beforeEach(() => {
 describe("AiSummaryDrawer", () => {
   test("is not rendered when the drawer is closed", () => {
     const { container } = render(
-      <AiSummaryDrawer ai={makeAi({ drawerOpen: false })} context={context} />,
+      <AiSummaryDrawer ai={makeAi({ drawerOpen: false })} />,
     );
     expect(container.firstChild).toBeNull();
   });
 
   test("renders the result: prose, context chips, and claims", () => {
-    render(<AiSummaryDrawer ai={makeAi()} context={context} />);
+    render(<AiSummaryDrawer ai={makeAi()} />);
 
     expect(screen.getByText(/highly cost-effective at national coverage/i)).toBeDefined();
     expect(screen.getByText("Afghanistan")).toBeDefined();
-    expect(screen.getByText("15 results")).toBeDefined();
+    expect(screen.getByText("15 references")).toBeDefined();
     // One numbered claim per claim in the summary.
     expect(document.querySelectorAll(".ai-claim").length).toBe(
       MOCK_SUMMARY.summary.claims.length,
@@ -57,7 +59,7 @@ describe("AiSummaryDrawer", () => {
 
   test("clicking a footnote scrolls to and flashes its claim", () => {
     const { container } = render(
-      <AiSummaryDrawer ai={makeAi()} context={context} />,
+      <AiSummaryDrawer ai={makeAi()} />,
     );
     const firstFootnote = container.querySelector(".ai-fn") as HTMLElement;
     fireEvent.click(firstFootnote);
@@ -80,7 +82,7 @@ describe("AiSummaryDrawer", () => {
         extraction_errors: [{ paper: "x", error: "unreadable" }],
       },
     });
-    render(<AiSummaryDrawer ai={ai} context={context} />);
+    render(<AiSummaryDrawer ai={ai} />);
     // 5 summarised + 2 no-full-text + 1 unreadable = 8 total.
     const note = screen.getByText(/Based on 5 of 8 references/i);
     expect(note.textContent).toMatch(/2 had no full text available/i);
@@ -91,12 +93,12 @@ describe("AiSummaryDrawer", () => {
     const ai = makeAi({
       result: { ...MOCK_SUMMARY, skipped_references: [], extraction_errors: [] },
     });
-    render(<AiSummaryDrawer ai={ai} context={context} />);
+    render(<AiSummaryDrawer ai={ai} />);
     expect(screen.getByText(/Based on 5 references\./i)).toBeDefined();
   });
 
   test("flag link points at the configured form and opens in a new tab", () => {
-    render(<AiSummaryDrawer ai={makeAi()} context={context} />);
+    render(<AiSummaryDrawer ai={makeAi()} />);
     const link = screen.getByRole("link", { name: /flag this summary/i });
     expect(link.getAttribute("href")).toBe("https://forms.example/flag");
     expect(link.getAttribute("target")).toBe("_blank");
@@ -106,7 +108,7 @@ describe("AiSummaryDrawer", () => {
     render(
       <AiSummaryDrawer
         ai={makeAi({ status: "error", result: null, errorMessage: "boom" })}
-        context={context}
+       
       />,
     );
     expect(screen.getByRole("alert")).toHaveTextContent("boom");
@@ -115,23 +117,23 @@ describe("AiSummaryDrawer", () => {
 
   test("shows a loading state with Cancel and Run in background while generating", () => {
     render(
-      <AiSummaryDrawer ai={makeAi({ status: "generating", result: null })} context={context} />,
+      <AiSummaryDrawer ai={makeAi({ status: "generating", result: null })} />,
     );
-    expect(screen.getByText(/summarising 15 papers/i)).toBeDefined();
+    expect(screen.getByText(/summarising 15 references/i)).toBeDefined();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDefined();
     expect(screen.getByRole("button", { name: "Run in background" })).toBeDefined();
   });
 
   test("Run in background invokes the hook action", () => {
     const ai = makeAi({ status: "generating", result: null });
-    render(<AiSummaryDrawer ai={ai} context={context} />);
+    render(<AiSummaryDrawer ai={ai} />);
     fireEvent.click(screen.getByRole("button", { name: "Run in background" }));
     expect(ai.runInBackground).toHaveBeenCalledTimes(1);
   });
 
   test("closing while generating backgrounds the job rather than aborting it", () => {
     const ai = makeAi({ status: "generating", result: null });
-    render(<AiSummaryDrawer ai={ai} context={context} />);
+    render(<AiSummaryDrawer ai={ai} />);
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(ai.runInBackground).toHaveBeenCalledTimes(1);
     expect(ai.dismiss).not.toHaveBeenCalled();
@@ -139,7 +141,7 @@ describe("AiSummaryDrawer", () => {
 
   test("explicit Cancel while generating aborts the job", () => {
     const ai = makeAi({ status: "generating", result: null });
-    render(<AiSummaryDrawer ai={ai} context={context} />);
+    render(<AiSummaryDrawer ai={ai} />);
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(ai.dismiss).toHaveBeenCalledTimes(1);
     expect(ai.runInBackground).not.toHaveBeenCalled();
@@ -147,7 +149,7 @@ describe("AiSummaryDrawer", () => {
 
   test("closing a finished summary dismisses it", () => {
     const ai = makeAi();
-    render(<AiSummaryDrawer ai={ai} context={context} />);
+    render(<AiSummaryDrawer ai={ai} />);
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(ai.dismiss).toHaveBeenCalledTimes(1);
     expect(ai.runInBackground).not.toHaveBeenCalled();

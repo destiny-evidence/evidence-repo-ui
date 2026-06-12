@@ -45,6 +45,9 @@ interface SearchPageProps {
 // past that are explicitly out of scope. Mirrors the search backend cap.
 const EXPORT_MAX_RESULTS = 10000;
 
+// The summariser accepts at most 50 references per request (1–50).
+const MAX_SUMMARY_REFERENCES = 50;
+
 // Maps the useVocabulary() result to the SearchBar `refine` prop. Returns
 // undefined when there are no facets to offer (empty schemes) so the Refine
 // trigger isn't rendered at all.
@@ -273,20 +276,23 @@ function SearchPageInner({ community }: { community: Community }) {
     });
   }
 
-  // Context shown in the AI-summary drawer and sent to the summariser as the
-  // terms to frame the summary around. A summary can be generated from any
-  // search, so the terms are the current free-text query plus any applied
-  // concept filters (a map cell arrives here with those filters pre-applied).
-  // The count is the full matching total — the hook summarises every reference
-  // the ids endpoint returns, not just the current page.
-  // Also requires a configured summariser so users never see placeholder data:
-  // unset VITE_SUMMARISER_BASE ⇒ the feature stays hidden.
+  // The AI-summary entry point. Requires a configured summariser so users never
+  // see placeholder data: unset VITE_SUMMARISER_BASE ⇒ the feature stays hidden.
   const aiSummariesEnabled =
     community.features.aiSummaries && Boolean(SUMMARISER_BASE);
-  const aiContext = {
-    terms: deriveSummaryTerms(params, vocab.labels),
-    count: results.results?.total ?? { count: 0, is_lower_bound: false },
-  };
+
+  // Terms framing the summary: the free-text query plus any applied concept
+  // filters (a map cell arrives here with those filters pre-applied).
+  const aiTerms = deriveSummaryTerms(params, vocab.labels);
+  const aiTotal = results.results?.total ?? { count: 0, is_lower_bound: false };
+  // The summariser accepts 1–50 references and at least one term; gate here so
+  // the user gets a clear reason rather than a server error.
+  const aiDisabledReason =
+    aiTerms.length === 0
+      ? "Search or filter by a term to summarise."
+      : aiTotal.count > MAX_SUMMARY_REFERENCES
+        ? `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references — refine your search.`
+        : undefined;
 
   function handleGenerateSummary() {
     if (ai.minimized) {
@@ -297,10 +303,15 @@ function SearchPageInner({ community }: { community: Community }) {
       params,
       community.defaultAnnotations,
     );
+    // Snapshot the display context now so a later search can't make it drift.
     ai.generate({
-      terms: aiContext.terms.map((name) => ({ name })),
       query,
       filters,
+      context: {
+        terms: aiTerms,
+        count: aiTotal,
+        countNoun: community.copy.countNoun,
+      },
     });
   }
 
@@ -343,7 +354,11 @@ function SearchPageInner({ community }: { community: Community }) {
       </section>
 
       {aiSummariesEnabled && hasResults && (
-        <AiSummaryButton onClick={handleGenerateSummary} />
+        <AiSummaryButton
+          onClick={handleGenerateSummary}
+          disabled={aiDisabledReason !== undefined}
+          disabledReason={aiDisabledReason}
+        />
       )}
 
       <section class="search-results">
@@ -463,7 +478,7 @@ function SearchPageInner({ community }: { community: Community }) {
 
       {aiSummariesEnabled && (
         <>
-          <AiSummaryDrawer ai={ai} context={aiContext} />
+          <AiSummaryDrawer ai={ai} />
           <AiSummaryMiniChip ai={ai} />
         </>
       )}

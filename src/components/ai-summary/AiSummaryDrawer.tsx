@@ -1,23 +1,14 @@
 import { Drawer } from "@/components/common/Drawer";
 import { WarningIcon } from "@/components/common/icons";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
-import type { UseAiSummaryResult } from "@/hooks/useAiSummary";
-import type { SearchResultTotal } from "@/types/models";
+import type { AiSummaryContext, UseAiSummaryResult } from "@/hooks/useAiSummary";
 import type { SkipReason, SummariseResponse } from "@/services/summariser";
 import { formatTotal } from "@/utils/searchTotal";
 import { SummaryBody } from "./renderSummary";
 import "./ai-summary.css";
 
-export interface AiSummaryContext {
-  /** Intersecting term labels shown as chips. */
-  terms: string[];
-  /** Papers feeding the summary (the full match total, may be a lower bound). */
-  count: SearchResultTotal;
-}
-
 interface AiSummaryDrawerProps {
   ai: UseAiSummaryResult;
-  context: AiSummaryContext;
 }
 
 const SKIP_REASON_TEXT: Record<SkipReason, string> = {
@@ -26,7 +17,7 @@ const SKIP_REASON_TEXT: Record<SkipReason, string> = {
   download_failed: "couldn't be downloaded",
 };
 
-export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
+export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
   const title =
     ai.status === "generating"
       ? "Generating summary…"
@@ -38,6 +29,7 @@ export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
   // does. While generating, close drops it to the background chip; once there's
   // nothing running, close clears the finished summary.
   const handleClose = ai.status === "generating" ? ai.runInBackground : ai.dismiss;
+  const context = ai.context;
 
   return (
     <Drawer
@@ -45,7 +37,7 @@ export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
       block="ai-drawer"
       title={title}
       titleAdornment={<span class="ai-beta">BETA</span>}
-      subtitle={<ContextChips terms={context.terms} count={context.count} />}
+      subtitle={context ? <ContextChips context={context} /> : undefined}
       headerAction={
         <button
           type="button"
@@ -61,13 +53,13 @@ export function AiSummaryDrawer({ ai, context }: AiSummaryDrawerProps) {
       closeOnBackdrop
       onClose={handleClose}
     >
-      {ai.status === "generating" && (
+      {ai.status === "generating" && context && (
         <div class="ai-loading">
           <span class="ai-spinner" />
           <span>
-            Summarising {formatTotal(context.count)}{" "}
-            {context.count.count === 1 ? "paper" : "papers"}… this can take
-            several minutes. You can keep working — use “Run in background”.
+            Summarising {formatTotal(context.count)} {context.countNoun}… this
+            can take several minutes. You can keep working — use “Run in
+            background”.
           </span>
         </div>
       )}
@@ -119,16 +111,16 @@ function CoverageNote({ result }: { result: SummariseResponse }) {
   );
 }
 
-function ContextChips({ terms, count }: AiSummaryContext) {
+function ContextChips({ context }: { context: AiSummaryContext }) {
   return (
     <div class="ai-ctx">
-      {terms.map((term, i) => (
+      {context.terms.map((term, i) => (
         <span key={i} class="ai-term">
           {term}
         </span>
       ))}
       <span class="ai-pill">
-        {formatTotal(count)} {count.count === 1 ? "result" : "results"}
+        {formatTotal(context.count)} {context.countNoun}
       </span>
     </div>
   );

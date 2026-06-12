@@ -1,16 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { requestSummary } from "@/services/summariserClient";
 import { searchReferenceIds, type SearchFilters } from "@/services/apiClient";
-import type { SummariseResponse, TermInfo } from "@/services/summariser";
+import type { SummariseResponse } from "@/services/summariser";
+import type { SearchResultTotal } from "@/types/models";
 
 export type AiSummaryStatus = "idle" | "generating" | "done" | "error";
 
+/** What the drawer displays about a summary — snapshotted at generate time. */
+export interface AiSummaryContext {
+  /** Intersecting term labels (query + applied concept filters). */
+  terms: string[];
+  /** Matching references at the intersection (may be a lower bound). */
+  count: SearchResultTotal;
+  /** The community's plural noun for evidence items ("references", …). */
+  countNoun: string;
+}
+
 export interface AiSummaryInput {
-  /** Intersecting terms the summary is framed against. */
-  terms: TermInfo[];
   /** Search query + filters identifying the references to summarise. */
   query: string | undefined;
   filters: Omit<SearchFilters, "page">;
+  /** Display context, captured now so a later search can't make it drift. */
+  context: AiSummaryContext;
 }
 
 export interface UseAiSummaryResult {
@@ -19,6 +30,8 @@ export interface UseAiSummaryResult {
   minimized: boolean;
   result: SummariseResponse | null;
   errorMessage: string | null;
+  /** Context for the active summary, frozen at generate time (null when idle). */
+  context: AiSummaryContext | null;
   /** The drawer is visible when there's an active summary and it isn't minimized. */
   drawerOpen: boolean;
   generate: (input: AiSummaryInput) => void;
@@ -40,6 +53,7 @@ export function useAiSummary(): UseAiSummaryResult {
   const [minimized, setMinimized] = useState(false);
   const [result, setResult] = useState<SummariseResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [context, setContext] = useState<AiSummaryContext | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   // Guards against a stale request resolving after dismiss/regenerate.
@@ -53,6 +67,7 @@ export function useAiSummary(): UseAiSummaryResult {
     setMinimized(false);
     setResult(null);
     setErrorMessage(null);
+    setContext(null);
   }, []);
 
   const generate = useCallback((input: AiSummaryInput) => {
@@ -66,6 +81,9 @@ export function useAiSummary(): UseAiSummaryResult {
     setMinimized(false);
     setResult(null);
     setErrorMessage(null);
+    // Freeze the context for this run so editing the search afterwards (while it
+    // generates or runs in the background) can't change what the drawer shows.
+    setContext(input.context);
 
     // Resolve every matching reference id, then summarise them. Both steps
     // honour the abort signal, so dismiss/regenerate cancels in-flight work.
@@ -78,7 +96,10 @@ export function useAiSummary(): UseAiSummaryResult {
         );
         if (stale()) return;
         const res = await requestSummary(
-          { terms: input.terms, referenceIds: reference_ids },
+          {
+            terms: input.context.terms.map((name) => ({ name })),
+            referenceIds: reference_ids,
+          },
           controller.signal,
         );
         if (stale()) return;
@@ -106,6 +127,7 @@ export function useAiSummary(): UseAiSummaryResult {
     minimized,
     result,
     errorMessage,
+    context,
     drawerOpen: status !== "idle" && !minimized,
     generate,
     open,

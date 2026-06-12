@@ -28,9 +28,13 @@ function deferred<T>() {
 }
 
 const input: AiSummaryInput = {
-  terms: [{ name: "Afghanistan" }],
   query: "afghanistan",
   filters: { annotation: ["domain-inclusion/hpv"] },
+  context: {
+    terms: ["Afghanistan"],
+    count: { count: 3, is_lower_bound: false },
+    countNoun: "references",
+  },
 };
 
 function resolveIds(reference_ids: string[]) {
@@ -65,6 +69,8 @@ describe("useAiSummary", () => {
 
     await waitFor(() => expect(result.current.status).toBe("done"));
     expect(result.current.result).toBe(MOCK_SUMMARY);
+    // Context is snapshotted so a later search can't make the drawer drift.
+    expect(result.current.context).toEqual(input.context);
 
     // ids endpoint queried with the search descriptor; its ids feed the summary.
     expect(mockIds).toHaveBeenCalledWith(
@@ -72,8 +78,9 @@ describe("useAiSummary", () => {
       input.filters,
       expect.anything(),
     );
+    // Summariser terms are derived from the snapshotted context labels.
     expect(mockRequest).toHaveBeenCalledWith(
-      { terms: input.terms, referenceIds: ["a", "b", "c"] },
+      { terms: [{ name: "Afghanistan" }], referenceIds: ["a", "b", "c"] },
       expect.anything(),
     );
   });
