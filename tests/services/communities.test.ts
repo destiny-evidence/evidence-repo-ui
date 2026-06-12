@@ -107,4 +107,14 @@ describe("communities", () => {
       ]),
     );
   });
+
+  it("excludes the HPV geographic schemes from result-card pills, none for ESEA", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("esea")?.pillExcludedSchemes).toEqual([]);
+    const hpv = findCommunity("hpv");
+    // HPV drops its geo schemes from pills; same set as geographicSchemes today,
+    // but a distinct field so the pill-exclusion intent is explicit in config.
+    expect(hpv?.pillExcludedSchemes).toEqual(hpv?.geographicSchemes);
+    expect(hpv?.pillExcludedSchemes).toHaveLength(5);
+  });
 });

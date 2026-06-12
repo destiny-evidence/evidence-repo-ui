@@ -64,6 +64,7 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: [
       "https://vocab.esea.education/ImplementationDescriptionScheme",
     ],
+    pillExcludedSchemes: [],
     geographicSchemes: [],
     features: { ...DEFAULT_FEATURES, evidenceMap: true, exportExcel: true },
     defaultEvidenceMapAxes: {
@@ -106,6 +107,7 @@ const COMMUNITIES: Community[] = [
       import.meta.env.VITE_HPV_CONTEXT_URL,
     ),
     filterExcludedSchemes: [],
+    pillExcludedSchemes: HPV_GEO_SCHEMES,
     geographicSchemes: HPV_GEO_SCHEMES,
     features: {
       ...DEFAULT_FEATURES,
