@@ -7,16 +7,16 @@ afterEach(cleanup);
 describe("AiSummaryButton", () => {
   test("is enabled and clickable by default", () => {
     const onClick = vi.fn();
-    render(<AiSummaryButton onClick={onClick} />);
+    const { container } = render(<AiSummaryButton onClick={onClick} />);
     const button = screen.getByRole("button", { name: /generate ai summary/i });
     expect((button as HTMLButtonElement).disabled).toBe(false);
-    expect(button.getAttribute("title")).toBeNull();
+    expect(container.querySelector("[data-tooltip]")).toBeNull();
     fireEvent.click(button);
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  test("disables and surfaces the reason as a tooltip", () => {
-    render(
+  test("disables and surfaces the reason via the shared Tooltip", () => {
+    const { container } = render(
       <AiSummaryButton
         onClick={vi.fn()}
         disabled
@@ -25,6 +25,8 @@ describe("AiSummaryButton", () => {
     );
     const button = screen.getByRole("button", { name: /generate ai summary/i });
     expect((button as HTMLButtonElement).disabled).toBe(true);
-    expect(button.getAttribute("title")).toMatch(/up to 50 references/i);
+    expect(
+      container.querySelector("[data-tooltip]")?.getAttribute("data-tooltip"),
+    ).toMatch(/up to 50 references/i);
   });
 });
