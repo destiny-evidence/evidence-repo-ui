@@ -30,15 +30,9 @@ describe("orderFilterItems", () => {
     expect(kinds(items)).toEqual(["year", "u:apple"]);
   });
 
-  test("pins a scheme by URI and groups geographic schemes in config order", () => {
+  test("pins schemes by URI in order, then appends the rest alphabetically", () => {
     const items = orderFilterItems([zebra, apple, country, region, convening], {
-      order: [
-        "u:convening",
-        "year",
-        "geographicSchemes",
-        "otherSchemes",
-      ],
-      geographicSchemes: ["u:country", "u:region"],
+      pinned: ["u:convening", "year", "u:country", "u:region"],
       showCountryFacetFilter: false,
     });
     expect(kinds(items)).toEqual([
@@ -51,25 +45,17 @@ describe("orderFilterItems", () => {
     ]);
   });
 
-  test("never places a scheme twice; the first slot claiming it wins", () => {
-    const items = orderFilterItems([country], {
-      order: ["u:country", "geographicSchemes", "otherSchemes"],
-      geographicSchemes: ["u:country"],
+  test("a pinned scheme isn't repeated by the trailing alphabetical sweep", () => {
+    const items = orderFilterItems([zebra, apple], {
+      pinned: ["u:zebra"],
       showCountryFacetFilter: false,
     });
-    expect(kinds(items)).toEqual(["u:country"]);
+    expect(kinds(items)).toEqual(["u:zebra", "u:apple"]);
   });
 
-  test("appends a trailing otherSchemes sweep so no scheme is dropped", () => {
-    const items = orderFilterItems([zebra, apple], {
-      order: ["year"],
-    });
-    expect(kinds(items)).toEqual(["year", "u:apple", "u:zebra"]);
-  });
-
-  test("ignores order tokens for schemes not present", () => {
+  test("ignores pinned URIs for schemes not present", () => {
     const items = orderFilterItems([apple], {
-      order: ["u:missing", "year", "otherSchemes"],
+      pinned: ["u:missing", "year"],
       showCountryFacetFilter: false,
     });
     expect(kinds(items)).toEqual(["year", "u:apple"]);

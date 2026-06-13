@@ -15,7 +15,7 @@ import type { SearchParams } from "@/services/searchParams";
 import type {
   EvidenceMapAxis,
   EvidenceMapAxes,
-  FilterSlot,
+  PinnedFilter,
 } from "@/types/models";
 import "./MapConfigPanel.css";
 
@@ -36,9 +36,8 @@ interface MapConfigPanelProps {
   // Hide the facet-backed Country card where the `countries` facet is empty;
   // the Country concept-scheme card still renders from `schemes`.
   showCountryFacetFilter?: boolean;
-  // Community filter-card ordering; absent ⇒ DEFAULT_FILTER_ORDER.
-  order?: readonly FilterSlot[];
-  geographicSchemes?: readonly string[];
+  // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
+  pinnedFilters?: readonly PinnedFilter[];
   onApply: (next: { axes: EvidenceMapAxes; filters: AppliedFilters }) => void;
 }
 
@@ -94,8 +93,7 @@ export function MapConfigPanel({
   params,
   countNoun = "results",
   showCountryFacetFilter = true,
-  order,
-  geographicSchemes,
+  pinnedFilters,
   onApply,
 }: MapConfigPanelProps) {
   const [rowDraft, setRowDraft] = useState<EvidenceMapAxis>(appliedAxes.row);
@@ -164,8 +162,7 @@ export function MapConfigPanel({
             draft={draft}
             countNoun={countNoun}
             showCountryFacetFilter={showCountryFacetFilter}
-            order={order}
-            geographicSchemes={geographicSchemes}
+            pinnedFilters={pinnedFilters}
           />
         </section>
       </div>

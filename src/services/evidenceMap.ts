@@ -115,9 +115,9 @@ export function resolveMapAxis(
   };
 }
 
-// Flatten the scheme to a depth-first preorder list: each concept immediately
-// followed by its descendants, so a parent and its children sit adjacent in the
-// grid (#148). Siblings at every level are alphabetized by label.
+// Flatten the scheme to a depth-first preorder list — each concept immediately
+// followed by its descendants — so a parent and its children sit adjacent in the
+// grid. Siblings at every level are alphabetized by label.
 function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
   const out: AxisCategory[] = [];
   const walk = (concepts: readonly Concept[]) => {
@@ -137,10 +137,9 @@ const byLabelThenKey = (
   a.label.localeCompare(b.label) ||
   (a.uri ?? a.key ?? "").localeCompare(b.uri ?? b.key ?? "");
 
-// Axis categories keep their given order — a scheme's hierarchy (#148), or the
-// empty list for a countries axis. Cell-only keys the axis doesn't enumerate
-// trail them, alphabetized; a countries axis (no categories) is thus fully
-// alphabetical.
+// Axis categories keep their given order — a scheme's hierarchy, or the empty
+// list for a countries axis. Cell-only keys the axis doesn't enumerate trail
+// them, alphabetized; a countries axis (no categories) is thus fully alphabetical.
 function mergeCategories(
   axis: AxisInput,
   cellKeys: Set<string>,

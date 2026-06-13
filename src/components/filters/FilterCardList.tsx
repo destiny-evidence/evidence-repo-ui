@@ -6,9 +6,11 @@ import { summary } from "./conceptSchemeFilterState";
 import { summary as countrySummary } from "./countryFilterState";
 import { summary as yearSummary } from "./yearRangeFilterState";
 import { orderFilterItems, type FilterItem } from "./filterOrder";
-import { schemeDisplayLabel } from "@/services/vocabulary/vocabularyService";
-import type { FilterSlot } from "@/types/models";
-import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
+import {
+  schemeDisplayLabel,
+  type ConceptScheme,
+} from "@/services/vocabulary/vocabularyService";
+import type { PinnedFilter } from "@/types/models";
 import type { FilterDraft } from "./useFilterDraft";
 import "./FilterCardList.css";
 
@@ -17,28 +19,24 @@ interface FilterCardListProps {
   countNoun?: string;
   // Show the facet-backed country card; off where the `countries` facet is empty.
   showCountryFacetFilter?: boolean;
-  // Community filter-card ordering; absent ⇒ DEFAULT_FILTER_ORDER.
-  order?: readonly FilterSlot[];
-  // Scheme URIs grouped by the "geographicSchemes" slot (in this order).
-  geographicSchemes?: readonly string[];
+  // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
+  pinnedFilters?: readonly PinnedFilter[];
 }
 
 /**
  * The stack of filter cards (publication year, country, one per concept scheme)
  * driven by a {@link FilterDraft}. Shared by the search drawer and the
- * evidence-map config panel so both render filters identically. Card order is
- * resolved from the community's {@link FilterSlot} order (#149).
+ * evidence-map config panel so both render filters identically. Pinned cards
+ * lead; the remaining schemes follow alphabetically.
  */
 export function FilterCardList({
   draft,
   countNoun = "results",
   showCountryFacetFilter = true,
-  order,
-  geographicSchemes,
+  pinnedFilters,
 }: FilterCardListProps) {
   const items = orderFilterItems(draft.schemes, {
-    order,
-    geographicSchemes,
+    pinned: pinnedFilters,
     showCountryFacetFilter,
   });
 

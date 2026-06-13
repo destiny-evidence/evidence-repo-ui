@@ -26,9 +26,9 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
 };
 
 // The HPV geographic ConceptSchemes (country + regional/classification). Full
-// scheme URIs to match inScheme. Ordered specific → broad: the country itself,
-// then its classification, then the regional groupings (alphabetical) — the
-// order they group in as filter cards (#149).
+// scheme URIs to match inScheme. Ordered specific → broad: the country, then its
+// classification, then the regional groupings (alphabetical) — the order they
+// group in as filter cards.
 const HPV_GEO_SCHEMES = [
   "https://vocab.aliveevidence.org/hpv/Country",
   "https://vocab.aliveevidence.org/hpv/CountryClassification",
@@ -36,9 +36,6 @@ const HPV_GEO_SCHEMES = [
   "https://vocab.aliveevidence.org/hpv/WHORegion",
   "https://vocab.aliveevidence.org/hpv/WorldBankRegion",
 ];
-
-// "Learning Convening" scheme — pinned to the top of the HPV filter list (#149).
-const HPV_CONVENING_THEME = "https://vocab.aliveevidence.org/hpv/ConveningTheme";
 
 // Shared copy fallbacks; a community overrides only what diverges.
 function buildCopy(
@@ -102,7 +99,6 @@ const COMMUNITIES: Community[] = [
   {
     slug: "hpv",
     name: "HPV Vaccine Delivery",
-    // TODO: placeholder annotation, pending the backend's HPV domain inclusion.
     defaultAnnotations: ["domain-inclusion/hpv"],
     vocabularyUrl: requireEnv(
       "VITE_HPV_VOCABULARY_URL",
@@ -115,13 +111,10 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: [],
     pillExcludedSchemes: HPV_GEO_SCHEMES,
     geographicSchemes: HPV_GEO_SCHEMES,
-    // Learning Convening, then year, then the geographic schemes, then the
-    // remaining schemes alphabetically (#149).
-    filterOrder: [
-      HPV_CONVENING_THEME,
+    pinnedFilters: [
+      "https://vocab.aliveevidence.org/hpv/ConveningTheme",
       "year",
-      "geographicSchemes",
-      "otherSchemes",
+      ...HPV_GEO_SCHEMES,
     ],
     features: {
       ...DEFAULT_FEATURES,

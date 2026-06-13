@@ -1,10 +1,8 @@
-import type { FilterSlot } from "@/types/models";
+import type { PinnedFilter } from "@/types/models";
 import {
   schemeDisplayLabel,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
-
-export type { FilterSlot };
 
 // One filter card, in render order: the two built-in cards plus one per scheme.
 export type FilterItem =
@@ -12,33 +10,24 @@ export type FilterItem =
   | { kind: "country" }
   | { kind: "scheme"; scheme: ConceptScheme };
 
-// Year first, then the country facet, then every scheme alphabetically.
-export const DEFAULT_FILTER_ORDER: readonly FilterSlot[] = [
-  "year",
-  "country",
-  "otherSchemes",
-];
+// Year, then the country facet. Every scheme follows alphabetically.
+export const DEFAULT_PINNED_FILTERS: readonly PinnedFilter[] = ["year", "country"];
 
 interface OrderFilterItemsOptions {
-  order?: readonly FilterSlot[];
-  // Scheme URIs grouped by the "geographicSchemes" slot, in this order.
-  geographicSchemes?: readonly string[];
+  pinned?: readonly PinnedFilter[];
   // When false the "country" slot renders nothing (facet unavailable).
   showCountryFacetFilter?: boolean;
 }
 
 /**
- * Resolve a community's {@link FilterSlot} order into the concrete list of
- * filter cards to render (#149). Each scheme appears exactly once: a slot naming
- * its URI, or the "geographicSchemes"/"otherSchemes" group that claims it first,
- * wins. A trailing "otherSchemes" sweep is always applied so no scheme is
- * silently dropped, even if the configured order omits it.
+ * Resolve the filter cards to render: the pinned cards in order, then every
+ * scheme not already pinned, alphabetized by display label. A scheme pinned by
+ * URI is shown once and skipped by the trailing sweep.
  */
 export function orderFilterItems(
   schemes: readonly ConceptScheme[],
   {
-    order = DEFAULT_FILTER_ORDER,
-    geographicSchemes = [],
+    pinned = DEFAULT_PINNED_FILTERS,
     showCountryFacetFilter = true,
   }: OrderFilterItemsOptions = {},
 ): FilterItem[] {
@@ -54,36 +43,19 @@ export function orderFilterItems(
     }
   };
 
-  const slots = order.includes("otherSchemes")
-    ? order
-    : [...order, "otherSchemes"];
-
-  for (const slot of slots) {
-    switch (slot) {
-      case "year":
-        items.push({ kind: "year" });
-        break;
-      case "country":
-        if (showCountryFacetFilter) items.push({ kind: "country" });
-        break;
-      case "geographicSchemes":
-        for (const uri of geographicSchemes) pushScheme(uri);
-        break;
-      case "otherSchemes":
-        for (const scheme of schemes
-          .filter((s) => !placed.has(s.uri))
-          .sort((a, b) =>
-            schemeDisplayLabel(a.label).localeCompare(
-              schemeDisplayLabel(b.label),
-            ),
-          )) {
-          pushScheme(scheme.uri);
-        }
-        break;
-      default:
-        pushScheme(slot);
-    }
+  for (const slot of pinned) {
+    if (slot === "year") items.push({ kind: "year" });
+    else if (slot === "country") {
+      if (showCountryFacetFilter) items.push({ kind: "country" });
+    } else pushScheme(slot);
   }
+
+  const rest = schemes
+    .filter((s) => !placed.has(s.uri))
+    .sort((a, b) =>
+      schemeDisplayLabel(a.label).localeCompare(schemeDisplayLabel(b.label)),
+    );
+  for (const scheme of rest) pushScheme(scheme.uri);
 
   return items;
 }

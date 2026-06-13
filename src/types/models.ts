@@ -24,20 +24,10 @@ export interface EvidenceMapAxes {
   column: EvidenceMapAxis;
 }
 
-// A slot in a community's filter-card ordering (see orderFilterItems). Besides
-// the built-in cards and group tokens, any concept-scheme URI pins that scheme
-// to a position. The `string & {}` arm keeps the named tokens auto-completable
+// A pinned filter card: the built-in "year"/"country" cards, or any concept
+// scheme by URI. The `string & {}` arm keeps the named tokens auto-completable
 // while still accepting arbitrary scheme URIs.
-export type FilterSlot =
-  // The publication-year card.
-  | "year"
-  // The facet-backed country card (omitted where countryFacetFilter is off).
-  | "country"
-  // Expands to the community's geographicSchemes, in their configured order.
-  | "geographicSchemes"
-  // All schemes not placed by another slot, alphabetized by display label.
-  | "otherSchemes"
-  | (string & {});
+export type PinnedFilter = "year" | "country" | (string & {});
 
 // See buildCopy() in services/communities.ts for the shared fallbacks.
 export interface CommunityCopy {
@@ -78,9 +68,9 @@ export interface Community {
   // (in this order) by the "geographicSchemes" filter slot. Empty for communities
   // with no geo schemes.
   geographicSchemes: string[];
-  // Order of the filter cards (see orderFilterItems). Absent ⇒ DEFAULT_FILTER_ORDER
-  // (year, country, then every scheme alphabetically).
-  filterOrder?: FilterSlot[];
+  // Filter cards pinned to the top, in order; every remaining scheme follows
+  // alphabetically. Absent ⇒ DEFAULT_PINNED_FILTERS (year, then country).
+  pinnedFilters?: PinnedFilter[];
   features: CommunityFeatures;
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).
