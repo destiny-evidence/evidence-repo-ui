@@ -22,6 +22,8 @@ export interface AiSummaryInput {
   filters: Omit<SearchFilters, "page">;
   /** Display context, captured now so a later search can't make it drift. */
   context: AiSummaryContext;
+  /** URL of the originating search, so the drawer can link back to it. */
+  originUrl: string;
 }
 
 export interface UseAiSummaryResult {
@@ -32,6 +34,8 @@ export interface UseAiSummaryResult {
   errorMessage: string | null;
   /** Context for the active summary, frozen at generate time (null when idle). */
   context: AiSummaryContext | null;
+  /** URL of the search the active summary came from (null when idle). */
+  originUrl: string | null;
   /** The drawer is visible when there's an active summary and it isn't minimized. */
   drawerOpen: boolean;
   generate: (input: AiSummaryInput) => void;
@@ -44,9 +48,9 @@ export interface UseAiSummaryResult {
 }
 
 /**
- * Owns AI-summary generation state for a page. Lives above the drawer so a
- * summary survives "Run in background" (the drawer closing) and can be reopened
- * from the background chip without losing the result.
+ * Owns AI-summary generation state. Mounted in AiSummaryProvider above the
+ * router, so a summary survives "Run in background" and navigation, and can be
+ * reopened from the background chip on any page without losing the result.
  */
 export function useAiSummary(): UseAiSummaryResult {
   const [status, setStatus] = useState<AiSummaryStatus>("idle");
@@ -54,6 +58,7 @@ export function useAiSummary(): UseAiSummaryResult {
   const [result, setResult] = useState<SummariseResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [context, setContext] = useState<AiSummaryContext | null>(null);
+  const [originUrl, setOriginUrl] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   // Guards against a stale request resolving after dismiss/regenerate.
@@ -68,6 +73,7 @@ export function useAiSummary(): UseAiSummaryResult {
     setResult(null);
     setErrorMessage(null);
     setContext(null);
+    setOriginUrl(null);
   }, []);
 
   const generate = useCallback((input: AiSummaryInput) => {
@@ -84,6 +90,7 @@ export function useAiSummary(): UseAiSummaryResult {
     // Freeze the context for this run so editing the search afterwards (while it
     // generates or runs in the background) can't change what the drawer shows.
     setContext(input.context);
+    setOriginUrl(input.originUrl);
 
     // Resolve every matching reference id, then summarise them. Both steps
     // honour the abort signal, so dismiss/regenerate cancels in-flight work.
@@ -128,6 +135,7 @@ export function useAiSummary(): UseAiSummaryResult {
     result,
     errorMessage,
     context,
+    originUrl,
     drawerOpen: status !== "idle" && !minimized,
     generate,
     open,

@@ -1,6 +1,8 @@
+import { useEffect, useState } from "preact/hooks";
 import { Drawer } from "@/components/common/Drawer";
 import { WarningIcon } from "@/components/common/icons";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
+import { URL_CHANGE_EVENT } from "@/services/navigation";
 import type { AiSummaryContext, UseAiSummaryResult } from "@/hooks/useAiSummary";
 import type { SkipReason, SummariseResponse } from "@/services/summariser";
 import { formatTotal } from "@/utils/searchTotal";
@@ -138,7 +140,30 @@ function Disclaimer() {
   );
 }
 
+// Reactive path + query, so the footer knows whether we're already on the
+// summary's own search page.
+function useCurrentUrl(): string {
+  const [url, setUrl] = useState(
+    () => window.location.pathname + window.location.search,
+  );
+  useEffect(() => {
+    const onChange = () =>
+      setUrl(window.location.pathname + window.location.search);
+    window.addEventListener("popstate", onChange);
+    window.addEventListener(URL_CHANGE_EVENT, onChange);
+    return () => {
+      window.removeEventListener("popstate", onChange);
+      window.removeEventListener(URL_CHANGE_EVENT, onChange);
+    };
+  }, []);
+  return url;
+}
+
 function DrawerFooter({ ai }: { ai: UseAiSummaryResult }) {
+  const currentUrl = useCurrentUrl();
+  // Only worth offering "Open this search" from a different page.
+  const showOpenSearch = ai.originUrl !== null && ai.originUrl !== currentUrl;
+
   if (ai.status === "generating") {
     return (
       <footer class="ai-drawer__footer">
@@ -156,18 +181,26 @@ function DrawerFooter({ ai }: { ai: UseAiSummaryResult }) {
     );
   }
 
-  // Flagging only applies to a produced summary — not the error state.
-  if (ai.status !== "done" || !AI_SUMMARY_FLAG_FORM_URL) return null;
+  // The footer only applies to a produced summary — not the error state.
+  if (ai.status !== "done") return null;
+  if (!showOpenSearch && !AI_SUMMARY_FLAG_FORM_URL) return null;
   return (
     <footer class="ai-drawer__footer">
-      <a
-        class="ai-btn ai-btn--flag ai-btn--push"
-        href={AI_SUMMARY_FLAG_FORM_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        ⚑ Flag this summary
-      </a>
+      {showOpenSearch && (
+        <a class="ai-btn" href={ai.originUrl ?? undefined}>
+          Open this search ↗
+        </a>
+      )}
+      {AI_SUMMARY_FLAG_FORM_URL && (
+        <a
+          class="ai-btn ai-btn--flag ai-btn--push"
+          href={AI_SUMMARY_FLAG_FORM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ⚑ Flag this summary
+        </a>
+      )}
     </footer>
   );
 }

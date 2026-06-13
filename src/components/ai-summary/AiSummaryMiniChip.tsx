@@ -11,30 +11,37 @@ interface AiSummaryMiniChipProps {
  */
 export function AiSummaryMiniChip({ ai }: AiSummaryMiniChipProps) {
   if (!ai.minimized) return null;
+  const done = ai.status === "done";
 
-  if (ai.status === "done") {
-    return (
-      <div class="ai-mini is-ready">
-        <span class="ai-mini__dot-ready" aria-hidden="true">
-          ✓
-        </span>
-        <span>Summary ready</span>
-        <span class="ai-mini__sep" aria-hidden="true" />
+  // The whole chip reopens the drawer; the trailing action is View (done) or
+  // Cancel — the only way to stop a running job.
+  return (
+    <div class={`ai-mini${done ? " is-ready" : ""}`}>
+      <button
+        type="button"
+        class="ai-mini__reopen"
+        onClick={ai.open}
+        title="Reopen summary"
+      >
+        {done ? (
+          <span class="ai-mini__dot-ready" aria-hidden="true">
+            ✓
+          </span>
+        ) : (
+          <span class="ai-spinner" aria-hidden="true" />
+        )}
+        <span>{done ? "Summary ready" : "Summarising…"}</span>
+      </button>
+      <span class="ai-mini__sep" aria-hidden="true" />
+      {done ? (
         <button type="button" class="ai-mini__view" onClick={ai.open}>
           View
         </button>
-      </div>
-    );
-  }
-
-  return (
-    <div class="ai-mini">
-      <span class="ai-spinner" aria-hidden="true" />
-      <span>Summarising…</span>
-      <span class="ai-mini__sep" aria-hidden="true" />
-      <button type="button" class="ai-mini__cancel" onClick={ai.dismiss}>
-        Cancel
-      </button>
+      ) : (
+        <button type="button" class="ai-mini__cancel" onClick={ai.dismiss}>
+          Cancel
+        </button>
+      )}
     </div>
   );
 }

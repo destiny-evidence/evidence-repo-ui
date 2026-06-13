@@ -349,6 +349,21 @@
   justify-content: center;
   font-size: 11px;
 }
+.ai-mini__reopen {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.ai-mini__reopen:hover {
+  color: var(--color-accent);
+}
 .ai-mini__view {
   font-family: var(--font-body);
   font-weight: 500;

@@ -35,6 +35,7 @@ const input: AiSummaryInput = {
     count: { count: 3, is_lower_bound: false },
     countNoun: "references",
   },
+  originUrl: "/test-community?q=afghanistan",
 };
 
 function resolveIds(reference_ids: string[]) {
