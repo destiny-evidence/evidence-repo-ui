@@ -25,15 +25,20 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   countryFacetFilter: true,
 };
 
-// The HPV geographic ConceptSchemes (country + regional/classification). Full scheme
-// URIs to match inScheme.
+// The HPV geographic ConceptSchemes (country + regional/classification). Full
+// scheme URIs to match inScheme. Ordered specific → broad: the country itself,
+// then its classification, then the regional groupings (alphabetical) — the
+// order they group in as filter cards (#149).
 const HPV_GEO_SCHEMES = [
   "https://vocab.aliveevidence.org/hpv/Country",
   "https://vocab.aliveevidence.org/hpv/CountryClassification",
   "https://vocab.aliveevidence.org/hpv/UNICEFRegion",
-  "https://vocab.aliveevidence.org/hpv/WorldBankRegion",
   "https://vocab.aliveevidence.org/hpv/WHORegion",
+  "https://vocab.aliveevidence.org/hpv/WorldBankRegion",
 ];
+
+// "Learning Convening" scheme — pinned to the top of the HPV filter list (#149).
+const HPV_CONVENING_THEME = "https://vocab.aliveevidence.org/hpv/ConveningTheme";
 
 // Shared copy fallbacks; a community overrides only what diverges.
 function buildCopy(
@@ -110,6 +115,14 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: [],
     pillExcludedSchemes: HPV_GEO_SCHEMES,
     geographicSchemes: HPV_GEO_SCHEMES,
+    // Learning Convening, then year, then the geographic schemes, then the
+    // remaining schemes alphabetically (#149).
+    filterOrder: [
+      HPV_CONVENING_THEME,
+      "year",
+      "geographicSchemes",
+      "otherSchemes",
+    ],
     features: {
       ...DEFAULT_FEATURES,
       evidenceMap: true,

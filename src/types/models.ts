@@ -24,6 +24,21 @@ export interface EvidenceMapAxes {
   column: EvidenceMapAxis;
 }
 
+// A slot in a community's filter-card ordering (see orderFilterItems). Besides
+// the built-in cards and group tokens, any concept-scheme URI pins that scheme
+// to a position. The `string & {}` arm keeps the named tokens auto-completable
+// while still accepting arbitrary scheme URIs.
+export type FilterSlot =
+  // The publication-year card.
+  | "year"
+  // The facet-backed country card (omitted where countryFacetFilter is off).
+  | "country"
+  // Expands to the community's geographicSchemes, in their configured order.
+  | "geographicSchemes"
+  // All schemes not placed by another slot, alphabetized by display label.
+  | "otherSchemes"
+  | (string & {});
+
 // See buildCopy() in services/communities.ts for the shared fallbacks.
 export interface CommunityCopy {
   searchPlaceholder: string;
@@ -59,9 +74,13 @@ export interface Community {
   // filterable in the drawer, they just aren't pills). HPV lists its geo schemes here.
   pillExcludedSchemes: string[];
   // Geographic concept schemes (country + regional/classification); shown first
-  // (prioritized) on the detail page's Taxonomy codes card. Empty for communities
+  // (prioritized) on the detail page's Taxonomy codes card, and grouped together
+  // (in this order) by the "geographicSchemes" filter slot. Empty for communities
   // with no geo schemes.
   geographicSchemes: string[];
+  // Order of the filter cards (see orderFilterItems). Absent ⇒ DEFAULT_FILTER_ORDER
+  // (year, country, then every scheme alphabetically).
+  filterOrder?: FilterSlot[];
   features: CommunityFeatures;
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).

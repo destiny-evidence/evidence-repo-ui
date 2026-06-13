@@ -89,17 +89,31 @@ describe("buildEvidenceMapModel", () => {
     expect(model.columns.find((c) => c.key === "cX")?.label).toBe("label:cX");
   });
 
-  test("sorts categories by label, not raw key", () => {
+  test("preserves the axis category order (the scheme hierarchy), unsorted", () => {
     const model = buildEvidenceMapModel(
       [cell("u:a", "x", 1), cell("u:b", "x", 1)],
+      // Given in hierarchy order (parent "Zebra" before its sorted children),
+      // not alphabetical — that order must survive unchanged.
       axisOf([
-        { key: "u:b", label: "Apple" },
-        { key: "u:a", label: "Banana" },
+        { key: "u:z", label: "Zebra" },
+        { key: "u:a", label: "Apple" },
+        { key: "u:b", label: "Banana" },
       ]),
       axisOf(),
     );
-    // u:b ("Apple") sorts before u:a ("Banana") despite key order.
-    expect(model.rows.map((r) => r.label)).toEqual(["Apple", "Banana"]);
+    expect(model.rows.map((r) => r.label)).toEqual(["Zebra", "Apple", "Banana"]);
+  });
+
+  test("appends cell-only keys after the axis categories, alphabetized", () => {
+    const model = buildEvidenceMapModel(
+      [cell("u:z", "x", 1), cell("u:b", "x", 1), cell("u:a", "x", 1)],
+      axisOf([{ key: "u:z", label: "Zebra" }], (k) =>
+        k === "u:a" ? "Apple" : k === "u:b" ? "Banana" : k,
+      ),
+      axisOf(),
+    );
+    // Enumerated "Zebra" stays first; the two cell-only keys trail it in label order.
+    expect(model.rows.map((r) => r.label)).toEqual(["Zebra", "Apple", "Banana"]);
   });
 
   test("looks up counts by pair, reports the maximum, and leaves empties undefined", () => {
@@ -179,6 +193,37 @@ describe("resolveMapAxis", () => {
     expect(axis.labelFor("https://vocab.esea.education/OutcomeScheme/C1")).toBe(
       "Access to Education",
     );
+  });
+
+  test("alphabetizes siblings at each level, keeping children under their parent", () => {
+    const unsorted: ConceptScheme = {
+      uri: "https://vocab.esea.education/RegionScheme",
+      label: "Region Scheme",
+      topConcepts: [
+        {
+          uri: "u:europe",
+          label: "Europe",
+          narrower: [
+            { uri: "u:spain", label: "Spain" },
+            { uri: "u:france", label: "France" },
+          ],
+        },
+        { uri: "u:africa", label: "Africa" },
+      ],
+    };
+    const axis = resolveMapAxis(
+      { kind: "scheme", schemeUri: "https://vocab.esea.education/RegionScheme" },
+      [unsorted],
+      null,
+    );
+    // Top concepts alphabetized (Africa before Europe); Europe's children
+    // alphabetized (France before Spain) and nested directly under it.
+    expect(axis.categories.map((c) => c.label)).toEqual([
+      "Africa",
+      "Europe",
+      "France",
+      "Spain",
+    ]);
   });
 
   test("falls back to the local name and no categories when the scheme is absent", () => {

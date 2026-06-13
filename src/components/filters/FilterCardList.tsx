@@ -5,7 +5,10 @@ import { YearRangeFilter } from "./YearRangeFilter";
 import { summary } from "./conceptSchemeFilterState";
 import { summary as countrySummary } from "./countryFilterState";
 import { summary as yearSummary } from "./yearRangeFilterState";
+import { orderFilterItems, type FilterItem } from "./filterOrder";
 import { schemeDisplayLabel } from "@/services/vocabulary/vocabularyService";
+import type { FilterSlot } from "@/types/models";
+import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import type { FilterDraft } from "./useFilterDraft";
 import "./FilterCardList.css";
 
@@ -14,18 +17,31 @@ interface FilterCardListProps {
   countNoun?: string;
   // Show the facet-backed country card; off where the `countries` facet is empty.
   showCountryFacetFilter?: boolean;
+  // Community filter-card ordering; absent ⇒ DEFAULT_FILTER_ORDER.
+  order?: readonly FilterSlot[];
+  // Scheme URIs grouped by the "geographicSchemes" slot (in this order).
+  geographicSchemes?: readonly string[];
 }
 
 /**
  * The stack of filter cards (publication year, country, one per concept scheme)
  * driven by a {@link FilterDraft}. Shared by the search drawer and the
- * evidence-map config panel so both render filters identically.
+ * evidence-map config panel so both render filters identically. Card order is
+ * resolved from the community's {@link FilterSlot} order (#149).
  */
 export function FilterCardList({
   draft,
   countNoun = "results",
   showCountryFacetFilter = true,
+  order,
+  geographicSchemes,
 }: FilterCardListProps) {
+  const items = orderFilterItems(draft.schemes, {
+    order,
+    geographicSchemes,
+    showCountryFacetFilter,
+  });
+
   return (
     <>
       {draft.facetError && (
@@ -33,15 +49,31 @@ export function FilterCardList({
           Filter counts unavailable.
         </div>
       )}
-      <FilterCard
-        title="Publication year"
-        summary={yearSummary(draft.yearDraft)}
-        defaultExpanded
-      >
-        <YearRangeFilter state={draft.yearDraft} onChange={draft.setYearDraft} />
-      </FilterCard>
-      {showCountryFacetFilter && (
+      {items.map((item) => renderItem(item, draft, countNoun))}
+    </>
+  );
+}
+
+function renderItem(item: FilterItem, draft: FilterDraft, countNoun: string) {
+  switch (item.kind) {
+    case "year":
+      return (
         <FilterCard
+          key="year"
+          title="Publication year"
+          summary={yearSummary(draft.yearDraft)}
+          defaultExpanded
+        >
+          <YearRangeFilter
+            state={draft.yearDraft}
+            onChange={draft.setYearDraft}
+          />
+        </FilterCard>
+      );
+    case "country":
+      return (
+        <FilterCard
+          key="country"
           title="Country"
           summary={countrySummary(draft.countryDraft)}
           defaultExpanded
@@ -54,26 +86,42 @@ export function FilterCardList({
             onChange={draft.setCountryDraft}
           />
         </FilterCard>
-      )}
-      {draft.schemes.map((scheme) => {
-        const state = draft.conceptStateFor(scheme);
-        return (
-          <FilterCard
-            key={scheme.uri}
-            title={schemeDisplayLabel(scheme.label)}
-            summary={summary(state)}
-          >
-            <ConceptSchemeFilter
-              scheme={scheme}
-              state={state}
-              counts={draft.facetCounts?.concepts ?? null}
-              countsLoading={draft.facetCountsLoading}
-              countNoun={countNoun}
-              onChange={(next) => draft.onSchemeChange(scheme, next)}
-            />
-          </FilterCard>
-        );
-      })}
-    </>
+      );
+    case "scheme":
+      return (
+        <SchemeCard
+          key={item.scheme.uri}
+          scheme={item.scheme}
+          draft={draft}
+          countNoun={countNoun}
+        />
+      );
+  }
+}
+
+function SchemeCard({
+  scheme,
+  draft,
+  countNoun,
+}: {
+  scheme: ConceptScheme;
+  draft: FilterDraft;
+  countNoun: string;
+}) {
+  const state = draft.conceptStateFor(scheme);
+  return (
+    <FilterCard
+      title={schemeDisplayLabel(scheme.label)}
+      summary={summary(state)}
+    >
+      <ConceptSchemeFilter
+        scheme={scheme}
+        state={state}
+        counts={draft.facetCounts?.concepts ?? null}
+        countsLoading={draft.facetCountsLoading}
+        countNoun={countNoun}
+        onChange={(next) => draft.onSchemeChange(scheme, next)}
+      />
+    </FilterCard>
   );
 }

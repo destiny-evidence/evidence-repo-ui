@@ -12,7 +12,11 @@ import {
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 import type { SearchParams } from "@/services/searchParams";
-import type { EvidenceMapAxis, EvidenceMapAxes } from "@/types/models";
+import type {
+  EvidenceMapAxis,
+  EvidenceMapAxes,
+  FilterSlot,
+} from "@/types/models";
 import "./MapConfigPanel.css";
 
 interface MapConfigPanelProps {
@@ -32,6 +36,9 @@ interface MapConfigPanelProps {
   // Hide the facet-backed Country card where the `countries` facet is empty;
   // the Country concept-scheme card still renders from `schemes`.
   showCountryFacetFilter?: boolean;
+  // Community filter-card ordering; absent ⇒ DEFAULT_FILTER_ORDER.
+  order?: readonly FilterSlot[];
+  geographicSchemes?: readonly string[];
   onApply: (next: { axes: EvidenceMapAxes; filters: AppliedFilters }) => void;
 }
 
@@ -87,6 +94,8 @@ export function MapConfigPanel({
   params,
   countNoun = "results",
   showCountryFacetFilter = true,
+  order,
+  geographicSchemes,
   onApply,
 }: MapConfigPanelProps) {
   const [rowDraft, setRowDraft] = useState<EvidenceMapAxis>(appliedAxes.row);
@@ -155,6 +164,8 @@ export function MapConfigPanel({
             draft={draft}
             countNoun={countNoun}
             showCountryFacetFilter={showCountryFacetFilter}
+            order={order}
+            geographicSchemes={geographicSchemes}
           />
         </section>
       </div>

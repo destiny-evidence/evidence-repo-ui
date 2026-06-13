@@ -492,6 +492,8 @@ function SearchPageInner({ community }: { community: Community }) {
           title={community.copy.drawerTitle}
           countNoun={community.copy.countNoun}
           showCountryFacetFilter={community.features.countryFacetFilter}
+          order={community.filterOrder}
+          geographicSchemes={community.geographicSchemes}
           schemes={filterableSchemes}
           appliedConceptFilters={params.conceptFilters}
           appliedCountryCodes={params.countryCodes}

@@ -366,6 +366,8 @@ function EvidenceMapView({
         key={canonical}
         schemes={filterableSchemes}
         showCountryFacetFilter={community.features.countryFacetFilter}
+        order={community.filterOrder}
+        geographicSchemes={community.geographicSchemes}
         appliedAxes={axes}
         defaultAxes={defaults}
         appliedConceptFilters={params.conceptFilters}

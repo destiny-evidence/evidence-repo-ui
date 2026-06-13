@@ -4,6 +4,7 @@ import { FilterActions } from "./FilterActions";
 import { useFilterDraft, type AppliedFilters } from "./useFilterDraft";
 import type { SearchParams } from "@/services/searchParams";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
+import type { FilterSlot } from "@/types/models";
 import "./FilterDrawer.css";
 
 export type { AppliedFilters };
@@ -14,6 +15,9 @@ interface FilterDrawerProps {
   countNoun?: string;
   // Show the facet-backed country card; off where the `countries` facet is empty.
   showCountryFacetFilter?: boolean;
+  // Community filter-card ordering; absent ⇒ DEFAULT_FILTER_ORDER.
+  order?: readonly FilterSlot[];
+  geographicSchemes?: readonly string[];
   schemes: ConceptScheme[];
   appliedConceptFilters: readonly (readonly string[])[];
   appliedCountryCodes: readonly string[];
@@ -38,6 +42,8 @@ function FilterDrawerPanel({
   title = "Refine the evidence",
   countNoun = "results",
   showCountryFacetFilter = true,
+  order,
+  geographicSchemes,
   schemes,
   appliedConceptFilters,
   appliedCountryCodes,
@@ -96,6 +102,8 @@ function FilterDrawerPanel({
         draft={draft}
         countNoun={countNoun}
         showCountryFacetFilter={showCountryFacetFilter}
+        order={order}
+        geographicSchemes={geographicSchemes}
       />
     </Drawer>
   );
