@@ -2,10 +2,15 @@ import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Toggled per-test; name starts with "mock" so vitest's hoisting allows it.
 let mockBase: string | undefined;
+let mockMock = false;
 vi.mock("@/config", () => ({
   get SUMMARISER_BASE() {
     return mockBase;
   },
+  get SUMMARISER_MOCK() {
+    return mockMock;
+  },
+  SUMMARISER_MOCK_DELAY_MS: 0,
 }));
 
 import { requestSummary } from "@/services/summariserClient";
@@ -34,6 +39,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", fetchMock);
   fetchMock.mockReset();
   mockBase = undefined;
+  mockMock = false;
 });
 
 afterEach(() => {
@@ -44,6 +50,13 @@ afterEach(() => {
 describe("requestSummary", () => {
   test("throws without hitting the network when no base is configured", async () => {
     await expect(requestSummary(request)).rejects.toThrow(/not configured/i);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("returns the canned summary without hitting the network when mocked", async () => {
+    mockMock = true;
+    const result = await requestSummary(request);
+    expect(result).toEqual(MOCK_SUMMARY);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

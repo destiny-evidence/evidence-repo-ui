@@ -30,7 +30,7 @@ import { AiSummaryDrawer } from "@/components/ai-summary/AiSummaryDrawer";
 import { AiSummaryMiniChip } from "@/components/ai-summary/AiSummaryMiniChip";
 import { useAiSummary } from "@/hooks/useAiSummary";
 import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
-import { SUMMARISER_BASE } from "@/config";
+import { SUMMARISER_BASE, SUMMARISER_MOCK } from "@/config";
 import { formatTotal } from "@/utils/searchTotal";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
@@ -278,11 +278,14 @@ function SearchPageInner({ community }: { community: Community }) {
   }
 
   // The AI-summary entry point. Requires a configured summariser so users never
-  // see placeholder data: unset VITE_SUMMARISER_BASE ⇒ the feature stays hidden.
-  // The ai_summary.writer role gates it per-user (#145).
+  // see placeholder data: unset VITE_SUMMARISER_BASE ⇒ the feature stays hidden
+  // (VITE_SUMMARISER_MOCK also enables it for local dev). The ai_summary.writer
+  // role gates it per-user (#145).
   const { aiSummaryWriter } = useAuth();
   const aiSummariesEnabled =
-    community.features.aiSummaries && Boolean(SUMMARISER_BASE) && aiSummaryWriter;
+    community.features.aiSummaries &&
+    (Boolean(SUMMARISER_BASE) || SUMMARISER_MOCK) &&
+    aiSummaryWriter;
 
   // Terms framing the summary: the free-text query plus any applied concept
   // filters (a map cell arrives here with those filters pre-applied).
