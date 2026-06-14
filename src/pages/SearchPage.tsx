@@ -26,11 +26,9 @@ import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
 import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
 import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
-import { AiSummaryDrawer } from "@/components/ai-summary/AiSummaryDrawer";
-import { AiSummaryMiniChip } from "@/components/ai-summary/AiSummaryMiniChip";
-import { useAiSummary } from "@/hooks/useAiSummary";
+import { useAiSummaryContext } from "@/components/ai-summary/AiSummaryProvider";
+import { aiSummariesEnabled } from "@/components/ai-summary/aiSummariesEnabled";
 import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
-import { SUMMARISER_BASE, SUMMARISER_MOCK } from "@/config";
 import { formatTotal } from "@/utils/searchTotal";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
@@ -146,7 +144,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const corpus = useCorpusTotal();
   const results = useSearch(params);
   const exportJob = useSearchExport();
-  const ai = useAiSummary();
+  const ai = useAiSummaryContext();
 
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
   // shared cache, so the Refine button is almost always ready by the time
@@ -282,29 +280,27 @@ function SearchPageInner({ community }: { community: Community }) {
   // (VITE_SUMMARISER_MOCK also enables it for local dev). The ai_summary.writer
   // role gates it per-user (#145).
   const { aiSummaryWriter } = useAuth();
-  const aiSummariesEnabled =
-    community.features.aiSummaries &&
-    (Boolean(SUMMARISER_BASE) || SUMMARISER_MOCK) &&
-    aiSummaryWriter;
+  const aiEnabled = aiSummariesEnabled(community, aiSummaryWriter);
 
   // Terms framing the summary: the free-text query plus any applied concept
   // filters (a map cell arrives here with those filters pre-applied).
   const aiTerms = deriveSummaryTerms(params, vocab.labels);
   const aiTotal = results.results?.total ?? { count: 0, is_lower_bound: false };
-  // The summariser accepts 1–50 references and at least one term; gate here so
-  // the user gets a clear reason rather than a server error.
+  // One summary at a time: while one is parked in the background (generating or
+  // unread) the button stays disabled and the indicator is the only way back.
+  // The rest mirror the summariser's limits — one term minimum, 1–50 references.
   const aiDisabledReason =
-    aiTerms.length === 0
-      ? "Search or filter by a term to summarise."
-      : aiTotal.count > MAX_SUMMARY_REFERENCES
-        ? `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references — refine your search.`
-        : undefined;
+    ai.status === "generating"
+      ? "A summary's still processing - open it to follow along or cancel."
+      : ai.minimized
+        ? "Your summary's ready - open it from the indicator to read it."
+        : aiTerms.length === 0
+          ? "Search or filter by a term to summarise."
+          : aiTotal.count > MAX_SUMMARY_REFERENCES
+            ? `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references - please refine your search.`
+            : undefined;
 
   function handleGenerateSummary() {
-    if (ai.minimized) {
-      ai.open();
-      return;
-    }
     const { query, filters } = toUnpaginatedSearchQuery(
       params,
       community.defaultAnnotations,
@@ -318,6 +314,7 @@ function SearchPageInner({ community }: { community: Community }) {
         count: aiTotal,
         countNoun: community.copy.countNoun,
       },
+      originUrl: buildSearchUrl(community.slug, params),
     });
   }
 
@@ -359,7 +356,7 @@ function SearchPageInner({ community }: { community: Community }) {
         />
       </section>
 
-      {aiSummariesEnabled && hasResults && (
+      {aiEnabled && hasResults && (
         <AiSummaryButton
           onClick={handleGenerateSummary}
           disabled={aiDisabledReason !== undefined}
@@ -481,13 +478,6 @@ function SearchPageInner({ community }: { community: Community }) {
           />
         )}
       </section>
-
-      {aiSummariesEnabled && (
-        <>
-          <AiSummaryDrawer ai={ai} />
-          <AiSummaryMiniChip ai={ai} />
-        </>
-      )}
 
       {filterableSchemes.length > 0 && (
         <FilterDrawer

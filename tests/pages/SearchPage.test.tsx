@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/preact";
 import { SearchPage } from "@/pages/SearchPage";
 import { CommunityProvider } from "@/community/CommunityContext";
 import { AuthProvider } from "@/auth/AuthContext";
+import { AiSummaryProvider } from "@/components/ai-summary/AiSummaryProvider";
 import type { SearchResult } from "@/types/models";
 import {
   OUTCOME_SCHEME_FIXTURE,
@@ -15,7 +16,9 @@ function renderSearchPage() {
   return render(
     <AuthProvider>
       <CommunityProvider>
-        <SearchPage />
+        <AiSummaryProvider>
+          <SearchPage />
+        </AiSummaryProvider>
       </CommunityProvider>
     </AuthProvider>,
   );

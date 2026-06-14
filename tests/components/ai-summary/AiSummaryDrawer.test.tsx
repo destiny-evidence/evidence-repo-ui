@@ -22,6 +22,7 @@ function makeAi(overrides: Partial<UseAiSummaryResult> = {}): UseAiSummaryResult
     result: MOCK_SUMMARY,
     errorMessage: null,
     context,
+    originUrl: "/test-community?q=afghanistan",
     drawerOpen: true,
     generate: vi.fn(),
     open: vi.fn(),

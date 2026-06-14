@@ -1,6 +1,7 @@
 import Router from "preact-router";
 import { AuthProvider } from "./auth/AuthContext";
 import { CommunityProvider } from "./community/CommunityContext";
+import { AiSummaryProvider } from "./components/ai-summary/AiSummaryProvider";
 import { AppShell } from "./components/layout/AppShell";
 import { SearchPage } from "./pages/SearchPage";
 import { VisualisePage } from "./pages/VisualisePage";
@@ -20,14 +21,16 @@ export function App() {
   return (
     <AuthProvider>
       <CommunityProvider>
-        <AppShell>
-          <Router onChange={emitUrlChange}>
-            <RecordDetailPage path="/:community/references/:id" />
-            <VisualisePage path="/:community/visualise" />
-            <SearchPage path="/:community" />
-            <NotFoundPage default />
-          </Router>
-        </AppShell>
+        <AiSummaryProvider>
+          <AppShell>
+            <Router onChange={emitUrlChange}>
+              <RecordDetailPage path="/:community/references/:id" />
+              <VisualisePage path="/:community/visualise" />
+              <SearchPage path="/:community" />
+              <NotFoundPage default />
+            </Router>
+          </AppShell>
+        </AiSummaryProvider>
       </CommunityProvider>
     </AuthProvider>
   );
