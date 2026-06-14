@@ -18,6 +18,16 @@ export const AI_SUMMARY_FLAG_FORM_URL: string | undefined =
 export const SUMMARISER_BASE: string | undefined =
   import.meta.env.VITE_SUMMARISER_BASE;
 
+// Local-dev escape hatch: serve a canned summary instead of calling the (slow,
+// costly) summariser. Enables the feature gate too, so no dummy base is needed.
+export const SUMMARISER_MOCK: boolean =
+  import.meta.env.VITE_SUMMARISER_MOCK === "true";
+
+// How long the mock pretends to work, in ms — long enough to exercise the
+// generating spinner, "Run in background", and cancel. Defaults to 1.5s.
+export const SUMMARISER_MOCK_DELAY_MS: number =
+  Number(import.meta.env.VITE_SUMMARISER_MOCK_DELAY_MS) || 1500;
+
 const VOCAB_PROXY_TARGET = import.meta.env.VITE_VOCAB_PROXY_TARGET;
 
 /**

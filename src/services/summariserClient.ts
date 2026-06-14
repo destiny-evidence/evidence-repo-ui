@@ -1,5 +1,10 @@
-import { SUMMARISER_BASE } from "@/config";
+import {
+  SUMMARISER_BASE,
+  SUMMARISER_MOCK,
+  SUMMARISER_MOCK_DELAY_MS,
+} from "@/config";
 import { keycloak } from "@/auth/keycloak";
+import { MOCK_SUMMARY } from "./summariserMock";
 import type { SummariseResponse, SummaryRequest } from "./summariser";
 
 export type { SummariseResponse, SummaryRequest } from "./summariser";
@@ -55,6 +60,12 @@ export async function requestSummary(
   request: SummaryRequest,
   signal?: AbortSignal,
 ): Promise<SummariseResponse> {
+  if (SUMMARISER_MOCK) {
+    // Honour the signal so cancel still works; "Run in background" needs no
+    // special handling — it only minimises the drawer, leaving this running.
+    await wait(SUMMARISER_MOCK_DELAY_MS, signal);
+    return MOCK_SUMMARY;
+  }
   if (!SUMMARISER_BASE) {
     throw new Error("Summariser is not configured (VITE_SUMMARISER_BASE).");
   }
