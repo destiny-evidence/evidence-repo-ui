@@ -5,6 +5,7 @@ import type {
 } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
 import {
+  compareLabels,
   schemeDisplayLabel,
   type Concept,
   type ConceptScheme,
@@ -115,11 +116,18 @@ export function resolveMapAxis(
   };
 }
 
-// The backend treats every concept in a scheme as a sibling regardless of depth.
+// Flatten the scheme to a depth-first preorder list — each concept immediately
+// followed by its descendants — so a parent and its children sit adjacent in the
+// grid. Siblings are already alpha-numerically ordered by the vocabulary build.
+// A concept reachable twice (e.g. a top concept also declared `broader` into
+// another subtree) is emitted once: a repeat key would warn and double the row.
 function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
   const out: AxisCategory[] = [];
+  const seen = new Set<string>();
   const walk = (concepts: readonly Concept[]) => {
     for (const concept of concepts) {
+      if (seen.has(concept.uri)) continue;
+      seen.add(concept.uri);
       out.push({ key: concept.uri, label: concept.label });
       if (concept.narrower) walk(concept.narrower);
     }
@@ -128,18 +136,20 @@ function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
   return out;
 }
 
+// Axis categories keep their given order — a scheme's hierarchy, or the empty
+// list for a countries axis. Cell-only keys the axis doesn't enumerate trail
+// them, alphabetized; a countries axis (no categories) is thus fully alphabetical.
 function mergeCategories(
   axis: AxisInput,
   cellKeys: Set<string>,
 ): AxisCategory[] {
-  const byKey = new Map<string, AxisCategory>();
-  for (const category of axis.categories) byKey.set(category.key, category);
+  const known = new Set(axis.categories.map((c) => c.key));
+  const extras: AxisCategory[] = [];
   for (const key of cellKeys) {
-    if (!byKey.has(key)) byKey.set(key, { key, label: axis.labelFor(key) });
+    if (!known.has(key)) extras.push({ key, label: axis.labelFor(key) });
   }
-  return [...byKey.values()].sort(
-    (a, b) => a.label.localeCompare(b.label) || a.key.localeCompare(b.key),
-  );
+  extras.sort((a, b) => compareLabels({ label: a.label, uri: a.key }, { label: b.label, uri: b.key }));
+  return [...axis.categories, ...extras];
 }
 
 /**

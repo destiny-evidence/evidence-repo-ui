@@ -5,6 +5,13 @@
   width: min(420px, 100vw);
 }
 
+/* The Cancel button is taller than the title's line box; center them so the
+   title doesn't sit pinned to the top of the row (shared header is flex-start
+   for the AI drawer's top-aligned close button). */
+.filter-drawer__header {
+  align-items: center;
+}
+
 .filter-drawer__body {
   padding: var(--spacing-sm) 0;
   display: flex;

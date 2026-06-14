@@ -25,14 +25,16 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   countryFacetFilter: true,
 };
 
-// The HPV geographic ConceptSchemes (country + regional/classification). Full scheme
-// URIs to match inScheme.
+// The HPV geographic ConceptSchemes (country + regional/classification). Full
+// scheme URIs to match inScheme. Ordered specific → broad: the country, then its
+// classification, then the regional groupings (alphabetical) — the order they
+// group in as filter cards.
 const HPV_GEO_SCHEMES = [
   "https://vocab.aliveevidence.org/hpv/Country",
   "https://vocab.aliveevidence.org/hpv/CountryClassification",
   "https://vocab.aliveevidence.org/hpv/UNICEFRegion",
-  "https://vocab.aliveevidence.org/hpv/WorldBankRegion",
   "https://vocab.aliveevidence.org/hpv/WHORegion",
+  "https://vocab.aliveevidence.org/hpv/WorldBankRegion",
 ];
 
 // Shared copy fallbacks; a community overrides only what diverges.
@@ -97,7 +99,6 @@ const COMMUNITIES: Community[] = [
   {
     slug: "hpv",
     name: "HPV Vaccine Delivery",
-    // TODO: placeholder annotation, pending the backend's HPV domain inclusion.
     defaultAnnotations: ["domain-inclusion/hpv"],
     vocabularyUrl: requireEnv(
       "VITE_HPV_VOCABULARY_URL",
@@ -110,6 +111,11 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: [],
     pillExcludedSchemes: HPV_GEO_SCHEMES,
     geographicSchemes: HPV_GEO_SCHEMES,
+    pinnedFilters: [
+      "https://vocab.aliveevidence.org/hpv/ConveningTheme",
+      "year",
+      ...HPV_GEO_SCHEMES,
+    ],
     features: {
       ...DEFAULT_FEATURES,
       evidenceMap: true,

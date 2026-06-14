@@ -24,6 +24,11 @@ export interface EvidenceMapAxes {
   column: EvidenceMapAxis;
 }
 
+// A pinned filter card: the built-in "year"/"country" cards, or any concept
+// scheme by URI. The `string & {}` arm keeps the named tokens auto-completable
+// while still accepting arbitrary scheme URIs.
+export type PinnedFilter = "year" | "country" | (string & {});
+
 // See buildCopy() in services/communities.ts for the shared fallbacks.
 export interface CommunityCopy {
   searchPlaceholder: string;
@@ -59,9 +64,13 @@ export interface Community {
   // filterable in the drawer, they just aren't pills). HPV lists its geo schemes here.
   pillExcludedSchemes: string[];
   // Geographic concept schemes (country + regional/classification); shown first
-  // (prioritized) on the detail page's Taxonomy codes card. Empty for communities
+  // (prioritized) on the detail page's Taxonomy codes card, and grouped together
+  // (in this order) by the "geographicSchemes" filter slot. Empty for communities
   // with no geo schemes.
   geographicSchemes: string[];
+  // Filter cards pinned to the top, in order; every remaining scheme follows
+  // alphabetically. Absent ⇒ DEFAULT_PINNED_FILTERS (year, then country).
+  pinnedFilters?: PinnedFilter[];
   features: CommunityFeatures;
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).

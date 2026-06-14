@@ -174,7 +174,7 @@ describe("buildVocabularyData", () => {
     expect(schemes).toEqual([]);
   });
 
-  it("nests narrower concepts under their broader parent", () => {
+  it("nests narrower concepts under their broader parent, alphabetized", () => {
     const { schemes } = buildVocabularyData(SAMPLE_VOCABULARY);
     const theme = schemes.find(
       (s) => s.uri === "https://vocab.esea.education/EducationThemeScheme",
@@ -184,15 +184,42 @@ describe("buildVocabularyData", () => {
     expect(top?.uri).toBe(
       "https://vocab.esea.education/EducationThemeScheme/C00022",
     );
+    // Source order is C00074 then C00075; the build sorts siblings by label, so
+    // "Class Size" leads "Literacy and Reading Interventions".
     expect(top?.narrower).toEqual([
-      {
-        uri: "https://vocab.esea.education/EducationThemeScheme/C00074",
-        label: "Literacy and Reading Interventions",
-      },
       {
         uri: "https://vocab.esea.education/EducationThemeScheme/C00075",
         label: "Class Size",
       },
+      {
+        uri: "https://vocab.esea.education/EducationThemeScheme/C00074",
+        label: "Literacy and Reading Interventions",
+      },
+    ]);
+  });
+
+  it("orders siblings alpha-numerically (e.g. age ranges, not lexically)", () => {
+    const ages = ["21+ years", "9–14 years", "0–8 years", "15–20 years"];
+    const { schemes } = buildVocabularyData({
+      "@graph": [
+        {
+          "@id": "u:targetPopulation",
+          "@type": "skos:ConceptScheme",
+          "dct:title": "Target Population",
+          "skos:hasTopConcept": ages.map((_, i) => ({ "@id": `u:age${i}` })),
+        },
+        ...ages.map((label, i) => ({
+          "@id": `u:age${i}`,
+          "@type": "skos:Concept",
+          "skos:prefLabel": label,
+        })),
+      ],
+    });
+    expect(schemes[0]?.topConcepts.map((c) => c.label)).toEqual([
+      "0–8 years",
+      "9–14 years",
+      "15–20 years",
+      "21+ years",
     ]);
   });
 
