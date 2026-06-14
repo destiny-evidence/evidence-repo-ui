@@ -67,7 +67,7 @@ export function makeCommunity(
       ...features,
     },
     copy: {
-      searchPlaceholder: "Search the evidence",
+      searchPlaceholder: "Search titles and abstracts",
       drawerTitle: "Refine the evidence",
       countNoun: "results",
       corpusDescriptor: "test research",

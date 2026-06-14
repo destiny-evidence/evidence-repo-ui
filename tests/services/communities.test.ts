@@ -39,13 +39,14 @@ describe("communities", () => {
     // copy: overridden noun, name-derived corpusDescriptor, shared defaults.
     expect(esea?.copy.countNoun).toBe("investigations");
     expect(esea?.copy.corpusDescriptor).toBe("education research");
-    expect(esea?.copy.searchPlaceholder).toBe("Search the evidence");
+    expect(esea?.copy.searchPlaceholder).toBe("Search titles and abstracts");
     expect(typeof esea?.features.evidenceMap).toBe("boolean");
 
     expect(hpv?.name).toBe("HPV Vaccine Delivery");
     expect(hpv?.vocabularyUrl).toBe("https://vocab.example/hpv-v1");
     expect(hpv?.copy.countNoun).toBe("references");
     expect(hpv?.copy.corpusDescriptor).toBe("HPV vaccine delivery research");
+    expect(hpv?.copy.searchPlaceholder).toBe("Search titles and abstracts");
     expect(typeof hpv?.features.evidenceMap).toBe("boolean");
     expect(hpv?.codingInstitution).toBeUndefined();
   });
