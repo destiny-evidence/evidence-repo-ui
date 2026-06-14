@@ -130,17 +130,15 @@ variable "esea_context_url" {
   default     = "https://vocab.evidence-repository.org/published/019d9463-2780-7243-b4de-e547386f2a90/1.1/context.jsonld"
 }
 
-# TODO: the HPV vocabulary is not yet published — these defaults are
-# placeholders so the build doesn't fail; update once the JSON-LD source lands.
 variable "hpv_vocabulary_url" {
-  description = "URL of the HPV community's published SKOS vocabulary (.jsonld) — placeholder until the HPV vocabulary is published"
+  description = "URL of the HPV community's published SKOS vocabulary (.jsonld)"
   type        = string
-  default     = "https://vocab.evidence-repository.org/published/TODO-hpv/1.0/vocabulary.jsonld"
+  default     = "https://vocab.evidence-repository.org/published/019d3e6a-04d6-76e9-9f7a-b8b26c1e0976/2.2/vocabulary.jsonld"
 }
 
 variable "hpv_context_url" {
-  description = "URL of the HPV community's JSON-LD @context (.jsonld) — placeholder until the HPV vocabulary is published"
+  description = "URL of the HPV community's JSON-LD @context (.jsonld)"
   type        = string
-  default     = "https://vocab.evidence-repository.org/published/TODO-hpv/1.0/context.jsonld"
+  default     = "https://vocab.evidence-repository.org/published/019d3e6a-04d6-76e9-9f7a-b8b26c1e0976/2.2/context.jsonld"
 }
 
