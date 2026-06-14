@@ -5,6 +5,7 @@ import type {
 } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
 import {
+  compareLabels,
   schemeDisplayLabel,
   type Concept,
   type ConceptScheme,
@@ -117,11 +118,16 @@ export function resolveMapAxis(
 
 // Flatten the scheme to a depth-first preorder list — each concept immediately
 // followed by its descendants — so a parent and its children sit adjacent in the
-// grid. Siblings at every level are alphabetized by label.
+// grid. Siblings are already alpha-numerically ordered by the vocabulary build.
+// A concept reachable twice (e.g. a top concept also declared `broader` into
+// another subtree) is emitted once: a repeat key would warn and double the row.
 function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
   const out: AxisCategory[] = [];
+  const seen = new Set<string>();
   const walk = (concepts: readonly Concept[]) => {
-    for (const concept of [...concepts].sort(byLabelThenKey)) {
+    for (const concept of concepts) {
+      if (seen.has(concept.uri)) continue;
+      seen.add(concept.uri);
       out.push({ key: concept.uri, label: concept.label });
       if (concept.narrower) walk(concept.narrower);
     }
@@ -129,13 +135,6 @@ function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
   walk(scheme.topConcepts);
   return out;
 }
-
-const byLabelThenKey = (
-  a: { label: string; uri?: string; key?: string },
-  b: { label: string; uri?: string; key?: string },
-): number =>
-  a.label.localeCompare(b.label) ||
-  (a.uri ?? a.key ?? "").localeCompare(b.uri ?? b.key ?? "");
 
 // Axis categories keep their given order — a scheme's hierarchy, or the empty
 // list for a countries axis. Cell-only keys the axis doesn't enumerate trail
@@ -149,7 +148,7 @@ function mergeCategories(
   for (const key of cellKeys) {
     if (!known.has(key)) extras.push({ key, label: axis.labelFor(key) });
   }
-  extras.sort(byLabelThenKey);
+  extras.sort((a, b) => compareLabels({ label: a.label, uri: a.key }, { label: b.label, uri: b.key }));
   return [...axis.categories, ...extras];
 }
 

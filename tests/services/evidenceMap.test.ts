@@ -195,34 +195,38 @@ describe("resolveMapAxis", () => {
     );
   });
 
-  test("alphabetizes siblings at each level, keeping children under their parent", () => {
-    const unsorted: ConceptScheme = {
+  test("emits each concept once, even when reachable under two parents", () => {
+    // The vocabulary build orders siblings; flattenScheme preserves that order
+    // but must not double-emit a concept that is both a top concept and a
+    // narrower of another subtree (a malformed-but-possible vocab).
+    const europe = {
+      uri: "u:europe",
+      label: "Europe",
+      narrower: [
+        { uri: "u:france", label: "France" },
+        { uri: "u:spain", label: "Spain" },
+      ],
+    };
+    const scheme: ConceptScheme = {
       uri: "https://vocab.esea.education/RegionScheme",
       label: "Region Scheme",
       topConcepts: [
-        {
-          uri: "u:europe",
-          label: "Europe",
-          narrower: [
-            { uri: "u:spain", label: "Spain" },
-            { uri: "u:france", label: "France" },
-          ],
-        },
-        { uri: "u:africa", label: "Africa" },
+        { uri: "u:africa", label: "Africa", narrower: [europe] },
+        europe,
       ],
     };
     const axis = resolveMapAxis(
       { kind: "scheme", schemeUri: "https://vocab.esea.education/RegionScheme" },
-      [unsorted],
+      [scheme],
       null,
     );
-    // Top concepts alphabetized (Africa before Europe); Europe's children
-    // alphabetized (France before Spain) and nested directly under it.
-    expect(axis.categories.map((c) => c.label)).toEqual([
-      "Africa",
-      "Europe",
-      "France",
-      "Spain",
+    // Europe (and its children) is emitted under Africa; its second appearance
+    // as a top concept is skipped — no duplicate keys.
+    expect(axis.categories.map((c) => c.key)).toEqual([
+      "u:africa",
+      "u:europe",
+      "u:france",
+      "u:spain",
     ]);
   });
 

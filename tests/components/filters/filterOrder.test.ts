@@ -60,4 +60,20 @@ describe("orderFilterItems", () => {
     });
     expect(kinds(items)).toEqual(["year", "u:apple"]);
   });
+
+  test("alphabetizes schemes alpha-numerically, not lexically", () => {
+    const phase10 = scheme("u:p10", "Phase 10");
+    const phase2 = scheme("u:p2", "Phase 2");
+    const items = orderFilterItems([phase10, phase2], {
+      pinned: [],
+    });
+    expect(kinds(items)).toEqual(["u:p2", "u:p10"]);
+  });
+
+  test("a repeated built-in slot is emitted once", () => {
+    const items = orderFilterItems([apple], {
+      pinned: ["year", "country", "year"],
+    });
+    expect(kinds(items)).toEqual(["year", "country", "u:apple"]);
+  });
 });

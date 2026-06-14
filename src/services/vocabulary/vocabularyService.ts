@@ -43,6 +43,19 @@ export function schemeDisplayLabel(label: string): string {
   return label.replace(/\s+Scheme$/i, "");
 }
 
+// Alpha-numeral collation for labels: `numeric` so "9–14 years" precedes
+// "15–20 years" rather than sorting "15" before "9". Ties break on URI for a
+// stable order. Used wherever concepts/schemes are ordered for display.
+export function compareLabels(
+  a: { label: string; uri?: string },
+  b: { label: string; uri?: string },
+): number {
+  return (
+    a.label.localeCompare(b.label, undefined, { numeric: true }) ||
+    (a.uri ?? "").localeCompare(b.uri ?? "")
+  );
+}
+
 export interface VocabularyData {
   labels: Map<string, string>;
   broader: Map<string, string>;
@@ -181,7 +194,8 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
 
     const narrower = (childrenByUri.get(uri) ?? [])
       .map((childUri) => buildConcept(childUri, visited))
-      .filter((c): c is Concept => c !== null);
+      .filter((c): c is Concept => c !== null)
+      .sort(compareLabels);
     if (narrower.length > 0) concept.narrower = narrower;
 
     return concept;
@@ -192,7 +206,8 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
     label: raw.label,
     topConcepts: raw.topConceptUris
       .map((uri) => buildConcept(uri, new Set()))
-      .filter((c): c is Concept => c !== null),
+      .filter((c): c is Concept => c !== null)
+      .sort(compareLabels),
   }));
 
   return { labels, broader, definitions, inScheme, schemes };

@@ -1,5 +1,6 @@
 import type { PinnedFilter } from "@/types/models";
 import {
+  compareLabels,
   schemeDisplayLabel,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
@@ -43,17 +44,29 @@ export function orderFilterItems(
     }
   };
 
+  // Built-in slots dedup on their kind so a config that repeats "year"/"country"
+  // can't emit two cards (and a duplicate React key).
   for (const slot of pinned) {
-    if (slot === "year") items.push({ kind: "year" });
-    else if (slot === "country") {
-      if (showCountryFacetFilter) items.push({ kind: "country" });
+    if (slot === "year") {
+      if (!placed.has("year")) {
+        placed.add("year");
+        items.push({ kind: "year" });
+      }
+    } else if (slot === "country") {
+      if (showCountryFacetFilter && !placed.has("country")) {
+        placed.add("country");
+        items.push({ kind: "country" });
+      }
     } else pushScheme(slot);
   }
 
   const rest = schemes
     .filter((s) => !placed.has(s.uri))
     .sort((a, b) =>
-      schemeDisplayLabel(a.label).localeCompare(schemeDisplayLabel(b.label)),
+      compareLabels(
+        { label: schemeDisplayLabel(a.label), uri: a.uri },
+        { label: schemeDisplayLabel(b.label), uri: b.uri },
+      ),
     );
   for (const scheme of rest) pushScheme(scheme.uri);
 
