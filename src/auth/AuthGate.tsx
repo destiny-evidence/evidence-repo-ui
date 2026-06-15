@@ -26,7 +26,7 @@ export function Landing() {
 export function Loading() {
   return (
     <div class="auth-gate">
-      <Spinner />
+      <Spinner size={36} />
     </div>
   );
 }
