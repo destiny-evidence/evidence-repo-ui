@@ -18,7 +18,7 @@ import { buildReferenceRows, HPV_SHEET_NAME } from "./buildHpvRows.ts";
 import {
   extractBibliographic,
   extractLinkedDataEnhancement,
-  isDict,
+  getInvestigation,
 } from "@/services/referenceUtils";
 import type {
   CodingInstitutionConfig,
@@ -128,8 +128,7 @@ export async function buildAllRows(
     if (!linked) continue;
     const bibliographic = extractBibliographic(reference);
     const referenceId = String(reference.id);
-    const rawInvestigation = linked.content.data["hasInvestigation"];
-    const inv: Investigation = isDict(rawInvestigation) ? rawInvestigation : {};
+    const inv: Investigation = getInvestigation(linked.content.data);
     const findings = (Array.isArray(inv["hasFinding"]) ? inv["hasFinding"] : []) as Finding[];
     const armIds = assignArmIds(findings);
     investigation.push(

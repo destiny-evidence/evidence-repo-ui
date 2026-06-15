@@ -126,13 +126,13 @@ const BIB_HEADERS = [
 ];
 
 describe("buildReferenceRows", () => {
-  test("derives one scheme column per scheme, headed by the display label", async () => {
+  test("derives one scheme column per scheme, ordered by label", async () => {
     const { headers } = await buildReferenceRows([], VOCAB);
     expect(headers).toEqual([
       ...BIB_HEADERS,
+      "Country",
       "Delivery Actor",
       "Target Population",
-      "Country",
     ]);
   });
 

@@ -17,6 +17,14 @@ export function isDict(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+// The investigation node of a linked-data `data` dict: `hasInvestigation` when
+// present, else the dict itself (vocabularies that omit the wrapper).
+export function getInvestigation(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  return isDict(data["hasInvestigation"]) ? data["hasInvestigation"] : data;
+}
+
 /**
  * Return the highest-priority enhancement of the given type on a
  * reference, or null.
@@ -125,13 +133,10 @@ export function extractFindingsAndEstimatesCount(
 ): { findings: number; estimates: number } | null {
   const ld = extractLinkedData(reference);
   if (!ld) return null;
-  const root = isDict(ld.data) ? ld.data : null;
-  const investigation =
-    root && isDict(root["hasInvestigation"]) ? root["hasInvestigation"] : root;
-  const rawFindings =
-    investigation && Array.isArray(investigation["hasFinding"])
-      ? investigation["hasFinding"]
-      : [];
+  const investigation = getInvestigation(ld.data);
+  const rawFindings = Array.isArray(investigation["hasFinding"])
+    ? investigation["hasFinding"]
+    : [];
   let estimates = 0;
   for (const f of rawFindings) {
     if (isDict(f) && Array.isArray(f["hasEffectEstimate"])) {

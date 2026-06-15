@@ -11,9 +11,11 @@ import {
   extractBibliographic,
   extractDoi,
   extractLinkedDataEnhancement,
+  getInvestigation,
 } from "@/services/referenceUtils";
-import { parseInvestigation } from "@/services/investigationParser";
+import { parseAppliedConcepts } from "@/services/investigationParser";
 import {
+  compareLabels,
   schemeDisplayLabel,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
@@ -42,14 +44,12 @@ interface SchemeColumn {
   header: string;
 }
 
-/**
- * Derive one column per scheme, headed by the scheme's display label. Guards
- * against a label colliding with the bibliographic block or another scheme by
- * falling back to the (unique) scheme URI suffix.
- */
+// Ordered by label to match the filter drawer / evidence map, not raw @graph
+// order. A label clashing with the bibliographic block or another scheme falls
+// back to a URI-suffixed form.
 function buildSchemeColumns(schemes: ConceptScheme[]): SchemeColumn[] {
   const used = new Set<string>(BIBLIOGRAPHIC_HEADERS);
-  return schemes.map((scheme) => {
+  return [...schemes].sort(compareLabels).map((scheme) => {
     let header = schemeDisplayLabel(scheme.label);
     if (used.has(header)) header = `${header} (${scheme.uri})`;
     used.add(header);
@@ -62,6 +62,7 @@ function buildReferenceRow(
   vocab: ConceptResolver,
   inScheme: Map<string, string>,
   schemeHeaderByUri: Map<string, string>,
+  dropped: Set<string>,
 ): SheetRow {
   const bib = extractBibliographic(reference);
   const authors = bib?.authorship
@@ -79,15 +80,20 @@ function buildReferenceRow(
 
   const linked = extractLinkedDataEnhancement(reference);
   if (linked) {
-    const { appliedConcepts } = parseInvestigation(
-      linked.content.data,
+    const appliedConcepts = parseAppliedConcepts(
+      getInvestigation(linked.content.data),
       vocab.prefixes,
       vocab.labels,
     );
     const buckets = new Map<string, string[]>();
     for (const concept of appliedConcepts) {
       const header = schemeHeaderByUri.get(inScheme.get(concept.uri) ?? "");
-      if (!header) continue;
+      // No column for this concept's scheme; record it so callers can warn
+      // rather than drop it silently.
+      if (!header) {
+        dropped.add(concept.uri);
+        continue;
+      }
       const value = concept.label ?? concept.uri;
       const bucket = buckets.get(header);
       if (bucket) bucket.push(value);
@@ -121,8 +127,17 @@ export async function buildReferenceRows(
   ];
 
   const rows: SheetRow[] = [];
+  const dropped = new Set<string>();
   for await (const reference of references) {
-    rows.push(buildReferenceRow(reference, vocab, inScheme, schemeHeaderByUri));
+    rows.push(
+      buildReferenceRow(reference, vocab, inScheme, schemeHeaderByUri, dropped),
+    );
+  }
+  if (dropped.size > 0) {
+    console.warn(
+      `HPV export: omitted ${dropped.size} applied concept(s) with no matching ` +
+        `scheme column: ${[...dropped].join(", ")}`,
+    );
   }
   return { headers, rows };
 }
