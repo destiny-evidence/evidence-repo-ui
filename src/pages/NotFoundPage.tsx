@@ -12,7 +12,7 @@ export function NotFoundPage(_props: NotFoundPageProps) {
       <h1>Page not found</h1>
       <p>
         The page you're looking for doesn't exist.{" "}
-        <a href={`/${DEFAULT_COMMUNITY_SLUG}`}>Go to search</a>.
+        <a href={`/${DEFAULT_COMMUNITY_SLUG}`}>Go to the HPV community</a>.
       </p>
     </div>
   );

@@ -47,13 +47,13 @@ test("shows the Visualise tab and routes to the visualise page when enabled", ()
 // internal anchor clicks and routes via history.pushState without firing
 // popstate or our URL_CHANGE_EVENT. Without bridging that gap, the
 // CommunityProvider stays on the old slug and SearchPage falls back to
-// NotFound even though the router moved to /esea.
-test("clicking Go to search from /banana shows the search page", () => {
+// NotFound even though the router moved to the default community.
+test("clicking the not-found link from /banana shows the search page", () => {
   history.pushState({}, "", "/banana");
   render(<App />);
   expect(screen.getByText("Page not found")).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole("link", { name: /go to search/i }));
+  fireEvent.click(screen.getByRole("link", { name: /go to the hpv community/i }));
 
   expect(
     screen.getByRole("heading", { name: /search the evidence/i }),
