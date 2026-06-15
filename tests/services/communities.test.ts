@@ -74,10 +74,16 @@ describe("communities", () => {
     expect(findCommunity("hpv")?.features.findingsAndEstimates).toBe(false);
   });
 
-  it("gates Excel export per community (ESEA on, HPV off until #127)", async () => {
+  it("enables Excel export for both communities", async () => {
     const { findCommunity } = await import("@/services/communities");
     expect(findCommunity("esea")?.features.exportExcel).toBe(true);
-    expect(findCommunity("hpv")?.features.exportExcel).toBe(false);
+    expect(findCommunity("hpv")?.features.exportExcel).toBe(true);
+  });
+
+  it("selects the per-community export workbook variant", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("esea")?.exportVariant).toBe("esea");
+    expect(findCommunity("hpv")?.exportVariant).toBe("hpv");
   });
 
   it("gates the facet-backed country filter per community (ESEA on, HPV off)", async () => {

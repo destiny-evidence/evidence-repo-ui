@@ -32,6 +32,7 @@ function startArgs(
     filename: string;
     vocabularyUrl: string;
     contextUrl: string;
+    variant: "esea" | "hpv";
   }> = {},
 ) {
   return {
@@ -40,6 +41,7 @@ function startArgs(
     filename: "f.xlsx",
     vocabularyUrl: VOCAB_URL,
     contextUrl: CONTEXT_URL,
+    variant: "esea" as const,
     ...overrides,
   };
 }
@@ -106,6 +108,7 @@ describe("useSearchExport", () => {
       VOCAB_URL,
       CONTEXT_URL,
       "file.xlsx",
+      "esea",
       undefined,
     );
     expect(mockRequest).toHaveBeenCalledWith("phonics", { annotation: ["x"] });

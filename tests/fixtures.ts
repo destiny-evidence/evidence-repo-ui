@@ -57,6 +57,7 @@ export function makeCommunity(
     filterExcludedSchemes: [],
     pillExcludedSchemes: [],
     geographicSchemes: [],
+    exportVariant: "esea",
     features: {
       evidenceMap: false,
       aiSummaries: false,

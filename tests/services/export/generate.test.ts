@@ -146,6 +146,19 @@ describe("generateWorkbook", () => {
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(inv);
     expect(rows.map((r) => r.reference_id)).toEqual(["ref-1", "ref-2"]);
   });
+
+  test("the hpv variant produces a single reference-level sheet", async () => {
+    const wb = await generateWorkbook(
+      [syntheticReference("ref-1")],
+      MINIMAL_VOCAB,
+      { variant: "hpv" },
+    );
+    expect(wb.SheetNames).toEqual(["References"]);
+    const sheet = wb.Sheets["References"]!;
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.reference_id).toBe("ref-1");
+  });
 });
 
 describe("workbookToArrayBuffer", () => {
