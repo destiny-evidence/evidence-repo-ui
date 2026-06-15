@@ -4,9 +4,9 @@ import { AuthError, Landing, Loading } from "@/auth/AuthGate";
 import { login, register } from "@/auth/keycloak";
 
 describe("AuthGate", () => {
-  test("Loading shows the signing-in message", () => {
-    render(<Loading />);
-    expect(screen.getByText("Signing you in…")).toBeInTheDocument();
+  test("Loading shows an animated spinner", () => {
+    const { container } = render(<Loading />);
+    expect(container.querySelector(".spinner")).toBeInTheDocument();
   });
 
   describe("Landing", () => {

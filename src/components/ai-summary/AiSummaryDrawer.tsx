@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { Drawer } from "@/components/common/Drawer";
+import { Spinner } from "@/components/common/Spinner";
 import { WarningIcon } from "@/components/common/icons";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
@@ -57,7 +58,7 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
     >
       {ai.status === "generating" && context && (
         <div class="ai-loading">
-          <span class="ai-spinner" />
+          <Spinner size={14} class="ai-loading__spinner" />
           <span>
             Summarising {formatTotal(context.count)} {context.countNoun}… this
             can take several minutes. You can keep working — use “Run in

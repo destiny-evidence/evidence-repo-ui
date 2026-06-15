@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/common/Spinner";
 import type { UseAiSummaryResult } from "@/hooks/useAiSummary";
 import "./ai-summary.css";
 
@@ -28,7 +29,7 @@ export function AiSummaryMiniChip({ ai }: AiSummaryMiniChipProps) {
             ✓
           </span>
         ) : (
-          <span class="ai-spinner" aria-hidden="true" />
+          <Spinner size={14} />
         )}
         <span>{done ? "Summary ready" : "Summarising…"}</span>
       </button>
