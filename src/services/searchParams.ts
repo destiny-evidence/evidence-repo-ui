@@ -9,6 +9,18 @@ export const SORT_BACKEND: Record<SortOption, string> = {
   oldest: "publication_year",
 };
 
+// Resolves the `sort` array sent to the API. With no free-text query
+// Elasticsearch scores every doc 1, so a "relevance" (undefined) sort
+// produces arbitrary ordering. Fall back to `newest` in that case.
+// This is deliberately invisible to the URL and the sort dropdown.
+export function effectiveSortBackend(
+  params: Pick<SearchParams, "q" | "sort">,
+): string[] | undefined {
+  if (params.sort !== undefined) return [SORT_BACKEND[params.sort]];
+  if (params.q.trim() === "") return [SORT_BACKEND.newest];
+  return undefined;
+}
+
 export interface SearchParams {
   q: string;
   page: number;
@@ -43,7 +55,10 @@ export function parseSearchParams(search: string): SearchParams {
 
   const conceptFilters: string[][] = [];
   for (const raw of params.getAll("concept")) {
-    const uris = raw.split(",").map((s) => s.trim()).filter((s) => s !== "");
+    const uris = raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s !== "");
     if (uris.length > 0) conceptFilters.push(uris);
   }
 
@@ -81,14 +96,18 @@ export function toQueryString(params: SearchParams): string {
   if (params.countryCodes.length > 0) {
     out.append("country", params.countryCodes.join(","));
   }
-  if (params.startYear !== undefined) out.set("start_year", String(params.startYear));
+  if (params.startYear !== undefined)
+    out.set("start_year", String(params.startYear));
   if (params.endYear !== undefined) out.set("end_year", String(params.endYear));
   if (params.sort !== undefined) out.set("sort", params.sort);
   if (params.page !== 1) out.set("page", String(params.page));
   return out.toString();
 }
 
-export function buildSearchUrl(communitySlug: string, params: SearchParams): string {
+export function buildSearchUrl(
+  communitySlug: string,
+  params: SearchParams,
+): string {
   const qs = toQueryString(params);
   return qs ? `/${communitySlug}?${qs}` : `/${communitySlug}`;
 }
@@ -106,7 +125,8 @@ export function toUnpaginatedSearchQuery(
     endYear: params.endYear,
     annotation: annotations,
   };
-  if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
+  const sort = effectiveSortBackend(params);
+  if (sort !== undefined) filters.sort = sort;
   if (params.conceptFilters.length > 0) {
     filters.conceptFilters = params.conceptFilters;
   }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
 import { searchReferences, type SearchFilters } from "@/services/apiClient";
-import { SORT_BACKEND } from "@/services/searchParams";
+import { effectiveSortBackend } from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
@@ -65,7 +65,8 @@ export function useSearch(params: SearchParams): {
       conceptFilters: params.conceptFilters,
       countryCodes: params.countryCodes,
     };
-    if (params.sort !== undefined) filters.sort = [SORT_BACKEND[params.sort]];
+    const sort = effectiveSortBackend(params);
+    if (sort !== undefined) filters.sort = sort;
 
     searchReferences(params.q || undefined, filters)
       .then((r) => { if (!cancelled) setResults(r); })

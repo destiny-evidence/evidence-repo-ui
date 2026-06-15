@@ -558,6 +558,8 @@ describe("SearchPage", () => {
         startYear: undefined,
         endYear: undefined,
         annotation: ["domain-inclusion/jacobs-education"],
+        // Browse mode has no relevance signal, so export mirrors the newest fallback.
+        sort: ["-publication_year"],
       });
     });
 
@@ -597,6 +599,7 @@ describe("SearchPage", () => {
         startYear: 2020,
         endYear: undefined,
         annotation: ["domain-inclusion/jacobs-education"],
+        sort: ["-publication_year"],
       });
     });
 

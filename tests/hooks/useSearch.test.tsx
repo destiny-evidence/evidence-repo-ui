@@ -221,6 +221,20 @@ describe("useSearch", () => {
     expect(filters).not.toHaveProperty("sort");
   });
 
+  // Browse mode (empty q) has no relevance signal — ES scores all docs 1 — so
+  // the hook quietly sorts by newest while leaving the URL/dropdown on relevance.
+  test("empty q + undefined sort sends newest fallback to the API", async () => {
+    mockSearch.mockResolvedValue(makeResult(1));
+    renderHook(() => useSearch(makeSearchParams({ countryCodes: ["DE"] })), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(mockSearch).toHaveBeenCalledTimes(1));
+    expect(mockSearch).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ sort: ["-publication_year"] }),
+    );
+  });
+
   test("refetches when sort changes (cache key includes sort)", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const { rerender } = renderHook(

@@ -315,6 +315,24 @@ describe("toUnpaginatedSearchQuery", () => {
     expect(out.filters.conceptFilters).toEqual([["https://x/A"]]);
   });
 
+  // ES scores every doc 1 with no free-text query, so relevance ordering is
+  // arbitrary; browse mode falls back to newest without touching the URL.
+  test("empty q + no explicit sort → newest fallback on filters", () => {
+    const out = toUnpaginatedSearchQuery(makeSearchParams(), ["dom-x"]);
+    expect(out.query).toBe("*");
+    expect(out.filters.sort).toEqual(["-publication_year"]);
+  });
+
+  test("non-empty q + no explicit sort → no fallback (relevance)", () => {
+    const out = toUnpaginatedSearchQuery(makeSearchParams({ q: "phonics" }), ["dom-x"]);
+    expect(out.filters).not.toHaveProperty("sort");
+  });
+
+  test("empty q + explicit oldest sort → oldest honoured (no override)", () => {
+    const out = toUnpaginatedSearchQuery(makeSearchParams({ sort: "oldest" }), ["dom-x"]);
+    expect(out.filters.sort).toEqual(["publication_year"]);
+  });
+
   test("filters carry years + annotations + sort alongside structured countries", () => {
     const p = makeSearchParams({
       q: "phonics",
