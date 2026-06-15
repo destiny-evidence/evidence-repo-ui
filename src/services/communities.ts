@@ -138,6 +138,41 @@ const COMMUNITIES: Community[] = [
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
     }),
+    externalResources: [
+      {
+        title: "Report v2.0 May 2026",
+        description:
+          "Framework, search criteria, and methodology for the Repository.",
+        href: "https://aliveevidence.org/wp-content/uploads/HPV-repo-report-v2.0.pdf",
+      },
+      {
+        title: "Protocol v2.0 May 2026",
+        description: "Summary of search results from the Repository dataset.",
+        href: "https://aliveevidence.org/wp-content/uploads/HPV-repo-protocol-v2.0.pdf",
+      },
+      {
+        title: "HPV Taxonomy v2.2",
+        description: "The taxonomy underpinning the Repository.",
+        href: "https://vocab.evidence-repository.org/019d3e6a-04d6-76e9-9f7a-b8b26c1e0976/2.2/",
+      },
+      {
+        title: "Taxonomy Change Report",
+        description: "All taxonomy changes since v1.0.",
+        href: "https://docs.google.com/document/d/1ApI5_ITUSjWB-saAkI80bJkQ4iAtslgU/edit",
+      },
+      {
+        title: "Changelog v2.0",
+        description:
+          "Updates and modifications to the Repository since v1.0.",
+        href: "https://aliveevidence.org/hpv-changelog/",
+      },
+      {
+        title: "Tutorial",
+        description:
+          "Written tutorials explaining how to use the key features of the Repository.",
+        href: "https://docs.google.com/document/d/1MaSLw84RumH8U0hXsyw7opRwYFq8UphJMjYVO9L-e44/edit?usp=sharing",
+      },
+    ],
   },
 ];
 
