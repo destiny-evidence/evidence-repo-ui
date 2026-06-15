@@ -53,7 +53,7 @@ test("clicking the not-found link from /banana shows the search page", () => {
   render(<App />);
   expect(screen.getByText("Page not found")).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole("link", { name: /go to the hpv community/i }));
+  fireEvent.click(screen.getByRole("link", { name: /go to hpv vaccine community/i }));
 
   expect(
     screen.getByRole("heading", { name: /search the evidence/i }),
