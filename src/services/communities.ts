@@ -43,7 +43,7 @@ function buildCopy(
   overrides: Partial<CommunityCopy>,
 ): CommunityCopy {
   return {
-    searchPlaceholder: "Search the evidence",
+    searchPlaceholder: "Search titles and abstracts",
     drawerTitle: "Refine the evidence",
     countNoun: "results",
     corpusDescriptor: `${name.toLowerCase()} research`,

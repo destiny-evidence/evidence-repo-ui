@@ -13,7 +13,7 @@ export function SearchBar({
   draftQ,
   onDraftQChange,
   onSubmit,
-  placeholder = "Search the evidence",
+  placeholder = "Search titles and abstracts",
   disabled = false,
 }: SearchBarProps) {
   function handleSubmit(e?: Event) {
