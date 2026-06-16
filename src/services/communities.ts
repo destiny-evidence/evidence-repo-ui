@@ -140,15 +140,15 @@ const COMMUNITIES: Community[] = [
     }),
     externalResources: [
       {
-        title: "Report v2.0 May 2026",
+        title: "Report v3 June 2026",
         description:
           "Framework, search criteria, and methodology for the Repository.",
-        href: "https://aliveevidence.org/wp-content/uploads/HPV-repo-report-v2.0.pdf",
+        href: "https://aliveevidence.org/wp-content/uploads/HPV-repo-report-v3.0.pdf",
       },
       {
-        title: "Protocol v2.0 May 2026",
+        title: "Protocol v3 June 2026",
         description: "Summary of search results from the Repository dataset.",
-        href: "https://aliveevidence.org/wp-content/uploads/HPV-repo-protocol-v2.0.pdf",
+        href: "https://aliveevidence.org/wp-content/uploads/HPV-repo-protocol-v3.0.pdf",
       },
       {
         title: "HPV Taxonomy v2.2",
@@ -156,14 +156,8 @@ const COMMUNITIES: Community[] = [
         href: "https://vocab.evidence-repository.org/019d3e6a-04d6-76e9-9f7a-b8b26c1e0976/2.2/",
       },
       {
-        title: "Taxonomy Change Report",
-        description: "All taxonomy changes since v1.0.",
-        href: "https://docs.google.com/document/d/1ApI5_ITUSjWB-saAkI80bJkQ4iAtslgU/edit",
-      },
-      {
-        title: "Changelog v2.0",
-        description:
-          "Updates and modifications to the Repository since v1.0.",
+        title: "Changelog",
+        description: "Updates and modifications to the Repository.",
         href: "https://aliveevidence.org/hpv-changelog/",
       },
       {
