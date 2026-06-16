@@ -23,6 +23,7 @@ import {
 import type {
   CodingInstitutionConfig,
   ExportVariant,
+  PinnedFilter,
   Reference,
 } from "@/types/models";
 
@@ -167,21 +168,28 @@ async function buildEducationWorkbook(
 /**
  * Build the HPV reference-level workbook: a single sheet with one row per
  * reference, bibliographic columns followed by one column per SKOS scheme
- * holding that reference's applied concepts in that scheme.
+ * holding that reference's applied concepts in that scheme. `pinnedFilters`
+ * orders the scheme columns to match the community's filter drawer.
  */
 async function buildHpvWorkbook(
   references: ReferenceSource,
   vocab: ConceptResolver,
+  pinnedFilters?: PinnedFilter[],
 ): Promise<XLSX.WorkBook> {
-  const { headers, rows } = await buildReferenceRows(references, vocab);
+  const { headers, rows } = await buildReferenceRows(
+    references,
+    vocab,
+    pinnedFilters,
+  );
   const wb = XLSX.utils.book_new();
   appendSheet(wb, HPV_SHEET_NAME, headers, rows);
   return wb;
 }
 
 export interface WorkbookOptions {
-  variant?: ExportVariant;
+  variant: ExportVariant;
   codingInstitution?: CodingInstitutionConfig;
+  pinnedFilters?: PinnedFilter[];
 }
 
 /**
@@ -199,12 +207,14 @@ export interface WorkbookOptions {
 export async function generateWorkbook(
   references: ReferenceSource,
   vocab: ConceptResolver,
-  options: WorkbookOptions = {},
+  options: WorkbookOptions,
 ): Promise<XLSX.WorkBook> {
-  if (options.variant === "hpv") {
-    return buildHpvWorkbook(references, vocab);
+  switch (options.variant) {
+    case "esea":
+      return buildEducationWorkbook(references, vocab, options.codingInstitution);
+    case "hpv":
+      return buildHpvWorkbook(references, vocab, options.pinnedFilters);
   }
-  return buildEducationWorkbook(references, vocab, options.codingInstitution);
 }
 
 /**

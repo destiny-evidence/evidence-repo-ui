@@ -92,7 +92,10 @@ const VOCAB: ConceptResolver = {
 function hpvRef(id: string, conceptCuries: string[]): Reference {
   return makeRef({
     id,
-    identifiers: [{ identifier: `10.1/${id}`, identifier_type: "doi" }],
+    identifiers: [
+      { identifier: `10.1/${id}`, identifier_type: "doi" },
+      { identifier: `W-${id}`, identifier_type: "open_alex" },
+    ],
     enhancements: [
       makeEnh(makeBibContent(), { id: `bib-${id}`, reference_id: id }),
       makeEnh(
@@ -116,23 +119,38 @@ function hpvRef(id: string, conceptCuries: string[]): Reference {
 }
 
 const BIB_HEADERS = [
-  "reference_id",
-  "title",
-  "authors",
-  "publication_year",
-  "journal",
-  "doi",
-  "abstract",
+  "Reference ID",
+  "Title",
+  "Authors",
+  "Publication year",
+  "Journal",
+  "DOI",
+  "OpenAlex ID",
+  "Abstract",
 ];
 
 describe("buildReferenceRows", () => {
-  test("derives one scheme column per scheme, ordered by label", async () => {
+  test("derives one scheme column per scheme, alphabetical, no Other codes when empty", async () => {
     const { headers } = await buildReferenceRows([], VOCAB);
     expect(headers).toEqual([
       ...BIB_HEADERS,
       "Country",
       "Delivery Actor",
       "Target Population",
+    ]);
+    expect(headers).not.toContain("Other codes");
+  });
+
+  test("orders scheme columns by pinnedFilters, then alphabetically", async () => {
+    const { headers } = await buildReferenceRows([], VOCAB, [
+      `${NS}TargetPopulation`,
+      "year",
+    ]);
+    expect(headers).toEqual([
+      ...BIB_HEADERS,
+      "Target Population",
+      "Country",
+      "Delivery Actor",
     ]);
   });
 
@@ -148,13 +166,14 @@ describe("buildReferenceRows", () => {
     );
     expect(rows).toHaveLength(1);
     const row = rows[0]!;
-    expect(row.reference_id).toBe("ref-1");
-    expect(row.title).toBe("HPV vaccine uptake in adolescents");
-    expect(row.authors).toBe("Smith J; Jones K");
-    expect(row.publication_year).toBe(2021);
-    expect(row.journal).toBe("Vaccine Journal");
-    expect(row.doi).toBe("10.1/ref-1");
-    expect(row.abstract).toBe("Study summary ref-1");
+    expect(row["Reference ID"]).toBe("ref-1");
+    expect(row["Title"]).toBe("HPV vaccine uptake in adolescents");
+    expect(row["Authors"]).toBe("Smith J; Jones K");
+    expect(row["Publication year"]).toBe(2021);
+    expect(row["Journal"]).toBe("Vaccine Journal");
+    expect(row["DOI"]).toBe("10.1/ref-1");
+    expect(row["OpenAlex ID"]).toBe("W-ref-1");
+    expect(row["Abstract"]).toBe("Study summary ref-1");
   });
 
   test("groups applied concepts into their scheme columns, joined with '; '", async () => {
@@ -187,8 +206,8 @@ describe("buildReferenceRows", () => {
     });
     const { rows } = await buildReferenceRows([bibOnly], VOCAB);
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.reference_id).toBe("ref-bib-only");
-    expect(rows[0]!.title).toBe("Bib only");
+    expect(rows[0]!["Reference ID"]).toBe("ref-bib-only");
+    expect(rows[0]!["Title"]).toBe("Bib only");
     expect(rows[0]!["Delivery Actor"]).toBeUndefined();
   });
 
@@ -198,8 +217,40 @@ describe("buildReferenceRows", () => {
       yield hpvRef("ref-2", ["hpv:c3"]);
     }
     const { rows } = await buildReferenceRows(gen(), VOCAB);
-    expect(rows.map((r) => r.reference_id)).toEqual(["ref-1", "ref-2"]);
+    expect(rows.map((r) => r["Reference ID"])).toEqual(["ref-1", "ref-2"]);
     expect(rows[0]!["Delivery Actor"]).toBe("Nurse");
     expect(rows[1]!["Target Population"]).toBe("Adolescent girls");
+  });
+
+  test("routes concepts with no scheme column into Other codes", async () => {
+    // hpv:c9 has a label but no inScheme entry; hpv:c8 is unlabelled too.
+    const vocab: ConceptResolver = {
+      ...VOCAB,
+      labels: new Map([...LABELS, [`${NS}c9`, "Uncoded concept"]]),
+    };
+    const { headers, rows } = await buildReferenceRows(
+      [hpvRef("ref-1", ["hpv:c1", "hpv:c9", "hpv:c8"])],
+      vocab,
+    );
+    expect(headers).toContain("Other codes");
+    const row = rows[0]!;
+    expect(row["Delivery Actor"]).toBe("Nurse");
+    expect(row["Other codes"]).toBe(`Uncoded concept; ${NS}c8`);
+  });
+
+  test("URI-suffixes a scheme header that collides with another scheme", async () => {
+    const collidingSchemes = [
+      { uri: `${NS}DeliveryActorA`, label: "Delivery Actor Scheme", topConcepts: [] },
+      { uri: `${NS}DeliveryActorB`, label: "Delivery Actor Scheme", topConcepts: [] },
+    ];
+    const { headers } = await buildReferenceRows([], {
+      ...VOCAB,
+      schemes: collidingSchemes,
+    });
+    expect(headers).toEqual([
+      ...BIB_HEADERS,
+      "Delivery Actor",
+      `Delivery Actor (${NS}DeliveryActorB)`,
+    ]);
   });
 });

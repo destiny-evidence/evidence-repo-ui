@@ -107,6 +107,7 @@ describe("generateWorkbook", () => {
     const wb = await generateWorkbook(
       [syntheticReference("ref-1")],
       MINIMAL_VOCAB,
+      { variant: "esea" },
     );
     expect(wb.SheetNames).toEqual([
       "Investigation Details",
@@ -128,6 +129,7 @@ describe("generateWorkbook", () => {
     const wb = await generateWorkbook(
       [noLinked, syntheticReference("ref-keep")],
       MINIMAL_VOCAB,
+      { variant: "esea" },
     );
     const inv = wb.Sheets["Investigation Details"]!;
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(inv);
@@ -141,7 +143,7 @@ describe("generateWorkbook", () => {
       yield syntheticReference("ref-1");
       yield syntheticReference("ref-2");
     }
-    const wb = await generateWorkbook(gen(), MINIMAL_VOCAB);
+    const wb = await generateWorkbook(gen(), MINIMAL_VOCAB, { variant: "esea" });
     const inv = wb.Sheets["Investigation Details"]!;
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(inv);
     expect(rows.map((r) => r.reference_id)).toEqual(["ref-1", "ref-2"]);
@@ -157,7 +159,7 @@ describe("generateWorkbook", () => {
     const sheet = wb.Sheets["References"]!;
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet);
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.reference_id).toBe("ref-1");
+    expect(rows[0]!["Reference ID"]).toBe("ref-1");
   });
 });
 
@@ -166,6 +168,7 @@ describe("workbookToArrayBuffer", () => {
     const wb = await generateWorkbook(
       [syntheticReference("ref-1")],
       MINIMAL_VOCAB,
+      { variant: "esea" },
     );
     const buf = workbookToArrayBuffer(wb);
     expect(buf).toBeInstanceOf(ArrayBuffer);

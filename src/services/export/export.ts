@@ -15,6 +15,7 @@ import {
 import type {
   CodingInstitutionConfig,
   ExportVariant,
+  PinnedFilter,
 } from "@/types/models";
 
 import { generateWorkbook, workbookToArrayBuffer } from "./generate.ts";
@@ -53,6 +54,7 @@ export async function exportReferencesToExcel(
   filename: string,
   variant: ExportVariant,
   codingInstitution?: CodingInstitutionConfig,
+  pinnedFilters?: PinnedFilter[],
 ): Promise<void> {
   const references = streamJsonlFromUrl(proxyBlobUrl(jsonlUrl));
   const [vocab, context] = await Promise.all([
@@ -67,7 +69,7 @@ export async function exportReferencesToExcel(
       inScheme: vocab.inScheme,
       schemes: vocab.schemes,
     },
-    { variant, codingInstitution },
+    { variant, codingInstitution, pinnedFilters },
   );
   triggerDownload(workbookToArrayBuffer(wb), filename);
 }

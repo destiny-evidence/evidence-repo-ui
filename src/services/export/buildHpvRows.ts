@@ -1,42 +1,49 @@
 /**
  * Row-building logic for the HPV reference-level workbook: one row per
  * reference, a fixed bibliographic block followed by one column per SKOS
- * scheme. Each scheme cell holds the `; `-joined prefLabels of that
- * reference's applied concepts that fall in the scheme. References with no
- * applied concepts still produce a row (with blank scheme cells).
+ * scheme and an "Other codes" catch-all. Each scheme cell holds the
+ * `; `-joined prefLabels of that reference's applied concepts that fall in the
+ * scheme; concepts in no listed scheme land in "Other codes". References with
+ * no applied concepts still produce a row (with blank concept cells).
  */
 
+import { orderFilterItems } from "@/components/filters/filterOrder";
 import {
   extractAbstract,
   extractBibliographic,
   extractDoi,
   extractLinkedDataEnhancement,
+  extractOpenAlexId,
   getInvestigation,
 } from "@/services/referenceUtils";
 import { parseAppliedConcepts } from "@/services/investigationParser";
 import {
-  compareLabels,
   schemeDisplayLabel,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
-import type { Reference } from "@/types/models";
+import type { PinnedFilter, Reference } from "@/types/models";
 
 import type { CellValue, ConceptResolver } from "./types.ts";
 
 export const HPV_SHEET_NAME = "References";
 
+const OTHER_CODES_HEADER = "Other codes";
+
 type SheetRow = Record<string, CellValue>;
 
 type ReferenceSource = Iterable<Reference> | AsyncIterable<Reference>;
 
+// Human-readable to sit alongside the vocabulary-derived scheme columns; the
+// esea workbook instead uses technical keys.
 const BIBLIOGRAPHIC_HEADERS = [
-  "reference_id",
-  "title",
-  "authors",
-  "publication_year",
-  "journal",
-  "doi",
-  "abstract",
+  "Reference ID",
+  "Title",
+  "Authors",
+  "Publication year",
+  "Journal",
+  "DOI",
+  "OpenAlex ID",
+  "Abstract",
 ] as const;
 
 interface SchemeColumn {
@@ -44,12 +51,17 @@ interface SchemeColumn {
   header: string;
 }
 
-// Ordered by label to match the filter drawer / evidence map, not raw @graph
-// order. A label clashing with the bibliographic block or another scheme falls
-// back to a URI-suffixed form.
-function buildSchemeColumns(schemes: ConceptScheme[]): SchemeColumn[] {
-  const used = new Set<string>(BIBLIOGRAPHIC_HEADERS);
-  return [...schemes].sort(compareLabels).map((scheme) => {
+// Ordered like the filter drawer (orderFilterItems) so columns match the UI
+// facets; a label clashing with another column falls back to a URI suffix.
+function buildSchemeColumns(
+  schemes: ConceptScheme[],
+  pinnedFilters: PinnedFilter[] | undefined,
+): SchemeColumn[] {
+  const ordered = orderFilterItems(schemes, { pinned: pinnedFilters }).flatMap(
+    (item) => (item.kind === "scheme" ? [item.scheme] : []),
+  );
+  const used = new Set<string>([...BIBLIOGRAPHIC_HEADERS, OTHER_CODES_HEADER]);
+  return ordered.map((scheme) => {
     let header = schemeDisplayLabel(scheme.label);
     if (used.has(header)) header = `${header} (${scheme.uri})`;
     used.add(header);
@@ -62,20 +74,20 @@ function buildReferenceRow(
   vocab: ConceptResolver,
   inScheme: Map<string, string>,
   schemeHeaderByUri: Map<string, string>,
-  dropped: Set<string>,
 ): SheetRow {
   const bib = extractBibliographic(reference);
   const authors = bib?.authorship
     ? bib.authorship.map((a) => a.display_name).join("; ")
     : null;
   const row: SheetRow = {
-    reference_id: String(reference.id),
-    title: bib?.title ?? null,
-    authors: authors || null,
-    publication_year: bib?.publication_year ?? null,
-    journal: bib?.publication_venue?.display_name ?? null,
-    doi: extractDoi(reference.identifiers),
-    abstract: extractAbstract(reference)?.abstract ?? null,
+    "Reference ID": String(reference.id),
+    Title: bib?.title ?? null,
+    Authors: authors || null,
+    "Publication year": bib?.publication_year ?? null,
+    Journal: bib?.publication_venue?.display_name ?? null,
+    DOI: extractDoi(reference.identifiers),
+    "OpenAlex ID": extractOpenAlexId(reference.identifiers),
+    Abstract: extractAbstract(reference)?.abstract ?? null,
   };
 
   const linked = extractLinkedDataEnhancement(reference);
@@ -87,13 +99,9 @@ function buildReferenceRow(
     );
     const buckets = new Map<string, string[]>();
     for (const concept of appliedConcepts) {
-      const header = schemeHeaderByUri.get(inScheme.get(concept.uri) ?? "");
-      // No column for this concept's scheme; record it so callers can warn
-      // rather than drop it silently.
-      if (!header) {
-        dropped.add(concept.uri);
-        continue;
-      }
+      const header =
+        schemeHeaderByUri.get(inScheme.get(concept.uri) ?? "") ??
+        OTHER_CODES_HEADER;
       const value = concept.label ?? concept.uri;
       const bucket = buckets.get(header);
       if (bucket) bucket.push(value);
@@ -108,36 +116,32 @@ function buildReferenceRow(
 }
 
 /**
- * Stream references and produce the header list (bibliographic block plus one
- * column per scheme) and one row per reference. Accepts a sync or async
- * iterable; `for await...of` handles both.
+ * Stream references into a header list and one row per reference. `pinnedFilters`
+ * orders the scheme columns to match the community's filter drawer.
  */
 export async function buildReferenceRows(
   references: ReferenceSource,
   vocab: ConceptResolver,
+  pinnedFilters?: PinnedFilter[],
 ): Promise<{ headers: string[]; rows: SheetRow[] }> {
-  const schemeColumns = buildSchemeColumns(vocab.schemes ?? []);
+  const schemeColumns = buildSchemeColumns(vocab.schemes ?? [], pinnedFilters);
   const schemeHeaderByUri = new Map(
     schemeColumns.map((c) => [c.uri, c.header]),
   );
   const inScheme = vocab.inScheme ?? new Map<string, string>();
+
+  const rows: SheetRow[] = [];
+  for await (const reference of references) {
+    rows.push(buildReferenceRow(reference, vocab, inScheme, schemeHeaderByUri));
+  }
+
   const headers = [
     ...BIBLIOGRAPHIC_HEADERS,
     ...schemeColumns.map((c) => c.header),
   ];
-
-  const rows: SheetRow[] = [];
-  const dropped = new Set<string>();
-  for await (const reference of references) {
-    rows.push(
-      buildReferenceRow(reference, vocab, inScheme, schemeHeaderByUri, dropped),
-    );
-  }
-  if (dropped.size > 0) {
-    console.warn(
-      `HPV export: omitted ${dropped.size} applied concept(s) with no matching ` +
-        `scheme column: ${[...dropped].join(", ")}`,
-    );
+  // Omit the catch-all unless something landed there — usually nothing does.
+  if (rows.some((row) => row[OTHER_CODES_HEADER] !== undefined)) {
+    headers.push(OTHER_CODES_HEADER);
   }
   return { headers, rows };
 }

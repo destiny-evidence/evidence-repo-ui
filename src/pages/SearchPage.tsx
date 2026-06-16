@@ -273,6 +273,7 @@ function SearchPageInner({ community }: { community: Community }) {
       contextUrl: community.contextUrl,
       variant: community.exportVariant,
       codingInstitution: community.codingInstitution,
+      pinnedFilters: community.pinnedFilters,
     });
   }
 

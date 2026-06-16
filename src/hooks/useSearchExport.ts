@@ -9,6 +9,7 @@ import { exportReferencesToExcel } from "@/services/export/export";
 import type {
   CodingInstitutionConfig,
   ExportVariant,
+  PinnedFilter,
   SearchExportRead,
 } from "@/types/models";
 
@@ -28,6 +29,7 @@ export interface StartExportOptions {
   contextUrl: string;
   variant: ExportVariant;
   codingInstitution?: CodingInstitutionConfig;
+  pinnedFilters?: PinnedFilter[];
 }
 
 export interface UseSearchExportResult {
@@ -83,6 +85,7 @@ export function useSearchExport(): UseSearchExportResult {
       contextUrl,
       variant,
       codingInstitution,
+      pinnedFilters,
     }: StartExportOptions) => {
       runIdRef.current += 1;
       const runId = runIdRef.current;
@@ -116,6 +119,7 @@ export function useSearchExport(): UseSearchExportResult {
             filename,
             variant,
             codingInstitution,
+            pinnedFilters,
           );
         } catch (err) {
           fail(

@@ -110,6 +110,7 @@ describe("useSearchExport", () => {
       "file.xlsx",
       "esea",
       undefined,
+      undefined,
     );
     expect(mockRequest).toHaveBeenCalledWith("phonics", { annotation: ["x"] });
   });
