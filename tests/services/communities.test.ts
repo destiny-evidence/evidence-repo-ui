@@ -51,6 +51,14 @@ describe("communities", () => {
     expect(hpv?.codingInstitution).toBeUndefined();
   });
 
+  it("defaults to the HPV community", async () => {
+    const { DEFAULT_COMMUNITY, DEFAULT_COMMUNITY_SLUG } = await import(
+      "@/services/communities"
+    );
+    expect(DEFAULT_COMMUNITY_SLUG).toBe("hpv");
+    expect(DEFAULT_COMMUNITY.name).toBe("HPV Vaccine Delivery");
+  });
+
   it("enables AI summaries only for HPV", async () => {
     const { findCommunity } = await import("@/services/communities");
     expect(findCommunity("hpv")?.features.aiSummaries).toBe(true);

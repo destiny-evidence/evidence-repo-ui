@@ -170,10 +170,19 @@ const COMMUNITIES: Community[] = [
   },
 ];
 
-// Brand link / not-found fallback target while there's no true "/" landing
-// page — the router only matches /:community/*.
-export const DEFAULT_COMMUNITY_SLUG = COMMUNITIES[0].slug;
-
 export function findCommunity(slug: string): Community | undefined {
   return COMMUNITIES.find((c) => c.slug === slug);
 }
+
+// Brand link / not-found fallback target while there's no true "/" landing
+// page — the router only matches /:community/*.
+export const DEFAULT_COMMUNITY = (() => {
+  const slug = "hpv";
+  const community = findCommunity(slug);
+  if (!community) {
+    throw new Error(`Default community "${slug}" is not registered.`);
+  }
+  return community;
+})();
+
+export const DEFAULT_COMMUNITY_SLUG = DEFAULT_COMMUNITY.slug;
