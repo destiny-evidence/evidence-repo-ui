@@ -151,9 +151,9 @@ const COMMUNITIES: Community[] = [
         href: "https://aliveevidence.org/wp-content/uploads/HPV-repo-protocol-v3.0.pdf",
       },
       {
-        title: "HPV Taxonomy v2.2",
+        title: "HPV Taxonomy v2.3",
         description: "The taxonomy underpinning the Repository.",
-        href: "https://vocab.evidence-repository.org/019d3e6a-04d6-76e9-9f7a-b8b26c1e0976/2.2/",
+        href: "https://vocab.evidence-repository.org/019d3e6a-04d6-76e9-9f7a-b8b26c1e0976/2.3/",
       },
       {
         title: "Changelog",
