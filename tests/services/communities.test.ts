@@ -56,7 +56,7 @@ describe("communities", () => {
       "@/services/communities"
     );
     expect(DEFAULT_COMMUNITY_SLUG).toBe("hpv");
-    expect(DEFAULT_COMMUNITY.slug).toBe("hpv");
+    expect(DEFAULT_COMMUNITY.name).toBe("HPV Vaccine Delivery");
   });
 
   it("enables AI summaries only for HPV", async () => {
