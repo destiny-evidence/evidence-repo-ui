@@ -50,7 +50,28 @@ export const MOCK_SUMMARY: SummariseResponse = {
     },
   ],
   summary: {
-    contradictions: [],
+    contradictions: [
+      {
+        contradiction:
+          "Studies disagree on whether multi-cohort catch-up vaccination stays cost-effective once delivery costs scale.",
+        quotes: [
+          {
+            quote:
+              "Extending vaccination to multiple older cohorts remained cost-effective even under conservative coverage and cost assumptions.",
+            paper: "abbas-2018",
+            page: 7,
+            terms: [2],
+          },
+          {
+            quote:
+              "Beyond the primary 9–14 cohort the incremental cost per DALY averted rose sharply, exceeding the threshold in lower-coverage scenarios.",
+            paper: "brisson-2021",
+            page: 14,
+            terms: [2],
+          },
+        ],
+      },
+    ],
     claims: [
       {
         claim:

@@ -59,7 +59,13 @@ describe("AiSummaryDrawer", () => {
   });
 
   test("omits the contradictions section when there are none", () => {
-    render(<AiSummaryDrawer ai={makeAi()} />);
+    const ai = makeAi({
+      result: {
+        ...MOCK_SUMMARY,
+        summary: { ...MOCK_SUMMARY.summary, contradictions: [] },
+      },
+    });
+    render(<AiSummaryDrawer ai={ai} />);
     expect(screen.queryByText(/where papers disagree/i)).toBeNull();
     expect(document.querySelector(".ai-contradiction")).toBeNull();
   });
