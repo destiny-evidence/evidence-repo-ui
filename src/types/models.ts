@@ -76,6 +76,9 @@ export interface Community {
   // Filter cards pinned to the top, in order; every remaining scheme follows
   // alphabetically. Absent ⇒ DEFAULT_PINNED_FILTERS (year, then country).
   pinnedFilters?: PinnedFilter[];
+  // Filter cards that start expanded, by slot ("year"/"country") or scheme URI;
+  // absent ⇒ DEFAULT_EXPANDED_FILTERS (year, country).
+  defaultExpandedFilters?: readonly PinnedFilter[];
   features: CommunityFeatures;
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).

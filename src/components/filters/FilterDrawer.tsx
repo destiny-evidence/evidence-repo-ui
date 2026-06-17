@@ -17,6 +17,8 @@ interface FilterDrawerProps {
   showCountryFacetFilter?: boolean;
   // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
   pinnedFilters?: readonly PinnedFilter[];
+  // Filter cards that start expanded; absent ⇒ DEFAULT_EXPANDED_FILTERS.
+  defaultExpandedFilters?: readonly PinnedFilter[];
   schemes: ConceptScheme[];
   appliedConceptFilters: readonly (readonly string[])[];
   appliedCountryCodes: readonly string[];
@@ -42,6 +44,7 @@ function FilterDrawerPanel({
   countNoun = "results",
   showCountryFacetFilter = true,
   pinnedFilters,
+  defaultExpandedFilters,
   schemes,
   appliedConceptFilters,
   appliedCountryCodes,
@@ -101,6 +104,7 @@ function FilterDrawerPanel({
         countNoun={countNoun}
         showCountryFacetFilter={showCountryFacetFilter}
         pinnedFilters={pinnedFilters}
+        defaultExpandedFilters={defaultExpandedFilters}
       />
     </Drawer>
   );

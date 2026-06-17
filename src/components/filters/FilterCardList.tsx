@@ -5,7 +5,11 @@ import { YearRangeFilter } from "./YearRangeFilter";
 import { summary } from "./conceptSchemeFilterState";
 import { summary as countrySummary } from "./countryFilterState";
 import { summary as yearSummary } from "./yearRangeFilterState";
-import { orderFilterItems, type FilterItem } from "./filterOrder";
+import {
+  DEFAULT_EXPANDED_FILTERS,
+  orderFilterItems,
+  type FilterItem,
+} from "./filterOrder";
 import {
   schemeDisplayLabel,
   type ConceptScheme,
@@ -21,6 +25,8 @@ interface FilterCardListProps {
   showCountryFacetFilter?: boolean;
   // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
   pinnedFilters?: readonly PinnedFilter[];
+  // Filter cards that start expanded; absent ⇒ DEFAULT_EXPANDED_FILTERS.
+  defaultExpandedFilters?: readonly PinnedFilter[];
 }
 
 /**
@@ -34,11 +40,13 @@ export function FilterCardList({
   countNoun = "results",
   showCountryFacetFilter = true,
   pinnedFilters,
+  defaultExpandedFilters = DEFAULT_EXPANDED_FILTERS,
 }: FilterCardListProps) {
   const items = orderFilterItems(draft.schemes, {
     pinned: pinnedFilters,
     showCountryFacetFilter,
   });
+  const expanded = new Set(defaultExpandedFilters);
 
   return (
     <>
@@ -47,12 +55,17 @@ export function FilterCardList({
           Filter counts unavailable.
         </div>
       )}
-      {items.map((item) => renderItem(item, draft, countNoun))}
+      {items.map((item) => renderItem(item, draft, countNoun, expanded))}
     </>
   );
 }
 
-function renderItem(item: FilterItem, draft: FilterDraft, countNoun: string) {
+function renderItem(
+  item: FilterItem,
+  draft: FilterDraft,
+  countNoun: string,
+  expanded: ReadonlySet<string>,
+) {
   switch (item.kind) {
     case "year":
       return (
@@ -60,7 +73,7 @@ function renderItem(item: FilterItem, draft: FilterDraft, countNoun: string) {
           key="year"
           title="Publication year"
           summary={yearSummary(draft.yearDraft)}
-          defaultExpanded
+          defaultExpanded={expanded.has("year")}
         >
           <YearRangeFilter
             state={draft.yearDraft}
@@ -74,7 +87,7 @@ function renderItem(item: FilterItem, draft: FilterDraft, countNoun: string) {
           key="country"
           title="Country"
           summary={countrySummary(draft.countryDraft)}
-          defaultExpanded
+          defaultExpanded={expanded.has("country")}
         >
           <CountryFilter
             state={draft.countryDraft}
@@ -92,6 +105,7 @@ function renderItem(item: FilterItem, draft: FilterDraft, countNoun: string) {
           scheme={item.scheme}
           draft={draft}
           countNoun={countNoun}
+          defaultExpanded={expanded.has(item.scheme.uri)}
         />
       );
   }
@@ -101,16 +115,19 @@ function SchemeCard({
   scheme,
   draft,
   countNoun,
+  defaultExpanded,
 }: {
   scheme: ConceptScheme;
   draft: FilterDraft;
   countNoun: string;
+  defaultExpanded: boolean;
 }) {
   const state = draft.conceptStateFor(scheme);
   return (
     <FilterCard
       title={schemeDisplayLabel(scheme.label)}
       summary={summary(state)}
+      defaultExpanded={defaultExpanded}
     >
       <ConceptSchemeFilter
         scheme={scheme}

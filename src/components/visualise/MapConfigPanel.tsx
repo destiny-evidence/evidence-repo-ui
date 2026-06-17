@@ -38,6 +38,8 @@ interface MapConfigPanelProps {
   showCountryFacetFilter?: boolean;
   // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
   pinnedFilters?: readonly PinnedFilter[];
+  // Filter cards that start expanded; absent ⇒ DEFAULT_EXPANDED_FILTERS.
+  defaultExpandedFilters?: readonly PinnedFilter[];
   onApply: (next: { axes: EvidenceMapAxes; filters: AppliedFilters }) => void;
 }
 
@@ -94,6 +96,7 @@ export function MapConfigPanel({
   countNoun = "results",
   showCountryFacetFilter = true,
   pinnedFilters,
+  defaultExpandedFilters,
   onApply,
 }: MapConfigPanelProps) {
   const [rowDraft, setRowDraft] = useState<EvidenceMapAxis>(appliedAxes.row);
@@ -163,6 +166,7 @@ export function MapConfigPanel({
             countNoun={countNoun}
             showCountryFacetFilter={showCountryFacetFilter}
             pinnedFilters={pinnedFilters}
+            defaultExpandedFilters={defaultExpandedFilters}
           />
         </section>
       </div>
