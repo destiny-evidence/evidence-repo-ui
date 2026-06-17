@@ -271,7 +271,9 @@ function SearchPageInner({ community }: { community: Community }) {
       filename: formatExportFilename(community.slug),
       vocabularyUrl: community.vocabularyUrl,
       contextUrl: community.contextUrl,
+      variant: community.exportVariant,
       codingInstitution: community.codingInstitution,
+      pinnedFilters: community.pinnedFilters,
     });
   }
 

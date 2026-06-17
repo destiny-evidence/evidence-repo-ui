@@ -7,11 +7,16 @@
  * triggers a browser download of the resulting `.xlsx`.
  */
 
+import { proxyBlobUrl } from "@/config";
 import {
   getCachedContext,
   getCachedVocabulary,
 } from "@/services/vocabulary";
-import type { CodingInstitutionConfig } from "@/types/models";
+import type {
+  CodingInstitutionConfig,
+  ExportVariant,
+  PinnedFilter,
+} from "@/types/models";
 
 import { generateWorkbook, workbookToArrayBuffer } from "./generate.ts";
 import { streamJsonlFromUrl } from "./jsonlStream.ts";
@@ -39,17 +44,19 @@ function triggerDownload(data: ArrayBuffer, filename: string): void {
 /**
  * Stream the JSONL at `jsonlUrl`, resolve concepts against the JSON-LD
  * vocabulary at `vocabularyUrl` (URI-keyed prefLabels) and the JSON-LD
- * @context at `contextUrl` (prefix → namespace map), build the
- * three-tab workbook, and prompt the user to download it as `filename`.
+ * @context at `contextUrl` (prefix → namespace map), build the workbook for
+ * the community's `variant`, and prompt the user to download it as `filename`.
  */
 export async function exportReferencesToExcel(
   jsonlUrl: string,
   vocabularyUrl: string,
   contextUrl: string,
   filename: string,
+  variant: ExportVariant,
   codingInstitution?: CodingInstitutionConfig,
+  pinnedFilters?: PinnedFilter[],
 ): Promise<void> {
-  const references = streamJsonlFromUrl(jsonlUrl);
+  const references = streamJsonlFromUrl(proxyBlobUrl(jsonlUrl));
   const [vocab, context] = await Promise.all([
     getCachedVocabulary(vocabularyUrl),
     getCachedContext(contextUrl),
@@ -59,8 +66,10 @@ export async function exportReferencesToExcel(
     {
       prefixes: context.prefixes,
       labels: vocab.labels,
+      inScheme: vocab.inScheme,
+      schemes: vocab.schemes,
     },
-    codingInstitution,
+    { variant, codingInstitution, pinnedFilters },
   );
   triggerDownload(workbookToArrayBuffer(wb), filename);
 }

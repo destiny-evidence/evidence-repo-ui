@@ -563,7 +563,7 @@ describe("SearchPage", () => {
       });
     });
 
-    test("export button hidden on /hpv until HPV Excel export (#127) lands", async () => {
+    test("export button shown on /hpv", async () => {
       history.replaceState(null, "", "/hpv");
       mockBoth({ results: makeResult(6, ["r1"]) });
       renderSearchPage();
@@ -572,7 +572,7 @@ describe("SearchPage", () => {
       );
       expect(
         screen.queryByRole("button", { name: /export to excel/i }),
-      ).toBeNull();
+      ).not.toBeNull();
     });
 
     test("enabled in year-only URL; click POSTs with q=* and the year filter", async () => {

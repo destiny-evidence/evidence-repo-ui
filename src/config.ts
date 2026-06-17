@@ -41,3 +41,20 @@ export function proxyVocabUrl(url: string): string {
   }
   return url;
 }
+
+const BLOB_PROXY_TARGET = import.meta.env.VITE_BLOB_PROXY_TARGET;
+
+/**
+ * Rewrite a signed blob-storage URL (e.g. a search-export download) through the
+ * local dev proxy when VITE_BLOB_PROXY_TARGET is set. The deployed storage
+ * account's CORS allows only the production UI origins, so local dev can't fetch
+ * the blob cross-origin; the proxy makes it same-origin. The SAS query string is
+ * preserved. In production, returns the URL unchanged.
+ */
+export function proxyBlobUrl(url: string): string {
+  if (!BLOB_PROXY_TARGET) return url;
+  if (url.startsWith(BLOB_PROXY_TARGET)) {
+    return "/blob-proxy" + url.slice(BLOB_PROXY_TARGET.length);
+  }
+  return url;
+}

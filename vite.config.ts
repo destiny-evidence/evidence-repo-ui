@@ -29,6 +29,14 @@ export default defineConfig(({ mode }) => {
             followRedirects: true,
           },
         }),
+        ...(env.VITE_BLOB_PROXY_TARGET && {
+          "/blob-proxy": {
+            target: env.VITE_BLOB_PROXY_TARGET,
+            changeOrigin: true,
+            rewrite: (path: string) => path.replace(/^\/blob-proxy/, ""),
+            followRedirects: true,
+          },
+        }),
       },
     },
   };

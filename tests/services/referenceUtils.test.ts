@@ -7,6 +7,7 @@ import {
   extractLinkedDataEnhancement,
   extractDoi,
   extractOpenAlexId,
+  extractOtherIdentifier,
   formatPagination,
 } from "@/services/referenceUtils";
 import type {
@@ -198,6 +199,51 @@ describe("extractOpenAlexId", () => {
     expect(
       extractOpenAlexId([{ identifier: 12345, identifier_type: "open_alex" }]),
     ).toBeNull();
+  });
+});
+
+describe("extractOtherIdentifier", () => {
+  test("returns null when identifiers is null", () => {
+    expect(extractOtherIdentifier(null, "EPPI ItemId")).toBeNull();
+  });
+
+  test("returns null when no matching other identifier exists", () => {
+    expect(
+      extractOtherIdentifier(
+        [{ identifier: "10.1/x", identifier_type: "doi" }],
+        "EPPI ItemId",
+      ),
+    ).toBeNull();
+  });
+
+  test("returns null when the other_identifier_name differs", () => {
+    expect(
+      extractOtherIdentifier(
+        [
+          {
+            identifier: "abc",
+            identifier_type: "other",
+            other_identifier_name: "arxiv",
+          },
+        ],
+        "EPPI ItemId",
+      ),
+    ).toBeNull();
+  });
+
+  test("returns the value of the matching other identifier", () => {
+    expect(
+      extractOtherIdentifier(
+        [
+          {
+            identifier: 482931,
+            identifier_type: "other",
+            other_identifier_name: "EPPI ItemId",
+          },
+        ],
+        "EPPI ItemId",
+      ),
+    ).toBe(482931);
   });
 });
 

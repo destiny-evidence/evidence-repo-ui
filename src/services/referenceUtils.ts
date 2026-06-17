@@ -17,6 +17,14 @@ export function isDict(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+// The investigation node of a linked-data `data` dict: `hasInvestigation` when
+// present, else the dict itself (vocabularies that omit the wrapper).
+export function getInvestigation(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  return isDict(data["hasInvestigation"]) ? data["hasInvestigation"] : data;
+}
+
 /**
  * Return the highest-priority enhancement of the given type on a
  * reference, or null.
@@ -125,13 +133,10 @@ export function extractFindingsAndEstimatesCount(
 ): { findings: number; estimates: number } | null {
   const ld = extractLinkedData(reference);
   if (!ld) return null;
-  const root = isDict(ld.data) ? ld.data : null;
-  const investigation =
-    root && isDict(root["hasInvestigation"]) ? root["hasInvestigation"] : root;
-  const rawFindings =
-    investigation && Array.isArray(investigation["hasFinding"])
-      ? investigation["hasFinding"]
-      : [];
+  const investigation = getInvestigation(ld.data);
+  const rawFindings = Array.isArray(investigation["hasFinding"])
+    ? investigation["hasFinding"]
+    : [];
   let estimates = 0;
   for (const f of rawFindings) {
     if (isDict(f) && Array.isArray(f["hasEffectEstimate"])) {
@@ -159,6 +164,21 @@ export function extractOpenAlexId(
     (i) => i.identifier_type === "open_alex",
   );
   return typeof openAlex?.identifier === "string" ? openAlex.identifier : null;
+}
+
+// `other`-typed identifiers are distinguished by `other_identifier_name`
+// (e.g. "EPPI ItemId"); return the first match's value.
+export function extractOtherIdentifier(
+  identifiers: ExternalIdentifier[] | null,
+  otherIdentifierName: string,
+): string | number | null {
+  if (!identifiers) return null;
+  const match = identifiers.find(
+    (i) =>
+      i.identifier_type === "other" &&
+      i.other_identifier_name === otherIdentifierName,
+  );
+  return match?.identifier ?? null;
 }
 
 // Editorial citation format: `volume(issue), first_page–last_page`.

@@ -1,3 +1,5 @@
+import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
+
 // JSON-LD structures inside LinkedDataEnhancement.data are kept loose: any
 // node can be either an inline object or a blank-node ref string, and
 // most fields are optional. We treat them as Record<string, unknown>
@@ -24,6 +26,11 @@ export interface CodedAnnotation {
 export interface ConceptResolver {
   prefixes: Map<string, string>;
   labels: Map<string, string>;
+  // URI → scheme URI and the scheme list, used by the reference-level (HPV)
+  // workbook to group applied concepts into per-scheme columns. The
+  // investigation-hierarchy (esea) workbook doesn't need them.
+  inScheme?: Map<string, string>;
+  schemes?: ConceptScheme[];
 }
 
 // Row types — the column set each sheet writes. Values are the raw

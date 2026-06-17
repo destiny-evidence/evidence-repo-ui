@@ -14,12 +14,18 @@ import {
   buildInvestigationRow,
   buildOutcomeRows,
 } from "./buildRows.ts";
+import { buildReferenceRows, HPV_SHEET_NAME } from "./buildHpvRows.ts";
 import {
   extractBibliographic,
   extractLinkedDataEnhancement,
-  isDict,
+  getInvestigation,
 } from "@/services/referenceUtils";
-import type { CodingInstitutionConfig, Reference } from "@/types/models";
+import type {
+  CodingInstitutionConfig,
+  ExportVariant,
+  PinnedFilter,
+  Reference,
+} from "@/types/models";
 
 import type {
   ArmRow,
@@ -37,8 +43,6 @@ const SHEET_NAMES = {
   outcomes: "Outcomes",
 } as const;
 
-type AnyRow = InvestigationRow | ArmRow | OutcomeRow;
-
 type ReferenceSource =
   | Iterable<Reference>
   | AsyncIterable<Reference>;
@@ -47,11 +51,13 @@ type ReferenceSource =
  * Convert a list of header-keyed row objects into the array-of-arrays
  * shape SheetJS expects: the first inner array is the header row, and
  * each subsequent row contains the values in the same column order, with
- * missing keys filled in as null.
+ * missing keys filled in as null. Generic over the row type so it serves
+ * both the fixed-interface (esea) rows and the dynamic, scheme-keyed (HPV)
+ * rows.
  */
-function rowsToAoa<R extends AnyRow>(
+function rowsToAoa<R extends object>(
   headers: ReadonlyArray<keyof R & string>,
-  rows: R[],
+  rows: ReadonlyArray<R>,
 ): unknown[][] {
   const aoa: unknown[][] = [headers as unknown as string[]];
   for (const row of rows) {
@@ -71,9 +77,9 @@ function rowsToAoa<R extends AnyRow>(
  * Multi-line cell contents are measured per line so
  * wrapped cells don't blow the column out.
  */
-function colWidths<R extends AnyRow>(
+function colWidths<R extends object>(
   headers: ReadonlyArray<keyof R & string>,
-  rows: R[],
+  rows: ReadonlyArray<R>,
 ): Array<{ wch: number }> {
   return headers.map((header) => {
     let maxLen = String(header).length;
@@ -92,11 +98,11 @@ function colWidths<R extends AnyRow>(
  * Materialise one tab on the workbook: convert rows to AoA, set column
  * widths, and append the sheet under the given name.
  */
-function appendSheet<R extends AnyRow>(
+function appendSheet<R extends object>(
   wb: XLSX.WorkBook,
   name: string,
   headers: ReadonlyArray<keyof R & string>,
-  rows: R[],
+  rows: ReadonlyArray<R>,
 ): void {
   const ws = XLSX.utils.aoa_to_sheet(rowsToAoa(headers, rows));
   ws["!cols"] = colWidths(headers, rows);
@@ -123,8 +129,7 @@ export async function buildAllRows(
     if (!linked) continue;
     const bibliographic = extractBibliographic(reference);
     const referenceId = String(reference.id);
-    const rawInvestigation = linked.content.data["hasInvestigation"];
-    const inv: Investigation = isDict(rawInvestigation) ? rawInvestigation : {};
+    const inv: Investigation = getInvestigation(linked.content.data);
     const findings = (Array.isArray(inv["hasFinding"]) ? inv["hasFinding"] : []) as Finding[];
     const armIds = assignArmIds(findings);
     investigation.push(
@@ -144,18 +149,10 @@ export async function buildAllRows(
 }
 
 /**
- * Top-level export: build rows for every reference and assemble the
- * three-tab workbook (Investigation Details, Investigation Arms,
- * Outcomes). Pure with respect to its inputs — no disk or network
- * access — so it runs in the browser as well as Node.
- *
- * The references argument can be a sync iterable (array) or async
- * iterable (JSONL stream), letting callers either load the whole file or
- * stream it from a signed URL. The `vocab` argument bundles the
- * JSON-LD @context prefix map and the URI-keyed prefLabel map fetched
- * via `vocabularyService` / `contextService`.
+ * Build the Education (esea) three-tab workbook (Investigation Details,
+ * Investigation Arms, Outcomes) from the structured investigation hierarchy.
  */
-export async function generateWorkbook(
+async function buildEducationWorkbook(
   references: ReferenceSource,
   vocab: ConceptResolver,
   codingInstitution?: CodingInstitutionConfig,
@@ -166,6 +163,58 @@ export async function generateWorkbook(
   appendSheet(wb, SHEET_NAMES.arms, SHEET_HEADERS.arms, rows.arms);
   appendSheet(wb, SHEET_NAMES.outcomes, SHEET_HEADERS.outcomes, rows.outcomes);
   return wb;
+}
+
+/**
+ * Build the HPV reference-level workbook: a single sheet with one row per
+ * reference, bibliographic columns followed by one column per SKOS scheme
+ * holding that reference's applied concepts in that scheme. `pinnedFilters`
+ * orders the scheme columns to match the community's filter drawer.
+ */
+async function buildHpvWorkbook(
+  references: ReferenceSource,
+  vocab: ConceptResolver,
+  pinnedFilters?: PinnedFilter[],
+): Promise<XLSX.WorkBook> {
+  const { headers, rows } = await buildReferenceRows(
+    references,
+    vocab,
+    pinnedFilters,
+  );
+  const wb = XLSX.utils.book_new();
+  appendSheet(wb, HPV_SHEET_NAME, headers, rows);
+  return wb;
+}
+
+export interface WorkbookOptions {
+  variant: ExportVariant;
+  codingInstitution?: CodingInstitutionConfig;
+  pinnedFilters?: PinnedFilter[];
+}
+
+/**
+ * Top-level export: assemble the workbook for the community's `variant`.
+ * Pure with respect to its inputs — no disk or network access — so it runs
+ * in the browser as well as Node.
+ *
+ * The references argument can be a sync iterable (array) or async
+ * iterable (JSONL stream), letting callers either load the whole file or
+ * stream it from a signed URL. The `vocab` argument bundles the
+ * JSON-LD @context prefix map and the URI-keyed prefLabel map fetched
+ * via `vocabularyService` / `contextService`; the reference-level (HPV)
+ * variant additionally reads its `inScheme` map and `schemes` list.
+ */
+export async function generateWorkbook(
+  references: ReferenceSource,
+  vocab: ConceptResolver,
+  options: WorkbookOptions,
+): Promise<XLSX.WorkBook> {
+  switch (options.variant) {
+    case "esea":
+      return buildEducationWorkbook(references, vocab, options.codingInstitution);
+    case "hpv":
+      return buildHpvWorkbook(references, vocab, options.pinnedFilters);
+  }
 }
 
 /**

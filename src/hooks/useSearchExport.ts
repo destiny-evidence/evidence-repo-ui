@@ -6,7 +6,12 @@ import {
   type SearchFilters,
 } from "@/services/apiClient";
 import { exportReferencesToExcel } from "@/services/export/export";
-import type { CodingInstitutionConfig, SearchExportRead } from "@/types/models";
+import type {
+  CodingInstitutionConfig,
+  ExportVariant,
+  PinnedFilter,
+  SearchExportRead,
+} from "@/types/models";
 
 export type ExportStatus =
   | "idle"
@@ -22,7 +27,9 @@ export interface StartExportOptions {
   filename: string;
   vocabularyUrl: string;
   contextUrl: string;
+  variant: ExportVariant;
   codingInstitution?: CodingInstitutionConfig;
+  pinnedFilters?: PinnedFilter[];
 }
 
 export interface UseSearchExportResult {
@@ -76,7 +83,9 @@ export function useSearchExport(): UseSearchExportResult {
       filename,
       vocabularyUrl,
       contextUrl,
+      variant,
       codingInstitution,
+      pinnedFilters,
     }: StartExportOptions) => {
       runIdRef.current += 1;
       const runId = runIdRef.current;
@@ -108,7 +117,9 @@ export function useSearchExport(): UseSearchExportResult {
             vocabularyUrl,
             contextUrl,
             filename,
+            variant,
             codingInstitution,
+            pinnedFilters,
           );
         } catch (err) {
           fail(

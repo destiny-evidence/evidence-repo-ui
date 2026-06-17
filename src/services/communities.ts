@@ -81,6 +81,7 @@ const COMMUNITIES: Community[] = [
       },
     },
     copy: buildCopy("Education", { countNoun: "investigations" }),
+    exportVariant: "esea",
     codingInstitution: rawSourcePatterns([
       [/(^|[^a-z])eef([^a-z]|$)/, "EEF"],
       [/(^|[^a-z])iiie([^a-z]|$)/, "IIIE"],
@@ -123,6 +124,7 @@ const COMMUNITIES: Community[] = [
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
+      exportExcel: true,
     },
     defaultEvidenceMapAxes: {
       row: {
@@ -138,6 +140,7 @@ const COMMUNITIES: Community[] = [
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
     }),
+    exportVariant: "hpv",
     externalResources: [
       {
         title: "Report v3 June 2026",

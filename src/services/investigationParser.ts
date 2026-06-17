@@ -1,5 +1,5 @@
 import { expandCompactUri } from "./vocabulary/contextService";
-import { isDict } from "./referenceUtils";
+import { getInvestigation, isDict } from "./referenceUtils";
 import type {
   InvestigationData,
   CodedAnnotation,
@@ -262,7 +262,7 @@ function resolveConceptRef(
   return { uri, label: labels.get(uri) };
 }
 
-function parseAppliedConcepts(
+export function parseAppliedConcepts(
   investigation: Dict,
   prefixes: Map<string, string>,
   labels: Map<string, string>,
@@ -431,10 +431,7 @@ function parseFindings(
  * is always available even when vocab/context fetches fail.
  */
 export function extractIsRetracted(data: Record<string, unknown>): boolean {
-  const investigation = isDict(data["hasInvestigation"])
-    ? (data["hasInvestigation"] as Dict)
-    : data;
-  return investigation["isRetracted"] === true;
+  return getInvestigation(data)["isRetracted"] === true;
 }
 
 /**
@@ -449,9 +446,7 @@ export function parseInvestigation(
   prefixes: Map<string, string>,
   labels: Map<string, string>,
 ): InvestigationData {
-  const investigation = isDict(data["hasInvestigation"])
-    ? (data["hasInvestigation"] as Dict)
-    : data;
+  const investigation = getInvestigation(data);
 
   return {
     documentType: parseOptional(investigation, "documentType", (n) =>

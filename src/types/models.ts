@@ -53,6 +53,11 @@ export interface ExternalResource {
   href: string;
 }
 
+// Selects which client-side Excel workbook a community's export builds.
+// Matches the community slug: "esea" is the investigation-hierarchy workbook,
+// "hpv" the reference-level one.
+export type ExportVariant = "esea" | "hpv";
+
 export interface Community {
   slug: string;
   name: string;
@@ -78,6 +83,8 @@ export interface Community {
   copy: CommunityCopy;
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;
+  // Which Excel workbook the export builds when features.exportExcel is on.
+  exportVariant: ExportVariant;
   externalResources?: ExternalResource[];
 }
 
