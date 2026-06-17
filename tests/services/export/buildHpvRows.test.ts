@@ -94,7 +94,11 @@ function hpvRef(id: string, conceptCuries: string[]): Reference {
     id,
     identifiers: [
       { identifier: `10.1/${id}`, identifier_type: "doi" },
-      { identifier: `W-${id}`, identifier_type: "open_alex" },
+      {
+        identifier: `EPPI-${id}`,
+        identifier_type: "other",
+        other_identifier_name: "EPPI ItemId",
+      },
     ],
     enhancements: [
       makeEnh(makeBibContent(), { id: `bib-${id}`, reference_id: id }),
@@ -125,7 +129,7 @@ const BIB_HEADERS = [
   "Publication year",
   "Journal",
   "DOI",
-  "OpenAlex ID",
+  "EPPI ItemId",
   "Abstract",
 ];
 
@@ -172,7 +176,7 @@ describe("buildReferenceRows", () => {
     expect(row["Publication year"]).toBe(2021);
     expect(row["Journal"]).toBe("Vaccine Journal");
     expect(row["DOI"]).toBe("10.1/ref-1");
-    expect(row["OpenAlex ID"]).toBe("W-ref-1");
+    expect(row["EPPI ItemId"]).toBe("EPPI-ref-1");
     expect(row["Abstract"]).toBe("Study summary ref-1");
   });
 

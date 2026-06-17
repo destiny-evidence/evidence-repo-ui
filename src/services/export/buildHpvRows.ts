@@ -13,7 +13,7 @@ import {
   extractBibliographic,
   extractDoi,
   extractLinkedDataEnhancement,
-  extractOpenAlexId,
+  extractOtherIdentifier,
   getInvestigation,
 } from "@/services/referenceUtils";
 import { parseAppliedConcepts } from "@/services/investigationParser";
@@ -42,7 +42,7 @@ const BIBLIOGRAPHIC_HEADERS = [
   "Publication year",
   "Journal",
   "DOI",
-  "OpenAlex ID",
+  "EPPI ItemId",
   "Abstract",
 ] as const;
 
@@ -86,7 +86,7 @@ function buildReferenceRow(
     "Publication year": bib?.publication_year ?? null,
     Journal: bib?.publication_venue?.display_name ?? null,
     DOI: extractDoi(reference.identifiers),
-    "OpenAlex ID": extractOpenAlexId(reference.identifiers),
+    "EPPI ItemId": extractOtherIdentifier(reference.identifiers, "EPPI ItemId"),
     Abstract: extractAbstract(reference)?.abstract ?? null,
   };
 

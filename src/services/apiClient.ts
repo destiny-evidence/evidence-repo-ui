@@ -126,9 +126,9 @@ export async function crossFacets(
   );
 }
 
-// Unlike searchReferences, no empty-q → "*" shim: the export endpoint is
-// gated at the search page (button disabled when q is empty), and an
-// explicit "*" from the user is forwarded as-is.
+// Unlike searchReferences, no empty-q → "*" shim here: the search page already
+// forwards "*" for a browse/empty search (exporting the whole corpus), and a
+// user's explicit "*" passes through as-is.
 export async function requestSearchExport(
   query: string,
   filters: Omit<SearchFilters, "page"> = {},

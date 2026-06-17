@@ -166,6 +166,21 @@ export function extractOpenAlexId(
   return typeof openAlex?.identifier === "string" ? openAlex.identifier : null;
 }
 
+// `other`-typed identifiers are distinguished by `other_identifier_name`
+// (e.g. "EPPI ItemId"); return the first match's value.
+export function extractOtherIdentifier(
+  identifiers: ExternalIdentifier[] | null,
+  otherIdentifierName: string,
+): string | number | null {
+  if (!identifiers) return null;
+  const match = identifiers.find(
+    (i) =>
+      i.identifier_type === "other" &&
+      i.other_identifier_name === otherIdentifierName,
+  );
+  return match?.identifier ?? null;
+}
+
 // Editorial citation format: `volume(issue), first_page–last_page`.
 // Uses en dash (U+2013) for page ranges per typographic convention.
 // Returns "" when nothing meaningful to render.
