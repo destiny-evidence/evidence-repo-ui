@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/common/Spinner";
 import { login, register } from "./keycloak";
 
 export function Landing() {
@@ -25,7 +26,7 @@ export function Landing() {
 export function Loading() {
   return (
     <div class="auth-gate">
-      <p>Signing you in…</p>
+      <Spinner size={36} />
     </div>
   );
 }

@@ -143,20 +143,9 @@
   font-size: var(--font-size-small);
   color: var(--color-text-tertiary);
 }
-.ai-spinner {
-  flex: 0 0 auto;
-  width: 14px;
-  height: 14px;
-  border: 1.5px solid var(--color-accent-light);
-  border-top-color: var(--color-accent);
-  border-radius: 50%;
+/* Nudge the spinner down to align with the first line of loading text. */
+.ai-loading__spinner {
   margin-top: 3px;
-  animation: ai-spin 0.7s linear infinite;
-}
-@keyframes ai-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* ── Narrative prose + footnotes ──────────────────────────── */
@@ -398,8 +387,5 @@
 @media (prefers-reduced-motion: reduce) {
   .ai-mini {
     animation: none;
-  }
-  .ai-spinner {
-    animation-duration: 1.4s;
   }
 }
