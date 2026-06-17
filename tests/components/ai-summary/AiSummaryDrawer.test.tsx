@@ -58,6 +58,53 @@ describe("AiSummaryDrawer", () => {
     );
   });
 
+  test("omits the contradictions section when there are none", () => {
+    render(<AiSummaryDrawer ai={makeAi()} />);
+    expect(screen.queryByText(/where papers disagree/i)).toBeNull();
+    expect(document.querySelector(".ai-contradiction")).toBeNull();
+  });
+
+  test("renders contradictions with their description and backing quotes", () => {
+    const ai = makeAi({
+      result: {
+        ...MOCK_SUMMARY,
+        summary: {
+          ...MOCK_SUMMARY.summary,
+          contradictions: [
+            {
+              contradiction:
+                "Papers disagree on whether catch-up campaigns are cost-effective.",
+              quotes: [
+                {
+                  quote: "Catch-up vaccination remained cost-effective.",
+                  paper: "anwari-2019",
+                  page: 12,
+                  terms: [2],
+                },
+                {
+                  quote: "Catch-up offered poor value for money.",
+                  paper: "canfell-2020",
+                  terms: [2],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    render(<AiSummaryDrawer ai={ai} />);
+
+    expect(screen.getByText(/where papers disagree/i)).toBeDefined();
+    expect(document.querySelectorAll(".ai-contradiction").length).toBe(1);
+    expect(
+      screen.getByText(/disagree on whether catch-up campaigns/i),
+    ).toBeDefined();
+    expect(screen.getByText(/remained cost-effective/i)).toBeDefined();
+    expect(screen.getByText(/poor value for money/i)).toBeDefined();
+    // The page number surfaces only for the quote that carries one.
+    expect(screen.getByText("p. 12")).toBeDefined();
+  });
+
   test("clicking a footnote scrolls to and flashes its claim", () => {
     const { container } = render(
       <AiSummaryDrawer ai={makeAi()} />,
