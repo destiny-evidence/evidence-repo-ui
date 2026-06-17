@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import {
   bubbleRadius,
   formatCompact,
@@ -94,35 +94,6 @@ export function EvidenceMapGrid({
     null,
   );
 
-  // Header tooltips can't be CSS pseudo-elements: the headers live inside the
-  // scroll box (overflow) and the map column (overflow: hidden), both of which
-  // clip a bubble that escapes the cell. Instead a single fixed-positioned
-  // bubble is measured against the hovered/focused header so it can sit above
-  // the text, clear of every clip. tailX tracks the text when the bubble is
-  // clamped to the viewport edge.
-  const [tip, setTip] = useState<{ text: string; x: number; y: number } | null>(
-    null,
-  );
-  const tipRef = useRef<HTMLDivElement>(null);
-  const showTip = (text: string, el: HTMLElement) => {
-    const r = el.getBoundingClientRect();
-    setTip({ text, x: r.left + r.width / 2, y: r.top });
-  };
-  const hideTip = () => setTip(null);
-
-  useLayoutEffect(() => {
-    const el = tipRef.current;
-    if (!tip || !el) return;
-    const half = el.offsetWidth / 2;
-    const margin = 8;
-    const x = Math.max(
-      margin + half,
-      Math.min(tip.x, window.innerWidth - margin - half),
-    );
-    el.style.left = `${x}px`;
-    el.style.setProperty("--tail-x", `${tip.x - x}px`);
-  }, [tip]);
-
   return (
     <div
       class={`evidence-map${updating ? " is-updating" : ""}${
@@ -182,8 +153,6 @@ export function EvidenceMapGrid({
                     onClick={
                       onColumnClick ? () => onColumnClick(column) : undefined
                     }
-                    onTipShow={showTip}
-                    onTipHide={hideTip}
                   />
                 </th>
               ))}
@@ -204,8 +173,6 @@ export function EvidenceMapGrid({
                     tooltip={headerTooltip}
                     ariaLabel={headerAriaLabel(row.label, countNoun)}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
-                    onTipShow={showTip}
-                    onTipHide={hideTip}
                   />
                 </th>
                 {columns.map((column) => {
@@ -249,56 +216,38 @@ export function EvidenceMapGrid({
       {view === "bubble" && (
         <MapLegend maxCount={maxCount} countNoun={countNoun} />
       )}
-      {tip && (
-        <div
-          ref={tipRef}
-          class="evidence-map__head-tip"
-          style={{ left: `${tip.x}px`, top: `${tip.y}px` }}
-          aria-hidden="true"
-        >
-          {tip.text}
-        </div>
-      )}
     </div>
   );
 }
 
-// A row/column header label. When clickable it's a button wrapping just the
-// label text (the click target is the label, while the whole cell shades on
-// hover — see CSS). Hover/focus reports the button's box up to the grid, which
-// positions the shared fixed tooltip above the text.
+// A row/column header label. When clickable it's a button (the click target is
+// the label; the whole cell shades on hover — see CSS) with a Tooltip.
 function HeaderLabel({
   label,
   labelClass,
   tooltip,
   ariaLabel,
   onClick,
-  onTipShow,
-  onTipHide,
 }: {
   label: string;
   labelClass?: string;
   tooltip: string;
   ariaLabel: string;
   onClick?: () => void;
-  onTipShow: (text: string, el: HTMLElement) => void;
-  onTipHide: () => void;
 }) {
   const labelSpan = <span class={labelClass}>{label}</span>;
   if (!onClick) return labelSpan;
   return (
-    <button
-      type="button"
-      class="evidence-map__head-link"
-      aria-label={ariaLabel}
-      onClick={onClick}
-      onMouseEnter={(e) => onTipShow(tooltip, e.currentTarget)}
-      onMouseLeave={onTipHide}
-      onFocus={(e) => onTipShow(tooltip, e.currentTarget)}
-      onBlur={onTipHide}
-    >
-      {labelSpan}
-    </button>
+    <Tooltip text={tooltip}>
+      <button
+        type="button"
+        class="evidence-map__head-link"
+        aria-label={ariaLabel}
+        onClick={onClick}
+      >
+        {labelSpan}
+      </button>
+    </Tooltip>
   );
 }
 
@@ -327,8 +276,6 @@ function Cell({
   onHover,
   onClick,
 }: CellProps) {
-  // Bubble radius drives the tooltip/tail anchor (--evidence-map-dot): the dot
-  // is centred in the cell, so the tail points at it rather than the cell edge.
   const radius =
     view === "bubble" && !empty
       ? bubbleRadius(count, maxCount, BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS)
@@ -365,7 +312,6 @@ function Cell({
   return (
     <td
       class={`evidence-map__cell${empty ? " is-empty" : ""}${activeClass}`}
-      style={{ "--evidence-map-dot": `${radius}px` }}
       onMouseEnter={onHover}
     >
       <Tooltip text={tooltip}>{content}</Tooltip>
