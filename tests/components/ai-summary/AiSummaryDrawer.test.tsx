@@ -106,9 +106,12 @@ describe("AiSummaryDrawer", () => {
       screen.getByText(/disagree on whether catch-up campaigns/i),
     ).toBeDefined();
     expect(screen.getByText(/remained cost-effective/i)).toBeDefined();
-    expect(screen.getByText(/poor value for money/i)).toBeDefined();
     // The page number surfaces only for the quote that carries one.
     expect(screen.getByText("p. 12")).toBeDefined();
+    const pagelessCite = screen
+      .getByText(/poor value for money/i)
+      .closest(".ai-claim__source");
+    expect(pagelessCite?.querySelector(".ai-cite__page")).toBeNull();
   });
 
   test("clicking a footnote scrolls to and flashes its claim", () => {
