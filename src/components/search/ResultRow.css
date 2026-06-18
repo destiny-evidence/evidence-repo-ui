@@ -175,7 +175,8 @@
   display: contents;
 }
 
-.row-pills .tag-group__tag {
+.row-pills .tag-group__tag,
+.row-pills .tooltip {
   pointer-events: auto;
 }
 

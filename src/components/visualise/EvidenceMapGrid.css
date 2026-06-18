@@ -134,39 +134,6 @@
   outline-offset: 2px;
 }
 
-/* The header tooltip: a fixed-positioned bubble (JS sets left/top from the
-   hovered header) so it escapes the scroll box and the map column's overflow,
-   which clip any in-cell pseudo-element. It sits above the text; --tail-x keeps
-   the tail over the text when the bubble is clamped to the viewport edge. */
-.evidence-map__head-tip {
-  position: fixed;
-  transform: translate(-50%, calc(-100% - 8px));
-  z-index: 1000;
-  pointer-events: none;
-  background: var(--tooltip-bg);
-  color: var(--tooltip-color);
-  padding: var(--tooltip-padding);
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-xs);
-  line-height: var(--tooltip-line-height);
-  width: max-content;
-  max-width: var(--tooltip-max-width);
-  white-space: pre-line;
-  text-align: left;
-  box-shadow: var(--shadow-md);
-}
-
-.evidence-map__head-tip::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: calc(50% + var(--tail-x, 0px));
-  transform: translateX(-50%);
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 8px solid var(--tooltip-bg);
-}
-
 /* ── Corner: total + axis key ── */
 .evidence-map__corner {
   top: 0;
@@ -252,42 +219,6 @@
   display: flex;
   width: 100%;
   height: 100%;
-}
-
-/* Anchor the bubble just above the dot (centred in the cell, radius in
-   --evidence-map-dot) rather than the cell edge, and shrink the text. */
-.evidence-map__cell .tooltip:hover::after,
-.evidence-map__cell .tooltip:focus-within::after,
-.evidence-map__cell .tooltip:focus-visible::after {
-  white-space: pre-line;
-  font-size: var(--font-size-xs);
-  bottom: calc(
-    50% + var(--evidence-map-dot, 0px) + var(--evidence-map-tip-lift, 0px) + 8px
-  );
-}
-
-/* Speech-bubble tail: a downward triangle whose apex meets the dot's top edge,
-   base meeting the bubble bottom 8px above. */
-.evidence-map__cell .tooltip:hover::before,
-.evidence-map__cell .tooltip:focus-within::before,
-.evidence-map__cell .tooltip:focus-visible::before {
-  content: "";
-  position: absolute;
-  bottom: calc(
-    50% + var(--evidence-map-dot, 0px) + var(--evidence-map-tip-lift, 0px)
-  );
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 8px solid var(--tooltip-bg);
-  z-index: 10;
-}
-
-/* Table cells have no bubble (--evidence-map-dot is 0), so the tail would land
-   on the centre of the number. Lift it clear of the digits. */
-.evidence-map__table--table .evidence-map__cell {
-  --evidence-map-tip-lift: 14px;
 }
 
 .evidence-map__cell-inner,

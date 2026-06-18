@@ -184,11 +184,13 @@ describe("EvidenceMapGrid", () => {
     });
 
     // Hovering shows the action tooltip for sighted users; leaving hides it.
-    fireEvent.mouseEnter(columnButton);
+    // The tooltip's hover handlers live on the .tooltip wrapper around the button.
+    const columnTip = columnButton.closest(".tooltip")!;
+    fireEvent.mouseEnter(columnTip);
     expect(
       screen.getByText("Click to view matching investigations"),
     ).toBeInTheDocument();
-    fireEvent.mouseLeave(columnButton);
+    fireEvent.mouseLeave(columnTip);
     expect(
       screen.queryByText("Click to view matching investigations"),
     ).not.toBeInTheDocument();

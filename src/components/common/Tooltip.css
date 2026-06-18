@@ -1,17 +1,9 @@
 /**
- * CSS-only tooltip: the trigger renders the `text` prop in a pill above
- * itself on hover or keyboard focus, via a positioned pseudo-element.
- *
- * Known limitations:
- * - No viewport-edge clamping; tooltips near the right edge of narrow
- *   viewports may clip.
- * - No portaling; an ancestor with `overflow: hidden` will clip the
- *   bubble. Consumers near such an ancestor should reposition the bubble
- *   so it fits inside the available space (see ConceptSchemeFilter.css).
+ * Tooltip: the trigger shows the `text` prop in a bubble on hover or keyboard
+ * focus. The bubble is a top-layer popover positioned by JS (see Tooltip.tsx),
+ * escaping ancestor overflow/stacking and flipping/clamping to fit the viewport.
  */
 
-/* Bubble appearance, shared with bespoke tooltips that can't reuse the pseudo
-   (e.g. the evidence map's fixed-positioned header tooltip). */
 :root {
   --tooltip-bg: #161b22;
   --tooltip-color: #fff;
@@ -25,14 +17,19 @@
   display: inline-flex;
 }
 
-.tooltip:hover::after,
-.tooltip:focus-within::after,
-.tooltip:focus-visible::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
+.tooltip__bubble {
+  position: fixed;
+  /* Override the UA `[popover]` defaults so our JS top/left win over centring. */
+  inset: auto;
+  margin: 0;
+  border: 0;
+  overflow: visible; /* let the tail pseudo-element show outside the box */
+  /* Off-screen until the layout effect positions it, to avoid a corner flash. */
+  top: -9999px;
+  left: 0;
   transform: translateX(-50%);
+  z-index: 2000; /* matters only where the top layer is unavailable */
+  pointer-events: none;
   background: var(--tooltip-bg);
   color: var(--tooltip-color);
   padding: var(--tooltip-padding);
@@ -42,11 +39,27 @@
   line-height: var(--tooltip-line-height);
   width: max-content;
   max-width: var(--tooltip-max-width);
-  /* pre-line honours explicit "\n" in `text` (multi-line tooltips) while still
-     wrapping/collapsing other whitespace; single-line tooltips are unaffected. */
+  /* pre-line honours explicit "\n" in `text` while still wrapping long lines. */
   white-space: pre-line;
   text-align: left;
-  z-index: 10;
-  pointer-events: none;
   box-shadow: var(--shadow-md);
+}
+
+.tooltip__bubble::after {
+  content: "";
+  position: absolute;
+  left: calc(50% + var(--tail-x, 0px));
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+}
+
+.tooltip__bubble[data-placement="above"]::after {
+  top: 100%;
+  border-top: 8px solid var(--tooltip-bg);
+}
+
+.tooltip__bubble[data-placement="below"]::after {
+  bottom: 100%;
+  border-bottom: 8px solid var(--tooltip-bg);
 }

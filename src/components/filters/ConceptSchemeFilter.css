@@ -12,10 +12,6 @@
 }
 
 .concept-scheme-filter__row {
-  /* Positioning context for the tooltip bubble below — anchors the bubble
-     to the row's left edge (the checkbox) instead of the label, while the
-     hover/focus trigger stays on the label only. */
-  position: relative;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -63,25 +59,6 @@
 
 .concept-scheme-filter__count.is-updating {
   opacity: 0.5;
-}
-
-/* Make the row (not the .tooltip span) the positioned ancestor for the
-   bubble: with position: static here the bubble falls through to the row.
-   Hover/focus still triggers on the .tooltip span (around the label only),
-   but the bubble is anchored at the row's left edge so it lines up with
-   the checkbox and extends rightward into the panel, avoiding the
-   horizontal clipping the drawer body would otherwise impose. Applies to
-   both label tooltips (concept definitions) and count tooltips (parent
-   semantics). */
-.concept-scheme-filter__row > .tooltip {
-  position: static;
-}
-
-.concept-scheme-filter__row > .tooltip:hover::after,
-.concept-scheme-filter__row > .tooltip:focus-within::after,
-.concept-scheme-filter__row > .tooltip:focus-visible::after {
-  left: 0;
-  transform: none;
 }
 
 .concept-scheme-filter__children {

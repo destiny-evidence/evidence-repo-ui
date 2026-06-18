@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { render } from "@testing-library/preact";
+import { render, fireEvent, screen } from "@testing-library/preact";
 import { Tooltip } from "@/components/common/Tooltip";
 
 describe("Tooltip", () => {
@@ -32,5 +32,35 @@ describe("Tooltip", () => {
       </Tooltip>,
     );
     expect(container.querySelector(".tooltip")).toBeNull();
+  });
+
+  test("shows the bubble on hover and removes it on leave", () => {
+    const { container } = render(
+      <Tooltip text="bubble text">
+        <button type="button">click</button>
+      </Tooltip>,
+    );
+    const wrap = container.querySelector(".tooltip")!;
+
+    fireEvent.mouseEnter(wrap);
+    expect(screen.getByText("bubble text")).toBeInTheDocument();
+
+    fireEvent.mouseLeave(wrap);
+    expect(screen.queryByText("bubble text")).not.toBeInTheDocument();
+  });
+
+  test("shows the bubble when the trigger is focused and hides it on blur", () => {
+    render(
+      <Tooltip text="focus text">
+        <button type="button">click</button>
+      </Tooltip>,
+    );
+    const button = screen.getByRole("button");
+
+    fireEvent.focus(button);
+    expect(screen.getByText("focus text")).toBeInTheDocument();
+
+    fireEvent.blur(button);
+    expect(screen.queryByText("focus text")).not.toBeInTheDocument();
   });
 });
