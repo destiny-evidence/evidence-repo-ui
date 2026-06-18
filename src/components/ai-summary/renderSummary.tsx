@@ -1,7 +1,7 @@
 import { Fragment } from "preact";
 import { useRef } from "preact/hooks";
-import { ExternalLinkIcon } from "@/components/common/icons";
-import type { PaperMeta, SummaryBlock } from "@/services/summariser";
+import { ExternalLinkIcon, WarningIcon } from "@/components/common/icons";
+import type { PaperMeta, QuoteRef, SummaryBlock } from "@/services/summariser";
 
 function citation(papers: PaperMeta[], paperId: string): string {
   const paper = papers.find((p) => p.paper === paperId);
@@ -12,6 +12,30 @@ function citation(papers: PaperMeta[], paperId: string): string {
   return `${lead}${etAl}${year}`;
 }
 
+// A verbatim quote with its provenance, shared by claims and contradictions.
+function QuoteSource({ quote, papers }: { quote: QuoteRef; papers: PaperMeta[] }) {
+  const paper = papers.find((p) => p.paper === quote.paper);
+  return (
+    <div class="ai-claim__source">
+      <p class="ai-quote">“{quote.quote}”</p>
+      <div class="ai-cite">
+        <span>{citation(papers, quote.paper)}</span>
+        {quote.page != null && <span class="ai-cite__page">p. {quote.page}</span>}
+        {paper?.doi && (
+          <a
+            class="ai-cite__doi"
+            href={`https://doi.org/${paper.doi}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            DOI <ExternalLinkIcon size={11} />
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface SummaryBodyProps {
   summary: SummaryBlock;
   papers: PaperMeta[];
@@ -20,9 +44,8 @@ interface SummaryBodyProps {
 /**
  * Renders the narrative prose with footnote markers linking to a numbered
  * "Claims & sources" list. Clicking a footnote scrolls to and flashes its claim.
- *
- * `summary.contradictions` is intentionally not rendered in this minimal
- * version; surfacing conflicting findings is a follow-up.
+ * Contradictions, when present, follow in a distinct "Where papers disagree"
+ * section with their own supporting quotes.
  */
 export function SummaryBody({ summary, papers }: SummaryBodyProps) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -72,31 +95,32 @@ export function SummaryBody({ summary, papers }: SummaryBodyProps) {
           <div key={n} id={`aiClaim-${n}`} class="ai-claim">
             <div class="ai-claim__num">{n}</div>
             <div class="ai-claim__body">
-              {claim.quotes.map((quote, qi) => {
-                const paper = papers.find((p) => p.paper === quote.paper);
-                return (
-                  <div key={qi} class="ai-claim__source">
-                    <p class="ai-quote">“{quote.quote}”</p>
-                    <div class="ai-cite">
-                      <span>{citation(papers, quote.paper)}</span>
-                      {paper?.doi && (
-                        <a
-                          class="ai-cite__doi"
-                          href={`https://doi.org/${paper.doi}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          DOI <ExternalLinkIcon size={11} />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              {claim.quotes.map((quote, qi) => (
+                <QuoteSource key={qi} quote={quote} papers={papers} />
+              ))}
             </div>
           </div>
         );
       })}
+
+      {summary.contradictions.length > 0 && (
+        <>
+          <p class="ai-contradictions-head">Where papers disagree</p>
+          {summary.contradictions.map((c, idx) => (
+            <div key={idx} class="ai-contradiction">
+              <div class="ai-contradiction__marker" aria-hidden="true">
+                <WarningIcon size={12} />
+              </div>
+              <div class="ai-claim__body">
+                <p class="ai-contradiction__text">{c.contradiction}</p>
+                {c.quotes.map((quote, qi) => (
+                  <QuoteSource key={qi} quote={quote} papers={papers} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 }
