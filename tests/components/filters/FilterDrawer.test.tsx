@@ -382,18 +382,26 @@ describe("FilterDrawer", () => {
   });
 
   describe("default expansion", () => {
-    function yearButton() {
-      return screen.getByRole("button", { name: /Publication year/ });
+    function cardButton(name: RegExp) {
+      return screen.getByRole("button", { name });
     }
 
-    test("expands the Publication year card by default", () => {
+    test("expands the year and country cards by default", () => {
       renderDrawer();
-      expect(yearButton().getAttribute("aria-expanded")).toBe("true");
+      expect(
+        cardButton(/Publication year/).getAttribute("aria-expanded"),
+      ).toBe("true");
+      expect(cardButton(/Country/).getAttribute("aria-expanded")).toBe("true");
     });
 
     test("collapses cards omitted from defaultExpandedFilters", () => {
       renderDrawer({ defaultExpandedFilters: [] });
-      expect(yearButton().getAttribute("aria-expanded")).toBe("false");
+      expect(
+        cardButton(/Publication year/).getAttribute("aria-expanded"),
+      ).toBe("false");
+      expect(cardButton(/Country/).getAttribute("aria-expanded")).toBe(
+        "false",
+      );
     });
   });
 
