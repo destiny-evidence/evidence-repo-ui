@@ -14,6 +14,9 @@ export type FilterItem =
 // Year, then the country facet. Every scheme follows alphabetically.
 export const DEFAULT_PINNED_FILTERS: readonly PinnedFilter[] = ["year", "country"];
 
+// The two built-in cards open expanded; scheme cards start collapsed.
+export const DEFAULT_EXPANDED_FILTERS: readonly PinnedFilter[] = ["year", "country"];
+
 interface OrderFilterItemsOptions {
   pinned?: readonly PinnedFilter[];
   // When false the "country" slot renders nothing (facet unavailable).

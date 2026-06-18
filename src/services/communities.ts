@@ -114,9 +114,12 @@ const COMMUNITIES: Community[] = [
     geographicSchemes: HPV_GEO_SCHEMES,
     pinnedFilters: [
       "https://vocab.aliveevidence.org/hpv/ConveningTheme",
+      "https://vocab.aliveevidence.org/hpv/ThematicFocusPrimary",
+      "https://vocab.aliveevidence.org/hpv/ThematicFocusSecondary",
       "year",
       ...HPV_GEO_SCHEMES,
     ],
+    defaultExpandedFilters: [],
     features: {
       ...DEFAULT_FEATURES,
       evidenceMap: true,

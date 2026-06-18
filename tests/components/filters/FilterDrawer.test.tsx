@@ -381,6 +381,30 @@ describe("FilterDrawer", () => {
     ).toBe(1);
   });
 
+  describe("default expansion", () => {
+    function cardButton(name: RegExp) {
+      return screen.getByRole("button", { name });
+    }
+
+    test("expands the year and country cards by default", () => {
+      renderDrawer();
+      expect(
+        cardButton(/Publication year/).getAttribute("aria-expanded"),
+      ).toBe("true");
+      expect(cardButton(/Country/).getAttribute("aria-expanded")).toBe("true");
+    });
+
+    test("collapses cards omitted from defaultExpandedFilters", () => {
+      renderDrawer({ defaultExpandedFilters: [] });
+      expect(
+        cardButton(/Publication year/).getAttribute("aria-expanded"),
+      ).toBe("false");
+      expect(cardButton(/Country/).getAttribute("aria-expanded")).toBe(
+        "false",
+      );
+    });
+  });
+
   describe("country filter integration", () => {
     test("renders the Country card after Publication year but before any scheme card", () => {
       const { container } = renderDrawer();

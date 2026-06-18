@@ -130,6 +130,22 @@ describe("communities", () => {
     );
   });
 
+  it("pins HPV's thematic-focus filters above publication year", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("hpv")?.pinnedFilters?.slice(0, 4)).toEqual([
+      "https://vocab.aliveevidence.org/hpv/ConveningTheme",
+      "https://vocab.aliveevidence.org/hpv/ThematicFocusPrimary",
+      "https://vocab.aliveevidence.org/hpv/ThematicFocusSecondary",
+      "year",
+    ]);
+  });
+
+  it("collapses HPV's filters by default, leaving ESEA on the default", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("hpv")?.defaultExpandedFilters).toEqual([]);
+    expect(findCommunity("esea")?.defaultExpandedFilters).toBeUndefined();
+  });
+
   it("excludes the HPV geographic schemes from result-card pills, none for ESEA", async () => {
     const { findCommunity } = await import("@/services/communities");
     expect(findCommunity("esea")?.pillExcludedSchemes).toEqual([]);
