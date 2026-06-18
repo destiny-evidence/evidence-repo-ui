@@ -41,7 +41,12 @@ function TooltipTrigger({
     const trigger = triggerRef.current;
     if (!shown || !bubble || !trigger) return;
 
-    bubble.showPopover?.(); // absent in jsdom and pre-2024 engines
+    // Re-runs when `text` changes mid-hover; showPopover() throws if already open.
+    try {
+      bubble.showPopover?.(); // absent in jsdom and pre-2024 engines
+    } catch {
+      // already open
+    }
 
     const r = trigger.getBoundingClientRect();
     const { offsetWidth: w, offsetHeight: h } = bubble;
