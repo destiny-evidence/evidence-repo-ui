@@ -51,6 +51,12 @@ describe("communities", () => {
     expect(hpv?.codingInstitution).toBeUndefined();
   });
 
+  it("resolves community slugs case-insensitively, so uppercase acronym URLs still work", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("ESEA")?.slug).toBe("esea");
+    expect(findCommunity("Hpv")?.slug).toBe("hpv");
+  });
+
   it("defaults to the HPV community", async () => {
     const { DEFAULT_COMMUNITY, DEFAULT_COMMUNITY_SLUG } = await import(
       "@/services/communities"

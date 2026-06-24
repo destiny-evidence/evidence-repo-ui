@@ -177,7 +177,8 @@ const COMMUNITIES: Community[] = [
 ];
 
 export function findCommunity(slug: string): Community | undefined {
-  return COMMUNITIES.find((c) => c.slug === slug);
+  // Slugs are acronyms (ESEA, HPV) registered lowercase; normalise input so a user typing /ESEA resolves.
+  return COMMUNITIES.find((c) => c.slug === slug.toLowerCase());
 }
 
 // Brand link / not-found fallback target while there's no true "/" landing
