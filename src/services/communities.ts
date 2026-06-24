@@ -176,6 +176,18 @@ const COMMUNITIES: Community[] = [
   },
 ];
 
+// findCommunity normalises lookups to lowercase, so an uppercase registered slug would be unreachable.
+export function assertLowercaseSlugs(communities: readonly Community[]): void {
+  for (const { slug } of communities) {
+    if (slug !== slug.toLowerCase()) {
+      throw new Error(
+        `Community slug "${slug}" must be lowercase (findCommunity normalises lookups to lowercase).`,
+      );
+    }
+  }
+}
+assertLowercaseSlugs(COMMUNITIES);
+
 export function findCommunity(slug: string): Community | undefined {
   // Slugs are acronyms (ESEA, HPV) registered lowercase; normalise input so a user typing /ESEA resolves.
   return COMMUNITIES.find((c) => c.slug === slug.toLowerCase());
