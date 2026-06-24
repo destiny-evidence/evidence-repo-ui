@@ -84,7 +84,7 @@ describe("AiSummaryDrawer", () => {
                 {
                   quote: "Catch-up vaccination remained cost-effective.",
                   paper: "anwari-2019",
-                  page: 12,
+                  page: "12",
                   terms: [2],
                 },
                 {
@@ -112,6 +112,15 @@ describe("AiSummaryDrawer", () => {
       .getByText(/poor value for money/i)
       .closest(".ai-claim__source");
     expect(pagelessCite?.querySelector(".ai-cite__page")).toBeNull();
+  });
+
+  test("renders non-integer page labels verbatim, not coerced to numbers", () => {
+    // The summariser sends page as a printed label (string), e.g. "S17", "iv",
+    // "12-14"; the mock carries such labels. They must render as-is, so a numeric
+    // coercion in the render path (which would show "p. NaN") fails this.
+    render(<AiSummaryDrawer ai={makeAi()} />);
+    expect(screen.getByText("p. S17")).toBeDefined();
+    expect(screen.getByText("p. iv")).toBeDefined();
   });
 
   test("clicking a footnote scrolls to and flashes its claim", () => {
