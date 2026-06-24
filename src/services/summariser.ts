@@ -16,7 +16,7 @@ export interface QuoteRef {
   quote: string;
   /** Identifies the source paper; joins to `PaperMeta.paper`. */
   paper: string;
-  page?: number | null;
+  page?: string | null;
   /** 1-based indices into the run's `terms` list. */
   terms: number[];
 }

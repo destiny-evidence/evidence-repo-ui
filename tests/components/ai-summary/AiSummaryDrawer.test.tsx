@@ -84,7 +84,7 @@ describe("AiSummaryDrawer", () => {
                 {
                   quote: "Catch-up vaccination remained cost-effective.",
                   paper: "anwari-2019",
-                  page: 12,
+                  page: "12",
                   terms: [2],
                 },
                 {
