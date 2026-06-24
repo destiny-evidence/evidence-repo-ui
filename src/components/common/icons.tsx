@@ -108,6 +108,27 @@ export function ChevronDownIcon({ size = "1em" }: { size?: number | string } = {
   );
 }
 
+/** Tray with a down arrow — used on download actions. */
+export function DownloadIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.75"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      width={size}
+      height={size}
+      aria-hidden="true"
+    >
+      <path d="M10 3v9" />
+      <path d="m6 8.5 4 4 4-4" />
+      <path d="M3.5 15.5h13" />
+    </svg>
+  );
+}
+
 /** Arrow pointing to upper-right — indicates an external link. */
 export function ExternalLinkIcon({ size = 12 }: { size?: number }) {
   return (

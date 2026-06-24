@@ -1,7 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { Drawer } from "@/components/common/Drawer";
 import { Spinner } from "@/components/common/Spinner";
-import { WarningIcon } from "@/components/common/icons";
+import { DownloadIcon, WarningIcon } from "@/components/common/icons";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 import type { AiSummaryContext, UseAiSummaryResult } from "@/hooks/useAiSummary";
@@ -199,6 +199,7 @@ function SavePdfButton({
       disabled={busy}
       aria-busy={busy}
     >
+      {!busy && <DownloadIcon size={14} />}
       {busy
         ? "Generating…"
         : failed
