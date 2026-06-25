@@ -155,6 +155,24 @@ describe("AiSummaryDrawer", () => {
     expect(note.textContent).toMatch(/1 couldn't be read/i);
   });
 
+  test("coverage note counts a paper listed in both papers and extraction_errors only once", () => {
+    // The service returns an unreadable paper (e.g. 413 too-large) in `papers`
+    // with empty metadata *and* in `extraction_errors`. Naively adding the two
+    // list lengths double-counts it ("5 of 6"); it must read "4 of 5".
+    const duplicated = MOCK_SUMMARY.papers[0].paper;
+    const ai = makeAi({
+      result: {
+        ...MOCK_SUMMARY,
+        papers: MOCK_SUMMARY.papers, // 5, one of which also errored
+        skipped_references: [],
+        extraction_errors: [{ paper: duplicated, error: "request_too_large" }],
+      },
+    });
+    render(<AiSummaryDrawer ai={ai} />);
+    const note = screen.getByText(/Based on 4 of 5 references/i);
+    expect(note.textContent).toMatch(/1 couldn't be read/i);
+  });
+
   test("coverage note reads cleanly at full coverage", () => {
     const ai = makeAi({
       result: { ...MOCK_SUMMARY, skipped_references: [], extraction_errors: [] },
