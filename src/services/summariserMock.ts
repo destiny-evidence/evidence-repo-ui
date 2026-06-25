@@ -59,14 +59,14 @@ export const MOCK_SUMMARY: SummariseResponse = {
             quote:
               "Extending vaccination to multiple older cohorts remained cost-effective even under conservative coverage and cost assumptions (regression coefficient β = 0.83).",
             paper: "abbas-2018",
-            page: 7,
+            page: "S17",
             terms: [2],
           },
           {
             quote:
               "Beyond the primary 9–14 cohort the incremental cost per DALY averted rose sharply (Δ ICER → above 1× GDP), exceeding the threshold in lower-coverage scenarios.",
             paper: "brisson-2021",
-            page: 14,
+            page: "iv",
             terms: [2],
           },
         ],

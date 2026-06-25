@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Community } from "@/types/models";
 
 function stubValidEnv() {
   vi.stubEnv("VITE_ESEA_VOCABULARY_URL", "https://vocab.example/v1");
@@ -49,6 +50,19 @@ describe("communities", () => {
     expect(hpv?.copy.searchPlaceholder).toBe("Search titles and abstracts");
     expect(typeof hpv?.features.evidenceMap).toBe("boolean");
     expect(hpv?.codingInstitution).toBeUndefined();
+  });
+
+  it("resolves community slugs case-insensitively, so uppercase acronym URLs still work", async () => {
+    const { findCommunity } = await import("@/services/communities");
+    expect(findCommunity("ESEA")?.slug).toBe("esea");
+    expect(findCommunity("Hpv")?.slug).toBe("hpv");
+  });
+
+  it("rejects a registered community slug that is not lowercase", async () => {
+    const { assertLowercaseSlugs } = await import("@/services/communities");
+    expect(() => assertLowercaseSlugs([{ slug: "ESEA" } as Community])).toThrow(
+      /lowercase/,
+    );
   });
 
   it("defaults to the HPV community", async () => {
