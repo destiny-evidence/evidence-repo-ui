@@ -11,6 +11,7 @@ import type { jsPDF as JsPdfDoc } from "jspdf";
 import type { AiSummaryContext } from "@/hooks/useAiSummary";
 import type {
   PaperMeta,
+  QuoteRef,
   SkipReason,
   SummariseResponse,
 } from "@/services/summariser";
@@ -344,11 +345,7 @@ export async function buildSummaryPdf(
   }
 
   // A verbatim quote (serif italic) + its citation line and optional DOI link.
-  function quoteBlock(quote: {
-    quote: string;
-    paper: string;
-    page?: number | null;
-  }): void {
+  function quoteBlock(quote: QuoteRef): void {
     paragraph(`"${quote.quote}"`, {
       size: 10.5,
       color: TEXT_QUOTE,
