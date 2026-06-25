@@ -4,7 +4,10 @@ import { Spinner } from "@/components/common/Spinner";
 import { DownloadIcon, WarningIcon } from "@/components/common/icons";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
-import type { AiSummaryContext, UseAiSummaryResult } from "@/hooks/useAiSummary";
+import type {
+  AiSummaryContext,
+  UseAiSummaryResult,
+} from "@/hooks/useAiSummary";
 import type { SkipReason, SummariseResponse } from "@/services/summariser";
 import { buildSummaryFilename, downloadSummaryPdf } from "@/services/export/summaryPdf";
 import { formatTotal } from "@/utils/searchTotal";
@@ -32,7 +35,8 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
   // Closing should never abort an in-flight job — only the explicit "Cancel"
   // does. While generating, close drops it to the background chip; once there's
   // nothing running, close clears the finished summary.
-  const handleClose = ai.status === "generating" ? ai.runInBackground : ai.dismiss;
+  const handleClose =
+    ai.status === "generating" ? ai.runInBackground : ai.dismiss;
   const context = ai.context;
 
   return (
@@ -77,10 +81,7 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
       {ai.status === "done" && ai.result && (
         <>
           <Disclaimer />
-          <SummaryBody
-            summary={ai.result.summary}
-            papers={ai.result.papers}
-          />
+          <SummaryBody summary={ai.result.summary} papers={ai.result.papers} />
           <CoverageNote result={ai.result} />
         </>
       )}
@@ -90,7 +91,9 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
 
 // How many references the summary actually drew on, and which were left out.
 function CoverageNote({ result }: { result: SummariseResponse }) {
-  const used = result.papers.length;
+  // Avoid double-counting papers with extraction
+  const erroredIds = new Set(result.extraction_errors.map((err) => err.paper));
+  const used = result.papers.filter((p) => !erroredIds.has(p.paper)).length;
 
   const reasonCounts = new Map<SkipReason, number>();
   for (const ref of result.skipped_references) {
@@ -103,7 +106,8 @@ function CoverageNote({ result }: { result: SummariseResponse }) {
     clauses.push(`${result.extraction_errors.length} couldn't be read`);
   }
 
-  const leftOut = result.skipped_references.length + result.extraction_errors.length;
+  const leftOut =
+    result.skipped_references.length + result.extraction_errors.length;
   const total = used + leftOut;
 
   return (
