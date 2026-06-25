@@ -1,11 +1,12 @@
 import { useEffect, useState } from "preact/hooks";
 import { Drawer } from "@/components/common/Drawer";
 import { Spinner } from "@/components/common/Spinner";
-import { WarningIcon } from "@/components/common/icons";
+import { DownloadIcon, WarningIcon } from "@/components/common/icons";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 import type { AiSummaryContext, UseAiSummaryResult } from "@/hooks/useAiSummary";
 import type { SkipReason, SummariseResponse } from "@/services/summariser";
+import { buildSummaryFilename, downloadSummaryPdf } from "@/services/export/summaryPdf";
 import { formatTotal } from "@/utils/searchTotal";
 import { SummaryBody } from "./renderSummary";
 import "./ai-summary.css";
@@ -160,6 +161,54 @@ function useCurrentUrl(): string {
   return url;
 }
 
+// Generates the PDF on click and triggers a one-click download
+function SavePdfButton({
+  result,
+  context,
+  originUrl,
+}: {
+  result: SummariseResponse;
+  context: AiSummaryContext;
+  originUrl: string | null;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  async function handleClick() {
+    setBusy(true);
+    setFailed(false);
+    try {
+      await downloadSummaryPdf(
+        result,
+        context,
+        buildSummaryFilename(result.summary.narrative[0]?.header),
+        originUrl,
+      );
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      class="ai-btn"
+      onClick={handleClick}
+      disabled={busy}
+      aria-busy={busy}
+    >
+      {!busy && <DownloadIcon size={14} />}
+      {busy
+        ? "Generating…"
+        : failed
+          ? "Couldn't create PDF — retry"
+          : "Download"}
+    </button>
+  );
+}
+
 function DrawerFooter({ ai }: { ai: UseAiSummaryResult }) {
   const currentUrl = useCurrentUrl();
   // Only worth offering "Open this search" from a different page.
@@ -184,9 +233,15 @@ function DrawerFooter({ ai }: { ai: UseAiSummaryResult }) {
 
   // The footer only applies to a produced summary — not the error state.
   if (ai.status !== "done") return null;
-  if (!showOpenSearch && !AI_SUMMARY_FLAG_FORM_URL) return null;
   return (
     <footer class="ai-drawer__footer">
+      {ai.result && ai.context && (
+        <SavePdfButton
+          result={ai.result}
+          context={ai.context}
+          originUrl={ai.originUrl}
+        />
+      )}
       {showOpenSearch && (
         <a class="ai-btn" href={ai.originUrl ?? undefined}>
           Open this search ↗

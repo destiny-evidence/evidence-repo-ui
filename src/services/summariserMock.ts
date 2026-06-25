@@ -57,14 +57,14 @@ export const MOCK_SUMMARY: SummariseResponse = {
         quotes: [
           {
             quote:
-              "Extending vaccination to multiple older cohorts remained cost-effective even under conservative coverage and cost assumptions.",
+              "Extending vaccination to multiple older cohorts remained cost-effective even under conservative coverage and cost assumptions (regression coefficient β = 0.83).",
             paper: "abbas-2018",
             page: "S17",
             terms: [2],
           },
           {
             quote:
-              "Beyond the primary 9–14 cohort the incremental cost per DALY averted rose sharply, exceeding the threshold in lower-coverage scenarios.",
+              "Beyond the primary 9–14 cohort the incremental cost per DALY averted rose sharply (Δ ICER → above 1× GDP), exceeding the threshold in lower-coverage scenarios.",
             paper: "brisson-2021",
             page: "iv",
             terms: [2],
@@ -79,7 +79,7 @@ export const MOCK_SUMMARY: SummariseResponse = {
         quotes: [
           {
             quote:
-              "Bivalent HPV vaccination delivered through the national immunisation programme was highly cost-effective at all coverage levels assessed.",
+              "Bivalent HPV vaccination delivered through the national immunisation programme was highly cost-effective at all coverage levels assessed (ICER ≤ 0.5× GDP per capita).",
             paper: "anwari-2019",
             terms: [1, 2],
           },
@@ -91,7 +91,7 @@ export const MOCK_SUMMARY: SummariseResponse = {
         quotes: [
           {
             quote:
-              "Across every modelled scenario the incremental cost per DALY averted remained below one times GDP per capita.",
+              "Across every modelled scenario the incremental cost per DALY averted remained below one times GDP per capita (mean ICER US$142 ± 18 per DALY).",
             paper: "canfell-2020",
             terms: [2],
           },
@@ -103,7 +103,7 @@ export const MOCK_SUMMARY: SummariseResponse = {
         quotes: [
           {
             quote:
-              "Equity impact was greatest among the lowest income quintiles, where baseline cervical-cancer burden was highest.",
+              "Equity impact was greatest among the lowest income quintiles, where baseline cervical-cancer burden was highest (χ² = 14.2, p ≤ 0.001).",
             paper: "abbas-2024",
             terms: [1],
           },
@@ -115,7 +115,7 @@ export const MOCK_SUMMARY: SummariseResponse = {
         quotes: [
           {
             quote:
-              "Vaccinating a single cohort of 9–14-year-old girls averted the majority of projected lifetime cervical-cancer cases; multi-cohort catch-up added further cases averted at modest additional cost.",
+              "Vaccinating a single cohort of 9–14-year-old girls averted the majority of projected lifetime cervical-cancer cases; multi-cohort catch-up added further cases averted at modest additional cost (antigen dose 20 μg; efficacy ≈ 95%).",
             paper: "abbas-2018",
             terms: [1, 2],
           },
@@ -127,7 +127,7 @@ export const MOCK_SUMMARY: SummariseResponse = {
         quotes: [
           {
             quote:
-              "Estimates derive from a transmission-dynamic model calibrated to local HPV prevalence rather than from empirical trial data.",
+              "Estimates derive from a transmission-dynamic model calibrated to local HPV prevalence (basic reproduction number ≈ 1.2, α = 0.05) rather than from empirical trial data.",
             paper: "brisson-2021",
             terms: [2],
           },
@@ -139,11 +139,11 @@ export const MOCK_SUMMARY: SummariseResponse = {
         header: "Cost-effectiveness in Afghanistan",
         sentences: [
           {
-            text: "Across the results at this intersection, bivalent HPV vaccination in Afghanistan is consistently found to be highly cost-effective at national coverage levels.",
+            text: "Across the results at this intersection, bivalent HPV vaccination in Afghanistan is consistently found to be highly cost-effective at national coverage levels (≥ 90% uptake).",
             claims: [1],
           },
           {
-            text: "Modelled programmes remain below the WHO cost-effectiveness threshold of one times GDP per capita across every scenario tested.",
+            text: "Modelled programmes remain below the WHO cost-effectiveness threshold of one times GDP per capita (≤ 1× GDP) across every scenario tested.",
             claims: [2],
           },
           {
