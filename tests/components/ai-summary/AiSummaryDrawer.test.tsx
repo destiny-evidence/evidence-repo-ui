@@ -15,7 +15,9 @@ const context = {
   countNoun: "references",
 };
 
-function makeAi(overrides: Partial<UseAiSummaryResult> = {}): UseAiSummaryResult {
+function makeAi(
+  overrides: Partial<UseAiSummaryResult> = {},
+): UseAiSummaryResult {
   return {
     status: "done",
     minimized: false,
@@ -49,7 +51,9 @@ describe("AiSummaryDrawer", () => {
   test("renders the result: prose, context chips, and claims", () => {
     render(<AiSummaryDrawer ai={makeAi()} />);
 
-    expect(screen.getByText(/highly cost-effective at national coverage/i)).toBeDefined();
+    expect(
+      screen.getByText(/highly cost-effective at national coverage/i),
+    ).toBeDefined();
     expect(screen.getByText("Afghanistan")).toBeDefined();
     expect(screen.getByText("15 references")).toBeDefined();
     // One numbered claim per claim in the summary.
@@ -124,9 +128,7 @@ describe("AiSummaryDrawer", () => {
   });
 
   test("clicking a footnote scrolls to and flashes its claim", () => {
-    const { container } = render(
-      <AiSummaryDrawer ai={makeAi()} />,
-    );
+    const { container } = render(<AiSummaryDrawer ai={makeAi()} />);
     const firstFootnote = container.querySelector(".ai-fn") as HTMLElement;
     fireEvent.click(firstFootnote);
 
@@ -156,9 +158,6 @@ describe("AiSummaryDrawer", () => {
   });
 
   test("coverage note counts a paper listed in both papers and extraction_errors only once", () => {
-    // The service returns an unreadable paper (e.g. 413 too-large) in `papers`
-    // with empty metadata *and* in `extraction_errors`. Naively adding the two
-    // list lengths double-counts it ("5 of 6"); it must read "4 of 5".
     const duplicated = MOCK_SUMMARY.papers[0].paper;
     const ai = makeAi({
       result: {
@@ -175,7 +174,11 @@ describe("AiSummaryDrawer", () => {
 
   test("coverage note reads cleanly at full coverage", () => {
     const ai = makeAi({
-      result: { ...MOCK_SUMMARY, skipped_references: [], extraction_errors: [] },
+      result: {
+        ...MOCK_SUMMARY,
+        skipped_references: [],
+        extraction_errors: [],
+      },
     });
     render(<AiSummaryDrawer ai={ai} />);
     expect(screen.getByText(/Based on 5 references\./i)).toBeDefined();
@@ -192,11 +195,12 @@ describe("AiSummaryDrawer", () => {
     render(
       <AiSummaryDrawer
         ai={makeAi({ status: "error", result: null, errorMessage: "boom" })}
-       
       />,
     );
     expect(screen.getByRole("alert")).toHaveTextContent("boom");
-    expect(screen.queryByRole("link", { name: /flag this summary/i })).toBeNull();
+    expect(
+      screen.queryByRole("link", { name: /flag this summary/i }),
+    ).toBeNull();
   });
 
   test("shows a loading state with Cancel and Run in background while generating", () => {
@@ -205,7 +209,9 @@ describe("AiSummaryDrawer", () => {
     );
     expect(screen.getByText(/summarising 15 references/i)).toBeDefined();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDefined();
-    expect(screen.getByRole("button", { name: "Run in background" })).toBeDefined();
+    expect(
+      screen.getByRole("button", { name: "Run in background" }),
+    ).toBeDefined();
   });
 
   test("Run in background invokes the hook action", () => {
