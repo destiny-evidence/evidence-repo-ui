@@ -1,9 +1,10 @@
 /**
- * Client-side AI-summary PDF via jsPDF's standard fonts: real text (not raster),
- * lazy-loaded, no print dialog. We can't embed our brand woff2 faces — jsPDF
- * needs TTF and the webfont licence forbids both conversion and PDF embedding —
- * so the styling maps our hierarchy onto the standard fonts (Helvetica body,
- * Times-italic quotes, Courier section labels). Layout mirrors the drawer.
+ * Client-side AI-summary PDF. Embeds the DejaVu family (sans / serif / mono) so
+ * Greek, maths and other non-Latin-1 symbols render faithfully — jsPDF's built-in
+ * fonts are WinAnsi-only and would corrupt them into plausible-but-wrong glyphs.
+ * DejaVu is permissively licensed for embedding (unlike our Klim brand faces).
+ * The TTFs load on demand alongside the lazy jsPDF chunk, so they cost nothing
+ * until a user exports. Layout mirrors the on-screen drawer (renderSummary.tsx).
  */
 
 import type { jsPDF as JsPdfDoc } from "jspdf";
@@ -14,15 +15,37 @@ import type {
   SummariseResponse,
 } from "@/services/summariser";
 import { formatTotal } from "@/utils/searchTotal";
+import sansUrl from "./fonts/DejaVuSans.ttf?url";
+import sansBoldUrl from "./fonts/DejaVuSans-Bold.ttf?url";
+import serifItalicUrl from "./fonts/DejaVuSerif-Italic.ttf?url";
+import monoUrl from "./fonts/DejaVuSansMono.ttf?url";
 
 type RGB = readonly [number, number, number];
-type StdFont = "helvetica" | "times" | "courier";
-type FontStyle = "normal" | "bold" | "italic" | "bolditalic";
+type PdfFont = "DejaVuSans" | "DejaVuSerif" | "DejaVuSansMono";
+type FontStyle = "normal" | "bold" | "italic";
+
+const FONT_SANS: PdfFont = "DejaVuSans"; // body, title, inline markers, links
+const FONT_SERIF: PdfFont = "DejaVuSerif"; // quotes (italic)
+const FONT_MONO: PdfFont = "DejaVuSansMono"; // section labels
+
+// jsPDF embeds one TTF per (family, style); these are every face the layout uses.
+const FONT_FACES: ReadonlyArray<{
+  url: string;
+  file: string;
+  family: PdfFont;
+  style: FontStyle;
+}> = [
+  { url: sansUrl, file: "DejaVuSans.ttf", family: FONT_SANS, style: "normal" },
+  { url: sansBoldUrl, file: "DejaVuSans-Bold.ttf", family: FONT_SANS, style: "bold" },
+  { url: serifItalicUrl, file: "DejaVuSerif-Italic.ttf", family: FONT_SERIF, style: "italic" },
+  { url: monoUrl, file: "DejaVuSansMono.ttf", family: FONT_MONO, style: "normal" },
+];
 
 // App design tokens (variables.css), duplicated since jsPDF can't read CSS vars.
 const TEXT_PRIMARY: RGB = [22, 27, 34];
 const TEXT_SECONDARY: RGB = [66, 74, 83];
 const TEXT_TERTIARY: RGB = [110, 119, 129];
+const TEXT_QUOTE: RGB = [92, 100, 110]; // a touch lighter than secondary, for quotes
 const ACCENT: RGB = [36, 57, 107];
 const WARNING_TEXT: RGB = [122, 90, 0];
 const WARNING_LIGHT: RGB = [254, 243, 199];
@@ -36,14 +59,26 @@ const SKIP_REASON_TEXT: Record<SkipReason, string> = {
   download_failed: "couldn't be downloaded",
 };
 
-/** Fold smart punctuation to ASCII; the standard PDF fonts only render Latin-1. */
-export function pdfSafe(text: string): string {
-  return text
-    .replace(/[‘’‚‛]/g, "'")
-    .replace(/[“”„‟]/g, '"')
-    .replace(/[–—]/g, "-")
-    .replace(/…/g, "...")
-    .replace(/[←-⇿]/g, ""); // arrows block
+/** Base64-encode an ArrayBuffer in chunks (sidesteps the arg limit on btoa). */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
+/** Fetch the TTF assets and register every face with the document. */
+async function registerFonts(doc: JsPdfDoc): Promise<void> {
+  await Promise.all(
+    FONT_FACES.map(async (face) => {
+      const buffer = await fetch(face.url).then((r) => r.arrayBuffer());
+      doc.addFileToVFS(face.file, arrayBufferToBase64(buffer));
+      doc.addFont(face.file, face.family, face.style);
+    }),
+  );
 }
 
 /** Author-year citation for a quote's source paper. Mirrors renderSummary.tsx. */
@@ -98,17 +133,17 @@ function slugifyHeadline(text: string, maxLen = 60): string {
 }
 
 /**
- * `ai-summary-<headline>-YYYYMMDD.pdf`. `headline` is the summary's lead
- * narrative header (cleaner than concatenated filters); falls back to a plain
- * dated name when absent.
+ * `ai-summary-<headline>-YYYYMMDD.pdf`, dated in the user's local timezone.
+ * `headline` is the summary's lead narrative header (cleaner than concatenated
+ * filters); falls back to a plain dated name when absent.
  */
 export function buildSummaryFilename(
   headline: string | null | undefined,
   now: Date = new Date(),
 ): string {
-  const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(now.getUTCDate()).padStart(2, "0");
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
   const slug = headline ? slugifyHeadline(headline) : "";
   const stem = slug ? `ai-summary-${slug}` : "ai-summary";
   return `${stem}-${y}${m}${d}.pdf`;
@@ -138,6 +173,7 @@ export async function buildSummaryPdf(
 ): Promise<JsPdfDoc> {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
+  await registerFonts(doc);
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -164,7 +200,7 @@ export async function buildSummaryPdf(
   interface TextOptions {
     size: number;
     color: RGB;
-    font?: StdFont;
+    font?: PdfFont;
     style?: FontStyle;
     indent?: number;
     gapAfter?: number;
@@ -174,13 +210,13 @@ export async function buildSummaryPdf(
   }
 
   function applyFont(opts: TextOptions): void {
-    doc.setFont(opts.font ?? "helvetica", opts.style ?? "normal");
+    doc.setFont(opts.font ?? FONT_SANS, opts.style ?? "normal");
     doc.setFontSize(opts.size);
     setColor(opts.color);
   }
 
   function paragraph(text: string, opts: TextOptions): void {
-    const clean = pdfSafe(opts.caps ? text.toUpperCase() : text);
+    const clean = opts.caps ? text.toUpperCase() : text;
     if (!clean) return;
     const indent = opts.indent ?? 0;
     const charSpace = opts.charSpace ?? 0;
@@ -202,14 +238,13 @@ export async function buildSummaryPdf(
     label: string,
     url: string,
     x: number,
-    opts: { size: number; font?: StdFont },
+    opts: { size: number; font?: PdfFont },
   ): number {
-    const clean = pdfSafe(label);
-    doc.setFont(opts.font ?? "helvetica", "normal");
+    doc.setFont(opts.font ?? FONT_SANS, "normal");
     doc.setFontSize(opts.size);
     setColor(ACCENT);
-    doc.text(clean, x, y, { baseline: "top" });
-    const w = doc.getTextWidth(clean);
+    doc.text(label, x, y, { baseline: "top" });
+    const w = doc.getTextWidth(label);
     const underlineY = y + opts.size * 1.05;
     setStroke(ACCENT);
     doc.setLineWidth(0.4);
@@ -226,15 +261,15 @@ export async function buildSummaryPdf(
     y += 12;
   }
 
-  // Mono-style label (Courier regular — bold reads too heavy), uppercase, over a
-  // rule. `reserve` keeps the heading with its first content so it isn't orphaned.
+  // Mono section label, uppercase, lightly tracked, over a rule. `reserve` keeps
+  // the heading with its first content so it isn't orphaned at a page foot.
   function sectionHead(label: string, color: RGB, reserve = 84): void {
     ensureSpace(reserve);
     hairline();
     paragraph(label, {
       size: 8,
       color,
-      font: "courier",
+      font: FONT_MONO,
       caps: true,
       charSpace: 0.5,
       gapAfter: 12,
@@ -246,7 +281,7 @@ export async function buildSummaryPdf(
     const r = 8;
     setFill(fill);
     doc.circle(PAGE_MARGIN + r, y + r, r, "F");
-    doc.setFont("courier", "bold");
+    doc.setFont(FONT_SANS, "bold");
     doc.setFontSize(9);
     setColor(text);
     doc.text(glyph, PAGE_MARGIN + r, y + r + 0.5, {
@@ -272,7 +307,7 @@ export async function buildSummaryPdf(
     };
 
     const drawWord = (word: string) => {
-      doc.setFont("helvetica", "normal");
+      doc.setFont(FONT_SANS, "normal");
       doc.setFontSize(opts.size);
       setColor(opts.color);
       const ww = doc.getTextWidth(word);
@@ -287,7 +322,7 @@ export async function buildSummaryPdf(
     const drawMarker = (n: number) => {
       const mSize = opts.size * 0.82;
       const label = `[${n}]`;
-      doc.setFont("helvetica", "normal");
+      doc.setFont(FONT_SANS, "normal");
       doc.setFontSize(mSize);
       setColor(ACCENT);
       const w = doc.getTextWidth(label);
@@ -299,7 +334,7 @@ export async function buildSummaryPdf(
     };
 
     sentences.forEach((s) => {
-      pdfSafe(s.text)
+      s.text
         .split(/\s+/)
         .filter(Boolean)
         .forEach(drawWord);
@@ -316,8 +351,8 @@ export async function buildSummaryPdf(
   }): void {
     paragraph(`"${quote.quote}"`, {
       size: 10.5,
-      color: TEXT_SECONDARY,
-      font: "times",
+      color: TEXT_QUOTE,
+      font: FONT_SERIF,
       style: "italic",
       indent: 28,
       gapAfter: 3,
@@ -337,7 +372,7 @@ export async function buildSummaryPdf(
       ensureSpace(lineHeight);
       drawLink(`doi.org/${paper.doi}`, `https://doi.org/${paper.doi}`, PAGE_MARGIN + 28, {
         size: 8.5,
-        font: "courier",
+        font: FONT_MONO,
       });
       y += lineHeight + 6;
     } else {
@@ -346,7 +381,7 @@ export async function buildSummaryPdf(
   }
 
   // ── Header ────────────────────────────────────────────────────────────
-  doc.setFont("helvetica", "bold");
+  doc.setFont(FONT_SANS, "bold");
   doc.setFontSize(20);
   setColor(ACCENT);
   doc.text("AI summary", PAGE_MARGIN, y, { baseline: "top" });
@@ -359,7 +394,7 @@ export async function buildSummaryPdf(
   doc.text("BETA", PAGE_MARGIN + titleW + 8 + 4, y + 5, { baseline: "top" });
   y += 28;
 
-  const termStr = context.terms.map(pdfSafe).join("  ·  ");
+  const termStr = context.terms.join("  ·  ");
   const countStr = `${formatTotal(context.count)} ${context.countNoun}`;
   paragraph(termStr ? `${termStr}  -  ${countStr}` : countStr, {
     size: 9.5,
@@ -372,8 +407,8 @@ export async function buildSummaryPdf(
     month: "long",
     day: "numeric",
   });
-  const genPrefix = pdfSafe(`Generated ${generated} from `);
-  doc.setFont("helvetica", "normal");
+  const genPrefix = `Generated ${generated} from `;
+  doc.setFont(FONT_SANS, "normal");
   doc.setFontSize(8.5);
   setColor(TEXT_TERTIARY);
   ensureSpace(8.5 * 1.4);
@@ -385,10 +420,9 @@ export async function buildSummaryPdf(
   y += 8.5 * 1.4 + 12;
 
   // ── Disclaimer banner ─────────────────────────────────────────────────
-  const disclaimer = pdfSafe(
-    "AI-generated from the papers at this intersection. Quotes are extracted verbatim — verify against the sources before using in synthesis.",
-  );
-  doc.setFont("helvetica", "normal");
+  const disclaimer =
+    "AI-generated from the papers at this intersection. Quotes are extracted verbatim — verify against the sources before using in synthesis.";
+  doc.setFont(FONT_SANS, "normal");
   doc.setFontSize(9);
   const padX = 10;
   const padY = 8;
@@ -416,7 +450,7 @@ export async function buildSummaryPdf(
       paragraph(para.header, {
         size: 8,
         color: TEXT_TERTIARY,
-        font: "courier",
+        font: FONT_MONO,
         caps: true,
         charSpace: 0.5,
         gapAfter: 6,

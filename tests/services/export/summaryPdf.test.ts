@@ -1,10 +1,11 @@
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, beforeAll, afterAll } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   buildSummaryFilename,
   buildSummaryPdf,
   citation,
   coverageNoteText,
-  pdfSafe,
 } from "@/services/export/summaryPdf";
 import { MOCK_SUMMARY } from "@/services/summariserMock";
 import type { PaperMeta, SummariseResponse } from "@/services/summariser";
@@ -14,20 +15,6 @@ const context = {
   count: { count: 15, is_lower_bound: false },
   countNoun: "references",
 };
-
-describe("pdfSafe", () => {
-  test("folds smart punctuation to ASCII the standard fonts can render", () => {
-    expect(pdfSafe("“quote” — it’s 90%…")).toBe('"quote" - it\'s 90%...');
-  });
-
-  test("strips arrow glyphs", () => {
-    expect(pdfSafe("open this search ↗")).toBe("open this search ");
-  });
-
-  test("preserves interior whitespace (inline composition relies on it)", () => {
-    expect(pdfSafe("from ")).toBe("from ");
-  });
-});
 
 describe("citation", () => {
   test("single author with year", () => {
@@ -103,9 +90,11 @@ describe("coverageNoteText", () => {
 });
 
 describe("buildSummaryFilename", () => {
-  const at = new Date("2026-06-24T09:30:00Z");
+  // Local-constructed so getFullYear/Month/Date are deterministic regardless of
+  // the runner's timezone (the filename now uses the local date).
+  const at = new Date(2026, 5, 24, 9, 30);
 
-  test("slugifies the lead narrative header and stamps a UTC date", () => {
+  test("slugifies the lead narrative header and stamps the local date", () => {
     expect(buildSummaryFilename("Cost-effectiveness in Afghanistan", at)).toBe(
       "ai-summary-cost-effectiveness-in-afghanistan-20260624.pdf",
     );
@@ -135,15 +124,39 @@ describe("buildSummaryFilename", () => {
 });
 
 describe("buildSummaryPdf", () => {
-  test("renders the fixture and embeds clickable links without throwing", async () => {
+  // jsdom can't fetch the bundled font assets, so serve the real TTFs from disk
+  // by basename — this also verifies the embedded faces are valid. Vitest runs
+  // from the repo root, so resolve relative to cwd.
+  const fontDir = resolve(process.cwd(), "src/services/export/fonts");
+  const realFetch = global.fetch;
+
+  beforeAll(() => {
+    global.fetch = (async (input: RequestInfo | URL) => {
+      const name = String(input).split("?")[0].split("/").pop()!;
+      const buf = readFileSync(resolve(fontDir, name));
+      return {
+        arrayBuffer: async () =>
+          buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      } as Response;
+    }) as typeof fetch;
+  });
+
+  afterAll(() => {
+    global.fetch = realFetch;
+  });
+
+  test("renders the fixture, embeds the font and clickable links", async () => {
     const doc = await buildSummaryPdf(MOCK_SUMMARY, context, "/hpv?q=hpv");
     const bytes = doc.output("arraybuffer") as ArrayBuffer;
     const pdf = new TextDecoder("latin1").decode(new Uint8Array(bytes));
-    // Uncompressed by default, so link annotations appear in plaintext.
+    // Embedded TrueType faces (the dictionary key is plaintext even if the
+    // stream is compressed).
+    expect(pdf).toContain("/FontFile2");
+    expect(pdf).toContain("DejaVu");
+    // Link annotations appear in plaintext (streams are uncompressed).
     expect(pdf).toContain("/URI");
     expect(pdf).toContain("https://doi.org/"); // a source DOI link
     expect(pdf).toContain("q=hpv"); // the resolved "this search" link
-    // Inline [n] markers become internal jumps to their claims.
-    expect(pdf).toContain("/Dest");
+    expect(pdf).toContain("/Dest"); // inline [n] → claim jumps
   });
 });
