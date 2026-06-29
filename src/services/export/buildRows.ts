@@ -106,6 +106,17 @@ const ARM_KEY_FIELDS = [
 
 type PlainRecord = Record<string, unknown>;
 
+/** Normalise a JSON-LD value to a list: absent → [], array → itself, single → [value]. */
+export function ensureArray(v: unknown): unknown[] {
+  if (v === undefined || v === null) return [];
+  return Array.isArray(v) ? v : [v];
+}
+
+/** Take the first element of an array (any type), else the value itself. */
+function first(v: unknown): unknown {
+  return Array.isArray(v) ? v[0] : v;
+}
+
 /**
  * Round numeric cells to 5 decimal places.
  * Pass-through for non-finite numbers and non-numeric values.
@@ -176,8 +187,7 @@ function supportingText(annotation: unknown): string | null {
  * delimiter-separated string.
  */
 function joinCodedIds(annotations: unknown, vocab: ConceptResolver): string {
-  const list = Array.isArray(annotations) ? annotations : [];
-  return list
+  return ensureArray(annotations)
     .map((a) => codedId(a, vocab))
     .filter((v): v is string | number | boolean => v != null && v !== "")
     .join("; ");
@@ -188,8 +198,7 @@ function joinCodedIds(annotations: unknown, vocab: ConceptResolver): string {
  * stringifying numerics. Nullish entries are dropped.
  */
 function joinCodedValues(annotations: unknown): string {
-  const list = Array.isArray(annotations) ? annotations : [];
-  return list
+  return ensureArray(annotations)
     .map((a) => codedValue(a))
     .filter((v): v is string | number | boolean => v != null)
     .map((v) => String(v))
@@ -201,8 +210,7 @@ function joinCodedValues(annotations: unknown): string {
  * between entries.
  */
 function joinSupportingTexts(annotations: unknown): string {
-  const list = Array.isArray(annotations) ? annotations : [];
-  return list
+  return ensureArray(annotations)
     .map((a) => supportingText(a))
     .filter((v): v is string => v != null && v !== "")
     .join(" | ");
@@ -213,11 +221,12 @@ function joinSupportingTexts(annotations: unknown): string {
  * dict (`{"@id": "_:foo", ...}`) or a bare string ref (`"_:foo"`).
  */
 function refId(value: unknown): string | null {
-  if (isDict(value)) {
-    const id = value["@id"];
+  const v = first(value);
+  if (isDict(v)) {
+    const id = v["@id"];
     return typeof id === "string" ? id : null;
   }
-  if (typeof value === "string") return value;
+  if (typeof v === "string") return v;
   return null;
 }
 
@@ -231,10 +240,11 @@ function buildBlankNodeLookup(findings: Finding[]): Map<string, PlainRecord> {
   const lookup = new Map<string, PlainRecord>();
   for (const finding of findings) {
     for (const key of ["comparedTo", "evaluates", "hasContext", "sampleSize", "attrition", "cost"] as const) {
-      const value = finding[key];
-      if (isDict(value)) {
-        const id = value["@id"];
-        if (typeof id === "string") lookup.set(id, value);
+      for (const value of ensureArray(finding[key])) {
+        if (isDict(value)) {
+          const id = value["@id"];
+          if (typeof id === "string") lookup.set(id, value as PlainRecord);
+        }
       }
     }
   }
@@ -251,8 +261,9 @@ type Resolver = (value: unknown) => PlainRecord;
  */
 function makeResolver(lookup: Map<string, PlainRecord>): Resolver {
   return (value) => {
-    if (typeof value === "string") return lookup.get(value) ?? {};
-    if (isDict(value)) return value;
+    const v = first(value);
+    if (typeof v === "string") return lookup.get(v) ?? {};
+    if (isDict(v)) return v;
     return {};
   };
 }
@@ -332,7 +343,6 @@ export function buildInvestigationRow(
   vocab: ConceptResolver,
   codingInstitution?: CodingInstitutionConfig,
 ): InvestigationRow {
-  const docType = investigation.documentType ?? {};
   const authors = bibliographic?.authorship
     ? bibliographic.authorship.map((a) => a.display_name).join("; ")
     : null;
@@ -344,8 +354,8 @@ export function buildInvestigationRow(
     publication_year: bibliographic?.publication_year ?? null,
     doi: extractDoi(reference.identifiers ?? null),
     openalex_id: extractOpenAlexId(reference.identifiers ?? null),
-    documentType: codedId(docType, vocab),
-    studyDesign: codedId(investigation.studyDesign ?? {}, vocab),
+    documentType: joinCodedIds(ensureArray(investigation.documentType), vocab),
+    studyDesign: joinCodedIds(ensureArray(investigation.studyDesign), vocab),
     vocabulary: linked.content.vocabulary_uri,
   };
 }
@@ -381,14 +391,14 @@ export function buildFindingRows(
       intervention_name: typeof intervention["name"] === "string" ? (intervention["name"] as string) : null,
       intervention_description: flattenDescription(intervention["description"]),
       control_description: flattenDescription(control["description"]),
-      intervention_duration_value: codedValue(intervention["duration"]),
-      intervention_duration_supportingText: supportingText(intervention["duration"]),
+      intervention_duration_value: codedValue(first(intervention["duration"])),
+      intervention_duration_supportingText: supportingText(first(intervention["duration"])),
       intervention_educationTheme: joinCodedIds(intervention["educationTheme"], vocab),
       intervention_educationTheme_supportingText: joinSupportingTexts(intervention["educationTheme"]),
-      intervention_implementationFidelity: codedId(intervention["implementationFidelity"], vocab),
-      intervention_implementationFidelity_supportingText: supportingText(intervention["implementationFidelity"]),
-      intervention_implementerType: codedId(intervention["implementerType"], vocab),
-      intervention_implementerType_supportingText: supportingText(intervention["implementerType"]),
+      intervention_implementationFidelity: joinCodedIds(ensureArray(intervention["implementationFidelity"]), vocab),
+      intervention_implementationFidelity_supportingText: joinSupportingTexts(ensureArray(intervention["implementationFidelity"])),
+      intervention_implementerType: joinCodedIds(ensureArray(intervention["implementerType"]), vocab),
+      intervention_implementerType_supportingText: joinSupportingTexts(ensureArray(intervention["implementerType"])),
       sampleSize_value: codedValue(sampleSize),
       sampleSize_supportingText: supportingText(sampleSize),
       attrition_value: codedValue(attrition),
@@ -425,11 +435,12 @@ export function buildOutcomeRows(
   for (let i = 0; i < findings.length; i++) {
     const finding = findings[i]!;
     const armId = armIds[i]!;
-    const outcomeBlock = isDict(finding["hasOutcome"]) ? (finding["hasOutcome"] as PlainRecord) : {};
+    const outcomeRaw = first(finding["hasOutcome"]);
+    const outcomeBlock = isDict(outcomeRaw) ? (outcomeRaw as PlainRecord) : {};
     const outcomeConcepts = joinCodedIds(outcomeBlock["outcome"], vocab);
     const outcomeConceptsSupporting = joinSupportingTexts(outcomeBlock["outcome"]);
 
-    const armData = Array.isArray(finding["hasArmData"]) ? (finding["hasArmData"] as PlainRecord[]) : [];
+    const armData = ensureArray(finding["hasArmData"]).filter(isDict) as PlainRecord[];
     const armLookup = new Map<string, PlainRecord>();
     for (const arm of armData) {
       const id = refId(arm["forCondition"]);
@@ -438,9 +449,9 @@ export function buildOutcomeRows(
     const interventionArm = armLookup.get(refId(finding["evaluates"]) ?? "") ?? {};
     const controlArm = armLookup.get(refId(finding["comparedTo"]) ?? "") ?? {};
 
-    const effectEstimates = Array.isArray(finding["hasEffectEstimate"])
-      ? (finding["hasEffectEstimate"] as PlainRecord[])
-      : [{}];
+    const estimates = ensureArray(finding["hasEffectEstimate"]).filter(isDict) as PlainRecord[];
+    // findings with no effect estimate still emit one row (outcome/arm data preserved)
+    const effectEstimates = estimates.length ? estimates : [{}];
     for (const effect of effectEstimates) {
       const baselineAdjusted = effect["baselineAdjusted"];
       rows.push({
@@ -450,7 +461,7 @@ export function buildOutcomeRows(
         outcome_description: typeof outcomeBlock["description"] === "string" ? (outcomeBlock["description"] as string) : null,
         outcome_concepts: outcomeConcepts,
         outcome_concepts_supportingText: outcomeConceptsSupporting,
-        effect_metric: label(effect["effectSizeMetric"], vocab) as CellValue,
+        effect_metric: label(first(effect["effectSizeMetric"]), vocab) as CellValue,
         point_estimate: round5Cell((effect["pointEstimate"] ?? null) as CellValue),
         ci_lower: round5Cell((effect["confidenceIntervalLower"] ?? null) as CellValue),
         ci_upper: round5Cell((effect["confidenceIntervalUpper"] ?? null) as CellValue),

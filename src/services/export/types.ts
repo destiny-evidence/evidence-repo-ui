@@ -47,8 +47,8 @@ export interface InvestigationRow {
   publication_year: number | null;
   doi: string | null;
   openalex_id: string | null;
-  documentType: CellValue;
-  studyDesign: CellValue;
+  documentType: string;
+  studyDesign: string;
   vocabulary: string;
 }
 
@@ -62,10 +62,10 @@ export interface ArmRow {
   intervention_duration_supportingText: string | null;
   intervention_educationTheme: string;
   intervention_educationTheme_supportingText: string;
-  intervention_implementationFidelity: CellValue;
-  intervention_implementationFidelity_supportingText: string | null;
-  intervention_implementerType: CellValue;
-  intervention_implementerType_supportingText: string | null;
+  intervention_implementationFidelity: string;
+  intervention_implementationFidelity_supportingText: string;
+  intervention_implementerType: string;
+  intervention_implementerType_supportingText: string;
   sampleSize_value: CellValue;
   sampleSize_supportingText: string | null;
   attrition_value: CellValue;
