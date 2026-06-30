@@ -24,8 +24,8 @@ export interface InterventionData {
   descriptions?: string[];
   educationThemes?: CodedAnnotation<ResolvedConcept>[];
   duration?: NumericAnnotation;
-  implementerType?: CodedAnnotation<ResolvedConcept>;
-  implementationFidelity?: CodedAnnotation<ResolvedConcept>;
+  implementerTypes?: CodedAnnotation<ResolvedConcept>[];
+  implementationFidelities?: CodedAnnotation<ResolvedConcept>[];
   implementationName?: StringAnnotation;
   implementationDescriptions?: StringAnnotation[];
   funderIntervention?: StringAnnotation;

@@ -507,8 +507,10 @@ describe("parseInvestigation", () => {
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
     const f = result.findings[0];
-    expect(f.intervention?.implementerType?.value.label).toBe("Cooperative Learning");
-    expect(f.intervention?.implementationFidelity?.value.label).toBe(
+    expect(f.intervention?.implementerTypes?.[0].value.label).toBe(
+      "Cooperative Learning",
+    );
+    expect(f.intervention?.implementationFidelities?.[0].value.label).toBe(
       "Cooperative Learning",
     );
     expect(f.intervention?.implementationName?.value).toBe("Impl name");
@@ -520,6 +522,37 @@ describe("parseInvestigation", () => {
     expect(f.groupDifferences?.value).toBe("Balanced");
     expect(f.sampleFeatures).toHaveLength(1);
     expect(f.sampleFeatures?.[0].value.label).toBe("Cooperative Learning");
+  });
+
+  test("parses multiple implementerTypes from an array", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: {
+            "@id": "_:int",
+            "@type": "Intervention",
+            implementerType: [
+              {
+                "@type": "ImplementerTypeCodingAnnotation",
+                codedValue: { "@id": "esea:C00086" },
+                status: "evrepo:coded",
+              },
+              {
+                "@type": "ImplementerTypeCodingAnnotation",
+                codedValue: { "@id": "esea:C00004" },
+                status: "evrepo:coded",
+              },
+            ],
+          },
+        },
+      ],
+    });
+    const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
+    expect(f.intervention?.implementerTypes?.map((i) => i.value.label)).toEqual([
+      "Cooperative Learning",
+      "Upper Secondary",
+    ]);
   });
 
   test("resolves sampleSize blank node references across findings", () => {

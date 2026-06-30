@@ -180,11 +180,15 @@ function parseIntervention(
     duration: parseOptional(node, "duration", (n) =>
       resolveNumericAnnotation(n, prefixes),
     ),
-    implementerType: parseOptional(node, "implementerType", (n) =>
-      resolveConceptAnnotation(n, prefixes, labels),
+    implementerTypes: resolveConceptAnnotations(
+      node["implementerType"],
+      prefixes,
+      labels,
     ),
-    implementationFidelity: parseOptional(node, "implementationFidelity", (n) =>
-      resolveConceptAnnotation(n, prefixes, labels),
+    implementationFidelities: resolveConceptAnnotations(
+      node["implementationFidelity"],
+      prefixes,
+      labels,
     ),
     implementationName: parseOptional(node, "implementationName", (n) =>
       resolveStringAnnotation(n, prefixes),
