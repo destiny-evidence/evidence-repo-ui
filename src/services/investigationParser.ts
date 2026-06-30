@@ -1,5 +1,5 @@
 import { expandCompactUri } from "./vocabulary/contextService";
-import { ensureArray, getInvestigation, isDict } from "./referenceUtils";
+import { ensureArray, first, getInvestigation, isDict } from "./referenceUtils";
 import type {
   InvestigationData,
   CodedAnnotation,
@@ -117,16 +117,12 @@ function resolveStringAnnotations(
     .filter((a): a is StringAnnotation => a !== null);
 }
 
-/**
- * Read an optional nested annotation from `raw[key]`. Returns undefined when
- * the field is absent or not a dict; otherwise delegates to `parse`.
- */
 function parseOptional<T>(
   raw: Dict,
   key: string,
   parse: (node: Dict) => T | null,
 ): T | undefined {
-  const node = raw[key];
+  const node = first(raw[key]);
   return isDict(node) ? parse(node) ?? undefined : undefined;
 }
 
@@ -348,7 +344,7 @@ function parseSingleFinding(
 
   // sampleSize can also be a blank-node reference for later findings
   let sampleSize: NumericAnnotation | undefined;
-  const ssNode = raw["sampleSize"];
+  const ssNode = first(raw["sampleSize"]);
   if (isDict(ssNode)) {
     sampleSize = resolveNumericAnnotation(ssNode, prefixes) ?? undefined;
   } else if (typeof ssNode === "string") {

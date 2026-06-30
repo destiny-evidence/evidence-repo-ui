@@ -454,6 +454,81 @@ describe("parseInvestigation", () => {
     expect(result.findings[1].sampleSize?.value).toBe(47);
   });
 
+  test("takes the first value of a scalar field arriving as an array (cost)", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          cost: [
+            {
+              "@type": "StringCodingAnnotation",
+              codedValue: { "@type": "xsd:string", "@value": "Reported" },
+              status: "evrepo:coded",
+            },
+            {
+              "@type": "StringCodingAnnotation",
+              codedValue: { "@type": "xsd:string", "@value": "Not reported" },
+              status: "evrepo:coded",
+            },
+          ],
+        },
+      ],
+    });
+    const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
+    expect(f.cost?.value).toBe("Reported");
+  });
+
+  test("takes the first value of sampleSize arriving as an array", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          sampleSize: [
+            {
+              "@type": "NumericCodingAnnotation",
+              codedValue: { "@type": "xsd:integer", "@value": 50 },
+              status: "evrepo:coded",
+            },
+            {
+              "@type": "NumericCodingAnnotation",
+              codedValue: { "@type": "xsd:integer", "@value": 100 },
+              status: "evrepo:coded",
+            },
+          ],
+        },
+      ],
+    });
+    const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
+    expect(f.sampleSize?.value).toBe(50);
+  });
+
+  test("resolves a blank-node sampleSize wrapped in a single-element array", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: { "@id": "_:int", "@type": "Intervention" },
+          hasContext: { "@id": "_:ctx", "@type": "Context" },
+          sampleSize: {
+            "@id": "_:sampleSize",
+            "@type": "NumericCodingAnnotation",
+            codedValue: { "@type": "xsd:integer", "@value": 47 },
+            status: "evrepo:coded",
+          },
+          hasOutcome: { "@type": "Outcome" },
+        },
+        {
+          "@type": "Finding",
+          sampleSize: ["_:sampleSize"],
+          hasOutcome: { "@type": "Outcome" },
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.findings[0].sampleSize?.value).toBe(47);
+    expect(result.findings[1].sampleSize?.value).toBe(47);
+  });
+
   test("parses effect estimates with CI bounds, metric, and adjustment flags", () => {
     const labels = new Map([
       ...LABELS,
