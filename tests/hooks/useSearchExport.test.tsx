@@ -27,6 +27,7 @@ const CONTEXT_URL = "https://test.example/context";
 
 function startArgs(
   overrides: Partial<{
+    format: "excel" | "ris" | "reference-list";
     query: string;
     filters: Record<string, unknown>;
     filename: string;
@@ -36,6 +37,7 @@ function startArgs(
   }> = {},
 ) {
   return {
+    format: "excel" as const,
     query: "phonics",
     filters: {},
     filename: "f.xlsx",
@@ -112,7 +114,11 @@ describe("useSearchExport", () => {
       undefined,
       undefined,
     );
-    expect(mockRequest).toHaveBeenCalledWith("phonics", { annotation: ["x"] });
+    expect(mockRequest).toHaveBeenCalledWith(
+      "phonics",
+      { annotation: ["x"] },
+      "jsonl",
+    );
   });
 
   test("failed surfaces the backend error message", async () => {

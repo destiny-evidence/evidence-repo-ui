@@ -16,11 +16,15 @@ import { useHistoryState } from "@/hooks/useHistoryState";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
-import { useSearchExport, type ExportStatus } from "@/hooks/useSearchExport";
+import {
+  useSearchExport,
+  type ExportStatus,
+  type ExportFormat,
+} from "@/hooks/useSearchExport";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
-import { ExportButton } from "@/components/search/ExportButton";
+import { ExportMenu } from "@/components/search/ExportMenu";
 import { RefineButton } from "@/components/search/RefineButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
@@ -69,14 +73,26 @@ function buildRefineConfig(
   return undefined;
 }
 
-function formatExportFilename(slug: string, now: Date = new Date()): string {
-  // UTC so the same wall-clock click in different timezones produces the
-  // same filename — easier to diff/dedupe across users.
+// `evidence-repository-<stem>-<slug>-YYYYMMDD.<ext>`. UTC so the same
+// wall-clock click in different timezones produces the same filename — easier
+// to diff/dedupe across users.
+function formatExportFilename(
+  stem: string,
+  slug: string,
+  ext: string,
+  now: Date = new Date(),
+): string {
   const y = now.getUTCFullYear();
   const m = String(now.getUTCMonth() + 1).padStart(2, "0");
   const d = String(now.getUTCDate()).padStart(2, "0");
-  return `evidence-repository-export-${slug}-${y}${m}${d}.xlsx`;
+  return `evidence-repository-${stem}-${slug}-${y}${m}${d}.${ext}`;
 }
+
+const EXPORT_FILE: Record<ExportFormat, { stem: string; ext: string }> = {
+  excel: { stem: "export", ext: "xlsx" },
+  ris: { stem: "references", ext: "ris" },
+  "reference-list": { stem: "references", ext: "pdf" },
+};
 
 function exportAnnouncementFor(status: ExportStatus): string {
   switch (status) {
@@ -260,20 +276,37 @@ function SearchPageInner({ community }: { community: Community }) {
   })();
   const exportAnnouncement = exportAnnouncementFor(exportJob.status);
 
-  function handleExport() {
+  function handleExport(format: ExportFormat) {
     const { query, filters } = toUnpaginatedSearchQuery(
       params,
       community.defaultAnnotations,
     );
+    const { stem, ext } = EXPORT_FILE[format];
+    const filename = formatExportFilename(stem, community.slug, ext);
+    if (format === "excel") {
+      exportJob.start({
+        format,
+        query,
+        filters,
+        filename,
+        vocabularyUrl: community.vocabularyUrl,
+        contextUrl: community.contextUrl,
+        variant: community.exportVariant,
+        codingInstitution: community.codingInstitution,
+        pinnedFilters: community.pinnedFilters,
+      });
+      return;
+    }
     exportJob.start({
+      format,
       query,
       filters,
-      filename: formatExportFilename(community.slug),
-      vocabularyUrl: community.vocabularyUrl,
-      contextUrl: community.contextUrl,
-      variant: community.exportVariant,
-      codingInstitution: community.codingInstitution,
-      pinnedFilters: community.pinnedFilters,
+      filename,
+      referenceListMeta: {
+        title: "Reference list",
+        subtitle: params.q ? `Search: ${params.q}` : null,
+        originUrl: buildSearchUrl(community.slug, params),
+      },
     });
   }
 
@@ -413,11 +446,11 @@ function SearchPageInner({ community }: { community: Community }) {
                   </span>
                 )}
                 {results.results && community.features.exportExcel && (
-                  <ExportButton
+                  <ExportMenu
                     disabled={exportDisabled}
                     status={exportJob.status}
-                    onClick={handleExport}
-                    tooltip={exportTooltip}
+                    onExport={handleExport}
+                    disabledReason={exportTooltip}
                   />
                 )}
                 {refine && (

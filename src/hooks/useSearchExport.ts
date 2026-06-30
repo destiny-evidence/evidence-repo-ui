@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import {
-  getSearchExport,
-  requestSearchExport,
-  type SearchFilters,
-} from "@/services/apiClient";
+import { type SearchFilters } from "@/services/apiClient";
 import { exportReferencesToExcel } from "@/services/export/export";
+import { runSearchExportToCompletion } from "@/services/export/searchExportJob";
+import {
+  downloadRisExport,
+  downloadReferenceListPdf,
+} from "@/services/export/risExport";
+import type { ReferenceListMeta } from "@/services/export/referenceListPdf";
 import type {
   CodingInstitutionConfig,
   ExportVariant,
   PinnedFilter,
-  SearchExportRead,
 } from "@/types/models";
 
 export type ExportStatus =
@@ -21,15 +22,26 @@ export type ExportStatus =
   | "done"
   | "error";
 
+/**
+ * UI export choices. `excel` runs the JSONL → workbook pipeline; `ris` and
+ * `reference-list` share one backend RIS job, then either save it verbatim or
+ * render it as a bibliography PDF.
+ */
+export type ExportFormat = "excel" | "ris" | "reference-list";
+
 export interface StartExportOptions {
+  format: ExportFormat;
   query: string;
   filters: Omit<SearchFilters, "page">;
   filename: string;
-  vocabularyUrl: string;
-  contextUrl: string;
-  variant: ExportVariant;
+  // Excel only:
+  vocabularyUrl?: string;
+  contextUrl?: string;
+  variant?: ExportVariant;
   codingInstitution?: CodingInstitutionConfig;
   pinnedFilters?: PinnedFilter[];
+  // Reference-list PDF only:
+  referenceListMeta?: ReferenceListMeta;
 }
 
 export interface UseSearchExportResult {
@@ -39,148 +51,103 @@ export interface UseSearchExportResult {
   reset: () => void;
 }
 
-const POLL_INTERVAL_MS = 2000;
+// excel streams JSONL; the bibliography formats both consume the RIS render.
+function serverFormatFor(format: ExportFormat): "jsonl" | "ris" {
+  return format === "excel" ? "jsonl" : "ris";
+}
+
+async function downloadForFormat(
+  resultUrl: string,
+  options: StartExportOptions,
+): Promise<void> {
+  switch (options.format) {
+    case "excel":
+      await exportReferencesToExcel(
+        resultUrl,
+        options.vocabularyUrl!,
+        options.contextUrl!,
+        options.filename,
+        options.variant!,
+        options.codingInstitution,
+        options.pinnedFilters,
+      );
+      return;
+    case "ris":
+      await downloadRisExport(resultUrl, options.filename);
+      return;
+    case "reference-list":
+      await downloadReferenceListPdf(
+        resultUrl,
+        options.filename,
+        options.referenceListMeta ?? { title: "Reference list" },
+      );
+      return;
+  }
+}
 
 /**
- * Drives the export request → polling → download pipeline.
+ * Drives the export request → poll → download pipeline for all formats.
  *
- * **Cancellation.** Each call to `start` increments `runIdRef` and captures
- * the new id in a closure. Every async callback compares its captured id
- * against the live ref via `isCurrentRun()` and bails if they differ —
- * meaning the user called `start` again, `reset`, or unmounted. Without the
- * guard, a stale callback from a cancelled run could clobber the current
- * run's state machine.
+ * **Cancellation.** Each `start` bumps `runIdRef` (captured in a closure) and
+ * aborts the previous run's controller. The job poller bails on abort; the
+ * `isCurrentRun` guard stops a stale callback clobbering a fresh run's state.
  */
 export function useSearchExport(): UseSearchExportResult {
   const [status, setStatus] = useState<ExportStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const runIdRef = useRef(0);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const clearScheduledPoll = useCallback(() => {
-    if (timeoutRef.current !== null) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
+  const abortRef = useRef<AbortController | null>(null);
 
   const reset = useCallback(() => {
     runIdRef.current += 1;
-    clearScheduledPoll();
+    abortRef.current?.abort();
+    abortRef.current = null;
     setStatus("idle");
     setErrorMessage(null);
-  }, [clearScheduledPoll]);
+  }, []);
 
-  // Cancel any in-flight run on unmount. The setStatus/setErrorMessage
-  // inside reset() are no-ops on the unmounted component.
+  // Cancel any in-flight run on unmount.
   useEffect(() => reset, [reset]);
 
-  const start = useCallback(
-    ({
-      query,
-      filters,
-      filename,
-      vocabularyUrl,
-      contextUrl,
-      variant,
-      codingInstitution,
-      pinnedFilters,
-    }: StartExportOptions) => {
-      runIdRef.current += 1;
-      const runId = runIdRef.current;
-      clearScheduledPoll();
-      setErrorMessage(null);
+  const start = useCallback((options: StartExportOptions) => {
+    runIdRef.current += 1;
+    const runId = runIdRef.current;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setErrorMessage(null);
+    setStatus("requesting");
 
-      setStatus("requesting");
+    const isCurrentRun = () => runIdRef.current === runId;
 
-      const isCurrentRun = () => runIdRef.current === runId;
-
-      // Drop the run into the error state, but only if it's still the
-      // current one — cancelled runs must not overwrite a fresh run's state.
-      const fail = (message: string) => {
+    runSearchExportToCompletion(
+      options.query,
+      options.filters,
+      serverFormatFor(options.format),
+      {
+        signal: controller.signal,
+        onPolling: () => {
+          if (isCurrentRun()) setStatus("polling");
+        },
+      },
+    )
+      .then(async (resultUrl) => {
         if (!isCurrentRun()) return;
-        setErrorMessage(message);
-        setStatus("error");
-      };
-
-      const handleCompleted = async (job: SearchExportRead) => {
-        if (!isCurrentRun()) return;
-        if (!job.result_url) {
-          fail("Export finished but no download URL was returned.");
-          return;
-        }
         setStatus("downloading");
-        try {
-          await exportReferencesToExcel(
-            job.result_url,
-            vocabularyUrl,
-            contextUrl,
-            filename,
-            variant,
-            codingInstitution,
-            pinnedFilters,
-          );
-        } catch (err) {
-          fail(
-            err instanceof Error
-              ? err.message
-              : "Failed to build the Excel file.",
-          );
-          return;
-        }
+        await downloadForFormat(resultUrl, options);
         if (!isCurrentRun()) return;
         setStatus("done");
-      };
-
-      const schedulePoll = (jobId: string) => {
-        timeoutRef.current = setTimeout(() => poll(jobId), POLL_INTERVAL_MS);
-      };
-
-      const handleStatus = (job: SearchExportRead) => {
-        if (job.status === "completed") {
-          handleCompleted(job);
-          return;
-        }
-        if (job.status === "failed") {
-          fail(job.error || "The export job failed.");
-          return;
-        }
-        // pending or running — keep polling. setStatus is idempotent on the
-        // second-and-later passes; Preact bails on same-value state writes.
-        setStatus("polling");
-        schedulePoll(job.id);
-      };
-
-      const poll = (jobId: string) => {
-        if (!isCurrentRun()) return;
-        getSearchExport(jobId)
-          .then((job) => {
-            if (!isCurrentRun()) return;
-            handleStatus(job);
-          })
-          .catch((err) => {
-            fail(
-              err instanceof Error
-                ? err.message
-                : "Lost contact with the export job. Please try again.",
-            );
-          });
-      };
-
-      requestSearchExport(query, filters)
-        .then((job) => {
-          if (!isCurrentRun()) return;
-          handleStatus(job);
-        })
-        .catch((err) => {
-          fail(
-            err instanceof Error ? err.message : "Failed to start the export.",
-          );
-        });
-    },
-    [clearScheduledPoll],
-  );
+      })
+      .catch((err: unknown) => {
+        // A cancelled/superseded run must not overwrite fresh state.
+        if (controller.signal.aborted || !isCurrentRun()) return;
+        setErrorMessage(
+          err instanceof Error ? err.message : "The export failed.",
+        );
+        setStatus("error");
+      });
+  }, []);
 
   return { status, errorMessage, start, reset };
 }

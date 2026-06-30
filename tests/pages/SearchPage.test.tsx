@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/preact";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/preact";
 import { SearchPage } from "@/pages/SearchPage";
 import { CommunityProvider } from "@/community/CommunityContext";
 import { AuthProvider } from "@/auth/AuthContext";
@@ -534,36 +534,70 @@ describe("SearchPage", () => {
     });
   });
 
-  describe("export button", () => {
-    test("enabled in browse mode; click POSTs with q=* and the community annotation", async () => {
+  describe("export menu", () => {
+    // The trigger and the in-panel action share the label "Export"; open via the
+    // trigger (the only "Export" button while closed), pick a format if given,
+    // then click the action inside the "Export format" group.
+    function openAndExport(formatLabel?: RegExp) {
+      fireEvent.click(screen.getByRole("button", { name: /^export$/i }));
+      const panel = screen.getByRole("group", { name: /export format/i });
+      if (formatLabel) {
+        fireEvent.click(within(panel).getByRole("radio", { name: formatLabel }));
+      }
+      fireEvent.click(within(panel).getByRole("button", { name: /^export$/i }));
+    }
+
+    // Job that accepts the request and then polls pending forever.
+    function stubPendingExport(id = "job") {
+      const job = { id, status: "pending" as const, truncated: false };
+      mockRequestExport.mockResolvedValue(job);
+      mockGetExport.mockResolvedValue(job);
+    }
+
+    test("enabled in browse mode; export POSTs with q=* and the community annotation", async () => {
       mockBoth({ results: makeResult(5721, ["r1"]) });
-      mockRequestExport.mockResolvedValue({
-        id: "job-browse",
-        status: "pending",
-        truncated: false,
-      });
-      mockGetExport.mockResolvedValue({
-        id: "job-browse",
-        status: "pending",
-        truncated: false,
-      });
+      stubPendingExport();
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
-      const btn = screen.getByRole("button", { name: /export to excel/i });
-      expect(btn).not.toHaveAttribute("aria-disabled", "true");
-      fireEvent.click(btn);
+      expect(
+        screen.getByRole("button", { name: /^export$/i }),
+      ).not.toHaveAttribute("aria-disabled", "true");
+      openAndExport();
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
-      expect(mockRequestExport).toHaveBeenCalledWith("*", {
-        startYear: undefined,
-        endYear: undefined,
-        annotation: ["domain-inclusion/jacobs-education"],
-        // Browse mode has no relevance signal, so export mirrors the newest fallback.
-        sort: ["-publication_year"],
-      });
+      // Default format is the reference list, which the backend renders as RIS.
+      expect(mockRequestExport).toHaveBeenCalledWith(
+        "*",
+        {
+          startYear: undefined,
+          endYear: undefined,
+          annotation: ["domain-inclusion/jacobs-education"],
+          // Browse mode has no relevance signal, so export mirrors the newest fallback.
+          sort: ["-publication_year"],
+        },
+        "ris",
+      );
     });
 
-    test("export button shown on /hpv", async () => {
+    test("selecting Excel exports as JSONL", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: makeResult(47, ["r1"]) });
+      stubPendingExport();
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      openAndExport(/excel/i);
+      await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
+      expect(mockRequestExport).toHaveBeenCalledWith(
+        "phonics",
+        expect.objectContaining({
+          annotation: ["domain-inclusion/jacobs-education"],
+        }),
+        "jsonl",
+      );
+    });
+
+    test("export menu shown on /hpv", async () => {
       history.replaceState(null, "", "/hpv");
       mockBoth({ results: makeResult(6, ["r1"]) });
       renderSearchPage();
@@ -571,36 +605,32 @@ describe("SearchPage", () => {
         expect(screen.getByText("Title r1")).toBeInTheDocument(),
       );
       expect(
-        screen.queryByRole("button", { name: /export to excel/i }),
+        screen.queryByRole("button", { name: /^export$/i }),
       ).not.toBeNull();
     });
 
-    test("enabled in year-only URL; click POSTs with q=* and the year filter", async () => {
+    test("enabled in year-only URL; export POSTs with q=* and the year filter", async () => {
       history.replaceState(null, "", "/esea?start_year=2020");
       mockBoth({ results: makeResult(120, ["r1"]) });
-      mockRequestExport.mockResolvedValue({
-        id: "job-yr",
-        status: "pending",
-        truncated: false,
-      });
-      mockGetExport.mockResolvedValue({
-        id: "job-yr",
-        status: "pending",
-        truncated: false,
-      });
+      stubPendingExport();
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
-      const btn = screen.getByRole("button", { name: /export to excel/i });
-      expect(btn).not.toHaveAttribute("aria-disabled", "true");
-      fireEvent.click(btn);
+      expect(
+        screen.getByRole("button", { name: /^export$/i }),
+      ).not.toHaveAttribute("aria-disabled", "true");
+      openAndExport();
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
-      expect(mockRequestExport).toHaveBeenCalledWith("*", {
-        startYear: 2020,
-        endYear: undefined,
-        annotation: ["domain-inclusion/jacobs-education"],
-        sort: ["-publication_year"],
-      });
+      expect(mockRequestExport).toHaveBeenCalledWith(
+        "*",
+        {
+          startYear: 2020,
+          endYear: undefined,
+          annotation: ["domain-inclusion/jacobs-education"],
+          sort: ["-publication_year"],
+        },
+        "ris",
+      );
     });
 
     test("disabled when result set is empty with explanatory tooltip", async () => {
@@ -611,7 +641,7 @@ describe("SearchPage", () => {
         expect(screen.getByText(/no matches/i)).toBeInTheDocument(),
       );
 
-      const btn = screen.getByRole("button", { name: /export to excel/i });
+      const btn = screen.getByRole("button", { name: /^export$/i });
       expect(btn).toHaveAttribute("aria-disabled", "true");
       expect(btn.parentElement).toHaveAttribute(
         "data-tooltip",
@@ -642,8 +672,8 @@ describe("SearchPage", () => {
       await waitFor(() =>
         expect(screen.getByText("Title phonics-ref")).toBeInTheDocument(),
       );
-      // First settled state: 47 results → button enabled.
-      const btn = screen.getByRole("button", { name: /export to excel/i });
+      // First settled state: 47 results → trigger enabled.
+      const btn = screen.getByRole("button", { name: /^export$/i });
       expect(btn).not.toHaveAttribute("aria-disabled", "true");
 
       // Submit a new query — keeps phonics-ref visible (dim) while the
@@ -653,13 +683,13 @@ describe("SearchPage", () => {
       });
       fireEvent.click(screen.getByRole("button", { name: /search/i }));
 
-      // Button is disabled while loading even though stale `results.results`
+      // Trigger is disabled while loading even though stale `results.results`
       // would have said `hasResults && !overCap`.
       await waitFor(() => expect(btn).toHaveAttribute("aria-disabled", "true"));
       // Tooltip is suppressed during loading to avoid asserting a stale count.
       expect(btn.parentElement).not.toHaveAttribute("data-tooltip");
 
-      // Resolve the literacy fetch; button re-enables.
+      // Resolve the literacy fetch; trigger re-enables.
       resolveLiteracy?.(makeResult(12, ["literacy-ref"]));
       await waitFor(() =>
         expect(btn).not.toHaveAttribute("aria-disabled", "true"),
@@ -672,7 +702,7 @@ describe("SearchPage", () => {
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
-      const btn = screen.getByRole("button", { name: /export to excel/i });
+      const btn = screen.getByRole("button", { name: /^export$/i });
       expect(btn).toHaveAttribute("aria-disabled", "true");
       expect(btn.parentElement).toHaveAttribute(
         "data-tooltip",
@@ -680,33 +710,25 @@ describe("SearchPage", () => {
       );
     });
 
-    test("click POSTs with current filters and shows preparing status", async () => {
+    test("export POSTs with current filters and shows preparing status", async () => {
       history.replaceState(null, "", "/esea?q=phonics&start_year=2015");
       mockBoth({ results: makeResult(47, ["r1"]) });
-      mockRequestExport.mockResolvedValue({
-        id: "job-1",
-        status: "pending",
-        truncated: false,
-      });
-      // Keep polling pending forever so the test settles on "Preparing…".
-      mockGetExport.mockResolvedValue({
-        id: "job-1",
-        status: "pending",
-        truncated: false,
-      });
-
+      stubPendingExport();
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
-      const btn = screen.getByRole("button", { name: /export to excel/i });
-      fireEvent.click(btn);
+      openAndExport();
 
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
-      expect(mockRequestExport).toHaveBeenCalledWith("phonics", {
-        startYear: 2015,
-        endYear: undefined,
-        annotation: ["domain-inclusion/jacobs-education"],
-      });
+      expect(mockRequestExport).toHaveBeenCalledWith(
+        "phonics",
+        {
+          startYear: 2015,
+          endYear: undefined,
+          annotation: ["domain-inclusion/jacobs-education"],
+        },
+        "ris",
+      );
       await waitFor(() =>
         expect(
           screen.getByRole("button", { name: /preparing/i }),
@@ -723,22 +745,25 @@ describe("SearchPage", () => {
         "/esea?q=phonics&concept=https%3A%2F%2Fvocab.esea.education%2FEducationLevelScheme%2FC00002",
       );
       mockBoth({ results: makeResult(7, ["r1"]) });
-      mockRequestExport.mockResolvedValue({ id: "job-facet", status: "pending", truncated: false });
-      mockGetExport.mockResolvedValue({ id: "job-facet", status: "pending", truncated: false });
+      stubPendingExport();
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
-      fireEvent.click(screen.getByRole("button", { name: /export to excel/i }));
+      openAndExport();
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
       // Concepts travel as structured filter, not embedded in the Lucene q.
-      expect(mockRequestExport).toHaveBeenCalledWith("phonics", {
-        startYear: undefined,
-        endYear: undefined,
-        annotation: ["domain-inclusion/jacobs-education"],
-        conceptFilters: [
-          ["https://vocab.esea.education/EducationLevelScheme/C00002"],
-        ],
-      });
+      expect(mockRequestExport).toHaveBeenCalledWith(
+        "phonics",
+        {
+          startYear: undefined,
+          endYear: undefined,
+          annotation: ["domain-inclusion/jacobs-education"],
+          conceptFilters: [
+            ["https://vocab.esea.education/EducationLevelScheme/C00002"],
+          ],
+        },
+        "ris",
+      );
     });
   });
 
