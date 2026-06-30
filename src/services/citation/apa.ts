@@ -1,0 +1,177 @@
+/**
+ * APA 7th-edition reference formatting.
+ *
+ * Author names are passed through *as stored*, not inverted to "Last, F.".
+ * Upstream author strings are inconsistent across import sources, so a
+ * "First Last → Last, F." transform corrupts about as often as it normalises
+ * (e.g. "Smith J" → "J, S."). We'd rather render a faithful "Jane Smith" than a
+ * confidently-wrong inversion. Only the APA list-level rules — comma separators,
+ * the ampersand before the last author, and the 21+ ellipsis — are applied,
+ * since those are safe whatever the individual name format.
+ *
+ * The formatter returns an array of {@link ApaSegment} (text + italic flag) so a
+ * rich renderer (HTML italics) and a plain-text consumer (PDF) can share one
+ * source of truth — see {@link apaPlainText}.
+ */
+
+export interface ApaReferenceInput {
+  /** Author display names, rendered verbatim. */
+  authors: string[];
+  year?: number | string | null;
+  title?: string | null;
+  /** Journal / publication-venue display name. Italicised. */
+  journal?: string | null;
+  volume?: string | null;
+  issue?: string | null;
+  firstPage?: string | null;
+  lastPage?: string | null;
+  publisher?: string | null;
+  /** Raw DOI ("10.x/y"), a "doi:" string, or a full URL. */
+  doi?: string | null;
+}
+
+export interface ApaSegment {
+  text: string;
+  /** Rendered italic (journal name, volume number). */
+  italic?: boolean;
+}
+
+function clean(value: string | null | undefined): string {
+  return (value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function ensureSentencePunctuation(value: string): string {
+  return /[.?!]$/.test(value) ? value : `${value}.`;
+}
+
+/** Normalise an author display name. Passed through as stored — see file note. */
+export function formatAuthorName(displayName: string): string {
+  return clean(displayName);
+}
+
+/**
+ * Join authors (verbatim) per APA 7 author-count rules: an ampersand before the
+ * final author for 2–20 authors; for 21+, the first 19 then an ellipsis then
+ * the final author (no ampersand).
+ */
+export function formatAuthorList(authors: string[]): string {
+  const names = authors.map(clean).filter(Boolean);
+  const n = names.length;
+  if (n === 0) return "";
+  if (n === 1) return names[0];
+  if (n === 2) return `${names[0]}, & ${names[1]}`;
+  if (n <= 20) {
+    return `${names.slice(0, -1).join(", ")}, & ${names[n - 1]}`;
+  }
+  return `${names.slice(0, 19).join(", ")}, … ${names[n - 1]}`;
+}
+
+function formatPagesRange(first: string, last: string): string {
+  if (first && last && first !== last) return `${first}–${last}`; // en dash
+  return first || last;
+}
+
+function formatDoiUrl(doi: string | null | undefined): string | null {
+  const value = clean(doi);
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://doi.org/${value.replace(/^doi:\s*/i, "")}`;
+}
+
+/**
+ * Format a reference as APA 7th-edition segments. Tuned for journal articles
+ * (the corpus is overwhelmingly articles); degrades gracefully when fields are
+ * missing. Article titles are rendered as stored — APA wants sentence case, but
+ * we can't recase without mangling proper nouns and acronyms.
+ */
+export function formatApaReference(input: ApaReferenceInput): ApaSegment[] {
+  const out: ApaSegment[] = [];
+  const text = (t: string) => out.push({ text: t });
+  const italic = (t: string) => out.push({ text: t, italic: true });
+
+  const authors = formatAuthorList(input.authors ?? []);
+  const yearRaw = input.year == null ? "" : String(input.year).trim();
+  const year = yearRaw || "n.d.";
+  const title = clean(input.title);
+  const journal = clean(input.journal);
+  const volume = clean(input.volume);
+  const issue = clean(input.issue);
+  const pages = formatPagesRange(clean(input.firstPage), clean(input.lastPage));
+  const publisher = clean(input.publisher);
+  const doiUrl = formatDoiUrl(input.doi);
+
+  // Author–date prefix. With no author, the title takes the author slot.
+  if (authors) {
+    text(`${authors} (${year}). `);
+    if (title) text(`${ensureSentencePunctuation(title)} `);
+  } else if (title) {
+    text(`${ensureSentencePunctuation(title)} (${year}). `);
+  } else {
+    text(`(${year}). `);
+  }
+
+  if (journal) {
+    italic(journal);
+    if (volume) {
+      text(", ");
+      italic(volume);
+      if (issue) text(`(${issue})`);
+    }
+    if (pages) text(`, ${pages}`);
+    text(".");
+  } else if (publisher) {
+    text(`${ensureSentencePunctuation(publisher)}`);
+  }
+
+  if (doiUrl) text(` ${doiUrl}`);
+
+  const segments = out.filter((s) => s.text !== "");
+  const last = segments[segments.length - 1];
+  if (last) last.text = last.text.replace(/\s+$/, "");
+  return segments;
+}
+
+/** Flatten segments to a single plain-text string (italics dropped). */
+export function apaPlainText(segments: ApaSegment[]): string {
+  return segments.map((s) => s.text).join("");
+}
+
+// Best-effort surname for ordering only — never displayed, so a wrong guess
+// just mis-files an entry rather than corrupting a name (hence we guess for
+// sorting but not display). Inverted "Last, First" → before the comma, else the
+// last word; right for the two dominant formats, harmless on the rest.
+function surnameKey(name: string): string {
+  const cleaned = clean(name);
+  if (cleaned.includes(",")) {
+    return cleaned.slice(0, cleaned.indexOf(",")).trim().toLowerCase();
+  }
+  const tokens = cleaned.split(" ");
+  return (tokens[tokens.length - 1] || cleaned).toLowerCase();
+}
+
+/**
+ * Case-insensitive ordering key for a bibliography: the first author's
+ * best-effort surname, falling back to the title when there are no authors.
+ */
+export function apaSortKey(input: ApaReferenceInput): string {
+  const first = (input.authors ?? []).map(clean).find(Boolean);
+  return first ? surnameKey(first) : clean(input.title).toLowerCase();
+}
+
+function yearValue(year: ApaReferenceInput["year"]): number {
+  const n = Number(String(year ?? "").slice(0, 4));
+  // Undated works sort last within an author group.
+  return Number.isFinite(n) && n > 0 ? n : Number.MAX_SAFE_INTEGER;
+}
+
+/**
+ * APA bibliography ordering: alphabetical by first-author surname, then by year
+ * (earliest first) within the same author. Use as an Array#sort comparator.
+ */
+export function compareApaReferences(
+  a: ApaReferenceInput,
+  b: ApaReferenceInput,
+): number {
+  const byName = apaSortKey(a).localeCompare(apaSortKey(b));
+  return byName !== 0 ? byName : yearValue(a.year) - yearValue(b.year);
+}
