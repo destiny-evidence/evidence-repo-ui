@@ -11,7 +11,6 @@ import type { jsPDF as JsPdfDoc } from "jspdf";
 import {
   type ApaReferenceInput,
   formatApaReference,
-  apaPlainText,
   compareApaReferences,
 } from "@/services/citation/apa";
 import {
@@ -23,6 +22,7 @@ import {
   ACCENT,
   BORDER,
   registerFonts,
+  renderApaEntry,
 } from "./pdfShared.ts";
 
 const PAGE_MARGIN = 48;
@@ -90,26 +90,6 @@ export async function buildReferenceListPdf(
     y += opts.gapAfter;
   };
 
-  // One reference: first line flush-left, continuation lines hang-indented.
-  const entry = (text: string) => {
-    doc.setFont(FONT_SANS, "normal");
-    doc.setFontSize(ENTRY_SIZE);
-    setColor(TEXT_PRIMARY);
-    const lineHeight = ENTRY_SIZE * ENTRY_LINE_FACTOR;
-    const lines = doc.splitTextToSize(text, contentW - HANGING_INDENT) as string[];
-    lines.forEach((l, i) => {
-      if (y + lineHeight > bottomLimit) {
-        doc.addPage();
-        y = PAGE_MARGIN;
-      }
-      doc.text(l, PAGE_MARGIN + (i === 0 ? 0 : HANGING_INDENT), y, {
-        baseline: "top",
-      });
-      y += lineHeight;
-    });
-    y += ENTRY_GAP;
-  };
-
   // ── Header ──────────────────────────────────────────────────────────────
   doc.setFont(FONT_SANS, "bold");
   doc.setFontSize(20);
@@ -168,10 +148,21 @@ export async function buildReferenceListPdf(
     return doc;
   }
 
-  // ── Entries (alphabetical by first-author surname, then year) ───────────
+  // ── Entries (alphabetical by title, then year) ──────────────────────────
   const sorted = [...inputs].sort(compareApaReferences);
   for (const input of sorted) {
-    entry(apaPlainText(formatApaReference(input)));
+    y = renderApaEntry(doc, formatApaReference(input), {
+      x: PAGE_MARGIN,
+      rightEdge: pageW - PAGE_MARGIN,
+      topMargin: PAGE_MARGIN,
+      bottomLimit,
+      y,
+      size: ENTRY_SIZE,
+      lineFactor: ENTRY_LINE_FACTOR,
+      hangingIndent: HANGING_INDENT,
+      color: TEXT_PRIMARY,
+    });
+    y += ENTRY_GAP;
   }
 
   return doc;

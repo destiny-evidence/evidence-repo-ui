@@ -16,7 +16,6 @@ import { formatTotal } from "@/utils/searchTotal";
 import {
   type ApaReferenceInput,
   formatApaReference,
-  apaPlainText,
   compareApaReferences,
 } from "@/services/citation/apa";
 import {
@@ -37,6 +36,7 @@ import {
   BORDER,
   WHITE,
   registerFonts,
+  renderApaEntry,
 } from "./pdfShared.ts";
 
 const SKIP_REASON_TEXT: Record<SkipReason, string> = {
@@ -472,12 +472,18 @@ export async function buildSummaryPdf(
     sectionHead("References", TEXT_SECONDARY);
     const sorted = [...references].sort(compareApaReferences);
     for (const input of sorted) {
-      paragraph(apaPlainText(formatApaReference(input)), {
+      y = renderApaEntry(doc, formatApaReference(input), {
+        x: PAGE_MARGIN,
+        rightEdge: pageW - PAGE_MARGIN,
+        topMargin: PAGE_MARGIN,
+        bottomLimit: pageH - PAGE_MARGIN,
+        y,
         size: 8.5,
-        color: TEXT_SECONDARY,
-        gapAfter: 5,
         lineFactor: 1.4,
+        hangingIndent: 14,
+        color: TEXT_SECONDARY,
       });
+      y += 5;
     }
   }
 

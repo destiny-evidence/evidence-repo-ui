@@ -12,6 +12,7 @@
  */
 
 import type { jsPDF as JsPdfDoc } from "jspdf";
+import type { ApaSegment } from "@/services/citation/apa";
 import sansUrl from "./fonts/DejaVuSans.ttf?url";
 import sansBoldUrl from "./fonts/DejaVuSans-Bold.ttf?url";
 import serifItalicUrl from "./fonts/DejaVuSerif-Italic.ttf?url";
@@ -70,4 +71,97 @@ export async function registerFonts(doc: JsPdfDoc): Promise<void> {
       doc.addFont(face.file, face.family, face.style);
     }),
   );
+}
+
+export interface ApaEntryLayout {
+  /** Left edge of the entry; continuation lines hang in from here. */
+  x: number;
+  rightEdge: number;
+  /** y to reset to after a page break. */
+  topMargin: number;
+  /** Largest y a line may start at before we page-break. */
+  bottomLimit: number;
+  /** Current top cursor. */
+  y: number;
+  size: number;
+  lineFactor: number;
+  hangingIndent: number;
+  color: RGB;
+}
+
+/**
+ * Render one APA reference as a hanging-indent paragraph, switching to the
+ * serif-italic face for italic segments (journal, volume). Wraps word-by-word so
+ * italic runs stay inline; a token wider than a line (e.g. a long DOI) is
+ * hard-wrapped by character. Returns the y cursor below the entry.
+ */
+export function renderApaEntry(
+  doc: JsPdfDoc,
+  segments: ApaSegment[],
+  layout: ApaEntryLayout,
+): number {
+  const { x: x0, rightEdge, topMargin, bottomLimit, size, lineFactor, hangingIndent, color } = layout;
+  const lineHeight = size * lineFactor;
+  doc.setTextColor(color[0], color[1], color[2]);
+  let y = layout.y;
+  let lineStart = x0;
+  let x = x0;
+
+  if (y + lineHeight > bottomLimit) {
+    doc.addPage();
+    y = topMargin;
+  }
+
+  const newline = () => {
+    y += lineHeight;
+    if (y + lineHeight > bottomLimit) {
+      doc.addPage();
+      y = topMargin;
+    }
+    lineStart = x0 + hangingIndent;
+    x = lineStart;
+  };
+
+  const fullLineWidth = rightEdge - (x0 + hangingIndent);
+
+  const drawWord = (word: string, italic: boolean, pendingSpace: boolean) => {
+    doc.setFont(italic ? FONT_SERIF : FONT_SANS, italic ? "italic" : "normal");
+    doc.setFontSize(size);
+    const width = doc.getTextWidth(word);
+
+    if (width > fullLineWidth && word.length > 1) {
+      const chunks = doc.splitTextToSize(word, fullLineWidth) as string[];
+      chunks.forEach((chunk, i) => {
+        if (i > 0 || x > lineStart) newline();
+        doc.text(chunk, x, y, { baseline: "top" });
+        x += doc.getTextWidth(chunk);
+      });
+      return;
+    }
+
+    const space = pendingSpace && x > lineStart ? doc.getTextWidth(" ") : 0;
+    if (x + space + width > rightEdge && x > lineStart) {
+      newline();
+      doc.text(word, x, y, { baseline: "top" });
+      x += width;
+    } else {
+      const drawX = x + space;
+      doc.text(word, drawX, y, { baseline: "top" });
+      x = drawX + width;
+    }
+  };
+
+  let pendingSpace = false;
+  for (const seg of segments) {
+    for (const part of seg.text.split(/(\s+)/)) {
+      if (part === "") continue;
+      if (/^\s+$/.test(part)) {
+        pendingSpace = true;
+        continue;
+      }
+      drawWord(part, !!seg.italic, pendingSpace);
+      pendingSpace = false;
+    }
+  }
+  return y + lineHeight;
 }

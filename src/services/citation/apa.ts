@@ -136,26 +136,19 @@ export function apaPlainText(segments: ApaSegment[]): string {
   return segments.map((s) => s.text).join("");
 }
 
-// Best-effort surname for ordering only — never displayed, so a wrong guess
-// just mis-files an entry rather than corrupting a name (hence we guess for
-// sorting but not display). Inverted "Last, First" → before the comma, else the
-// last word; right for the two dominant formats, harmless on the rest.
-function surnameKey(name: string): string {
-  const cleaned = clean(name);
-  if (cleaned.includes(",")) {
-    return cleaned.slice(0, cleaned.indexOf(",")).trim().toLowerCase();
-  }
-  const tokens = cleaned.split(" ");
-  return (tokens[tokens.length - 1] || cleaned).toLowerCase();
-}
-
 /**
- * Case-insensitive ordering key for a bibliography: the first author's
- * best-effort surname, falling back to the title when there are no authors.
+ * Case-insensitive ordering key. We sort by title rather than author: upstream
+ * name-part order is inconsistent (some "First Last", some "Last First"), so a
+ * surname can't be picked reliably, whereas the title is unambiguous. A leading
+ * article is dropped, per APA's rule for alphabetising titles. Falls back to the
+ * first author as stored when there's no title.
  */
 export function apaSortKey(input: ApaReferenceInput): string {
-  const first = (input.authors ?? []).map(clean).find(Boolean);
-  return first ? surnameKey(first) : clean(input.title).toLowerCase();
+  const title = clean(input.title)
+    .toLowerCase()
+    .replace(/^(the|a|an)\s+/, "");
+  if (title) return title;
+  return ((input.authors ?? []).map(clean).find(Boolean) ?? "").toLowerCase();
 }
 
 function yearValue(year: ApaReferenceInput["year"]): number {
@@ -165,8 +158,8 @@ function yearValue(year: ApaReferenceInput["year"]): number {
 }
 
 /**
- * APA bibliography ordering: alphabetical by first-author surname, then by year
- * (earliest first) within the same author. Use as an Array#sort comparator.
+ * Bibliography ordering: alphabetical by title (see apaSortKey), then by year
+ * (earliest first) to break ties. Use as an Array#sort comparator.
  */
 export function compareApaReferences(
   a: ApaReferenceInput,

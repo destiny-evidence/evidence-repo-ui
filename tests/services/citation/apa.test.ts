@@ -162,46 +162,39 @@ describe("formatApaReference", () => {
 });
 
 describe("apaSortKey", () => {
-  test("derives the surname from a 'First Last' name", () => {
-    expect(apaSortKey({ authors: ["Jane Smith"], title: "Z" })).toBe("smith");
+  test("keys on the title, lowercased", () => {
+    expect(apaSortKey({ authors: ["Jane Smith"], title: "Vaccine uptake" })).toBe(
+      "vaccine uptake",
+    );
   });
 
-  test("derives the surname from an inverted 'Last, First' name", () => {
-    expect(apaSortKey({ authors: ["Smith, Jane"], title: "Z" })).toBe("smith");
+  test("ignores a leading article", () => {
+    expect(apaSortKey({ authors: [], title: "The European journal" })).toBe(
+      "european journal",
+    );
   });
 
-  test("uses the last word for a middle-name form", () => {
-    expect(apaSortKey({ authors: ["J. A. Smith"], title: "Z" })).toBe("smith");
-  });
-
-  test("falls back to the title when there are no authors", () => {
-    expect(apaSortKey({ authors: [], title: "A Study" })).toBe("a study");
+  test("falls back to the first author when there is no title", () => {
+    expect(apaSortKey({ authors: ["Jit Mark"], title: null })).toBe("jit mark");
   });
 });
 
 describe("compareApaReferences", () => {
-  const ref = (author: string, year: number | null, title = "") => ({
-    authors: [author],
+  const ref = (title: string, year: number | null) => ({
+    authors: [],
     year,
     title,
   });
 
-  test("orders alphabetically by best-effort surname", () => {
-    const list = [ref("Jane Smith", 2020), ref("Bob Adams", 2019)];
-    const ordered = [...list].sort(compareApaReferences).map((r) => r.authors[0]);
-    expect(ordered).toEqual(["Bob Adams", "Jane Smith"]);
+  test("orders alphabetically by title, ignoring leading articles", () => {
+    const list = [ref("The zebra study", 2020), ref("Apples", 2019)];
+    const ordered = [...list].sort(compareApaReferences).map((r) => r.title);
+    expect(ordered).toEqual(["Apples", "The zebra study"]);
   });
 
-  test("matches inverted and plain forms of the same surname, then tiebreaks by year", () => {
-    const list = [ref("Smith, Jane", 2021), ref("Jane Smith", 2018)];
+  test("breaks ties by year, earliest first; undated last", () => {
+    const list = [ref("Same title", null), ref("Same title", 2010), ref("Same title", 2000)];
     const ordered = [...list].sort(compareApaReferences).map((r) => r.year);
-    // Same surname → earliest year first.
-    expect(ordered).toEqual([2018, 2021]);
-  });
-
-  test("sorts undated works last within an author group", () => {
-    const list = [ref("Smith, J", null), ref("Smith, J", 2000)];
-    const ordered = [...list].sort(compareApaReferences).map((r) => r.year);
-    expect(ordered).toEqual([2000, null]);
+    expect(ordered).toEqual([2000, 2010, null]);
   });
 });

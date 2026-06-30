@@ -41,9 +41,12 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
     ai.status === "generating" ? ai.runInBackground : ai.dismiss;
   const context = ai.context;
 
-  // The summary's bibliography: a RIS export of the same search, loaded once the
-  // summary is done. Shared by the drawer's References section and its PDF.
-  const references = useReferenceListExport(ai.search, ai.status === "done");
+  // The summary's bibliography: a RIS export of the same search. Preloaded
+  // alongside generation.
+  const references = useReferenceListExport(
+    ai.search,
+    ai.status === "generating" || ai.status === "done",
+  );
 
   return (
     <Drawer
