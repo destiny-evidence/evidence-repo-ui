@@ -529,6 +529,102 @@ describe("parseInvestigation", () => {
     expect(result.findings[1].sampleSize?.value).toBe(47);
   });
 
+  test("resolves structural refs arriving as single-element arrays", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: [
+            { "@id": "_:int", "@type": "Intervention", name: "Wrapped intervention" },
+          ],
+          comparedTo: [
+            { "@id": "_:ctrl", "@type": "ControlCondition", description: "Wrapped control" },
+          ],
+          hasContext: [{ "@id": "_:ctx", "@type": "Context" }],
+          hasOutcome: { "@type": "Outcome" },
+        },
+      ],
+    });
+    const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
+    expect(f.intervention?.name).toBe("Wrapped intervention");
+    expect(f.control?.description).toBe("Wrapped control");
+    expect(f.context).not.toBeNull();
+  });
+
+  test("resolves an array-wrapped blank-node structural ref across findings", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: [
+            { "@id": "_:int", "@type": "Intervention", name: "Shared intervention" },
+          ],
+          hasContext: { "@id": "_:ctx", "@type": "Context" },
+          hasOutcome: { "@type": "Outcome" },
+        },
+        {
+          "@type": "Finding",
+          evaluates: ["_:int"],
+          hasOutcome: { "@type": "Outcome" },
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.findings[0].intervention?.name).toBe("Shared intervention");
+    expect(result.findings[1].intervention?.name).toBe("Shared intervention");
+    expect(result.findings[1].interventionRef).toBe("_:int");
+  });
+
+  test("resolves arm forCondition arriving as an array", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          hasArmData: [
+            {
+              "@id": "_:armI",
+              "@type": "ObservedResult",
+              forCondition: ["_:int"],
+              n: 100,
+            },
+          ],
+        },
+      ],
+    });
+    const arm = parseInvestigation(data, PREFIXES, LABELS).findings[0].arms![0];
+    expect(arm.conditionRef).toBe("_:int");
+  });
+
+  test("resolves effectSizeMetric and estimateSource arriving as arrays of CURIE strings", () => {
+    const labels = new Map([
+      ...LABELS,
+      ["https://vocab.evidence-repository.org/HEDGES_G", "Hedges' g"],
+      [
+        "https://vocab.evidence-repository.org/COMPUTED",
+        "Computed from summary statistics",
+      ],
+    ]);
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          hasEffectEstimate: [
+            {
+              "@type": "EffectEstimate",
+              pointEstimate: -0.48,
+              effectSizeMetric: ["evrepo:HEDGES_G"],
+              estimateSource: ["evrepo:COMPUTED"],
+            },
+          ],
+        },
+      ],
+    });
+    const ee = parseInvestigation(data, PREFIXES, labels).findings[0]
+      .effectEstimates![0];
+    expect(ee.effectSizeMetric?.label).toBe("Hedges' g");
+    expect(ee.estimateSource?.label).toBe("Computed from summary statistics");
+  });
+
   test("parses effect estimates with CI bounds, metric, and adjustment flags", () => {
     const labels = new Map([
       ...LABELS,

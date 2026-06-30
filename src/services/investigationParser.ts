@@ -269,7 +269,7 @@ function parseArm(node: Dict): ArmData {
   const numField = (key: string) => resolveNumericValue(node[key]);
   return {
     id: getString(node["@id"]) ?? "",
-    conditionRef: getIdRef(node["forCondition"]),
+    conditionRef: getIdRef(first(node["forCondition"])),
     n: numField("n"),
     mean: numField("mean"),
     sd: numField("sd"),
@@ -296,8 +296,16 @@ function parseEffectEstimate(
     confidenceLevel: resolveNumericValue(node["confidenceLevel"]),
     ciLower: resolveNumericValue(node["confidenceIntervalLower"]),
     ciUpper: resolveNumericValue(node["confidenceIntervalUpper"]),
-    effectSizeMetric: resolveConceptRef(node["effectSizeMetric"], prefixes, labels),
-    estimateSource: resolveConceptRef(node["estimateSource"], prefixes, labels),
+    effectSizeMetric: resolveConceptRef(
+      first(node["effectSizeMetric"]),
+      prefixes,
+      labels,
+    ),
+    estimateSource: resolveConceptRef(
+      first(node["estimateSource"]),
+      prefixes,
+      labels,
+    ),
     baselineAdjusted:
       typeof node["baselineAdjusted"] === "boolean"
         ? (node["baselineAdjusted"] as boolean)
@@ -330,11 +338,15 @@ function parseSingleFinding(
   prefixes: Map<string, string>,
   labels: Map<string, string>,
 ): FindingData {
-  const interv = resolveRef(raw["evaluates"], blankNodes, (n) =>
+  const interv = resolveRef(first(raw["evaluates"]), blankNodes, (n) =>
     parseIntervention(n, prefixes, labels),
   );
-  const ctrl = resolveRef(raw["comparedTo"], blankNodes, parseControlCondition);
-  const ctx = resolveRef(raw["hasContext"], blankNodes, (n) =>
+  const ctrl = resolveRef(
+    first(raw["comparedTo"]),
+    blankNodes,
+    parseControlCondition,
+  );
+  const ctx = resolveRef(first(raw["hasContext"]), blankNodes, (n) =>
     parseContext(n, prefixes, labels),
   );
 
@@ -403,9 +415,10 @@ function parseFindings(
   for (const raw of rawFindings) {
     if (!isDict(raw)) continue;
     for (const key of ["evaluates", "comparedTo", "hasContext", "sampleSize"]) {
-      const child = raw[key];
-      if (isDict(child) && typeof child["@id"] === "string") {
-        blankNodes.set(child["@id"] as string, child);
+      for (const child of ensureArray(raw[key]).filter(isDict)) {
+        if (typeof child["@id"] === "string") {
+          blankNodes.set(child["@id"] as string, child);
+        }
       }
     }
   }
