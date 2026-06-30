@@ -2,6 +2,7 @@ import { describe, test, expect } from "vitest";
 import {
   extractAbstract,
   extractBibliographic,
+  extractFindingsAndEstimatesCount,
   extractLatestEnhancement,
   extractLinkedData,
   extractLinkedDataEnhancement,
@@ -9,7 +10,9 @@ import {
   extractOpenAlexId,
   extractOtherIdentifier,
   formatPagination,
+  getInvestigation,
 } from "@/services/referenceUtils";
+import { makeReference } from "../fixtures";
 import type {
   Reference,
   Enhancement,
@@ -421,5 +424,69 @@ describe("extractAbstract", () => {
       ],
     };
     expect(extractAbstract(ref)).toBe(duplicateOnly);
+  });
+});
+
+describe("getInvestigation", () => {
+  test("unwraps a bare-dict hasInvestigation", () => {
+    expect(getInvestigation({ hasInvestigation: { marker: "inv" } })).toEqual({
+      marker: "inv",
+    });
+  });
+
+  test("takes the first element of an array-wrapped hasInvestigation", () => {
+    expect(getInvestigation({ hasInvestigation: [{ marker: "inv" }] })).toEqual({
+      marker: "inv",
+    });
+  });
+
+  test("falls back to the root when the wrapper is omitted", () => {
+    const root = { studyDesign: { "@id": "esea:C1" } };
+    expect(getInvestigation(root)).toBe(root);
+  });
+});
+
+describe("extractFindingsAndEstimatesCount", () => {
+  test("returns null when the reference has no linked-data enhancement", () => {
+    expect(extractFindingsAndEstimatesCount(makeReference({}))).toBeNull();
+  });
+
+  test("counts a bare-dict single finding and its bare-dict estimate", () => {
+    const ref = makeReference({
+      investigation: {
+        hasFinding: { hasEffectEstimate: { pointEstimate: 0.3 } },
+      },
+    });
+    expect(extractFindingsAndEstimatesCount(ref)).toEqual({
+      findings: 1,
+      estimates: 1,
+    });
+  });
+
+  test("counts array-form findings and estimates unchanged", () => {
+    const ref = makeReference({
+      investigation: {
+        hasFinding: [
+          { hasEffectEstimate: [{}, {}] },
+          { hasEffectEstimate: [{}] },
+        ],
+      },
+    });
+    expect(extractFindingsAndEstimatesCount(ref)).toEqual({
+      findings: 2,
+      estimates: 3,
+    });
+  });
+
+  test("ignores non-dict entries in a findings array", () => {
+    const ref = makeReference({
+      investigation: {
+        hasFinding: [{ hasEffectEstimate: {} }, "stray"],
+      },
+    });
+    expect(extractFindingsAndEstimatesCount(ref)).toEqual({
+      findings: 1,
+      estimates: 1,
+    });
   });
 });

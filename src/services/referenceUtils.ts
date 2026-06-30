@@ -17,12 +17,23 @@ export function isDict(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+export function ensureArray(v: unknown): unknown[] {
+  if (v === undefined || v === null) return [];
+  return Array.isArray(v) ? v : [v];
+}
+
+export function first(v: unknown): unknown {
+  return Array.isArray(v) ? v[0] : v;
+}
+
 // The investigation node of a linked-data `data` dict: `hasInvestigation` when
-// present, else the dict itself (vocabularies that omit the wrapper).
+// present (dict or array-wrapped, take first), else the dict itself
+// (vocabularies that omit the wrapper).
 export function getInvestigation(
   data: Record<string, unknown>,
 ): Record<string, unknown> {
-  return isDict(data["hasInvestigation"]) ? data["hasInvestigation"] : data;
+  const inv = first(data["hasInvestigation"]);
+  return isDict(inv) ? inv : data;
 }
 
 /**
@@ -134,16 +145,12 @@ export function extractFindingsAndEstimatesCount(
   const ld = extractLinkedData(reference);
   if (!ld) return null;
   const investigation = getInvestigation(ld.data);
-  const rawFindings = Array.isArray(investigation["hasFinding"])
-    ? investigation["hasFinding"]
-    : [];
+  const findings = ensureArray(investigation["hasFinding"]).filter(isDict);
   let estimates = 0;
-  for (const f of rawFindings) {
-    if (isDict(f) && Array.isArray(f["hasEffectEstimate"])) {
-      estimates += f["hasEffectEstimate"].length;
-    }
+  for (const f of findings) {
+    estimates += ensureArray(f["hasEffectEstimate"]).filter(isDict).length;
   }
-  return { findings: rawFindings.length, estimates };
+  return { findings: findings.length, estimates };
 }
 
 export function extractDoi(

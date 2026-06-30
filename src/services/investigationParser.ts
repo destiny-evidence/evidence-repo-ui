@@ -1,5 +1,5 @@
 import { expandCompactUri } from "./vocabulary/contextService";
-import { getInvestigation, isDict } from "./referenceUtils";
+import { ensureArray, getInvestigation, isDict } from "./referenceUtils";
 import type {
   InvestigationData,
   CodedAnnotation,
@@ -18,11 +18,6 @@ import type {
 type Dict = Record<string, unknown>;
 
 const SKIP_STATUSES = ["notReported", "notApplicable"];
-
-function ensureArray(v: unknown): unknown[] {
-  if (v === undefined || v === null) return [];
-  return Array.isArray(v) ? v : [v];
-}
 
 function shouldSkip(node: Dict, prefixes: Map<string, string>): boolean {
   const status = node["status"];
