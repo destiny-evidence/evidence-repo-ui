@@ -58,6 +58,17 @@ function formatAuthors(
   return year ? `${names} (${year})` : names;
 }
 
+function dedupeByUri(
+  annotations: CodedAnnotation<ResolvedConcept>[],
+): CodedAnnotation<ResolvedConcept>[] {
+  const seen = new Set<string>();
+  return annotations.filter((a) => {
+    if (seen.has(a.value.uri)) return false;
+    seen.add(a.value.uri);
+    return true;
+  });
+}
+
 export function InvestigationCard({
   title,
   authors,
@@ -74,9 +85,15 @@ export function InvestigationCard({
   vocabUnavailable,
 }: InvestigationCardProps) {
   const venueText = formatVenue(venue, pagination);
+  const docTypeTags = dedupeByUri(documentTypes).map(
+    (d) => d.value.label ?? d.value.uri,
+  );
+  const studyDesignTags = dedupeByUri(studyDesigns).map(
+    (d) => d.value.label ?? d.value.uri,
+  );
   const hasInvestigationContent =
-    documentTypes.length > 0 ||
-    studyDesigns.length > 0 ||
+    docTypeTags.length > 0 ||
+    studyDesignTags.length > 0 ||
     vocabUnavailable ||
     codingInstitution;
 
@@ -128,17 +145,11 @@ export function InvestigationCard({
                 Vocabulary unavailable — some labels could not be resolved.
               </p>
             )}
-            {documentTypes.length > 0 && (
-              <TagGroup
-                label="Doc Type"
-                tags={documentTypes.map((d) => d.value.label ?? d.value.uri)}
-              />
+            {docTypeTags.length > 0 && (
+              <TagGroup label="Doc Type" tags={docTypeTags} />
             )}
-            {studyDesigns.length > 0 && (
-              <TagGroup
-                label="Study Design"
-                tags={studyDesigns.map((d) => d.value.label ?? d.value.uri)}
-              />
+            {studyDesignTags.length > 0 && (
+              <TagGroup label="Study Design" tags={studyDesignTags} />
             )}
             {codingInstitution && (
               <p

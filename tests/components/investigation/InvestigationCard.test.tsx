@@ -153,6 +153,28 @@ describe("InvestigationCard", () => {
     expect(container.querySelector(".tag-group")).toBeNull();
   });
 
+  test("dedupes repeated concept URIs in doc type and study design tags", () => {
+    render(
+      <InvestigationCard
+        {...DEFAULT_PROPS}
+        documentTypes={[
+          { value: { uri: "u:ja", label: "Journal Article" } },
+          { value: { uri: "u:ja", label: "Journal Article" } },
+        ]}
+        studyDesigns={[
+          { value: { uri: "u:qed", label: "Quasi-experimental study" } },
+          { value: { uri: "u:rct", label: "Randomised Controlled Trial" } },
+          { value: { uri: "u:qed", label: "Quasi-experimental study" } },
+          { value: { uri: "u:rct", label: "Randomised Controlled Trial" } },
+          { value: { uri: "u:rct", label: "Randomised Controlled Trial" } },
+        ]}
+      />,
+    );
+    expect(screen.getAllByText("Journal Article")).toHaveLength(1);
+    expect(screen.getAllByText("Quasi-experimental study")).toHaveLength(1);
+    expect(screen.getAllByText("Randomised Controlled Trial")).toHaveLength(1);
+  });
+
   test("shows retracted banner when isRetracted is true", () => {
     render(<InvestigationCard {...DEFAULT_PROPS} isRetracted={true} />);
 
