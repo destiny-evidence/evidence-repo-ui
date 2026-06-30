@@ -258,8 +258,7 @@ export function parseAppliedConcepts(
   prefixes: Map<string, string>,
   labels: Map<string, string>,
 ): ResolvedConcept[] {
-  const raw = investigation["hasAppliedConcept"];
-  const items = Array.isArray(raw) ? raw : [];
+  const items = ensureArray(investigation["hasAppliedConcept"]);
   return items
     .map((v) => resolveConceptRef(v, prefixes, labels))
     .filter((c): c is ResolvedConcept => c !== undefined);

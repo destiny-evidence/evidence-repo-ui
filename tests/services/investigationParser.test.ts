@@ -119,6 +119,32 @@ describe("parseInvestigation", () => {
     ]);
   });
 
+  test("resolves a single hasAppliedConcept arriving as a bare URI string", () => {
+    const data = makeData({
+      hasAppliedConcept: "https://vocab.esea.education/C00086",
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.appliedConcepts).toEqual([
+      {
+        uri: "https://vocab.esea.education/C00086",
+        label: "Cooperative Learning",
+      },
+    ]);
+  });
+
+  test("resolves a single hasAppliedConcept arriving as a bare {@id} object", () => {
+    const data = makeData({
+      hasAppliedConcept: { "@id": "https://vocab.esea.education/C00086" },
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.appliedConcepts).toEqual([
+      {
+        uri: "https://vocab.esea.education/C00086",
+        label: "Cooperative Learning",
+      },
+    ]);
+  });
+
   test("extractIsRetracted returns true when set", () => {
     const data = makeData({ isRetracted: true });
     expect(extractIsRetracted(data)).toBe(true);
