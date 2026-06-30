@@ -2,12 +2,8 @@
  * APA 7th-edition reference formatting.
  *
  * Author names are passed through *as stored*, not inverted to "Last, F.".
- * Upstream author strings are inconsistent across import sources, so a
- * "First Last → Last, F." transform corrupts about as often as it normalises
- * (e.g. "Smith J" → "J, S."). We'd rather render a faithful "Jane Smith" than a
- * confidently-wrong inversion. Only the APA list-level rules — comma separators,
- * the ampersand before the last author, and the 21+ ellipsis — are applied,
- * since those are safe whatever the individual name format.
+ * Upstream author strings are inconsistent, eg some "First Last", some "Last First",
+ * some "Last. F", some "F. Last".
  *
  * The formatter returns an array of {@link ApaSegment} (text + italic flag) so a
  * rich renderer (HTML italics) and a plain-text consumer (PDF) can share one
@@ -79,10 +75,7 @@ function formatDoiUrl(doi: string | null | undefined): string | null {
 }
 
 /**
- * Format a reference as APA 7th-edition segments. Tuned for journal articles
- * (the corpus is overwhelmingly articles); degrades gracefully when fields are
- * missing. Article titles are rendered as stored — APA wants sentence case, but
- * we can't recase without mangling proper nouns and acronyms.
+ * Format a reference as APA 7th-edition segments.
  */
 export function formatApaReference(input: ApaReferenceInput): ApaSegment[] {
   const out: ApaSegment[] = [];
@@ -137,8 +130,8 @@ export function apaPlainText(segments: ApaSegment[]): string {
 }
 
 /**
- * Case-insensitive ordering key. We sort by title rather than author: upstream
- * name-part order is inconsistent (some "First Last", some "Last First"), so a
+ * Case-insensitive ordering key. We sort by title rather than author due to
+ * upstream data issues (see above), so a
  * surname can't be picked reliably, whereas the title is unambiguous. A leading
  * article is dropped, per APA's rule for alphabetising titles. Falls back to the
  * first author as stored when there's no title.

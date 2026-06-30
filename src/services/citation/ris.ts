@@ -3,8 +3,7 @@
  *
  * RIS is the tagged citation format reference managers consume: each record is a
  * run of `TAG  - value` lines starting at `TY` and ending at `ER`. We parse the
- * subset our backend emits (see destiny-repository's `ris.py`) and map it to the
- * APA formatter's input so the bibliography PDF is built from the *same* RIS the
+ * subset our backend emits so the bibliography PDF is built from the *same* RIS the
  * user can download — one source of bibliographic truth.
  */
 
