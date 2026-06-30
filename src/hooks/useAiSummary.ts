@@ -36,6 +36,11 @@ export interface UseAiSummaryResult {
   context: AiSummaryContext | null;
   /** URL of the search the active summary came from (null when idle). */
   originUrl: string | null;
+  /**
+   * The originating search, retained so the drawer can request the same
+   * reference set as a RIS export for its bibliography. Null when idle.
+   */
+  search: { query: string | undefined; filters: Omit<SearchFilters, "page"> } | null;
   /** The drawer is visible when there's an active summary and it isn't minimized. */
   drawerOpen: boolean;
   generate: (input: AiSummaryInput) => void;
@@ -59,6 +64,7 @@ export function useAiSummary(): UseAiSummaryResult {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [context, setContext] = useState<AiSummaryContext | null>(null);
   const [originUrl, setOriginUrl] = useState<string | null>(null);
+  const [search, setSearch] = useState<UseAiSummaryResult["search"]>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   // Guards against a stale request resolving after dismiss/regenerate.
@@ -74,6 +80,7 @@ export function useAiSummary(): UseAiSummaryResult {
     setErrorMessage(null);
     setContext(null);
     setOriginUrl(null);
+    setSearch(null);
   }, []);
 
   const generate = useCallback((input: AiSummaryInput) => {
@@ -91,6 +98,7 @@ export function useAiSummary(): UseAiSummaryResult {
     // generates or runs in the background) can't change what the drawer shows.
     setContext(input.context);
     setOriginUrl(input.originUrl);
+    setSearch({ query: input.query, filters: input.filters });
 
     // Resolve every matching reference id, then summarise them. Both steps
     // honour the abort signal, so dismiss/regenerate cancels in-flight work.
@@ -136,6 +144,7 @@ export function useAiSummary(): UseAiSummaryResult {
     errorMessage,
     context,
     originUrl,
+    search,
     drawerOpen: status !== "idle" && !minimized,
     generate,
     open,

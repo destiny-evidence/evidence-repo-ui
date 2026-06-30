@@ -10,8 +10,10 @@ import type {
 } from "@/hooks/useAiSummary";
 import type { SkipReason, SummariseResponse } from "@/services/summariser";
 import { buildSummaryFilename, downloadSummaryPdf } from "@/services/export/summaryPdf";
+import { useReferenceListExport } from "@/hooks/useReferenceListExport";
+import type { ApaReferenceInput } from "@/services/citation/apa";
 import { formatTotal } from "@/utils/searchTotal";
-import { SummaryBody } from "./renderSummary";
+import { SummaryBody, SummaryReferences } from "./renderSummary";
 import "./ai-summary.css";
 
 interface AiSummaryDrawerProps {
@@ -39,6 +41,10 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
     ai.status === "generating" ? ai.runInBackground : ai.dismiss;
   const context = ai.context;
 
+  // The summary's bibliography: a RIS export of the same search, loaded once the
+  // summary is done. Shared by the drawer's References section and its PDF.
+  const references = useReferenceListExport(ai.search, ai.status === "done");
+
   return (
     <Drawer
       open={ai.drawerOpen}
@@ -57,7 +63,7 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
           ✕
         </button>
       }
-      footer={<DrawerFooter ai={ai} />}
+      footer={<DrawerFooter ai={ai} references={references.inputs} />}
       closeOnBackdrop
       onClose={handleClose}
     >
@@ -83,6 +89,7 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
           <Disclaimer />
           <SummaryBody summary={ai.result.summary} papers={ai.result.papers} />
           <CoverageNote result={ai.result} />
+          <SummaryReferences references={references} />
         </>
       )}
     </Drawer>
@@ -170,10 +177,12 @@ function SavePdfButton({
   result,
   context,
   originUrl,
+  references,
 }: {
   result: SummariseResponse;
   context: AiSummaryContext;
   originUrl: string | null;
+  references: ApaReferenceInput[];
 }) {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -187,6 +196,7 @@ function SavePdfButton({
         context,
         buildSummaryFilename(result.summary.narrative[0]?.header),
         originUrl,
+        references,
       );
     } catch {
       setFailed(true);
@@ -213,7 +223,13 @@ function SavePdfButton({
   );
 }
 
-function DrawerFooter({ ai }: { ai: UseAiSummaryResult }) {
+function DrawerFooter({
+  ai,
+  references,
+}: {
+  ai: UseAiSummaryResult;
+  references: ApaReferenceInput[];
+}) {
   const currentUrl = useCurrentUrl();
   // Only worth offering "Open this search" from a different page.
   const showOpenSearch = ai.originUrl !== null && ai.originUrl !== currentUrl;
@@ -244,6 +260,7 @@ function DrawerFooter({ ai }: { ai: UseAiSummaryResult }) {
           result={ai.result}
           context={ai.context}
           originUrl={ai.originUrl}
+          references={references}
         />
       )}
       {showOpenSearch && (

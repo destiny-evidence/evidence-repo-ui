@@ -1,10 +1,7 @@
 /**
- * Client-side AI-summary PDF. Embeds the DejaVu family (sans / serif / mono) so
- * Greek, maths and other non-Latin-1 symbols render faithfully — jsPDF's built-in
- * fonts are WinAnsi-only and would corrupt them into plausible-but-wrong glyphs.
- * DejaVu is permissively licensed for embedding (unlike our Klim brand faces).
- * The TTFs load on demand alongside the lazy jsPDF chunk, so they cost nothing
- * until a user exports. Layout mirrors the on-screen drawer (renderSummary.tsx).
+ * Client-side AI-summary PDF. Uses the shared DejaVu font embedding and design
+ * tokens (see pdfShared.ts) so non-Latin-1 symbols render faithfully. Layout
+ * mirrors the on-screen drawer (renderSummary.tsx).
  */
 
 import type { jsPDF as JsPdfDoc } from "jspdf";
@@ -16,71 +13,37 @@ import type {
   SummariseResponse,
 } from "@/services/summariser";
 import { formatTotal } from "@/utils/searchTotal";
-import sansUrl from "./fonts/DejaVuSans.ttf?url";
-import sansBoldUrl from "./fonts/DejaVuSans-Bold.ttf?url";
-import serifItalicUrl from "./fonts/DejaVuSerif-Italic.ttf?url";
-import monoUrl from "./fonts/DejaVuSansMono.ttf?url";
-
-type RGB = readonly [number, number, number];
-type PdfFont = "DejaVuSans" | "DejaVuSerif" | "DejaVuSansMono";
-type FontStyle = "normal" | "bold" | "italic";
-
-const FONT_SANS: PdfFont = "DejaVuSans"; // body, title, inline markers, links
-const FONT_SERIF: PdfFont = "DejaVuSerif"; // quotes (italic)
-const FONT_MONO: PdfFont = "DejaVuSansMono"; // section labels
-
-// jsPDF embeds one TTF per (family, style); these are every face the layout uses.
-const FONT_FACES: ReadonlyArray<{
-  url: string;
-  file: string;
-  family: PdfFont;
-  style: FontStyle;
-}> = [
-  { url: sansUrl, file: "DejaVuSans.ttf", family: FONT_SANS, style: "normal" },
-  { url: sansBoldUrl, file: "DejaVuSans-Bold.ttf", family: FONT_SANS, style: "bold" },
-  { url: serifItalicUrl, file: "DejaVuSerif-Italic.ttf", family: FONT_SERIF, style: "italic" },
-  { url: monoUrl, file: "DejaVuSansMono.ttf", family: FONT_MONO, style: "normal" },
-];
-
-// App design tokens (variables.css), duplicated since jsPDF can't read CSS vars.
-const TEXT_PRIMARY: RGB = [22, 27, 34];
-const TEXT_SECONDARY: RGB = [66, 74, 83];
-const TEXT_TERTIARY: RGB = [110, 119, 129];
-const TEXT_QUOTE: RGB = [92, 100, 110]; // a touch lighter than secondary, for quotes
-const ACCENT: RGB = [36, 57, 107];
-const WARNING_TEXT: RGB = [122, 90, 0];
-const WARNING_LIGHT: RGB = [254, 243, 199];
-const WARNING_BORDER: RGB = [255, 193, 7];
-const BORDER: RGB = [216, 220, 226];
-const WHITE: RGB = [255, 255, 255];
+import {
+  type ApaReferenceInput,
+  formatApaReference,
+  apaPlainText,
+  compareApaReferences,
+} from "@/services/citation/apa";
+import {
+  type RGB,
+  type PdfFont,
+  type FontStyle,
+  FONT_SANS,
+  FONT_SERIF,
+  FONT_MONO,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+  TEXT_TERTIARY,
+  TEXT_QUOTE,
+  ACCENT,
+  WARNING_TEXT,
+  WARNING_LIGHT,
+  WARNING_BORDER,
+  BORDER,
+  WHITE,
+  registerFonts,
+} from "./pdfShared.ts";
 
 const SKIP_REASON_TEXT: Record<SkipReason, string> = {
   no_full_text: "had no full text available",
   not_pdf: "were not in PDF format",
   download_failed: "couldn't be downloaded",
 };
-
-/** Base64-encode an ArrayBuffer in chunks (sidesteps the arg limit on btoa). */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  }
-  return btoa(binary);
-}
-
-/** Fetch the TTF assets and register every face with the document. */
-async function registerFonts(doc: JsPdfDoc): Promise<void> {
-  await Promise.all(
-    FONT_FACES.map(async (face) => {
-      const buffer = await fetch(face.url).then((r) => r.arrayBuffer());
-      doc.addFileToVFS(face.file, arrayBufferToBase64(buffer));
-      doc.addFont(face.file, face.family, face.style);
-    }),
-  );
-}
 
 /** Author-year citation for a quote's source paper. Mirrors renderSummary.tsx. */
 export function citation(papers: PaperMeta[], paperId: string): string {
@@ -171,6 +134,7 @@ export async function buildSummaryPdf(
   result: SummariseResponse,
   context: AiSummaryContext,
   originUrl: string | null = null,
+  references: ApaReferenceInput[] = [],
 ): Promise<JsPdfDoc> {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -501,6 +465,22 @@ export async function buildSummaryPdf(
     gapAfter: 0,
   });
 
+  // ── References ────────────────────────────────────────────────────────
+  // APA bibliography for the summary's search, sourced from the backend RIS
+  // export (same as the results-page reference list). Plain text, alphabetical.
+  if (references.length > 0) {
+    sectionHead("References", TEXT_SECONDARY);
+    const sorted = [...references].sort(compareApaReferences);
+    for (const input of sorted) {
+      paragraph(apaPlainText(formatApaReference(input)), {
+        size: 8.5,
+        color: TEXT_SECONDARY,
+        gapAfter: 5,
+        lineFactor: 1.4,
+      });
+    }
+  }
+
   // Wire each [n] marker to its claim. Links attach to the current page, so
   // switch to the marker's page before adding, then restore.
   const lastPage = doc.getNumberOfPages();
@@ -523,7 +503,8 @@ export async function downloadSummaryPdf(
   context: AiSummaryContext,
   filename: string,
   originUrl: string | null = null,
+  references: ApaReferenceInput[] = [],
 ): Promise<void> {
-  const doc = await buildSummaryPdf(result, context, originUrl);
+  const doc = await buildSummaryPdf(result, context, originUrl, references);
   doc.save(filename);
 }
