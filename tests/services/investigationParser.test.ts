@@ -41,17 +41,17 @@ describe("parseInvestigation", () => {
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
 
-    expect(result.documentType).toBeDefined();
-    expect(result.documentType!.value.uri).toBe(
+    expect(result.documentTypes).toHaveLength(1);
+    expect(result.documentTypes[0].value.uri).toBe(
       "https://vocab.esea.education/C00008",
     );
-    expect(result.documentType!.value.label).toBe("Journal Article");
+    expect(result.documentTypes[0].value.label).toBe("Journal Article");
   });
 
-  test("returns undefined documentType when not present", () => {
+  test("returns empty documentTypes when not present", () => {
     const data = makeData({});
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.documentType).toBeUndefined();
+    expect(result.documentTypes).toEqual([]);
   });
 
   test("skips documentType with notReported status", () => {
@@ -64,7 +64,7 @@ describe("parseInvestigation", () => {
     });
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.documentType).toBeUndefined();
+    expect(result.documentTypes).toEqual([]);
   });
 
   test("skips documentType with notApplicable status", () => {
@@ -77,7 +77,81 @@ describe("parseInvestigation", () => {
     });
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.documentType).toBeUndefined();
+    expect(result.documentTypes).toEqual([]);
+  });
+
+  test("parses multiple documentTypes from an array", () => {
+    const data = makeData({
+      documentType: [
+        {
+          "@type": "DocumentTypeCodingAnnotation",
+          codedValue: { "@id": "esea:C00008" },
+          status: "evrepo:coded",
+        },
+        {
+          "@type": "DocumentTypeCodingAnnotation",
+          codedValue: { "@id": "esea:C00086" },
+          status: "evrepo:coded",
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.documentTypes.map((d) => d.value.label)).toEqual([
+      "Journal Article",
+      "Cooperative Learning",
+    ]);
+  });
+
+  test("parses a single studyDesign dict", () => {
+    const data = makeData({
+      studyDesign: {
+        "@type": "StudyDesignCodingAnnotation",
+        codedValue: { "@id": "esea:C00086" },
+        status: "evrepo:coded",
+      },
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.studyDesigns).toHaveLength(1);
+    expect(result.studyDesigns[0].value.label).toBe("Cooperative Learning");
+  });
+
+  test("parses multiple studyDesigns from an array", () => {
+    const data = makeData({
+      studyDesign: [
+        {
+          "@type": "StudyDesignCodingAnnotation",
+          codedValue: { "@id": "esea:C00086" },
+          status: "evrepo:coded",
+        },
+        {
+          "@type": "StudyDesignCodingAnnotation",
+          codedValue: { "@id": "esea:C00004" },
+          status: "evrepo:coded",
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.studyDesigns.map((d) => d.value.label)).toEqual([
+      "Cooperative Learning",
+      "Upper Secondary",
+    ]);
+  });
+
+  test("returns empty studyDesigns when absent", () => {
+    const result = parseInvestigation(makeData({}), PREFIXES, LABELS);
+    expect(result.studyDesigns).toEqual([]);
+  });
+
+  test("skips a studyDesign marked notReported", () => {
+    const data = makeData({
+      studyDesign: {
+        "@type": "StudyDesignCodingAnnotation",
+        codedValue: { "@id": "esea:C00086" },
+        status: "evrepo:notReported",
+      },
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.studyDesigns).toEqual([]);
   });
 
   test("parses isRetracted flag", () => {
@@ -167,7 +241,7 @@ describe("parseInvestigation", () => {
     };
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.documentType?.value.label).toBe("Journal Article");
+    expect(result.documentTypes[0]?.value.label).toBe("Journal Article");
   });
 
   test("returns empty findings when hasFinding is absent", () => {
@@ -783,9 +857,9 @@ describe("parseInvestigation", () => {
     });
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.documentType?.value.uri).toBe(
+    expect(result.documentTypes[0]?.value.uri).toBe(
       "https://vocab.esea.education/C99999",
     );
-    expect(result.documentType?.value.label).toBeUndefined();
+    expect(result.documentTypes[0]?.value.label).toBeUndefined();
   });
 });

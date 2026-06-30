@@ -452,8 +452,15 @@ export function parseInvestigation(
   const investigation = getInvestigation(data);
 
   return {
-    documentType: parseOptional(investigation, "documentType", (n) =>
-      resolveConceptAnnotation(n, prefixes, labels),
+    documentTypes: resolveConceptAnnotations(
+      investigation["documentType"],
+      prefixes,
+      labels,
+    ),
+    studyDesigns: resolveConceptAnnotations(
+      investigation["studyDesign"],
+      prefixes,
+      labels,
     ),
     isRetracted: investigation["isRetracted"] === true,
     findings: parseFindings(investigation, prefixes, labels),

@@ -135,7 +135,8 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
           doi={doi}
           abstract={abstract}
           publicationYear={bibliographic?.publication_year ?? null}
-          documentType={investigation?.documentType}
+          documentTypes={investigation?.documentTypes ?? []}
+          studyDesigns={investigation?.studyDesigns ?? []}
           codingInstitution={codingInstitution}
           isRetracted={isRetracted}
           hasInvestigation={hasLinkedData}

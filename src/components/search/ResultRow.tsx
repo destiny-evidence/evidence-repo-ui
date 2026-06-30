@@ -44,9 +44,9 @@ function formatAuthors(authors: { display_name: string }[]): string {
   return `${head}, +${authors.length - MAX_AUTHORS_SHOWN} more`;
 }
 
-// Document type first, then per-finding context/intervention/outcome concepts
-// and sample features. De-duped by URI; insertion order preserved so the
-// document type pill leads.
+// Investigation-level concepts (document type, study design) first, then
+// per-finding context/intervention/outcome concepts and sample features.
+// De-duped by URI; insertion order preserved so investigation pills lead.
 function aggregatePillConcepts(
   inv: InvestigationData,
 ): CodedAnnotation<ResolvedConcept>[] {
@@ -61,7 +61,8 @@ function aggregatePillConcepts(
   };
   const addAll = (xs?: CodedAnnotation<ResolvedConcept>[]) => xs?.forEach(add);
 
-  if (inv.documentType) add(inv.documentType);
+  addAll(inv.documentTypes);
+  addAll(inv.studyDesigns);
   for (const f of inv.findings) {
     addAll(f.context?.educationLevels);
     addAll(f.context?.settings);

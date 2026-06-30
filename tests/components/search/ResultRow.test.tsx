@@ -199,6 +199,26 @@ describe("ResultRow", () => {
     expect(pills?.querySelector(".tag-group__tag--more")).toBeNull();
   });
 
+  test("includes study design among the result pills (ESEA walk)", () => {
+    vocabState.labels = new Map([["http://ex/QED", "Quasi-experimental design"]]);
+    vocabState.broader = new Map();
+    vocabState.definitions = new Map();
+    contextState.context = { prefixes: new Map() };
+
+    const ref = makeRef({
+      investigation: {
+        studyDesign: { codedValue: { "@id": "http://ex/QED" } },
+        hasFinding: [],
+      },
+    });
+    const { container } = render(
+      <ResultRow communitySlug="esea" reference={ref} />,
+    );
+    const pills = container.querySelector(".row-pills");
+    expect(pills).not.toBeNull();
+    expect(pills).toHaveTextContent("Quasi-experimental design");
+  });
+
   test("caps pill list at PILL_CAP and renders +N more", () => {
     const overflow = 4;
     const labels = new Map<string, string>();

@@ -100,7 +100,8 @@ export interface FindingData {
 }
 
 export interface InvestigationData {
-  documentType?: CodedAnnotation<ResolvedConcept>;
+  documentTypes: CodedAnnotation<ResolvedConcept>[];
+  studyDesigns: CodedAnnotation<ResolvedConcept>[];
   isRetracted: boolean;
   findings: FindingData[];
   // Flat investigation-level concept refs (hasAppliedConcept). Bare URI

@@ -18,7 +18,8 @@ interface InvestigationCardProps {
   doi: string | null;
   abstract?: AbstractContentEnhancement | null;
   publicationYear: number | null;
-  documentType?: CodedAnnotation<ResolvedConcept>;
+  documentTypes: CodedAnnotation<ResolvedConcept>[];
+  studyDesigns: CodedAnnotation<ResolvedConcept>[];
   codingInstitution?: string | null;
   isRetracted: boolean;
   hasInvestigation: boolean;
@@ -65,7 +66,8 @@ export function InvestigationCard({
   doi,
   abstract = null,
   publicationYear,
-  documentType,
+  documentTypes,
+  studyDesigns,
   codingInstitution,
   isRetracted,
   hasInvestigation,
@@ -73,7 +75,10 @@ export function InvestigationCard({
 }: InvestigationCardProps) {
   const venueText = formatVenue(venue, pagination);
   const hasInvestigationContent =
-    documentType || vocabUnavailable || codingInstitution;
+    documentTypes.length > 0 ||
+    studyDesigns.length > 0 ||
+    vocabUnavailable ||
+    codingInstitution;
 
   return (
     <>
@@ -123,10 +128,16 @@ export function InvestigationCard({
                 Vocabulary unavailable — some labels could not be resolved.
               </p>
             )}
-            {documentType && (
+            {documentTypes.length > 0 && (
               <TagGroup
                 label="Doc Type"
-                tags={[documentType.value.label ?? documentType.value.uri]}
+                tags={documentTypes.map((d) => d.value.label ?? d.value.uri)}
+              />
+            )}
+            {studyDesigns.length > 0 && (
+              <TagGroup
+                label="Study Design"
+                tags={studyDesigns.map((d) => d.value.label ?? d.value.uri)}
               />
             )}
             {codingInstitution && (
