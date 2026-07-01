@@ -10,8 +10,10 @@ import type {
 } from "@/hooks/useAiSummary";
 import type { SkipReason, SummariseResponse } from "@/services/summariser";
 import { buildSummaryFilename, downloadSummaryPdf } from "@/services/export/summaryPdf";
-import { useReferenceListExport } from "@/hooks/useReferenceListExport";
-import type { ApaReferenceInput } from "@/services/citation/apa";
+import {
+  useReferenceListExport,
+  type UseReferenceListExportResult,
+} from "@/hooks/useReferenceListExport";
 import { formatTotal } from "@/utils/searchTotal";
 import { SummaryBody, SummaryReferences } from "./renderSummary";
 import "./ai-summary.css";
@@ -66,7 +68,7 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
           ✕
         </button>
       }
-      footer={<DrawerFooter ai={ai} references={references.inputs} />}
+      footer={<DrawerFooter ai={ai} references={references} />}
       closeOnBackdrop
       onClose={handleClose}
     >
@@ -185,10 +187,15 @@ function SavePdfButton({
   result: SummariseResponse;
   context: AiSummaryContext;
   originUrl: string | null;
-  references: ApaReferenceInput[];
+  references: UseReferenceListExportResult;
 }) {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+
+  // Block the download while the references are still loading, so the PDF isn't
+  // generated with an empty (silently dropped) References section. A failed load
+  // is allowed through — a PDF without references beats no PDF at all.
+  const preparing = references.status === "loading";
 
   async function handleClick() {
     setBusy(true);
@@ -199,7 +206,7 @@ function SavePdfButton({
         context,
         buildSummaryFilename(result.summary.narrative[0]?.header),
         originUrl,
-        references,
+        references.inputs,
       );
     } catch {
       setFailed(true);
@@ -213,15 +220,17 @@ function SavePdfButton({
       type="button"
       class="ai-btn"
       onClick={handleClick}
-      disabled={busy}
-      aria-busy={busy}
+      disabled={busy || preparing}
+      aria-busy={busy || preparing}
     >
-      {!busy && <DownloadIcon size={14} />}
-      {busy
-        ? "Generating…"
-        : failed
-          ? "Couldn't create PDF — retry"
-          : "Download"}
+      {!busy && !preparing && <DownloadIcon size={14} />}
+      {preparing
+        ? "Preparing references…"
+        : busy
+          ? "Generating…"
+          : failed
+            ? "Couldn't create PDF — retry"
+            : "Download"}
     </button>
   );
 }
@@ -231,7 +240,7 @@ function DrawerFooter({
   references,
 }: {
   ai: UseAiSummaryResult;
-  references: ApaReferenceInput[];
+  references: UseReferenceListExportResult;
 }) {
   const currentUrl = useCurrentUrl();
   // Only worth offering "Open this search" from a different page.
