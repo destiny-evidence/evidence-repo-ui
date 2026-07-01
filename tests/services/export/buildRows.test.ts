@@ -396,6 +396,39 @@ describe("buildFindingRows", () => {
     expect(outRows[0]!.intervention_n).toBe(100);
     expect(outRows[0]!.control_n).toBe(95);
   });
+
+  test("joins multiple sampleSize/attrition/cost values instead of dropping extras", () => {
+    const findings: Finding[] = [
+      {
+        sampleSize: [
+          { codedValue: { "@value": 100 }, supportingText: "arm A" },
+          { codedValue: { "@value": 120 }, supportingText: "arm B" },
+        ],
+        attrition: [{ codedValue: { "@value": 5 } }, { codedValue: { "@value": 8 } }],
+        cost: [{ codedValue: { "@value": 1000 } }, { codedValue: { "@value": 2000 } }],
+      },
+    ];
+    const rows = buildFindingRows("ref-1", findings, [1], VOCAB);
+    expect(rows[0]!.sampleSize_value).toBe("100; 120");
+    expect(rows[0]!.sampleSize_supportingText).toBe("arm A | arm B");
+    expect(rows[0]!.attrition_value).toBe("5; 8");
+    expect(rows[0]!.cost_value).toBe("1000; 2000");
+  });
+
+  test("resolves and joins sampleSize given as multiple blank-node refs", () => {
+    const findings: Finding[] = [
+      {
+        sampleSize: [
+          { "@id": "_:ss1", codedValue: { "@value": 100 } },
+          { "@id": "_:ss2", codedValue: { "@value": 120 } },
+        ],
+      },
+      // later finding reaches the same nodes by bare ref (the common real-data shape)
+      { sampleSize: ["_:ss1", "_:ss2"] },
+    ];
+    const rows = buildFindingRows("ref-1", findings, [1, 2], VOCAB);
+    expect(rows[1]!.sampleSize_value).toBe("100; 120");
+  });
 });
 
 describe("buildOutcomeRows", () => {
@@ -500,6 +533,23 @@ describe("buildOutcomeRows", () => {
     expect(armRows[0]!.intervention_duration_value).toBe(40);
     const outRows = buildOutcomeRows("ref-1", findings, [1], VOCAB);
     expect(outRows[0]!.effect_metric).toBe("Standardised Mean Difference");
+  });
+
+  test("joins multiple durations rather than dropping all but the first", () => {
+    const findings: Finding[] = [
+      {
+        evaluates: {
+          "@id": "_:i1",
+          duration: [
+            { codedValue: { "@value": 5 }, supportingText: "5 weeks" },
+            { codedValue: { "@value": 10 }, supportingText: "10 weeks" },
+          ],
+        },
+      },
+    ];
+    const rows = buildFindingRows("ref-1", findings, [1], VOCAB);
+    expect(rows[0]!.intervention_duration_value).toBe("5; 10");
+    expect(rows[0]!.intervention_duration_supportingText).toBe("5 weeks | 10 weeks");
   });
 
   test("tolerates single-dict hasArmData/hasEffectEstimate and array-wrapped hasOutcome (@set shape)", () => {

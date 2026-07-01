@@ -206,6 +206,18 @@ function joinCodedValues(annotations: unknown): string {
 }
 
 /**
+ * Scalar `@value` cell: a lone value kept typed (numeric stays numeric),
+ * two or more `; `-joined so an extra coded value is never dropped.
+ */
+function collapseCodedValues(annotations: unknown): CellValue {
+  const values = ensureArray(annotations)
+    .map((a) => codedValue(a))
+    .filter((v): v is string | number | boolean => v != null);
+  if (values.length <= 1) return values[0] ?? null;
+  return values.map((v) => String(v)).join("; ");
+}
+
+/**
  * Concatenate the `supportingText` field of each annotation with ` | `
  * between entries.
  */
@@ -375,14 +387,15 @@ export function buildFindingRows(
   vocab: ConceptResolver,
 ): ArmRow[] {
   const resolve = makeResolver(buildBlankNodeLookup(findings));
+  const resolveMany = (value: unknown): PlainRecord[] => ensureArray(value).map(resolve);
   const rows: ArmRow[] = [];
   for (let i = 0; i < findings.length; i++) {
     const finding = findings[i]!;
     const armId = armIds[i]!;
     const ctx = resolve(finding["hasContext"]);
-    const sampleSize = resolve(finding["sampleSize"]);
-    const attrition = resolve(finding["attrition"]);
-    const cost = resolve(finding["cost"]);
+    const sampleSizes = resolveMany(finding["sampleSize"]);
+    const attritions = resolveMany(finding["attrition"]);
+    const costs = resolveMany(finding["cost"]);
     const intervention = resolve(finding["evaluates"]);
     const control = resolve(finding["comparedTo"]);
     rows.push({
@@ -391,19 +404,19 @@ export function buildFindingRows(
       intervention_name: typeof intervention["name"] === "string" ? (intervention["name"] as string) : null,
       intervention_description: flattenDescription(intervention["description"]),
       control_description: flattenDescription(control["description"]),
-      intervention_duration_value: codedValue(first(intervention["duration"])),
-      intervention_duration_supportingText: supportingText(first(intervention["duration"])),
+      intervention_duration_value: collapseCodedValues(intervention["duration"]),
+      intervention_duration_supportingText: joinSupportingTexts(intervention["duration"]),
       intervention_educationTheme: joinCodedIds(intervention["educationTheme"], vocab),
       intervention_educationTheme_supportingText: joinSupportingTexts(intervention["educationTheme"]),
       intervention_implementationFidelity: joinCodedIds(ensureArray(intervention["implementationFidelity"]), vocab),
       intervention_implementationFidelity_supportingText: joinSupportingTexts(ensureArray(intervention["implementationFidelity"])),
       intervention_implementerType: joinCodedIds(ensureArray(intervention["implementerType"]), vocab),
       intervention_implementerType_supportingText: joinSupportingTexts(ensureArray(intervention["implementerType"])),
-      sampleSize_value: codedValue(sampleSize),
-      sampleSize_supportingText: supportingText(sampleSize),
-      attrition_value: codedValue(attrition),
-      attrition_supportingText: supportingText(attrition),
-      cost_value: codedValue(cost),
+      sampleSize_value: collapseCodedValues(sampleSizes),
+      sampleSize_supportingText: joinSupportingTexts(sampleSizes),
+      attrition_value: collapseCodedValues(attritions),
+      attrition_supportingText: joinSupportingTexts(attritions),
+      cost_value: collapseCodedValues(costs),
       context_country: joinCodedValues(ctx["country"]),
       context_countryLevel1: joinCodedValues(ctx["countryLevel1"]),
       context_educationLevel: joinCodedIds(ctx["educationLevel"], vocab),
