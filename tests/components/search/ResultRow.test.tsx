@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/preact";
+import { render, screen, fireEvent } from "@testing-library/preact";
 import { PILL_CAP, ResultRow } from "@/components/search/ResultRow";
 import { rawSourcePatterns } from "@/services/codingInstitution";
 import {
@@ -417,5 +417,41 @@ describe("ResultRow", () => {
     );
     expect(screen.queryByText("Cohort study")).not.toBeNull();
     expect(screen.queryByText("Nigeria")).toBeNull();
+  });
+
+  describe("selection", () => {
+    test("no checkbox unless selectable", () => {
+      render(<ResultRow communitySlug="esea" reference={makeRef()} />);
+      expect(screen.queryByRole("checkbox")).toBeNull();
+    });
+
+    test("checkbox toggles selection and does not sit inside the row link", () => {
+      const onToggle = vi.fn();
+      render(
+        <ResultRow
+          communitySlug="esea"
+          reference={makeRef()}
+          selectable
+          onToggle={onToggle}
+        />,
+      );
+      const box = screen.getByRole("checkbox", { name: /select on phonics/i });
+      fireEvent.click(box);
+      expect(onToggle).toHaveBeenCalledOnce();
+      // The checkbox is a sibling of the row link, not nested in it, so a tick
+      // can't also trigger navigation.
+      const rowLink = screen.getByRole("link", { name: /on phonics instruction/i });
+      expect(rowLink).not.toContainElement(box);
+    });
+
+    test("reflects selected state on the checkbox and the row", () => {
+      const { container } = render(
+        <ResultRow communitySlug="esea" reference={makeRef()} selectable selected />,
+      );
+      expect(
+        screen.getByRole("checkbox", { name: /deselect on phonics/i }),
+      ).toBeChecked();
+      expect(container.querySelector(".result-row")).toHaveClass("is-selected");
+    });
   });
 });

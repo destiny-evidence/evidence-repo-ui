@@ -32,6 +32,13 @@ import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDr
 import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
 import { useAiSummaryContext } from "@/components/ai-summary/AiSummaryProvider";
 import { aiSummariesEnabled } from "@/components/ai-summary/aiSummariesEnabled";
+import { SelectionControls } from "@/components/search/SelectionControls";
+import {
+  SelectionBanner,
+  type SelectionBannerContent,
+} from "@/components/search/SelectionBanner";
+import { selectionEnabled } from "@/components/search/selectionEnabled";
+import { useSelectionContext } from "@/components/search/SelectionProvider";
 import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
 import { formatTotal } from "@/utils/searchTotal";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
@@ -161,6 +168,23 @@ function SearchPageInner({ community }: { community: Community }) {
   const results = useSearch(params);
   const exportJob = useSearchExport();
   const ai = useAiSummaryContext();
+
+  // Reference selection lives in a provider above the router so it survives
+  // navigation. The identity below excludes page + sort, so paging/sorting
+  // keeps the selection while a new community/query/filter clears it.
+  const selection = useSelectionContext();
+  const selectionIdentity = JSON.stringify({
+    community: community.slug,
+    q: params.q,
+    conceptFilters: params.conceptFilters,
+    countryCodes: params.countryCodes,
+    startYear: params.startYear,
+    endYear: params.endYear,
+  });
+  const { syncSearchIdentity } = selection;
+  useEffect(() => {
+    syncSearchIdentity(selectionIdentity);
+  }, [syncSearchIdentity, selectionIdentity]);
 
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
   // shared cache, so the Refine button is almost always ready by the time
@@ -317,6 +341,44 @@ function SearchPageInner({ community }: { community: Community }) {
   const { aiSummaryWriter } = useAuth();
   const aiEnabled = aiSummariesEnabled(community, aiSummaryWriter);
 
+  // Row selection is only offered when a consumer (export or AI summary) can
+  // act on it, and the community has opted in via the feature flag.
+  const selectable = selectionEnabled(community, aiSummaryWriter);
+  const visibleIds = results.results?.references.map((r) => r.id) ?? [];
+  const selectionTotal = results.results?.total ?? { count: 0, is_lower_bound: false };
+  const selectionCount = selection.count(selectionTotal.count);
+  const isSelecting = selectable && hasResults && selectionCount > 0;
+  const masterState = selection.masterState(visibleIds);
+  const multiPage = results.results !== null && selectionTotal.count > visibleIds.length;
+  // "All N selected." only when everything really is selected; once a page is
+  // deselected in all-mode there are exclusions, so fall back to the count.
+  const allSelected =
+    selection.mode === "all" && selection.excluded.size === 0;
+  const selectionStatusLabel = allSelected
+    ? `All ${formatTotal(selectionTotal)} selected.`
+    : `${selectionCount.toLocaleString()} selected.`;
+  // The master checkbox selects/deselects the current page, keeping any
+  // cross-page selection (the banner escalates to all matches).
+  function handleMasterToggle() {
+    selection.setPageSelected(visibleIds, masterState !== "all");
+  }
+  // Selection summary row: the count and Clear, plus — whenever more than one
+  // page exists and the selection isn't already everything (a manual subset, or
+  // all-minus-exclusions) — an escalation to select every match.
+  const selectionBanner: SelectionBannerContent | null = isSelecting
+    ? {
+        countLabel: selectionStatusLabel,
+        selectAll:
+          multiPage && !allSelected
+            ? {
+                label: `Select all ${formatTotal(selectionTotal)} references`,
+                onAction: selection.selectAllPages,
+              }
+            : undefined,
+        onClear: selection.clear,
+      }
+    : null;
+
   // Terms framing the summary: the free-text query plus any applied concept
   // filters (a map cell arrives here with those filters pre-applied).
   const aiTerms = deriveSummaryTerms(params, vocab.labels);
@@ -401,9 +463,16 @@ function SearchPageInner({ community }: { community: Community }) {
 
       <section class="search-results">
         {showMetaBar && (
-          <div class="search-results__meta">
+          <div class={`search-results__meta${isSelecting ? " is-selecting" : ""}`}>
             <span class="search-results__meta-left" aria-live="polite">
-              {showSummary
+              {selectable && results.results && (
+                <SelectionControls
+                  master={masterState}
+                  onMasterToggle={handleMasterToggle}
+                  disabled={!hasResults}
+                />
+              )}
+              {!isSelecting && showSummary
                 ? results.error
                   ? (
                     <>
@@ -473,6 +542,8 @@ function SearchPageInner({ community }: { community: Community }) {
           </div>
         )}
 
+        {selectable && <SelectionBanner content={selectionBanner} />}
+
         <div
           class={`search-results__list${
             results.loading && results.results !== null ? " is-updating" : ""
@@ -500,6 +571,9 @@ function SearchPageInner({ community }: { community: Community }) {
               codingInstitution={community.codingInstitution}
               findingsAndEstimates={community.features.findingsAndEstimates}
               pillExcludedSchemes={community.pillExcludedSchemes}
+              selectable={selectable}
+              selected={selection.isSelected(ref.id)}
+              onToggle={() => selection.toggle(ref.id)}
             />
           ))}
         </div>

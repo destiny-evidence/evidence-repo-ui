@@ -4,6 +4,7 @@ import { SearchPage } from "@/pages/SearchPage";
 import { CommunityProvider } from "@/community/CommunityContext";
 import { AuthProvider } from "@/auth/AuthContext";
 import { AiSummaryProvider } from "@/components/ai-summary/AiSummaryProvider";
+import { SelectionProvider } from "@/components/search/SelectionProvider";
 import type { SearchResult } from "@/types/models";
 import {
   OUTCOME_SCHEME_FIXTURE,
@@ -17,7 +18,9 @@ function renderSearchPage() {
     <AuthProvider>
       <CommunityProvider>
         <AiSummaryProvider>
-          <SearchPage />
+          <SelectionProvider>
+            <SearchPage />
+          </SelectionProvider>
         </AiSummaryProvider>
       </CommunityProvider>
     </AuthProvider>,
