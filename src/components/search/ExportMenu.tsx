@@ -14,9 +14,9 @@ interface ExportMenuProps {
 }
 
 const FORMATS: { value: ExportFormat; name: string; ext: string }[] = [
+  { value: "excel", name: "Excel spreadsheet", ext: ".xlsx" },
   { value: "reference-list", name: "Reference list", ext: ".pdf" },
   { value: "ris", name: "RIS", ext: ".ris" },
-  { value: "excel", name: "Excel spreadsheet", ext: ".xlsx" },
 ];
 
 function busyLabel(status: ExportStatus): string | null {
