@@ -25,6 +25,7 @@ function makeAi(
     errorMessage: null,
     context,
     originUrl: "/test-community?q=afghanistan",
+    search: null,
     drawerOpen: true,
     generate: vi.fn(),
     open: vi.fn(),

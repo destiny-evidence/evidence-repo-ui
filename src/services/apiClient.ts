@@ -126,12 +126,17 @@ export async function crossFacets(
   );
 }
 
+// Server-side export payload: JSONL (streamed into the Excel workbook) or RIS
+// (downloaded directly, or parsed client-side into the reference-list PDF).
+export type ServerExportFormat = "jsonl" | "ris";
+
 // Unlike searchReferences, no empty-q → "*" shim here: the search page already
 // forwards "*" for a browse/empty search (exporting the whole corpus), and a
 // user's explicit "*" passes through as-is.
 export async function requestSearchExport(
   query: string,
   filters: Omit<SearchFilters, "page"> = {},
+  exportFormat: ServerExportFormat = "jsonl",
 ): Promise<SearchExportRead> {
   const params = new URLSearchParams();
   params.set("q", query.trim());
@@ -140,6 +145,8 @@ export async function requestSearchExport(
   for (const a of filters.annotation ?? []) params.append("annotation", a);
   for (const s of filters.sort ?? []) params.append("sort", s);
   appendStructuredFilters(params, filters);
+  // jsonl is the server default; only send the param when overriding it.
+  if (exportFormat !== "jsonl") params.set("export_format", exportFormat);
   return api.post<SearchExportRead>(
     `/v1/references/search/exports/?${params.toString()}`,
     undefined,

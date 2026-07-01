@@ -1,6 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { describe, test, expect } from "vitest";
 import {
   buildSummaryFilename,
   buildSummaryPdf,
@@ -9,6 +7,7 @@ import {
 } from "@/services/export/summaryPdf";
 import { MOCK_SUMMARY } from "@/services/summariserMock";
 import type { PaperMeta, SummariseResponse } from "@/services/summariser";
+import { useDiskFonts } from "./diskFonts";
 
 const context = {
   terms: ["Afghanistan", "Cost-effectiveness"],
@@ -124,26 +123,7 @@ describe("buildSummaryFilename", () => {
 });
 
 describe("buildSummaryPdf", () => {
-  // jsdom can't fetch the bundled font assets, so serve the real TTFs from disk
-  // by basename — this also verifies the embedded faces are valid. Vitest runs
-  // from the repo root, so resolve relative to cwd.
-  const fontDir = resolve(process.cwd(), "src/services/export/fonts");
-  const realFetch = global.fetch;
-
-  beforeAll(() => {
-    global.fetch = (async (input: RequestInfo | URL) => {
-      const name = String(input).split("?")[0].split("/").pop()!;
-      const buf = readFileSync(resolve(fontDir, name));
-      return {
-        arrayBuffer: async () =>
-          buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
-      } as Response;
-    }) as typeof fetch;
-  });
-
-  afterAll(() => {
-    global.fetch = realFetch;
-  });
+  useDiskFonts();
 
   test("renders the fixture, embeds the font and clickable links", async () => {
     const doc = await buildSummaryPdf(MOCK_SUMMARY, context, "/hpv?q=hpv");

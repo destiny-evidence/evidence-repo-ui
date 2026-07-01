@@ -10,8 +10,12 @@ import type {
 } from "@/hooks/useAiSummary";
 import type { SkipReason, SummariseResponse } from "@/services/summariser";
 import { buildSummaryFilename, downloadSummaryPdf } from "@/services/export/summaryPdf";
+import {
+  useReferenceListExport,
+  type UseReferenceListExportResult,
+} from "@/hooks/useReferenceListExport";
 import { formatTotal } from "@/utils/searchTotal";
-import { SummaryBody } from "./renderSummary";
+import { SummaryBody, SummaryReferences } from "./renderSummary";
 import "./ai-summary.css";
 
 interface AiSummaryDrawerProps {
@@ -39,6 +43,13 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
     ai.status === "generating" ? ai.runInBackground : ai.dismiss;
   const context = ai.context;
 
+  // The summary's bibliography: a RIS export of the same search. Preloaded
+  // alongside generation.
+  const references = useReferenceListExport(
+    ai.search,
+    ai.status === "generating" || ai.status === "done",
+  );
+
   return (
     <Drawer
       open={ai.drawerOpen}
@@ -57,7 +68,7 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
           ✕
         </button>
       }
-      footer={<DrawerFooter ai={ai} />}
+      footer={<DrawerFooter ai={ai} references={references} />}
       closeOnBackdrop
       onClose={handleClose}
     >
@@ -83,6 +94,7 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
           <Disclaimer />
           <SummaryBody summary={ai.result.summary} papers={ai.result.papers} />
           <CoverageNote result={ai.result} />
+          <SummaryReferences references={references} />
         </>
       )}
     </Drawer>
@@ -170,13 +182,20 @@ function SavePdfButton({
   result,
   context,
   originUrl,
+  references,
 }: {
   result: SummariseResponse;
   context: AiSummaryContext;
   originUrl: string | null;
+  references: UseReferenceListExportResult;
 }) {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+
+  // Block the download while the references are still loading, so the PDF isn't
+  // generated with an empty (silently dropped) References section. A failed load
+  // is allowed through — a PDF without references beats no PDF at all.
+  const preparing = references.status === "loading";
 
   async function handleClick() {
     setBusy(true);
@@ -187,6 +206,7 @@ function SavePdfButton({
         context,
         buildSummaryFilename(result.summary.narrative[0]?.header),
         originUrl,
+        references.inputs,
       );
     } catch {
       setFailed(true);
@@ -200,20 +220,28 @@ function SavePdfButton({
       type="button"
       class="ai-btn"
       onClick={handleClick}
-      disabled={busy}
-      aria-busy={busy}
+      disabled={busy || preparing}
+      aria-busy={busy || preparing}
     >
-      {!busy && <DownloadIcon size={14} />}
-      {busy
-        ? "Generating…"
-        : failed
-          ? "Couldn't create PDF — retry"
-          : "Download"}
+      {!busy && !preparing && <DownloadIcon size={14} />}
+      {preparing
+        ? "Preparing references…"
+        : busy
+          ? "Generating…"
+          : failed
+            ? "Couldn't create PDF — retry"
+            : "Download"}
     </button>
   );
 }
 
-function DrawerFooter({ ai }: { ai: UseAiSummaryResult }) {
+function DrawerFooter({
+  ai,
+  references,
+}: {
+  ai: UseAiSummaryResult;
+  references: UseReferenceListExportResult;
+}) {
   const currentUrl = useCurrentUrl();
   // Only worth offering "Open this search" from a different page.
   const showOpenSearch = ai.originUrl !== null && ai.originUrl !== currentUrl;
@@ -244,6 +272,7 @@ function DrawerFooter({ ai }: { ai: UseAiSummaryResult }) {
           result={ai.result}
           context={ai.context}
           originUrl={ai.originUrl}
+          references={references}
         />
       )}
       {showOpenSearch && (

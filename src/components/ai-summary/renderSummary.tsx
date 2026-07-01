@@ -1,7 +1,14 @@
 import { Fragment } from "preact";
 import { useRef } from "preact/hooks";
 import { ExternalLinkIcon, WarningIcon } from "@/components/common/icons";
+import { Spinner } from "@/components/common/Spinner";
 import type { PaperMeta, QuoteRef, SummaryBlock } from "@/services/summariser";
+import {
+  type ApaReferenceInput,
+  formatApaReference,
+  compareApaReferences,
+} from "@/services/citation/apa";
+import type { UseReferenceListExportResult } from "@/hooks/useReferenceListExport";
 
 function citation(papers: PaperMeta[], paperId: string): string {
   const paper = papers.find((p) => p.paper === paperId);
@@ -33,6 +40,55 @@ function QuoteSource({ quote, papers }: { quote: QuoteRef; papers: PaperMeta[] }
         )}
       </div>
     </div>
+  );
+}
+
+// One APA reference, italic runs preserved via the formatter's segments.
+function ReferenceEntry({ input }: { input: ApaReferenceInput }) {
+  return (
+    <p class="ai-reference">
+      {formatApaReference(input).map((seg, i) =>
+        seg.italic ? <i key={i}>{seg.text}</i> : <Fragment key={i}>{seg.text}</Fragment>,
+      )}
+    </p>
+  );
+}
+
+/**
+ * APA bibliography for the summary's search, loaded from the backend RIS export
+ * (the same source as the results-page reference list). Async: shows a loading
+ * line while the export runs, an error line if it fails, then the sorted list.
+ */
+export function SummaryReferences({
+  references,
+}: {
+  references: UseReferenceListExportResult;
+}) {
+  const { status, inputs, error } = references;
+  if (status === "idle") return null;
+
+  return (
+    <section class="ai-references">
+      <p class="ai-references__head">References</p>
+      {status === "loading" && (
+        <p class="ai-references__status">
+          <Spinner size={12} /> Loading references…
+        </p>
+      )}
+      {status === "error" && (
+        <p class="ai-references__status" role="alert">
+          {error ?? "Couldn't load references."}
+        </p>
+      )}
+      {status === "ready" &&
+        (inputs.length === 0 ? (
+          <p class="ai-references__status">No references found.</p>
+        ) : (
+          [...inputs]
+            .sort(compareApaReferences)
+            .map((input, i) => <ReferenceEntry key={i} input={input} />)
+        ))}
+    </section>
   );
 }
 
