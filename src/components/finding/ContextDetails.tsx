@@ -18,6 +18,7 @@ function collectEvidence(context: ContextData) {
     ...evidenceFrom("Setting", context.settings),
     ...evidenceFrom("Participants", context.participants),
     ...evidenceFrom("Country", context.countries),
+    ...evidenceFrom("Region", context.countryLevel1s),
   ];
 }
 
@@ -56,10 +57,10 @@ export function ContextDetails({
             <span>{context.countries.map((c) => countryName(c.value)).join(", ")}</span>
           </div>
         )}
-        {context.countryLevel1 && (
+        {context.countryLevel1s && context.countryLevel1s.length > 0 && (
           <div class="lg-field">
             <span class="lg-label">Region</span>
-            <span>{context.countryLevel1.value}</span>
+            <span>{context.countryLevel1s.map((r) => r.value).join(", ")}</span>
           </div>
         )}
       </div>

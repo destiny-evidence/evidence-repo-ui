@@ -42,13 +42,13 @@ function collectEvidence(intervention: InterventionData): SourceEvidenceEntry[] 
       "Implementation fidelity",
       intervention.implementationFidelities,
     ),
-    ...evidenceFrom("Implementation name", intervention.implementationName),
+    ...evidenceFrom("Implementation name", intervention.implementationNames),
     ...evidenceFrom(
       "Implementation description",
       intervention.implementationDescriptions,
     ),
-    ...evidenceFrom("Funder", intervention.funderIntervention),
-    ...evidenceFrom("Duration", intervention.duration),
+    ...evidenceFrom("Funder", intervention.funderInterventions),
+    ...evidenceFrom("Duration", intervention.durations),
   ];
 }
 
@@ -110,9 +110,9 @@ export function InterventionDetails({
         </div>
       )}
 
-      {intervention.implementationName && (
+      {intervention.implementationNames && intervention.implementationNames.length > 0 && (
         <LabeledField label="Implementation name">
-          {intervention.implementationName.value}
+          {intervention.implementationNames.map((n) => n.value).join("; ")}
         </LabeledField>
       )}
 
@@ -122,15 +122,15 @@ export function InterventionDetails({
         </LabeledField>
       ))}
 
-      {intervention.funderIntervention && (
+      {intervention.funderInterventions && intervention.funderInterventions.length > 0 && (
         <LabeledField label="Funder">
-          {intervention.funderIntervention.value}
+          {intervention.funderInterventions.map((f) => f.value).join("; ")}
         </LabeledField>
       )}
 
-      {intervention.duration && (
+      {intervention.durations && intervention.durations.length > 0 && (
         <LabeledField label="Duration">
-          {intervention.duration.value}
+          {intervention.durations.map((d) => d.value).join("; ")}
         </LabeledField>
       )}
 

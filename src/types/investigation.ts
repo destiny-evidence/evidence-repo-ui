@@ -23,12 +23,12 @@ export interface InterventionData {
   name?: string;
   descriptions?: string[];
   educationThemes?: CodedAnnotation<ResolvedConcept>[];
-  duration?: NumericAnnotation;
+  durations?: NumericAnnotation[];
   implementerTypes?: CodedAnnotation<ResolvedConcept>[];
   implementationFidelities?: CodedAnnotation<ResolvedConcept>[];
-  implementationName?: StringAnnotation;
+  implementationNames?: StringAnnotation[];
   implementationDescriptions?: StringAnnotation[];
-  funderIntervention?: StringAnnotation;
+  funderInterventions?: StringAnnotation[];
 }
 
 export interface ControlConditionData {
@@ -41,7 +41,7 @@ export interface ContextData {
   educationLevels?: CodedAnnotation<ResolvedConcept>[];
   settings?: CodedAnnotation<ResolvedConcept>[];
   countries?: StringAnnotation[];
-  countryLevel1?: StringAnnotation;
+  countryLevel1s?: StringAnnotation[];
   participants?: StringAnnotation[];
 }
 
@@ -90,10 +90,10 @@ export interface FindingData {
   context: ContextData | null;
   contextRef?: string;
   outcome: OutcomeData | null;
-  sampleSize?: NumericAnnotation;
-  attrition?: NumericAnnotation;
-  cost?: StringAnnotation;
-  groupDifferences?: StringAnnotation;
+  sampleSizes?: NumericAnnotation[];
+  attritions?: NumericAnnotation[];
+  costs?: StringAnnotation[];
+  groupDifferences?: StringAnnotation[];
   sampleFeatures?: CodedAnnotation<ResolvedConcept>[];
   effectEstimates?: EffectEstimateData[];
   arms?: ArmData[];

@@ -44,10 +44,10 @@ interface FindingCardProps {
 
 function hasSampleData(finding: FindingData): boolean {
   return Boolean(
-    finding.sampleSize ||
-      finding.attrition ||
-      finding.cost ||
-      finding.groupDifferences ||
+    finding.sampleSizes?.length ||
+      finding.attritions?.length ||
+      finding.costs?.length ||
+      finding.groupDifferences?.length ||
       (finding.sampleFeatures && finding.sampleFeatures.length > 0),
   );
 }

@@ -338,8 +338,8 @@ describe("parseInvestigation", () => {
     expect(finding.intervention?.educationThemes?.[0].value.label).toBe(
       "Cooperative Learning",
     );
-    expect(finding.intervention?.duration?.value).toBe(5);
-    expect(finding.intervention?.duration?.supportingText).toBe("5 weeks");
+    expect(finding.intervention?.durations?.[0]?.value).toBe(5);
+    expect(finding.intervention?.durations?.[0]?.supportingText).toBe("5 weeks");
     expect(finding.control?.description).toBe("Business as usual");
     expect(finding.context?.educationLevels).toHaveLength(1);
     expect(finding.context?.settings).toHaveLength(1);
@@ -350,8 +350,8 @@ describe("parseInvestigation", () => {
     expect(finding.outcome?.outcomes?.[0].supportingText).toBe(
       "primary outcome",
     );
-    expect(finding.sampleSize?.value).toBe(50);
-    expect(finding.attrition?.value).toBe(12);
+    expect(finding.sampleSizes?.[0]?.value).toBe(50);
+    expect(finding.attritions?.[0]?.value).toBe(12);
   });
 
   test("resolves blank node references across findings", () => {
@@ -429,7 +429,7 @@ describe("parseInvestigation", () => {
     const result = parseInvestigation(data, PREFIXES, LABELS);
     const finding = result.findings[0];
     expect(finding.intervention?.educationThemes).toBeUndefined();
-    expect(finding.sampleSize).toBeUndefined();
+    expect(finding.sampleSizes).toBeUndefined();
   });
 
   test("parses new intervention, context, and finding fields", () => {
@@ -513,13 +513,13 @@ describe("parseInvestigation", () => {
     expect(f.intervention?.implementationFidelities?.[0].value.label).toBe(
       "Cooperative Learning",
     );
-    expect(f.intervention?.implementationName?.value).toBe("Impl name");
+    expect(f.intervention?.implementationNames?.[0]?.value).toBe("Impl name");
     expect(f.intervention?.implementationDescriptions?.[0].value).toBe("Impl desc");
-    expect(f.intervention?.funderIntervention?.value).toBe("Funder X");
+    expect(f.intervention?.funderInterventions?.[0]?.value).toBe("Funder X");
     expect(f.context?.countries?.[0].value).toBe("Netherlands");
-    expect(f.context?.countryLevel1?.value).toBe("North Holland");
-    expect(f.cost?.value).toBe("Not reported");
-    expect(f.groupDifferences?.value).toBe("Balanced");
+    expect(f.context?.countryLevel1s?.[0]?.value).toBe("North Holland");
+    expect(f.costs?.[0]?.value).toBe("Not reported");
+    expect(f.groupDifferences?.[0]?.value).toBe("Balanced");
     expect(f.sampleFeatures).toHaveLength(1);
     expect(f.sampleFeatures?.[0].value.label).toBe("Cooperative Learning");
   });
@@ -583,11 +583,49 @@ describe("parseInvestigation", () => {
     });
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.findings[0].sampleSize?.value).toBe(47);
-    expect(result.findings[1].sampleSize?.value).toBe(47);
+    expect(result.findings[0].sampleSizes?.[0]?.value).toBe(47);
+    expect(result.findings[1].sampleSizes?.[0]?.value).toBe(47);
   });
 
-  test("takes the first value of a scalar field arriving as an array (cost)", () => {
+  test("resolves attrition and cost blank-node references across findings", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: { "@id": "_:int", "@type": "Intervention" },
+          hasContext: { "@id": "_:ctx", "@type": "Context" },
+          attrition: {
+            "@id": "_:attr",
+            "@type": "NumericCodingAnnotation",
+            codedValue: { "@type": "xsd:integer", "@value": 9 },
+            status: "evrepo:coded",
+          },
+          cost: {
+            "@id": "_:cost",
+            "@type": "StringCodingAnnotation",
+            codedValue: { "@type": "xsd:string", "@value": "Not reported" },
+            status: "evrepo:coded",
+          },
+          hasOutcome: { "@type": "Outcome" },
+        },
+        {
+          "@type": "Finding",
+          evaluates: "_:int",
+          hasContext: "_:ctx",
+          attrition: "_:attr",
+          cost: "_:cost",
+          hasOutcome: { "@type": "Outcome" },
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.findings[0].attritions?.[0]?.value).toBe(9);
+    expect(result.findings[0].costs?.[0]?.value).toBe("Not reported");
+    expect(result.findings[1].attritions?.[0]?.value).toBe(9);
+    expect(result.findings[1].costs?.[0]?.value).toBe("Not reported");
+  });
+
+  test("preserves all values of a scalar field arriving as an array (cost)", () => {
     const data = makeData({
       hasFinding: [
         {
@@ -608,10 +646,10 @@ describe("parseInvestigation", () => {
       ],
     });
     const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
-    expect(f.cost?.value).toBe("Reported");
+    expect(f.costs?.map((c) => c.value)).toEqual(["Reported", "Not reported"]);
   });
 
-  test("takes the first value of sampleSize arriving as an array", () => {
+  test("preserves all values of sampleSize arriving as an array", () => {
     const data = makeData({
       hasFinding: [
         {
@@ -632,7 +670,61 @@ describe("parseInvestigation", () => {
       ],
     });
     const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
-    expect(f.sampleSize?.value).toBe(50);
+    expect(f.sampleSizes?.map((s) => s.value)).toEqual([50, 100]);
+  });
+
+  test("preserves all values for the widened scalar fields arriving as arrays", () => {
+    const num = (v: number) => ({
+      "@type": "NumericCodingAnnotation",
+      codedValue: { "@type": "xsd:integer", "@value": v },
+      status: "evrepo:coded",
+    });
+    const str = (v: string) => ({
+      "@type": "StringCodingAnnotation",
+      codedValue: { "@type": "xsd:string", "@value": v },
+      status: "evrepo:coded",
+    });
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: {
+            "@id": "_:int",
+            "@type": "Intervention",
+            duration: [num(6), num(12)],
+            implementationName: [str("Programme A"), str("Programme B")],
+            funderIntervention: [str("Wellcome"), str("Nuffield")],
+          },
+          hasContext: {
+            "@id": "_:ctx",
+            "@type": "Context",
+            countryLevel1: [str("California"), str("Texas")],
+          },
+          hasOutcome: { "@type": "Outcome" },
+          attrition: [num(8), num(15)],
+          groupDifferences: [str("Comparable"), str("Age imbalance")],
+        },
+      ],
+    });
+    const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
+    expect(f.intervention?.durations?.map((d) => d.value)).toEqual([6, 12]);
+    expect(f.intervention?.implementationNames?.map((n) => n.value)).toEqual([
+      "Programme A",
+      "Programme B",
+    ]);
+    expect(f.intervention?.funderInterventions?.map((v) => v.value)).toEqual([
+      "Wellcome",
+      "Nuffield",
+    ]);
+    expect(f.context?.countryLevel1s?.map((r) => r.value)).toEqual([
+      "California",
+      "Texas",
+    ]);
+    expect(f.attritions?.map((a) => a.value)).toEqual([8, 15]);
+    expect(f.groupDifferences?.map((g) => g.value)).toEqual([
+      "Comparable",
+      "Age imbalance",
+    ]);
   });
 
   test("resolves a blank-node sampleSize wrapped in a single-element array", () => {
@@ -658,8 +750,8 @@ describe("parseInvestigation", () => {
       ],
     });
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.findings[0].sampleSize?.value).toBe(47);
-    expect(result.findings[1].sampleSize?.value).toBe(47);
+    expect(result.findings[0].sampleSizes?.[0]?.value).toBe(47);
+    expect(result.findings[1].sampleSizes?.[0]?.value).toBe(47);
   });
 
   test("resolves structural refs arriving as single-element arrays", () => {

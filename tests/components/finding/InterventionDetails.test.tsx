@@ -120,4 +120,21 @@ describe("InterventionDetails", () => {
     fireEvent.click(screen.getByRole("button", { name: /Source evidence/ }));
     expect(evidenceLabels(container)).toEqual(["Implementer"]);
   });
+
+  test("joins multiple durations into a single Duration field", () => {
+    renderDetails(makeIntervention({ durations: [{ value: 6 }, { value: 12 }] }));
+    expect(screen.getByText("Duration")).toBeDefined();
+    expect(screen.getByText("6; 12")).toBeDefined();
+  });
+
+  test("joins multiple implementation names and funders each into one field", () => {
+    renderDetails(
+      makeIntervention({
+        implementationNames: [{ value: "Programme A" }, { value: "Programme B" }],
+        funderInterventions: [{ value: "Wellcome" }, { value: "Nuffield" }],
+      }),
+    );
+    expect(screen.getByText("Programme A; Programme B")).toBeDefined();
+    expect(screen.getByText("Wellcome; Nuffield")).toBeDefined();
+  });
 });
