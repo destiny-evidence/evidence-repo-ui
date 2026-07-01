@@ -93,6 +93,10 @@ const LABELS = new Map([
   ["https://vocab.esea.education/ImplementerScheme/Teacher", "Teacher"],
   ["https://vocab.esea.education/FidelityScheme/High", "High"],
   ["https://vocab.esea.education/EffectMetricScheme/SMD", "Standardised Mean Difference"],
+  ["https://vocab.esea.education/StudyDesignScheme/QED", "Quasi-Experimental Design"],
+  ["https://vocab.esea.education/ImplementerScheme/NGO", "NGO"],
+  ["https://vocab.esea.education/ImplementationFidelityScheme/High", "High Fidelity"],
+  ["https://vocab.esea.education/ImplementationFidelityScheme/Partial", "Partial Fidelity"],
 ]);
 
 const VOCAB: ConceptResolver = { prefixes: PREFIXES, labels: LABELS };
@@ -219,6 +223,29 @@ describe("buildInvestigationRow", () => {
     expect(buildInvestigationRow(ref, null, linked, {}, VOCAB, coding).source).toBe("EEF");
     expect(buildInvestigationRow(ref, null, linked, {}, VOCAB).source).toBeNull();
   });
+
+  test("joins multiple study designs; single document type unchanged", () => {
+    const linked = linkedEnh({});
+    const bib = bibEnh();
+    const ref = makeRef({ enhancements: [bib, linked] });
+    const row = buildInvestigationRow(
+      ref,
+      bib.content,
+      linked,
+      {
+        documentType: { codedValue: { "@id": "esea:DocumentTypeScheme/C00008" } },
+        studyDesign: [
+          { codedValue: { "@id": "esea:StudyDesignScheme/RCT" } },
+          { codedValue: { "@id": "esea:StudyDesignScheme/QED" } },
+        ],
+      },
+      VOCAB,
+    );
+    expect(row.documentType).toBe("Journal Article");
+    expect(row.studyDesign).toBe(
+      "Randomised Controlled Trial; Quasi-Experimental Design",
+    );
+  });
 });
 
 describe("buildFindingRows", () => {
@@ -291,6 +318,116 @@ describe("buildFindingRows", () => {
     expect(rows[0]!.intervention_educationTheme).toBe(
       "Literacy; esea:UnknownScheme/X",
     );
+  });
+
+  test("joins multiple implementer types and fidelity, with their supporting text", () => {
+    const findings: Finding[] = [
+      {
+        evaluates: {
+          "@id": "_:i1",
+          implementerType: [
+            { codedValue: { "@id": "esea:ImplementerScheme/Teacher" }, supportingText: "p. 1" },
+            { codedValue: { "@id": "esea:ImplementerScheme/NGO" }, supportingText: "p. 2" },
+          ],
+          implementationFidelity: [
+            { codedValue: { "@id": "esea:ImplementationFidelityScheme/High" }, supportingText: "p. 4" },
+            { codedValue: { "@id": "esea:ImplementationFidelityScheme/Partial" }, supportingText: "p. 5" },
+          ],
+        },
+      },
+    ];
+    const rows = buildFindingRows("ref-1", findings, [1], VOCAB);
+    expect(rows[0]!.intervention_implementerType).toBe("Teacher; NGO");
+    expect(rows[0]!.intervention_implementerType_supportingText).toBe("p. 1 | p. 2");
+    // implementationFidelity is a separate read/type, so pin it too.
+    expect(rows[0]!.intervention_implementationFidelity).toBe("High Fidelity; Partial Fidelity");
+    expect(rows[0]!.intervention_implementationFidelity_supportingText).toBe("p. 4 | p. 5");
+  });
+
+  test("tolerates a single dict (not array) for multi-valued concept and value columns", () => {
+    const findings: Finding[] = [
+      {
+        evaluates: {
+          "@id": "_:i1",
+          // no @set upstream → a single value compacts to a bare dict, not [dict]
+          educationTheme: { codedValue: { "@id": "esea:EducationThemeScheme/Literacy" } },
+        },
+        hasContext: {
+          "@id": "_:ctx",
+          country: { codedValue: { "@value": "USA" } },
+          educationLevel: {
+            codedValue: { "@id": "esea:EducationLevelScheme/Primary" },
+            supportingText: "p. 3",
+          },
+        },
+      },
+    ];
+    const rows = buildFindingRows("ref-1", findings, [1], VOCAB);
+    expect(rows[0]!.intervention_educationTheme).toBe("Literacy");
+    expect(rows[0]!.context_country).toBe("USA");
+    expect(rows[0]!.context_educationLevel).toBe("Primary");
+    expect(rows[0]!.context_educationLevel_supportingText).toBe("p. 3");
+  });
+
+  test("resolves structural refs wrapped in single-element arrays (@set shape)", () => {
+    const findings: Finding[] = [
+      {
+        evaluates: [{ "@id": "_:i1", name: "Wrapped intervention" }],
+        comparedTo: [{ "@id": "_:c1", name: "Control" }],
+        hasArmData: [
+          { forCondition: ["_:i1"], n: 100 },
+          { forCondition: ["_:c1"], n: 95 },
+        ],
+        hasEffectEstimate: [{ pointEstimate: 0.5 }],
+      },
+      // later finding reuses the array-defined intervention/control by bare ref
+      { evaluates: "_:i1", comparedTo: "_:c1" },
+    ];
+    // Drive arm IDs through the real assignArmIds path (not a hardcoded [1, 2]),
+    // which production calls before row-building and which depends on the same
+    // makeResolver/buildBlankNodeLookup/refId helpers this task changes. Both
+    // findings share one arm tuple, so the real flow dedupes to a single row.
+    const armIds = assignArmIds(findings);
+    expect(armIds).toEqual([1, 1]);
+    const armRows = buildFindingRows("ref-1", findings, armIds, VOCAB);
+    expect(armRows).toHaveLength(1);
+    expect(armRows[0]!.intervention_name).toBe("Wrapped intervention");
+    const outRows = buildOutcomeRows("ref-1", findings, armIds, VOCAB);
+    expect(outRows[0]!.intervention_n).toBe(100);
+    expect(outRows[0]!.control_n).toBe(95);
+  });
+
+  test("joins multiple sampleSize/attrition/cost values instead of dropping extras", () => {
+    const findings: Finding[] = [
+      {
+        sampleSize: [
+          { codedValue: { "@value": 100 }, supportingText: "arm A" },
+          { codedValue: { "@value": 120 }, supportingText: "arm B" },
+        ],
+        attrition: [{ codedValue: { "@value": 5 } }, { codedValue: { "@value": 8 } }],
+        cost: [{ codedValue: { "@value": 1000 } }, { codedValue: { "@value": 2000 } }],
+      },
+    ];
+    const rows = buildFindingRows("ref-1", findings, [1], VOCAB);
+    expect(rows[0]!.sampleSize_value).toBe("100; 120");
+    expect(rows[0]!.sampleSize_supportingText).toBe("arm A | arm B");
+    expect(rows[0]!.attrition_value).toBe("5; 8");
+    expect(rows[0]!.cost_value).toBe("1000; 2000");
+  });
+
+  test("resolves and joins sampleSize given as multiple blank-node refs", () => {
+    const findings: Finding[] = [
+      {
+        sampleSize: [
+          { "@id": "_:ss1", codedValue: { "@value": 100 } },
+          { "@id": "_:ss2", codedValue: { "@value": 120 } },
+        ],
+      },
+      // later finding reaches the same nodes by bare ref (the common real-data shape)
+      { sampleSize: ["_:ss1", "_:ss2"] },
+    ];
+    const rows = buildFindingRows("ref-1", findings, [1, 2], VOCAB);
+    expect(rows[1]!.sampleSize_value).toBe("100; 120");
   });
 });
 
@@ -381,5 +518,54 @@ describe("buildOutcomeRows", () => {
     const rows = buildOutcomeRows("ref-1", findings, [1], VOCAB);
     expect(rows[0]!.intervention_n).toBe(50);
     expect(rows[0]!.control_n).toBe(48);
+  });
+
+  test("resolves effect metric and duration wrapped in an array (@set shape)", () => {
+    const findings: Finding[] = [
+      {
+        evaluates: { "@id": "_:i1", duration: [{ codedValue: { "@value": 40 } }] },
+        hasEffectEstimate: [
+          { effectSizeMetric: ["esea:EffectMetricScheme/SMD"], pointEstimate: 0.2 },
+        ],
+      },
+    ];
+    const armRows = buildFindingRows("ref-1", findings, [1], VOCAB);
+    expect(armRows[0]!.intervention_duration_value).toBe(40);
+    const outRows = buildOutcomeRows("ref-1", findings, [1], VOCAB);
+    expect(outRows[0]!.effect_metric).toBe("Standardised Mean Difference");
+  });
+
+  test("joins multiple durations rather than dropping all but the first", () => {
+    const findings: Finding[] = [
+      {
+        evaluates: {
+          "@id": "_:i1",
+          duration: [
+            { codedValue: { "@value": 5 }, supportingText: "5 weeks" },
+            { codedValue: { "@value": 10 }, supportingText: "10 weeks" },
+          ],
+        },
+      },
+    ];
+    const rows = buildFindingRows("ref-1", findings, [1], VOCAB);
+    expect(rows[0]!.intervention_duration_value).toBe("5; 10");
+    expect(rows[0]!.intervention_duration_supportingText).toBe("5 weeks | 10 weeks");
+  });
+
+  test("tolerates single-dict hasArmData/hasEffectEstimate and array-wrapped hasOutcome (@set shape)", () => {
+    const findings: Finding[] = [
+      {
+        evaluates: { "@id": "_:i1" },
+        comparedTo: { "@id": "_:c1" },
+        hasOutcome: [{ name: "Reading" }],            // array wrap of a singular block → first
+        hasArmData: { forCondition: "_:i1", n: 100 }, // single dict of a repeatable container → all
+        hasEffectEstimate: { pointEstimate: 0.5 },    // single dict of a repeatable container → all
+      },
+    ];
+    const rows = buildOutcomeRows("ref-1", findings, [1], VOCAB);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.outcome_name).toBe("Reading");
+    expect(rows[0]!.point_estimate).toBe(0.5);
+    expect(rows[0]!.intervention_n).toBe(100);
   });
 });

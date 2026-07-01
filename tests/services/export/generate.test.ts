@@ -161,6 +161,25 @@ describe("generateWorkbook", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]!["Reference ID"]).toBe("ref-1");
   });
+
+  test("tolerates a single-dict hasFinding (no @set) and still emits arm/outcome rows", async () => {
+    const ref = syntheticReference("ref-1");
+    // A 1-finding investigation compacts hasFinding to a bare dict (no @set).
+    const ld = ref.enhancements!.find(
+      (e) => e.content.enhancement_type === "linked_data",
+    )!;
+    const inv = (ld.content as unknown as {
+      data: { hasInvestigation: { hasFinding: unknown } };
+    }).data.hasInvestigation;
+    inv.hasFinding = (inv.hasFinding as unknown[])[0];
+
+    const wb = await generateWorkbook([ref], MINIMAL_VOCAB, { variant: "esea" });
+    const outcomes = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+      wb.Sheets["Outcomes"]!,
+    );
+    expect(outcomes).toHaveLength(1);
+    expect(outcomes[0]!.point_estimate).toBe(0.5);
+  });
 });
 
 describe("workbookToArrayBuffer", () => {
