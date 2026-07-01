@@ -565,7 +565,7 @@ describe("SearchPage", () => {
       ).not.toHaveAttribute("aria-disabled", "true");
       openAndExport();
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
-      // Default format is the reference list, which the backend renders as RIS.
+      // Default format is Excel, which the backend renders as JSONL.
       expect(mockRequestExport).toHaveBeenCalledWith(
         "*",
         {
@@ -575,7 +575,7 @@ describe("SearchPage", () => {
           // Browse mode has no relevance signal, so export mirrors the newest fallback.
           sort: ["-publication_year"],
         },
-        "ris",
+        "jsonl",
       );
     });
 
@@ -629,7 +629,7 @@ describe("SearchPage", () => {
           annotation: ["domain-inclusion/jacobs-education"],
           sort: ["-publication_year"],
         },
-        "ris",
+        "jsonl",
       );
     });
 
@@ -727,7 +727,7 @@ describe("SearchPage", () => {
           endYear: undefined,
           annotation: ["domain-inclusion/jacobs-education"],
         },
-        "ris",
+        "jsonl",
       );
       await waitFor(() =>
         expect(
@@ -762,7 +762,7 @@ describe("SearchPage", () => {
             ["https://vocab.esea.education/EducationLevelScheme/C00002"],
           ],
         },
-        "ris",
+        "jsonl",
       );
     });
   });

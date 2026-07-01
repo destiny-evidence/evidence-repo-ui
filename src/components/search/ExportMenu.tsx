@@ -45,7 +45,7 @@ export function ExportMenu({
   disabledReason,
 }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
-  const [format, setFormat] = useState<ExportFormat>("reference-list");
+  const [format, setFormat] = useState<ExportFormat>("excel");
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();

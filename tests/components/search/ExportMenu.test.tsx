@@ -34,10 +34,10 @@ function openAndExport(formatLabel?: RegExp) {
 }
 
 describe("ExportMenu", () => {
-  test("defaults to the reference list", () => {
+  test("defaults to Excel", () => {
     const { onExport } = setup();
     openAndExport();
-    expect(onExport).toHaveBeenCalledWith("reference-list");
+    expect(onExport).toHaveBeenCalledWith("excel");
   });
 
   test("exports the chosen format", () => {
