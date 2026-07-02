@@ -85,6 +85,14 @@
   gap: var(--spacing-sm);
 }
 
+/* Vertical divider between the selection controls and the action buttons. */
+.search-results__meta-div {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px var(--spacing-xs);
+  background: var(--color-border);
+}
+
 .search-results__meta-right {
   display: inline-flex;
   align-items: center;

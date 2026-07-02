@@ -14,7 +14,7 @@ describe("SelectionBanner", () => {
     expect(screen.getByText("20 selected")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /select all/i })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
     expect(onClear).toHaveBeenCalledOnce();
   });
 

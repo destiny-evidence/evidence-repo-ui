@@ -2,27 +2,21 @@
    (components/common/Drawer.css); these are the AI-specific content styles,
    ported from the mid-fi design and reusing the system's tokens. */
 
-/* ── Generate button (above results) ──────────────────────── */
-.gen-row {
-  max-width: 960px;
-  /* The search hero already pads 36px below the search bar; pull up so the
-     button lands at the design's ~16px gap instead of stacking both. */
-  margin: calc(var(--spacing-md) - 36px) auto var(--spacing-md);
-  display: flex;
-  justify-content: flex-end;
-}
+/* ── Generate button (in the results meta bar) ────────────── */
 .gen-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 6px;
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
   color: #fff;
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
-  font-size: var(--font-size-small);
+  /* Match the meta bar's Export/Refine buttons so the row aligns. */
+  font-size: var(--font-size-xs);
+  line-height: 1.2;
   font-weight: 500;
-  padding: 8px 14px;
+  padding: 7px 12px;
   cursor: pointer;
   transition: background 0.12s, box-shadow 0.12s;
 }
@@ -37,6 +31,9 @@
 .ai-beta {
   font-family: var(--font-mono);
   font-size: 9px;
+  /* line-height 1 keeps the badge within the button's text line so it doesn't
+     make the button taller than the sibling Export/Refine buttons. */
+  line-height: 1;
   letter-spacing: 0.08em;
   font-weight: 600;
   background: var(--color-accent);

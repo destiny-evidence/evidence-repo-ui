@@ -453,14 +453,6 @@ function SearchPageInner({ community }: { community: Community }) {
         />
       </section>
 
-      {aiEnabled && hasResults && (
-        <AiSummaryButton
-          onClick={handleGenerateSummary}
-          disabled={aiDisabledReason !== undefined}
-          disabledReason={aiDisabledReason}
-        />
-      )}
-
       <section class="search-results">
         {showMetaBar && (
           <div class={`search-results__meta${isSelecting ? " is-selecting" : ""}`}>
@@ -494,34 +486,39 @@ function SearchPageInner({ community }: { community: Community }) {
                         ? formatResultsSummary(params.q, results.results.total)
                         : null
                 : null}
+              {results.results
+                && selectable
+                && (aiEnabled || community.features.exportExcel) && (
+                  <span class="search-results__meta-div" aria-hidden="true" />
+                )}
+              {aiEnabled && hasResults && (
+                <AiSummaryButton
+                  onClick={handleGenerateSummary}
+                  disabled={aiDisabledReason !== undefined}
+                  disabledReason={aiDisabledReason}
+                />
+              )}
+              {results.results && exportJob.status === "error" && (
+                <span class="search-results__export-status" role="alert">
+                  {exportJob.errorMessage ?? "Export failed."}
+                </span>
+              )}
+              {results.results && (
+                <span class="visually-hidden" role="status" aria-live="polite">
+                  {exportAnnouncement}
+                </span>
+              )}
+              {results.results && community.features.exportExcel && (
+                <ExportMenu
+                  disabled={exportDisabled}
+                  status={exportJob.status}
+                  onExport={handleExport}
+                  disabledReason={exportTooltip}
+                />
+              )}
             </span>
             {(refine || results.results) && (
               <span class="search-results__meta-right">
-                {results.results && exportJob.status === "error" && (
-                  <span
-                    class="search-results__export-status"
-                    role="alert"
-                  >
-                    {exportJob.errorMessage ?? "Export failed."}
-                  </span>
-                )}
-                {results.results && (
-                  <span
-                    class="visually-hidden"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {exportAnnouncement}
-                  </span>
-                )}
-                {results.results && community.features.exportExcel && (
-                  <ExportMenu
-                    disabled={exportDisabled}
-                    status={exportJob.status}
-                    onExport={handleExport}
-                    disabledReason={exportTooltip}
-                  />
-                )}
                 {refine && (
                   <RefineButton
                     count={refine.count}

@@ -8,7 +8,7 @@ interface AiSummaryButtonProps {
   disabledReason?: string;
 }
 
-/** "Generate AI summary" entry point shown above the results list. */
+/** "Generate AI summary" entry point in the search results meta bar. */
 export function AiSummaryButton({
   onClick,
   disabled = false,
@@ -22,13 +22,9 @@ export function AiSummaryButton({
   );
   // Tooltip wrapper lives outside the disabled button so the bubble still
   // appears on hover (disabled buttons don't receive pointer events).
-  return (
-    <div class="gen-row">
-      {disabled && disabledReason ? (
-        <Tooltip text={disabledReason}>{button}</Tooltip>
-      ) : (
-        button
-      )}
-    </div>
+  return disabled && disabledReason ? (
+    <Tooltip text={disabledReason}>{button}</Tooltip>
+  ) : (
+    button
   );
 }

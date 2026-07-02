@@ -33,7 +33,7 @@ export function SelectionBanner({
         </button>
       )}
       <button type="button" class="sel-banner__clear" onClick={content.onClear}>
-        Clear
+        Clear all
       </button>
     </div>
   );
