@@ -23,13 +23,28 @@ export function toHierarchicalTag(
   };
 }
 
+/**
+ * Collapse annotations sharing a concept URI (they render as identical pills);
+ * distinct supporting text is preserved separately by the source-evidence view.
+ */
+export function dedupeByUri(
+  annotations: CodedAnnotation<ResolvedConcept>[],
+): CodedAnnotation<ResolvedConcept>[] {
+  const seen = new Set<string>();
+  return annotations.filter((a) => {
+    if (seen.has(a.value.uri)) return false;
+    seen.add(a.value.uri);
+    return true;
+  });
+}
+
 export function conceptsToTags(
   annotations: CodedAnnotation<ResolvedConcept>[] | undefined,
   labels: Map<string, string>,
   broader: Map<string, string>,
   definitions?: Map<string, string>,
 ): HierarchicalTag[] {
-  return (annotations ?? []).map((a) =>
+  return dedupeByUri(annotations ?? []).map((a) =>
     toHierarchicalTag(a.value, labels, broader, definitions),
   );
 }

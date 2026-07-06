@@ -9,6 +9,7 @@ import type {
   PublicationVenue,
 } from "@/types/models";
 import type { CodedAnnotation, ResolvedConcept } from "@/types/investigation";
+import { dedupeByUri } from "@/services/conceptLabels";
 
 interface InvestigationCardProps {
   title: string | null;
@@ -56,17 +57,6 @@ function formatAuthors(
     : authors.map((a) => a.display_name);
   const names = truncated.join(", ");
   return year ? `${names} (${year})` : names;
-}
-
-function dedupeByUri(
-  annotations: CodedAnnotation<ResolvedConcept>[],
-): CodedAnnotation<ResolvedConcept>[] {
-  const seen = new Set<string>();
-  return annotations.filter((a) => {
-    if (seen.has(a.value.uri)) return false;
-    seen.add(a.value.uri);
-    return true;
-  });
 }
 
 export function InvestigationCard({
