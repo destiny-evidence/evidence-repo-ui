@@ -9,6 +9,7 @@ import type {
   PublicationVenue,
 } from "@/types/models";
 import type { CodedAnnotation, ResolvedConcept } from "@/types/investigation";
+import { dedupeByUri } from "@/services/conceptLabels";
 
 interface InvestigationCardProps {
   title: string | null;
@@ -18,7 +19,8 @@ interface InvestigationCardProps {
   doi: string | null;
   abstract?: AbstractContentEnhancement | null;
   publicationYear: number | null;
-  documentType?: CodedAnnotation<ResolvedConcept>;
+  documentTypes: CodedAnnotation<ResolvedConcept>[];
+  studyDesigns: CodedAnnotation<ResolvedConcept>[];
   codingInstitution?: string | null;
   isRetracted: boolean;
   hasInvestigation: boolean;
@@ -65,15 +67,25 @@ export function InvestigationCard({
   doi,
   abstract = null,
   publicationYear,
-  documentType,
+  documentTypes,
+  studyDesigns,
   codingInstitution,
   isRetracted,
   hasInvestigation,
   vocabUnavailable,
 }: InvestigationCardProps) {
   const venueText = formatVenue(venue, pagination);
+  const docTypeTags = dedupeByUri(documentTypes).map(
+    (d) => d.value.label ?? d.value.uri,
+  );
+  const studyDesignTags = dedupeByUri(studyDesigns).map(
+    (d) => d.value.label ?? d.value.uri,
+  );
   const hasInvestigationContent =
-    documentType || vocabUnavailable || codingInstitution;
+    docTypeTags.length > 0 ||
+    studyDesignTags.length > 0 ||
+    vocabUnavailable ||
+    codingInstitution;
 
   return (
     <>
@@ -123,11 +135,11 @@ export function InvestigationCard({
                 Vocabulary unavailable — some labels could not be resolved.
               </p>
             )}
-            {documentType && (
-              <TagGroup
-                label="Doc Type"
-                tags={[documentType.value.label ?? documentType.value.uri]}
-              />
+            {docTypeTags.length > 0 && (
+              <TagGroup label="Doc Type" tags={docTypeTags} />
+            )}
+            {studyDesignTags.length > 0 && (
+              <TagGroup label="Study Design" tags={studyDesignTags} />
             )}
             {codingInstitution && (
               <p

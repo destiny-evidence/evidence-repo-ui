@@ -4,9 +4,13 @@ import {
   type SourceEvidenceEntry,
 } from "./SourceEvidenceToggle";
 import { LabeledField } from "../common/LabeledField";
-import { conceptsToTags, toHierarchicalTag } from "@/services/conceptLabels";
+import { conceptsToTags } from "@/services/conceptLabels";
 import { evidenceFrom } from "@/services/sourceEvidence";
-import type { InterventionData } from "@/types/investigation";
+import type {
+  CodedAnnotation,
+  InterventionData,
+  ResolvedConcept,
+} from "@/types/investigation";
 import "../common/LabeledField.css";
 
 interface InterventionDetailsProps {
@@ -16,26 +20,35 @@ interface InterventionDetailsProps {
   definitions?: Map<string, string>;
 }
 
-function themeEvidence(intervention: InterventionData): SourceEvidenceEntry[] {
-  const themes = intervention.educationThemes ?? [];
-  const multiple = themes.length > 1;
-  return themes
-    .filter((t) => t.supportingText)
-    .map((t) => ({
-      label: multiple ? `Theme: ${t.value.label ?? t.value.uri}` : "Theme",
-      text: t.supportingText ?? "",
+function conceptEvidence(
+  label: string,
+  annotations: CodedAnnotation<ResolvedConcept>[] | undefined,
+): SourceEvidenceEntry[] {
+  const all = annotations ?? [];
+  const multiple = all.length > 1;
+  return all
+    .filter((a) => a.supportingText)
+    .map((a) => ({
+      label: multiple ? `${label}: ${a.value.label ?? a.value.uri}` : label,
+      text: a.supportingText ?? "",
     }));
 }
 
 function collectEvidence(intervention: InterventionData): SourceEvidenceEntry[] {
   return [
-    ...themeEvidence(intervention),
-    ...evidenceFrom("Implementer", intervention.implementerType),
-    ...evidenceFrom("Implementation fidelity", intervention.implementationFidelity),
-    ...evidenceFrom("Implementation name", intervention.implementationName),
-    ...evidenceFrom("Implementation description", intervention.implementationDescriptions),
-    ...evidenceFrom("Funder", intervention.funderIntervention),
-    ...evidenceFrom("Duration", intervention.duration),
+    ...conceptEvidence("Theme", intervention.educationThemes),
+    ...conceptEvidence("Implementer", intervention.implementerTypes),
+    ...conceptEvidence(
+      "Implementation fidelity",
+      intervention.implementationFidelities,
+    ),
+    ...evidenceFrom("Implementation name", intervention.implementationNames),
+    ...evidenceFrom(
+      "Implementation description",
+      intervention.implementationDescriptions,
+    ),
+    ...evidenceFrom("Funder", intervention.funderInterventions),
+    ...evidenceFrom("Duration", intervention.durations),
   ];
 }
 
@@ -47,6 +60,18 @@ export function InterventionDetails({
 }: InterventionDetailsProps) {
   const themeTags = conceptsToTags(
     intervention.educationThemes,
+    labels,
+    broader,
+    definitions,
+  );
+  const implementerTags = conceptsToTags(
+    intervention.implementerTypes,
+    labels,
+    broader,
+    definitions,
+  );
+  const fidelityTags = conceptsToTags(
+    intervention.implementationFidelities,
     labels,
     broader,
     definitions,
@@ -73,41 +98,21 @@ export function InterventionDetails({
         </>
       )}
 
-      {intervention.implementerType && (
+      {implementerTags.length > 0 && (
         <div class="labeled-field">
-          <TagGroup
-            label="Implementer"
-            tags={[
-              toHierarchicalTag(
-                intervention.implementerType.value,
-                labels,
-                broader,
-                definitions,
-              ),
-            ]}
-          />
+          <TagGroup label="Implementer" tags={implementerTags} />
         </div>
       )}
 
-      {intervention.implementationFidelity && (
+      {fidelityTags.length > 0 && (
         <div class="labeled-field">
-          <TagGroup
-            label="Implementation fidelity"
-            tags={[
-              toHierarchicalTag(
-                intervention.implementationFidelity.value,
-                labels,
-                broader,
-                definitions,
-              ),
-            ]}
-          />
+          <TagGroup label="Implementation fidelity" tags={fidelityTags} />
         </div>
       )}
 
-      {intervention.implementationName && (
+      {intervention.implementationNames && intervention.implementationNames.length > 0 && (
         <LabeledField label="Implementation name">
-          {intervention.implementationName.value}
+          {intervention.implementationNames.map((n) => n.value).join("; ")}
         </LabeledField>
       )}
 
@@ -117,15 +122,15 @@ export function InterventionDetails({
         </LabeledField>
       ))}
 
-      {intervention.funderIntervention && (
+      {intervention.funderInterventions && intervention.funderInterventions.length > 0 && (
         <LabeledField label="Funder">
-          {intervention.funderIntervention.value}
+          {intervention.funderInterventions.map((f) => f.value).join("; ")}
         </LabeledField>
       )}
 
-      {intervention.duration && (
+      {intervention.durations && intervention.durations.length > 0 && (
         <LabeledField label="Duration">
-          {intervention.duration.value}
+          {intervention.durations.map((d) => d.value).join("; ")}
         </LabeledField>
       )}
 

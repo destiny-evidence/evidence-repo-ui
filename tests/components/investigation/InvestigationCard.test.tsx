@@ -18,12 +18,15 @@ const DEFAULT_PROPS = {
   doi: "10.1234/test.2024",
   abstract: null,
   publicationYear: 2024,
-  documentType: {
-    value: {
-      uri: "https://vocab.esea.education/C00008",
-      label: "Journal Article",
+  documentTypes: [
+    {
+      value: {
+        uri: "https://vocab.esea.education/C00008",
+        label: "Journal Article",
+      },
     },
-  },
+  ],
+  studyDesigns: [],
   isRetracted: false,
   hasInvestigation: true,
   vocabUnavailable: false,
@@ -96,6 +99,82 @@ describe("InvestigationCard", () => {
     expect(screen.getByText("Journal Article")).toBeDefined();
   });
 
+  test("renders multiple document type tags", () => {
+    render(
+      <InvestigationCard
+        {...DEFAULT_PROPS}
+        documentTypes={[
+          {
+            value: {
+              uri: "https://vocab.esea.education/C00008",
+              label: "Journal Article",
+            },
+          },
+          {
+            value: { uri: "https://vocab.esea.education/C9", label: "Report" },
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText("Journal Article")).toBeDefined();
+    expect(screen.getByText("Report")).toBeDefined();
+  });
+
+  test("renders a Study Design tag group, one tag per design", () => {
+    render(
+      <InvestigationCard
+        {...DEFAULT_PROPS}
+        studyDesigns={[
+          { value: { uri: "https://vocab.esea.education/C1", label: "RCT" } },
+          {
+            value: {
+              uri: "https://vocab.esea.education/C2",
+              label: "Quasi-experimental",
+            },
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText("Study Design")).toBeDefined();
+    expect(screen.getByText("RCT")).toBeDefined();
+    expect(screen.getByText("Quasi-experimental")).toBeDefined();
+  });
+
+  test("renders no Study Design group when there are no study designs", () => {
+    render(<InvestigationCard {...DEFAULT_PROPS} />);
+    expect(screen.queryByText("Study Design")).toBeNull();
+  });
+
+  test("renders no divider when doc type and study design are both empty", () => {
+    const { container } = render(
+      <InvestigationCard {...DEFAULT_PROPS} documentTypes={[]} studyDesigns={[]} />,
+    );
+    expect(container.querySelector(".investigation-card__divider")).toBeNull();
+    expect(container.querySelector(".tag-group")).toBeNull();
+  });
+
+  test("dedupes repeated concept URIs in doc type and study design tags", () => {
+    render(
+      <InvestigationCard
+        {...DEFAULT_PROPS}
+        documentTypes={[
+          { value: { uri: "u:ja", label: "Journal Article" } },
+          { value: { uri: "u:ja", label: "Journal Article" } },
+        ]}
+        studyDesigns={[
+          { value: { uri: "u:qed", label: "Quasi-experimental study" } },
+          { value: { uri: "u:rct", label: "Randomised Controlled Trial" } },
+          { value: { uri: "u:qed", label: "Quasi-experimental study" } },
+          { value: { uri: "u:rct", label: "Randomised Controlled Trial" } },
+          { value: { uri: "u:rct", label: "Randomised Controlled Trial" } },
+        ]}
+      />,
+    );
+    expect(screen.getAllByText("Journal Article")).toHaveLength(1);
+    expect(screen.getAllByText("Quasi-experimental study")).toHaveLength(1);
+    expect(screen.getAllByText("Randomised Controlled Trial")).toHaveLength(1);
+  });
+
   test("shows retracted banner when isRetracted is true", () => {
     render(<InvestigationCard {...DEFAULT_PROPS} isRetracted={true} />);
 
@@ -119,7 +198,7 @@ describe("InvestigationCard", () => {
       <InvestigationCard
         {...DEFAULT_PROPS}
         hasInvestigation={false}
-        documentType={undefined}
+        documentTypes={[]}
       />,
     );
 
@@ -131,7 +210,7 @@ describe("InvestigationCard", () => {
     render(
       <InvestigationCard
         {...DEFAULT_PROPS}
-        documentType={undefined}
+        documentTypes={[]}
         vocabUnavailable={true}
       />,
     );
@@ -162,7 +241,8 @@ describe("InvestigationCard", () => {
         pagination={null}
         doi={null}
         publicationYear={null}
-        documentType={undefined}
+        documentTypes={[]}
+        studyDesigns={[]}
         isRetracted={false}
         hasInvestigation={false}
         vocabUnavailable={false}

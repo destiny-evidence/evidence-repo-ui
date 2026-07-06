@@ -1,5 +1,5 @@
 import { expandCompactUri } from "./vocabulary/contextService";
-import { getInvestigation, isDict } from "./referenceUtils";
+import { ensureArray, first, getInvestigation, isDict } from "./referenceUtils";
 import type {
   InvestigationData,
   CodedAnnotation,
@@ -18,11 +18,6 @@ import type {
 type Dict = Record<string, unknown>;
 
 const SKIP_STATUSES = ["notReported", "notApplicable"];
-
-function ensureArray(v: unknown): unknown[] {
-  if (v === undefined || v === null) return [];
-  return Array.isArray(v) ? v : [v];
-}
 
 function shouldSkip(node: Dict, prefixes: Map<string, string>): boolean {
   const status = node["status"];
@@ -122,16 +117,48 @@ function resolveStringAnnotations(
     .filter((a): a is StringAnnotation => a !== null);
 }
 
+function resolveNumericAnnotations(
+  raw: unknown,
+  prefixes: Map<string, string>,
+): NumericAnnotation[] {
+  return ensureArray(raw)
+    .filter(isDict)
+    .map((n) => resolveNumericAnnotation(n, prefixes))
+    .filter((a): a is NumericAnnotation => a !== null);
+}
+
 /**
- * Read an optional nested annotation from `raw[key]`. Returns undefined when
- * the field is absent or not a dict; otherwise delegates to `parse`.
+ * Resolve a list of annotations whose entries may be blank-node string
+ * references (e.g. "_:sampleSize") to a definition carried on a sibling
+ * finding. Inline dicts parse directly; string refs resolve via the registry
+ * built during pass 1.
  */
+function resolveAnnotationsWithRefs<T>(
+  raw: unknown,
+  blankNodes: Map<string, Dict>,
+  resolve: (node: Dict) => T | null,
+): T[] {
+  return ensureArray(raw)
+    .map((node) => {
+      if (isDict(node)) return resolve(node);
+      if (typeof node === "string") {
+        const found = blankNodes.get(node);
+        if (found) return resolve(found);
+        console.warn(
+          `[investigationParser] Unresolved blank-node reference: ${node}`,
+        );
+      }
+      return null;
+    })
+    .filter((a): a is T => a !== null);
+}
+
 function parseOptional<T>(
   raw: Dict,
   key: string,
   parse: (node: Dict) => T | null,
 ): T | undefined {
-  const node = raw[key];
+  const node = first(raw[key]);
   return isDict(node) ? parse(node) ?? undefined : undefined;
 }
 
@@ -180,31 +207,40 @@ function parseIntervention(
     node["implementationDescription"],
     prefixes,
   );
+  const durations = resolveNumericAnnotations(node["duration"], prefixes);
+  const implementationNames = resolveStringAnnotations(
+    node["implementationName"],
+    prefixes,
+  );
+  const funderInterventions = resolveStringAnnotations(
+    node["funderIntervention"],
+    prefixes,
+  );
 
   return {
     id: getString(node["@id"]) ?? "",
     name: getString(node["name"]),
     descriptions: descriptions.length > 0 ? descriptions : undefined,
     educationThemes: educationThemes.length > 0 ? educationThemes : undefined,
-    duration: parseOptional(node, "duration", (n) =>
-      resolveNumericAnnotation(n, prefixes),
+    durations: durations.length > 0 ? durations : undefined,
+    implementerTypes: resolveConceptAnnotations(
+      node["implementerType"],
+      prefixes,
+      labels,
     ),
-    implementerType: parseOptional(node, "implementerType", (n) =>
-      resolveConceptAnnotation(n, prefixes, labels),
+    implementationFidelities: resolveConceptAnnotations(
+      node["implementationFidelity"],
+      prefixes,
+      labels,
     ),
-    implementationFidelity: parseOptional(node, "implementationFidelity", (n) =>
-      resolveConceptAnnotation(n, prefixes, labels),
-    ),
-    implementationName: parseOptional(node, "implementationName", (n) =>
-      resolveStringAnnotation(n, prefixes),
-    ),
+    implementationNames:
+      implementationNames.length > 0 ? implementationNames : undefined,
     implementationDescriptions:
       implementationDescriptions.length > 0
         ? implementationDescriptions
         : undefined,
-    funderIntervention: parseOptional(node, "funderIntervention", (n) =>
-      resolveStringAnnotation(n, prefixes),
-    ),
+    funderInterventions:
+      funderInterventions.length > 0 ? funderInterventions : undefined,
   };
 }
 
@@ -232,15 +268,17 @@ function parseContext(
   );
   const participants = resolveStringAnnotations(node["participants"], prefixes);
   const countries = resolveStringAnnotations(node["country"], prefixes);
+  const countryLevel1s = resolveStringAnnotations(
+    node["countryLevel1"],
+    prefixes,
+  );
 
   return {
     id: getString(node["@id"]) ?? "",
     educationLevels: educationLevels.length > 0 ? educationLevels : undefined,
     settings: settings.length > 0 ? settings : undefined,
     countries: countries.length > 0 ? countries : undefined,
-    countryLevel1: parseOptional(node, "countryLevel1", (n) =>
-      resolveStringAnnotation(n, prefixes),
-    ),
+    countryLevel1s: countryLevel1s.length > 0 ? countryLevel1s : undefined,
     participants: participants.length > 0 ? participants : undefined,
   };
 }
@@ -267,8 +305,7 @@ export function parseAppliedConcepts(
   prefixes: Map<string, string>,
   labels: Map<string, string>,
 ): ResolvedConcept[] {
-  const raw = investigation["hasAppliedConcept"];
-  const items = Array.isArray(raw) ? raw : [];
+  const items = ensureArray(investigation["hasAppliedConcept"]);
   return items
     .map((v) => resolveConceptRef(v, prefixes, labels))
     .filter((c): c is ResolvedConcept => c !== undefined);
@@ -278,7 +315,7 @@ function parseArm(node: Dict): ArmData {
   const numField = (key: string) => resolveNumericValue(node[key]);
   return {
     id: getString(node["@id"]) ?? "",
-    conditionRef: getIdRef(node["forCondition"]),
+    conditionRef: getIdRef(first(node["forCondition"])),
     n: numField("n"),
     mean: numField("mean"),
     sd: numField("sd"),
@@ -305,8 +342,16 @@ function parseEffectEstimate(
     confidenceLevel: resolveNumericValue(node["confidenceLevel"]),
     ciLower: resolveNumericValue(node["confidenceIntervalLower"]),
     ciUpper: resolveNumericValue(node["confidenceIntervalUpper"]),
-    effectSizeMetric: resolveConceptRef(node["effectSizeMetric"], prefixes, labels),
-    estimateSource: resolveConceptRef(node["estimateSource"], prefixes, labels),
+    effectSizeMetric: resolveConceptRef(
+      first(node["effectSizeMetric"]),
+      prefixes,
+      labels,
+    ),
+    estimateSource: resolveConceptRef(
+      first(node["estimateSource"]),
+      prefixes,
+      labels,
+    ),
     baselineAdjusted:
       typeof node["baselineAdjusted"] === "boolean"
         ? (node["baselineAdjusted"] as boolean)
@@ -339,11 +384,15 @@ function parseSingleFinding(
   prefixes: Map<string, string>,
   labels: Map<string, string>,
 ): FindingData {
-  const interv = resolveRef(raw["evaluates"], blankNodes, (n) =>
+  const interv = resolveRef(first(raw["evaluates"]), blankNodes, (n) =>
     parseIntervention(n, prefixes, labels),
   );
-  const ctrl = resolveRef(raw["comparedTo"], blankNodes, parseControlCondition);
-  const ctx = resolveRef(raw["hasContext"], blankNodes, (n) =>
+  const ctrl = resolveRef(
+    first(raw["comparedTo"]),
+    blankNodes,
+    parseControlCondition,
+  );
+  const ctx = resolveRef(first(raw["hasContext"]), blankNodes, (n) =>
     parseContext(n, prefixes, labels),
   );
 
@@ -351,21 +400,23 @@ function parseSingleFinding(
     parseOutcome(n, prefixes, labels),
   );
 
-  // sampleSize can also be a blank-node reference for later findings
-  let sampleSize: NumericAnnotation | undefined;
-  const ssNode = raw["sampleSize"];
-  if (isDict(ssNode)) {
-    sampleSize = resolveNumericAnnotation(ssNode, prefixes) ?? undefined;
-  } else if (typeof ssNode === "string") {
-    const resolved = blankNodes.get(ssNode);
-    if (resolved) {
-      sampleSize = resolveNumericAnnotation(resolved, prefixes) ?? undefined;
-    } else {
-      console.warn(
-        `[investigationParser] Unresolved blank-node reference: ${ssNode}`,
-      );
-    }
-  }
+  // sampleSize, attrition, and cost are sample-level scalars that can be
+  // factored out into a shared blank node and referenced by later findings.
+  const sampleSizes = resolveAnnotationsWithRefs(
+    raw["sampleSize"],
+    blankNodes,
+    (n) => resolveNumericAnnotation(n, prefixes),
+  );
+  const attritions = resolveAnnotationsWithRefs(raw["attrition"], blankNodes, (n) =>
+    resolveNumericAnnotation(n, prefixes),
+  );
+  const costs = resolveAnnotationsWithRefs(raw["cost"], blankNodes, (n) =>
+    resolveStringAnnotation(n, prefixes),
+  );
+  const groupDifferences = resolveStringAnnotations(
+    raw["groupDifferences"],
+    prefixes,
+  );
 
   const sampleFeatures = resolveConceptAnnotations(
     raw["sampleFeatures"],
@@ -386,14 +437,11 @@ function parseSingleFinding(
     context: ctx.data,
     contextRef: ctx.ref,
     outcome: outcome ?? null,
-    sampleSize,
-    attrition: parseOptional(raw, "attrition", (n) =>
-      resolveNumericAnnotation(n, prefixes),
-    ),
-    cost: parseOptional(raw, "cost", (n) => resolveStringAnnotation(n, prefixes)),
-    groupDifferences: parseOptional(raw, "groupDifferences", (n) =>
-      resolveStringAnnotation(n, prefixes),
-    ),
+    sampleSizes: sampleSizes.length > 0 ? sampleSizes : undefined,
+    attritions: attritions.length > 0 ? attritions : undefined,
+    costs: costs.length > 0 ? costs : undefined,
+    groupDifferences:
+      groupDifferences.length > 0 ? groupDifferences : undefined,
     sampleFeatures: sampleFeatures.length > 0 ? sampleFeatures : undefined,
     arms: arms.length > 0 ? arms : undefined,
     effectEstimates: effectEstimates.length > 0 ? effectEstimates : undefined,
@@ -411,10 +459,18 @@ function parseFindings(
   const blankNodes = new Map<string, Dict>();
   for (const raw of rawFindings) {
     if (!isDict(raw)) continue;
-    for (const key of ["evaluates", "comparedTo", "hasContext", "sampleSize"]) {
-      const child = raw[key];
-      if (isDict(child) && typeof child["@id"] === "string") {
-        blankNodes.set(child["@id"] as string, child);
+    for (const key of [
+      "evaluates",
+      "comparedTo",
+      "hasContext",
+      "sampleSize",
+      "attrition",
+      "cost",
+    ]) {
+      for (const child of ensureArray(raw[key]).filter(isDict)) {
+        if (typeof child["@id"] === "string") {
+          blankNodes.set(child["@id"] as string, child);
+        }
       }
     }
   }
@@ -449,8 +505,15 @@ export function parseInvestigation(
   const investigation = getInvestigation(data);
 
   return {
-    documentType: parseOptional(investigation, "documentType", (n) =>
-      resolveConceptAnnotation(n, prefixes, labels),
+    documentTypes: resolveConceptAnnotations(
+      investigation["documentType"],
+      prefixes,
+      labels,
+    ),
+    studyDesigns: resolveConceptAnnotations(
+      investigation["studyDesign"],
+      prefixes,
+      labels,
     ),
     isRetracted: investigation["isRetracted"] === true,
     findings: parseFindings(investigation, prefixes, labels),

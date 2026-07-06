@@ -129,7 +129,7 @@ export function makeRichFinding(overrides: Partial<FindingData> = {}): FindingDa
         { value: { uri: "u:theme", label: "Cooperative Learning" } },
       ],
       descriptions: ["Students work in small groups"],
-      duration: { value: 5, supportingText: "5 weeks" },
+      durations: [{ value: 5, supportingText: "5 weeks" }],
     },
     interventionRef: "_:int",
     control: { id: "_:ctrl", description: "Business as usual" },
@@ -144,7 +144,7 @@ export function makeRichFinding(overrides: Partial<FindingData> = {}): FindingDa
       name: "Math test",
       outcomes: [{ value: { uri: "u:2", label: "Basic Skills" } }],
     },
-    sampleSize: { value: 50 },
+    sampleSizes: [{ value: 50 }],
     ...overrides,
   };
 }
@@ -185,7 +185,7 @@ export function makeSharedContext(
       name: "Cooperative Learning",
       educationThemes: [{ value: { uri: "u:1", label: "Literacy" } }],
       descriptions: ["Students work in small groups"],
-      duration: { value: 5 },
+      durations: [{ value: 5 }],
     } satisfies InterventionData,
     control: {
       id: "_:ctrl",

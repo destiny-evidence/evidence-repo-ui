@@ -41,17 +41,17 @@ describe("parseInvestigation", () => {
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
 
-    expect(result.documentType).toBeDefined();
-    expect(result.documentType!.value.uri).toBe(
+    expect(result.documentTypes).toHaveLength(1);
+    expect(result.documentTypes[0].value.uri).toBe(
       "https://vocab.esea.education/C00008",
     );
-    expect(result.documentType!.value.label).toBe("Journal Article");
+    expect(result.documentTypes[0].value.label).toBe("Journal Article");
   });
 
-  test("returns undefined documentType when not present", () => {
+  test("returns empty documentTypes when not present", () => {
     const data = makeData({});
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.documentType).toBeUndefined();
+    expect(result.documentTypes).toEqual([]);
   });
 
   test("skips documentType with notReported status", () => {
@@ -64,7 +64,7 @@ describe("parseInvestigation", () => {
     });
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.documentType).toBeUndefined();
+    expect(result.documentTypes).toEqual([]);
   });
 
   test("skips documentType with notApplicable status", () => {
@@ -77,7 +77,81 @@ describe("parseInvestigation", () => {
     });
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.documentType).toBeUndefined();
+    expect(result.documentTypes).toEqual([]);
+  });
+
+  test("parses multiple documentTypes from an array", () => {
+    const data = makeData({
+      documentType: [
+        {
+          "@type": "DocumentTypeCodingAnnotation",
+          codedValue: { "@id": "esea:C00008" },
+          status: "evrepo:coded",
+        },
+        {
+          "@type": "DocumentTypeCodingAnnotation",
+          codedValue: { "@id": "esea:C00086" },
+          status: "evrepo:coded",
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.documentTypes.map((d) => d.value.label)).toEqual([
+      "Journal Article",
+      "Cooperative Learning",
+    ]);
+  });
+
+  test("parses a single studyDesign dict", () => {
+    const data = makeData({
+      studyDesign: {
+        "@type": "StudyDesignCodingAnnotation",
+        codedValue: { "@id": "esea:C00086" },
+        status: "evrepo:coded",
+      },
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.studyDesigns).toHaveLength(1);
+    expect(result.studyDesigns[0].value.label).toBe("Cooperative Learning");
+  });
+
+  test("parses multiple studyDesigns from an array", () => {
+    const data = makeData({
+      studyDesign: [
+        {
+          "@type": "StudyDesignCodingAnnotation",
+          codedValue: { "@id": "esea:C00086" },
+          status: "evrepo:coded",
+        },
+        {
+          "@type": "StudyDesignCodingAnnotation",
+          codedValue: { "@id": "esea:C00004" },
+          status: "evrepo:coded",
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.studyDesigns.map((d) => d.value.label)).toEqual([
+      "Cooperative Learning",
+      "Upper Secondary",
+    ]);
+  });
+
+  test("returns empty studyDesigns when absent", () => {
+    const result = parseInvestigation(makeData({}), PREFIXES, LABELS);
+    expect(result.studyDesigns).toEqual([]);
+  });
+
+  test("skips a studyDesign marked notReported", () => {
+    const data = makeData({
+      studyDesign: {
+        "@type": "StudyDesignCodingAnnotation",
+        codedValue: { "@id": "esea:C00086" },
+        status: "evrepo:notReported",
+      },
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.studyDesigns).toEqual([]);
   });
 
   test("parses isRetracted flag", () => {
@@ -119,6 +193,32 @@ describe("parseInvestigation", () => {
     ]);
   });
 
+  test("resolves a single hasAppliedConcept arriving as a bare URI string", () => {
+    const data = makeData({
+      hasAppliedConcept: "https://vocab.esea.education/C00086",
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.appliedConcepts).toEqual([
+      {
+        uri: "https://vocab.esea.education/C00086",
+        label: "Cooperative Learning",
+      },
+    ]);
+  });
+
+  test("resolves a single hasAppliedConcept arriving as a bare {@id} object", () => {
+    const data = makeData({
+      hasAppliedConcept: { "@id": "https://vocab.esea.education/C00086" },
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.appliedConcepts).toEqual([
+      {
+        uri: "https://vocab.esea.education/C00086",
+        label: "Cooperative Learning",
+      },
+    ]);
+  });
+
   test("extractIsRetracted returns true when set", () => {
     const data = makeData({ isRetracted: true });
     expect(extractIsRetracted(data)).toBe(true);
@@ -141,7 +241,7 @@ describe("parseInvestigation", () => {
     };
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.documentType?.value.label).toBe("Journal Article");
+    expect(result.documentTypes[0]?.value.label).toBe("Journal Article");
   });
 
   test("returns empty findings when hasFinding is absent", () => {
@@ -238,8 +338,8 @@ describe("parseInvestigation", () => {
     expect(finding.intervention?.educationThemes?.[0].value.label).toBe(
       "Cooperative Learning",
     );
-    expect(finding.intervention?.duration?.value).toBe(5);
-    expect(finding.intervention?.duration?.supportingText).toBe("5 weeks");
+    expect(finding.intervention?.durations?.[0]?.value).toBe(5);
+    expect(finding.intervention?.durations?.[0]?.supportingText).toBe("5 weeks");
     expect(finding.control?.description).toBe("Business as usual");
     expect(finding.context?.educationLevels).toHaveLength(1);
     expect(finding.context?.settings).toHaveLength(1);
@@ -250,8 +350,8 @@ describe("parseInvestigation", () => {
     expect(finding.outcome?.outcomes?.[0].supportingText).toBe(
       "primary outcome",
     );
-    expect(finding.sampleSize?.value).toBe(50);
-    expect(finding.attrition?.value).toBe(12);
+    expect(finding.sampleSizes?.[0]?.value).toBe(50);
+    expect(finding.attritions?.[0]?.value).toBe(12);
   });
 
   test("resolves blank node references across findings", () => {
@@ -329,7 +429,7 @@ describe("parseInvestigation", () => {
     const result = parseInvestigation(data, PREFIXES, LABELS);
     const finding = result.findings[0];
     expect(finding.intervention?.educationThemes).toBeUndefined();
-    expect(finding.sampleSize).toBeUndefined();
+    expect(finding.sampleSizes).toBeUndefined();
   });
 
   test("parses new intervention, context, and finding fields", () => {
@@ -407,19 +507,52 @@ describe("parseInvestigation", () => {
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
     const f = result.findings[0];
-    expect(f.intervention?.implementerType?.value.label).toBe("Cooperative Learning");
-    expect(f.intervention?.implementationFidelity?.value.label).toBe(
+    expect(f.intervention?.implementerTypes?.[0].value.label).toBe(
       "Cooperative Learning",
     );
-    expect(f.intervention?.implementationName?.value).toBe("Impl name");
+    expect(f.intervention?.implementationFidelities?.[0].value.label).toBe(
+      "Cooperative Learning",
+    );
+    expect(f.intervention?.implementationNames?.[0]?.value).toBe("Impl name");
     expect(f.intervention?.implementationDescriptions?.[0].value).toBe("Impl desc");
-    expect(f.intervention?.funderIntervention?.value).toBe("Funder X");
+    expect(f.intervention?.funderInterventions?.[0]?.value).toBe("Funder X");
     expect(f.context?.countries?.[0].value).toBe("Netherlands");
-    expect(f.context?.countryLevel1?.value).toBe("North Holland");
-    expect(f.cost?.value).toBe("Not reported");
-    expect(f.groupDifferences?.value).toBe("Balanced");
+    expect(f.context?.countryLevel1s?.[0]?.value).toBe("North Holland");
+    expect(f.costs?.[0]?.value).toBe("Not reported");
+    expect(f.groupDifferences?.[0]?.value).toBe("Balanced");
     expect(f.sampleFeatures).toHaveLength(1);
     expect(f.sampleFeatures?.[0].value.label).toBe("Cooperative Learning");
+  });
+
+  test("parses multiple implementerTypes from an array", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: {
+            "@id": "_:int",
+            "@type": "Intervention",
+            implementerType: [
+              {
+                "@type": "ImplementerTypeCodingAnnotation",
+                codedValue: { "@id": "esea:C00086" },
+                status: "evrepo:coded",
+              },
+              {
+                "@type": "ImplementerTypeCodingAnnotation",
+                codedValue: { "@id": "esea:C00004" },
+                status: "evrepo:coded",
+              },
+            ],
+          },
+        },
+      ],
+    });
+    const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
+    expect(f.intervention?.implementerTypes?.map((i) => i.value.label)).toEqual([
+      "Cooperative Learning",
+      "Upper Secondary",
+    ]);
   });
 
   test("resolves sampleSize blank node references across findings", () => {
@@ -450,8 +583,271 @@ describe("parseInvestigation", () => {
     });
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.findings[0].sampleSize?.value).toBe(47);
-    expect(result.findings[1].sampleSize?.value).toBe(47);
+    expect(result.findings[0].sampleSizes?.[0]?.value).toBe(47);
+    expect(result.findings[1].sampleSizes?.[0]?.value).toBe(47);
+  });
+
+  test("resolves attrition and cost blank-node references across findings", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: { "@id": "_:int", "@type": "Intervention" },
+          hasContext: { "@id": "_:ctx", "@type": "Context" },
+          attrition: {
+            "@id": "_:attr",
+            "@type": "NumericCodingAnnotation",
+            codedValue: { "@type": "xsd:integer", "@value": 9 },
+            status: "evrepo:coded",
+          },
+          cost: {
+            "@id": "_:cost",
+            "@type": "StringCodingAnnotation",
+            codedValue: { "@type": "xsd:string", "@value": "Not reported" },
+            status: "evrepo:coded",
+          },
+          hasOutcome: { "@type": "Outcome" },
+        },
+        {
+          "@type": "Finding",
+          evaluates: "_:int",
+          hasContext: "_:ctx",
+          attrition: "_:attr",
+          cost: "_:cost",
+          hasOutcome: { "@type": "Outcome" },
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.findings[0].attritions?.[0]?.value).toBe(9);
+    expect(result.findings[0].costs?.[0]?.value).toBe("Not reported");
+    expect(result.findings[1].attritions?.[0]?.value).toBe(9);
+    expect(result.findings[1].costs?.[0]?.value).toBe("Not reported");
+  });
+
+  test("preserves all values of a scalar field arriving as an array (cost)", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          cost: [
+            {
+              "@type": "StringCodingAnnotation",
+              codedValue: { "@type": "xsd:string", "@value": "Reported" },
+              status: "evrepo:coded",
+            },
+            {
+              "@type": "StringCodingAnnotation",
+              codedValue: { "@type": "xsd:string", "@value": "Not reported" },
+              status: "evrepo:coded",
+            },
+          ],
+        },
+      ],
+    });
+    const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
+    expect(f.costs?.map((c) => c.value)).toEqual(["Reported", "Not reported"]);
+  });
+
+  test("preserves all values of sampleSize arriving as an array", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          sampleSize: [
+            {
+              "@type": "NumericCodingAnnotation",
+              codedValue: { "@type": "xsd:integer", "@value": 50 },
+              status: "evrepo:coded",
+            },
+            {
+              "@type": "NumericCodingAnnotation",
+              codedValue: { "@type": "xsd:integer", "@value": 100 },
+              status: "evrepo:coded",
+            },
+          ],
+        },
+      ],
+    });
+    const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
+    expect(f.sampleSizes?.map((s) => s.value)).toEqual([50, 100]);
+  });
+
+  test("preserves all values for the widened scalar fields arriving as arrays", () => {
+    const num = (v: number) => ({
+      "@type": "NumericCodingAnnotation",
+      codedValue: { "@type": "xsd:integer", "@value": v },
+      status: "evrepo:coded",
+    });
+    const str = (v: string) => ({
+      "@type": "StringCodingAnnotation",
+      codedValue: { "@type": "xsd:string", "@value": v },
+      status: "evrepo:coded",
+    });
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: {
+            "@id": "_:int",
+            "@type": "Intervention",
+            duration: [num(6), num(12)],
+            implementationName: [str("Programme A"), str("Programme B")],
+            funderIntervention: [str("Wellcome"), str("Nuffield")],
+          },
+          hasContext: {
+            "@id": "_:ctx",
+            "@type": "Context",
+            countryLevel1: [str("California"), str("Texas")],
+          },
+          hasOutcome: { "@type": "Outcome" },
+          attrition: [num(8), num(15)],
+          groupDifferences: [str("Comparable"), str("Age imbalance")],
+        },
+      ],
+    });
+    const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
+    expect(f.intervention?.durations?.map((d) => d.value)).toEqual([6, 12]);
+    expect(f.intervention?.implementationNames?.map((n) => n.value)).toEqual([
+      "Programme A",
+      "Programme B",
+    ]);
+    expect(f.intervention?.funderInterventions?.map((v) => v.value)).toEqual([
+      "Wellcome",
+      "Nuffield",
+    ]);
+    expect(f.context?.countryLevel1s?.map((r) => r.value)).toEqual([
+      "California",
+      "Texas",
+    ]);
+    expect(f.attritions?.map((a) => a.value)).toEqual([8, 15]);
+    expect(f.groupDifferences?.map((g) => g.value)).toEqual([
+      "Comparable",
+      "Age imbalance",
+    ]);
+  });
+
+  test("resolves a blank-node sampleSize wrapped in a single-element array", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: { "@id": "_:int", "@type": "Intervention" },
+          hasContext: { "@id": "_:ctx", "@type": "Context" },
+          sampleSize: {
+            "@id": "_:sampleSize",
+            "@type": "NumericCodingAnnotation",
+            codedValue: { "@type": "xsd:integer", "@value": 47 },
+            status: "evrepo:coded",
+          },
+          hasOutcome: { "@type": "Outcome" },
+        },
+        {
+          "@type": "Finding",
+          sampleSize: ["_:sampleSize"],
+          hasOutcome: { "@type": "Outcome" },
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.findings[0].sampleSizes?.[0]?.value).toBe(47);
+    expect(result.findings[1].sampleSizes?.[0]?.value).toBe(47);
+  });
+
+  test("resolves structural refs arriving as single-element arrays", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: [
+            { "@id": "_:int", "@type": "Intervention", name: "Wrapped intervention" },
+          ],
+          comparedTo: [
+            { "@id": "_:ctrl", "@type": "ControlCondition", description: "Wrapped control" },
+          ],
+          hasContext: [{ "@id": "_:ctx", "@type": "Context" }],
+          hasOutcome: { "@type": "Outcome" },
+        },
+      ],
+    });
+    const f = parseInvestigation(data, PREFIXES, LABELS).findings[0];
+    expect(f.intervention?.name).toBe("Wrapped intervention");
+    expect(f.control?.description).toBe("Wrapped control");
+    expect(f.context).not.toBeNull();
+  });
+
+  test("resolves an array-wrapped blank-node structural ref across findings", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          evaluates: [
+            { "@id": "_:int", "@type": "Intervention", name: "Shared intervention" },
+          ],
+          hasContext: { "@id": "_:ctx", "@type": "Context" },
+          hasOutcome: { "@type": "Outcome" },
+        },
+        {
+          "@type": "Finding",
+          evaluates: ["_:int"],
+          hasOutcome: { "@type": "Outcome" },
+        },
+      ],
+    });
+    const result = parseInvestigation(data, PREFIXES, LABELS);
+    expect(result.findings[0].intervention?.name).toBe("Shared intervention");
+    expect(result.findings[1].intervention?.name).toBe("Shared intervention");
+    expect(result.findings[1].interventionRef).toBe("_:int");
+  });
+
+  test("resolves arm forCondition arriving as an array", () => {
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          hasArmData: [
+            {
+              "@id": "_:armI",
+              "@type": "ObservedResult",
+              forCondition: ["_:int"],
+              n: 100,
+            },
+          ],
+        },
+      ],
+    });
+    const arm = parseInvestigation(data, PREFIXES, LABELS).findings[0].arms![0];
+    expect(arm.conditionRef).toBe("_:int");
+  });
+
+  test("resolves effectSizeMetric and estimateSource arriving as arrays of CURIE strings", () => {
+    const labels = new Map([
+      ...LABELS,
+      ["https://vocab.evidence-repository.org/HEDGES_G", "Hedges' g"],
+      [
+        "https://vocab.evidence-repository.org/COMPUTED",
+        "Computed from summary statistics",
+      ],
+    ]);
+    const data = makeData({
+      hasFinding: [
+        {
+          "@type": "Finding",
+          hasEffectEstimate: [
+            {
+              "@type": "EffectEstimate",
+              pointEstimate: -0.48,
+              effectSizeMetric: ["evrepo:HEDGES_G"],
+              estimateSource: ["evrepo:COMPUTED"],
+            },
+          ],
+        },
+      ],
+    });
+    const ee = parseInvestigation(data, PREFIXES, labels).findings[0]
+      .effectEstimates![0];
+    expect(ee.effectSizeMetric?.label).toBe("Hedges' g");
+    expect(ee.estimateSource?.label).toBe("Computed from summary statistics");
   });
 
   test("parses effect estimates with CI bounds, metric, and adjustment flags", () => {
@@ -586,9 +982,9 @@ describe("parseInvestigation", () => {
     });
 
     const result = parseInvestigation(data, PREFIXES, LABELS);
-    expect(result.documentType?.value.uri).toBe(
+    expect(result.documentTypes[0]?.value.uri).toBe(
       "https://vocab.esea.education/C99999",
     );
-    expect(result.documentType?.value.label).toBeUndefined();
+    expect(result.documentTypes[0]?.value.label).toBeUndefined();
   });
 });

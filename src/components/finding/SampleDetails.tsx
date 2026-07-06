@@ -6,7 +6,7 @@ import type { FindingData } from "@/types/investigation";
 
 type SampleFields = Pick<
   FindingData,
-  "sampleSize" | "attrition" | "cost" | "groupDifferences" | "sampleFeatures"
+  "sampleSizes" | "attritions" | "costs" | "groupDifferences" | "sampleFeatures"
 >;
 
 interface SampleDetailsProps {
@@ -18,9 +18,9 @@ interface SampleDetailsProps {
 
 function collectEvidence(finding: SampleFields) {
   return [
-    ...evidenceFrom("Size", finding.sampleSize),
-    ...evidenceFrom("Attrition", finding.attrition),
-    ...evidenceFrom("Cost", finding.cost),
+    ...evidenceFrom("Size", finding.sampleSizes),
+    ...evidenceFrom("Attrition", finding.attritions),
+    ...evidenceFrom("Cost", finding.costs),
     ...evidenceFrom("Group differences", finding.groupDifferences),
     ...evidenceFrom("Features", finding.sampleFeatures),
   ];
@@ -41,45 +41,41 @@ export function SampleDetails({
   const evidenceEntries = collectEvidence(finding);
 
   const hasAny =
-    finding.sampleSize ||
-    finding.attrition ||
-    finding.cost ||
-    finding.groupDifferences ||
+    finding.sampleSizes?.length ||
+    finding.attritions?.length ||
+    finding.costs?.length ||
+    finding.groupDifferences?.length ||
     featureTags.length > 0;
   if (!hasAny) return null;
 
   return (
     <>
       <div class="sample-details__grid lg-field-grid">
-        {finding.sampleSize && (
+        {finding.sampleSizes && finding.sampleSizes.length > 0 && (
           <div class="sample-details__field lg-field">
             <span class="sample-details__field-label lg-label">Size</span>
-            <span>
-              {finding.sampleSize.value}
-            </span>
+            <span>{finding.sampleSizes.map((s) => s.value).join("; ")}</span>
           </div>
         )}
         {featureTags.length > 0 && (
           <TagGroup label="Features" tags={featureTags} />
         )}
-        {finding.attrition && (
+        {finding.attritions && finding.attritions.length > 0 && (
           <div class="sample-details__field lg-field">
             <span class="sample-details__field-label lg-label">Attrition</span>
-            <span>
-              {finding.attrition.value}
-            </span>
+            <span>{finding.attritions.map((a) => a.value).join("; ")}</span>
           </div>
         )}
-        {finding.cost && (
+        {finding.costs && finding.costs.length > 0 && (
           <div class="sample-details__field lg-field">
             <span class="sample-details__field-label lg-label">Cost</span>
-            <span>{finding.cost.value}</span>
+            <span>{finding.costs.map((c) => c.value).join("; ")}</span>
           </div>
         )}
-        {finding.groupDifferences && (
+        {finding.groupDifferences && finding.groupDifferences.length > 0 && (
           <div class="sample-details__field sample-details__field--wide lg-field">
             <span class="sample-details__field-label lg-label">Group differences</span>
-            <span>{finding.groupDifferences.value}</span>
+            <span>{finding.groupDifferences.map((g) => g.value).join("; ")}</span>
           </div>
         )}
       </div>

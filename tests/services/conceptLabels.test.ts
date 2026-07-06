@@ -89,4 +89,29 @@ describe("conceptsToTags", () => {
   test("returns empty array when annotations is undefined", () => {
     expect(conceptsToTags(undefined, labels, broader)).toEqual([]);
   });
+
+  test("collapses annotations that share a concept URI to one tag", () => {
+    const tags = conceptsToTags(
+      [
+        { value: { uri: "u:a", label: "Alpha" } },
+        { value: { uri: "u:a", label: "Alpha" } },
+      ],
+      labels,
+      broader,
+    );
+    expect(tags).toEqual([{ label: "Alpha" }]);
+  });
+
+  test("keeps first-occurrence order when distinct URIs are interleaved", () => {
+    const tags = conceptsToTags(
+      [
+        { value: { uri: "u:a", label: "Alpha" } },
+        { value: { uri: "u:b", label: "Beta" } },
+        { value: { uri: "u:a", label: "Alpha" } },
+      ],
+      labels,
+      broader,
+    );
+    expect(tags).toEqual([{ label: "Alpha" }, { label: "Beta" }]);
+  });
 });
