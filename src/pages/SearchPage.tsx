@@ -32,11 +32,7 @@ import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDr
 import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
 import { useAiSummaryContext } from "@/components/ai-summary/AiSummaryProvider";
 import { aiSummariesEnabled } from "@/components/ai-summary/aiSummariesEnabled";
-import { SelectionControls } from "@/components/search/SelectionControls";
-import {
-  SelectionBanner,
-  type SelectionBannerContent,
-} from "@/components/search/SelectionBanner";
+import { SelectionHeader } from "@/components/search/SelectionHeader";
 import { selectionEnabled } from "@/components/search/selectionEnabled";
 import { useSelectionContext } from "@/components/search/SelectionProvider";
 import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
@@ -115,17 +111,13 @@ function exportAnnouncementFor(status: ExportStatus): string {
   }
 }
 
-function formatResultsSummary(
-  q: string,
-  total: { count: number; is_lower_bound: boolean },
-) {
-  const qClause = q !== "" ? ` for “${q}”` : "";
-  // Wrapping span keeps the count + tail as a single anonymous flex item
-  // inside the meta bar so the gap rule doesn't separate them.
+function formatResultsSummary(total: { count: number; is_lower_bound: boolean }) {
+  // Wrapping span keeps the count + tail as one flex item so the row's gap
+  // rule doesn't separate them.
   return (
-    <span class="search-results__meta-summary">
+    <span>
       <span class="search-results__meta-count">{formatTotal(total)}</span>
-      {` results${qClause}`}
+      {" results"}
     </span>
   );
 }
@@ -169,18 +161,14 @@ function SearchPageInner({ community }: { community: Community }) {
   const exportJob = useSearchExport();
   const ai = useAiSummaryContext();
 
-  // Reference selection lives in a provider above the router so it survives
-  // navigation. The identity below excludes page + sort, so paging/sorting
+  // Identity keyed on the canonical query minus page/sort, so paging/sorting
   // keeps the selection while a new community/query/filter clears it.
   const selection = useSelectionContext();
-  const selectionIdentity = JSON.stringify({
-    community: community.slug,
-    q: params.q,
-    conceptFilters: params.conceptFilters,
-    countryCodes: params.countryCodes,
-    startYear: params.startYear,
-    endYear: params.endYear,
-  });
+  const selectionIdentity = `${community.slug}?${toQueryString({
+    ...params,
+    page: 1,
+    sort: undefined,
+  })}`;
   const { syncSearchIdentity } = selection;
   useEffect(() => {
     syncSearchIdentity(selectionIdentity);
@@ -344,40 +332,19 @@ function SearchPageInner({ community }: { community: Community }) {
   // Row selection is only offered when a consumer (export or AI summary) can
   // act on it, and the community has opted in via the feature flag.
   const selectable = selectionEnabled(community, aiSummaryWriter);
-  const visibleIds = results.results?.references.map((r) => r.id) ?? [];
   const selectionTotal = results.results?.total ?? { count: 0, is_lower_bound: false };
   const selectionCount = selection.count(selectionTotal.count);
-  const isSelecting = selectable && hasResults && selectionCount > 0;
-  const masterState = selection.masterState(visibleIds);
-  const multiPage = results.results !== null && selectionTotal.count > visibleIds.length;
-  // "All N selected." only when everything really is selected; once a page is
-  // deselected in all-mode there are exclusions, so fall back to the count.
-  const allSelected =
-    selection.mode === "all" && selection.excluded.size === 0;
+  // Checked once everything is selected (via select-all or by ticking every row).
+  const allSelected = selectionCount > 0 && selectionCount === selectionTotal.count;
+  const someSelected = selectionCount > 0 && !allSelected;
   const selectionStatusLabel = allSelected
-    ? `All ${formatTotal(selectionTotal)} selected.`
-    : `${selectionCount.toLocaleString()} selected.`;
-  // The master checkbox selects/deselects the current page, keeping any
-  // cross-page selection (the banner escalates to all matches).
-  function handleMasterToggle() {
-    selection.setPageSelected(visibleIds, masterState !== "all");
+    ? `All ${formatTotal(selectionTotal)} selected`
+    : `${selectionCount.toLocaleString()} selected`;
+  // Any active selection clears; only an empty one selects all (Gmail-style).
+  function handleToggleAll() {
+    if (selectionCount > 0) selection.clear();
+    else selection.selectAll();
   }
-  // Selection summary row: the count and Clear, plus — whenever more than one
-  // page exists and the selection isn't already everything (a manual subset, or
-  // all-minus-exclusions) — an escalation to select every match.
-  const selectionBanner: SelectionBannerContent | null = isSelecting
-    ? {
-        countLabel: selectionStatusLabel,
-        selectAll:
-          multiPage && !allSelected
-            ? {
-                label: `Select all ${formatTotal(selectionTotal)} references`,
-                onAction: selection.selectAllPages,
-              }
-            : undefined,
-        onClear: selection.clear,
-      }
-    : null;
 
   // Terms framing the summary: the free-text query plus any applied concept
   // filters (a map cell arrives here with those filters pre-applied).
@@ -425,6 +392,16 @@ function SearchPageInner({ community }: { community: Community }) {
       )
     : 1;
 
+  // Null on a single page so the grid cell / bottom wrapper don't render empty.
+  const paginationEl = results.results && totalPages > 1 ? (
+    <Pagination
+      currentPage={params.page}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
+      disabled={results.loading}
+    />
+  ) : null;
+
   return (
     <div class="search-page">
       {visualiseBackUrl && (
@@ -453,41 +430,50 @@ function SearchPageInner({ community }: { community: Community }) {
         />
       </section>
 
+      {(showSummary || results.results) && (
+        <div class="search-results__pagerow">
+          <span class="search-results__count" aria-live="polite">
+            {showSummary
+              ? results.error
+                ? (
+                  <>
+                    <span>Couldn't load results.</span>
+                    <button
+                      type="button"
+                      class="search-results__retry"
+                      onClick={() => results.retry()}
+                    >
+                      Try again
+                    </button>
+                  </>
+                )
+                : results.loading && results.results === null
+                  ? "Searching…"
+                  : results.loading
+                    ? "Updating results…"
+                    : results.results
+                      ? formatResultsSummary(results.results.total)
+                      : null
+              : null}
+          </span>
+          {paginationEl}
+        </div>
+      )}
+
       <section class="search-results">
         {showMetaBar && (
-          <div class={`search-results__meta${isSelecting ? " is-selecting" : ""}`}>
-            <span class="search-results__meta-left" aria-live="polite">
-              {selectable && results.results && (
-                <SelectionControls
-                  master={masterState}
-                  onMasterToggle={handleMasterToggle}
-                  disabled={!hasResults}
+          <div class="search-results__meta">
+            <span class="search-results__meta-left">
+              {selectable && hasResults && (
+                <SelectionHeader
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onToggle={handleToggleAll}
+                  countLabel={selectionCount > 0 ? selectionStatusLabel : ""}
                 />
               )}
-              {!isSelecting && showSummary
-                ? results.error
-                  ? (
-                    <>
-                      <span>Couldn't load results.</span>
-                      <button
-                        type="button"
-                        class="search-results__retry"
-                        onClick={() => results.retry()}
-                      >
-                        Try again
-                      </button>
-                    </>
-                  )
-                  : results.loading && results.results === null
-                    ? "Searching…"
-                    : results.loading
-                      ? "Updating results…"
-                      : results.results
-                        ? formatResultsSummary(params.q, results.results.total)
-                        : null
-                : null}
-              {results.results
-                && selectable
+              {selectable
+                && hasResults
                 && (aiEnabled || community.features.exportExcel) && (
                   <span class="search-results__meta-div" aria-hidden="true" />
                 )}
@@ -539,8 +525,6 @@ function SearchPageInner({ community }: { community: Community }) {
           </div>
         )}
 
-        {selectable && <SelectionBanner content={selectionBanner} />}
-
         <div
           class={`search-results__list${
             results.loading && results.results !== null ? " is-updating" : ""
@@ -574,16 +558,11 @@ function SearchPageInner({ community }: { community: Community }) {
             />
           ))}
         </div>
-
-        {results.results && (
-          <Pagination
-            currentPage={params.page}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            disabled={results.loading}
-          />
-        )}
       </section>
+
+      {paginationEl && (
+        <div class="search-results__pager">{paginationEl}</div>
+      )}
 
       {filterableSchemes.length > 0 && (
         <FilterDrawer

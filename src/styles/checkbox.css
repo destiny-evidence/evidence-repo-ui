@@ -1,0 +1,13 @@
+/* Shared native checkbox styling. Components add only positioning deltas. */
+.ui-checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.ui-checkbox:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

@@ -147,4 +147,5 @@ describe("useAiSummary", () => {
     expect(result.current.errorMessage).toBe("ids down");
     expect(mockRequest).not.toHaveBeenCalled();
   });
+
 });

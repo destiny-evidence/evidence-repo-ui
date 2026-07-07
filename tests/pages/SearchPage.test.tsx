@@ -221,7 +221,7 @@ describe("SearchPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /search/i }));
 
     await waitFor(() =>
-      expect(screen.getByText(/results for/i)).toHaveTextContent(/3 results for/i)
+      expect(screen.getByText(/results/i)).toHaveTextContent(/3 results/i)
     );
     expect(window.location.search).toBe("?q=phonics");
     // Corpus subtitle is unchanged throughout the transition.
@@ -296,7 +296,7 @@ describe("SearchPage", () => {
     renderSearchPage();
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-    expect(screen.getByText(/results for/i)).toHaveTextContent(/10,000\+ results for “education”/i);
+    expect(screen.getByText(/results/i)).toHaveTextContent(/10,000\+ results/i);
   });
 
   test("changing sort commits an unsubmitted draft query", async () => {
@@ -353,7 +353,7 @@ describe("SearchPage", () => {
     mockBoth({ results: makeResult(7, ["r1"]) });
     const { container } = renderSearchPage();
     await waitFor(() => {
-      const summary = container.querySelector(".search-results__meta-summary");
+      const summary = container.querySelector(".search-results__count");
       expect(summary).toBeInTheDocument();
       expect(summary).toHaveTextContent(/7\s*results/);
     });

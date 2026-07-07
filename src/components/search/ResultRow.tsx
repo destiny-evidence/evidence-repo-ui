@@ -164,7 +164,7 @@ export function ResultRow({
       {selectable && (
         <input
           type="checkbox"
-          class="row-check"
+          class="ui-checkbox row-check"
           checked={selected}
           aria-label={selected ? `Deselect ${title}` : `Select ${title}`}
           onChange={() => onToggle?.()}

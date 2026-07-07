@@ -7,6 +7,7 @@ import { MATOMO_CONTAINER_URL } from "./config";
 import "./styles/reset.css";
 import "./styles/fonts.css";
 import "./styles/variables.css";
+import "./styles/checkbox.css";
 import "./styles/auth-gate.css";
 
 const root = document.getElementById("app")!;

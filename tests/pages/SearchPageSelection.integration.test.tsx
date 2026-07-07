@@ -44,33 +44,84 @@ beforeEach(() => {
 });
 
 async function gotoPage(n: number) {
-  fireEvent.click(screen.getByRole("button", { name: `Page ${n}` }));
+  // Pagination renders above and below the table; either navigates.
+  fireEvent.click(screen.getAllByRole("button", { name: `Page ${n}` })[0]);
   await waitFor(() =>
     expect(screen.getByRole("checkbox", { name: new RegExp(`p${n}-r0$`) })).toBeInTheDocument(),
   );
 }
 
 describe("cross-page selection persistence", () => {
-  test("a page deselected after 'select all' stays deselected on return", async () => {
+  test("a row deselected after 'select all' stays deselected on return", async () => {
     render(<App />);
     await waitFor(() =>
       expect(screen.getByRole("checkbox", { name: /p1-r0$/ })).toBeInTheDocument(),
     );
 
-    // Select this page, then escalate to all matches.
-    fireEvent.click(screen.getByRole("checkbox", { name: "Select this page" }));
-    fireEvent.click(screen.getByRole("button", { name: /select all 40 references/i }));
-    expect(screen.getByText("All 40 selected.")).toBeInTheDocument();
+    // Select every match via the top-left checkbox.
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select all references" }));
+    expect(screen.getByText("All 40 selected")).toBeInTheDocument();
 
-    // Go to page 2 (all selected there), deselect the whole page.
+    // On page 2, deselect a single row.
     await gotoPage(2);
     expect(screen.getByRole("checkbox", { name: "Deselect p2-r0" })).toBeChecked();
-    fireEvent.click(screen.getByRole("checkbox", { name: "Deselect this page" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Deselect p2-r0" }));
     expect(screen.getByRole("checkbox", { name: "Select p2-r0" })).not.toBeChecked();
 
     // Away to page 1 and back to page 2 — the deselection must survive.
     await gotoPage(1);
     await gotoPage(2);
     expect(screen.getByRole("checkbox", { name: "Select p2-r0" })).not.toBeChecked();
+  });
+
+  test("re-sorting keeps the selection", async () => {
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: /p1-r0$/ })).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select all references" }));
+    expect(screen.getByText("All 40 selected")).toBeInTheDocument();
+
+    // Changing sort re-navigates but keeps the same result set — selection stays.
+    fireEvent.change(screen.getByRole("combobox", { name: "Sort results" }), {
+      target: { value: "newest" },
+    });
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: /p1-r0$/ })).toBeInTheDocument(),
+    );
+    expect(screen.getByText("All 40 selected")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Deselect p1-r0" })).toBeChecked();
+  });
+
+  test("master checkbox reads checked once every row is ticked individually", async () => {
+    // A single page holding the whole result set.
+    const refs = ["a", "b", "c"].map((id) =>
+      makeReference({ id, bibliographic: { title: id } }),
+    );
+    mockSearch.mockResolvedValue({
+      total: { count: 3, is_lower_bound: false },
+      page: { count: 3, number: 1 },
+      references: refs,
+    });
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: "Select a" })).toBeInTheDocument(),
+    );
+
+    const master = () => screen.getByRole("checkbox", { name: /(Select|Deselect) all references/ }) as HTMLInputElement;
+    expect(master().indeterminate).toBe(false);
+    expect(master()).not.toBeChecked();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select a" }));
+    expect(master().indeterminate).toBe(true); // partial
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select b" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select c" }));
+
+    // Every row selected individually — master is checked, not indeterminate.
+    expect(master()).toBeChecked();
+    expect(master().indeterminate).toBe(false);
+    expect(screen.getByText("All 3 selected")).toBeInTheDocument();
   });
 });
