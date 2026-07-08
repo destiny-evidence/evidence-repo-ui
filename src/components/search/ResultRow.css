@@ -26,6 +26,8 @@
    left-column content and pills shift one column to the right. */
 .result-row--selectable {
   grid-template-columns: auto 1fr auto;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
 }
 
 .result-row--selectable .row-pills {
