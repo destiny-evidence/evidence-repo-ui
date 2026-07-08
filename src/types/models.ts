@@ -11,6 +11,9 @@ export interface CommunityFeatures {
   exportExcel: boolean;
   // Whether the facet-backed country filter card is shown; needs a populated `countries` facet.
   countryFacetFilter: boolean;
+  // Gates the result-row selection UI (checkboxes + selection controls). Only
+  // useful alongside export or AI summaries, which consume the selection.
+  referenceSelection: boolean;
 }
 
 // One axis of the evidence map.

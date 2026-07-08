@@ -22,6 +22,32 @@
   background: var(--color-bg-hover);
 }
 
+/* Selection: a checkbox gutter is added as the first grid column, so the
+   left-column content and pills shift one column to the right. */
+.result-row--selectable {
+  grid-template-columns: auto 1fr auto;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
+.result-row--selectable .row-pills {
+  grid-column: 2;
+}
+
+.result-row.is-selected,
+.result-row.is-selected:nth-child(even) {
+  background: var(--color-accent-light);
+}
+
+/* The checkbox raises above the stretched-link overlay (like .doi-link) so a
+   tick toggles selection instead of navigating to the record. */
+.row-check {
+  position: relative;
+  z-index: 2;
+  align-self: start;
+  margin: 3px 0 0;
+}
+
 .result-row:last-of-type {
   border-bottom: none;
   border-bottom-left-radius: 4px;

@@ -23,6 +23,9 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   // Off until a community's Excel export is built — the export is Education-shaped today.
   exportExcel: false,
   countryFacetFilter: true,
+  // Off until the consumers (AI summary / export of a selection) ship; turn on
+  // per community once those land.
+  referenceSelection: false,
 };
 
 // The HPV geographic ConceptSchemes (country + regional/classification). Full

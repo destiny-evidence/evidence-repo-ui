@@ -28,6 +28,10 @@ interface ResultRowProps {
   findingsAndEstimates?: boolean;
   // Concept schemes whose members are dropped from pills (e.g. geo).
   pillExcludedSchemes?: readonly string[];
+  // When true, renders a selection checkbox in a left column.
+  selectable?: boolean;
+  selected?: boolean;
+  onToggle?: () => void;
 }
 
 const MAX_AUTHORS_SHOWN = 3;
@@ -79,6 +83,9 @@ export function ResultRow({
   codingInstitution: codingConfig,
   findingsAndEstimates = true,
   pillExcludedSchemes = NO_PILL_EXCLUSIONS,
+  selectable = false,
+  selected = false,
+  onToggle,
 }: ResultRowProps) {
   const bib = extractBibliographic(reference);
   const doi = extractDoi(reference.identifiers);
@@ -150,7 +157,23 @@ export function ResultRow({
   // clickable above the overlay; .row-right and stat-badges deliberately
   // stay un-positioned so their clicks fall through to the row link.
   return (
-    <article class="result-row">
+    <article
+      class={`result-row${selectable ? " result-row--selectable" : ""}${
+        selectable && selected ? " is-selected" : ""
+      }`}
+    >
+      {selectable && (
+        <input
+          type="checkbox"
+          class="ui-checkbox row-check"
+          checked={selected}
+          aria-label={selected ? `Deselect ${title}` : `Select ${title}`}
+          onChange={() => onToggle?.()}
+          // Raised above the stretched-link overlay (see CSS); stop the click
+          // from bubbling to the row so it never navigates to the record.
+          onClick={(e) => e.stopPropagation()}
+        />
+      )}
       <a
         class="row-link"
         href={`/${communitySlug}/references/${reference.id}`}

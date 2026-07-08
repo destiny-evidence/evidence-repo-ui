@@ -32,6 +32,9 @@ import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDr
 import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
 import { useAiSummaryContext } from "@/components/ai-summary/AiSummaryProvider";
 import { aiSummariesEnabled } from "@/components/ai-summary/aiSummariesEnabled";
+import { SelectionHeader } from "@/components/search/SelectionHeader";
+import { selectionEnabled } from "@/components/search/selectionEnabled";
+import { useSelectionContext } from "@/components/search/SelectionProvider";
 import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
 import { formatTotal } from "@/utils/searchTotal";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
@@ -108,17 +111,13 @@ function exportAnnouncementFor(status: ExportStatus): string {
   }
 }
 
-function formatResultsSummary(
-  q: string,
-  total: { count: number; is_lower_bound: boolean },
-) {
-  const qClause = q !== "" ? ` for “${q}”` : "";
-  // Wrapping span keeps the count + tail as a single anonymous flex item
-  // inside the meta bar so the gap rule doesn't separate them.
+function formatResultsSummary(total: { count: number; is_lower_bound: boolean }) {
+  // Wrapping span keeps the count + tail as one flex item so the row's gap
+  // rule doesn't separate them.
   return (
-    <span class="search-results__meta-summary">
+    <span>
       <span class="search-results__meta-count">{formatTotal(total)}</span>
-      {` results${qClause}`}
+      {" results"}
     </span>
   );
 }
@@ -161,6 +160,19 @@ function SearchPageInner({ community }: { community: Community }) {
   const results = useSearch(params);
   const exportJob = useSearchExport();
   const ai = useAiSummaryContext();
+
+  // Identity keyed on the canonical query minus page/sort, so paging/sorting
+  // keeps the selection while a new community/query/filter clears it.
+  const selection = useSelectionContext();
+  const selectionIdentity = `${community.slug}?${toQueryString({
+    ...params,
+    page: 1,
+    sort: undefined,
+  })}`;
+  const { syncSearchIdentity } = selection;
+  useEffect(() => {
+    syncSearchIdentity(selectionIdentity);
+  }, [syncSearchIdentity, selectionIdentity]);
 
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
   // shared cache, so the Refine button is almost always ready by the time
@@ -317,6 +329,23 @@ function SearchPageInner({ community }: { community: Community }) {
   const { aiSummaryWriter } = useAuth();
   const aiEnabled = aiSummariesEnabled(community, aiSummaryWriter);
 
+  // Row selection is only offered when a consumer (export or AI summary) can
+  // act on it, and the community has opted in via the feature flag.
+  const selectable = selectionEnabled(community, aiSummaryWriter);
+  const selectionTotal = results.results?.total ?? { count: 0, is_lower_bound: false };
+  const selectionCount = selection.count(selectionTotal.count);
+  // Checked once everything is selected (via select-all or by ticking every row).
+  const allSelected = selectionCount > 0 && selectionCount === selectionTotal.count;
+  const someSelected = selectionCount > 0 && !allSelected;
+  const selectionStatusLabel = allSelected
+    ? `All ${formatTotal(selectionTotal)} selected`
+    : `${selectionCount.toLocaleString()} selected`;
+  // Any active selection clears; only an empty one selects all (Gmail-style).
+  function handleToggleAll() {
+    if (selectionCount > 0) selection.clear();
+    else selection.selectAll();
+  }
+
   // Terms framing the summary: the free-text query plus any applied concept
   // filters (a map cell arrives here with those filters pre-applied).
   const aiTerms = deriveSummaryTerms(params, vocab.labels);
@@ -363,6 +392,16 @@ function SearchPageInner({ community }: { community: Community }) {
       )
     : 1;
 
+  // Null on a single page so the grid cell / bottom wrapper don't render empty.
+  const paginationEl = results.results && totalPages > 1 ? (
+    <Pagination
+      currentPage={params.page}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
+      disabled={results.loading}
+    />
+  ) : null;
+
   return (
     <div class="search-page">
       {visualiseBackUrl && (
@@ -391,68 +430,81 @@ function SearchPageInner({ community }: { community: Community }) {
         />
       </section>
 
-      {aiEnabled && hasResults && (
-        <AiSummaryButton
-          onClick={handleGenerateSummary}
-          disabled={aiDisabledReason !== undefined}
-          disabledReason={aiDisabledReason}
-        />
+      {(showSummary || results.results) && (
+        <div class="search-results__pagerow">
+          <span class="search-results__count" aria-live="polite">
+            {showSummary
+              ? results.error
+                ? (
+                  <>
+                    <span>Couldn't load results.</span>
+                    <button
+                      type="button"
+                      class="search-results__retry"
+                      onClick={() => results.retry()}
+                    >
+                      Try again
+                    </button>
+                  </>
+                )
+                : results.loading && results.results === null
+                  ? "Searching…"
+                  : results.loading
+                    ? "Updating results…"
+                    : results.results
+                      ? formatResultsSummary(results.results.total)
+                      : null
+              : null}
+          </span>
+          {paginationEl}
+        </div>
       )}
 
       <section class="search-results">
         {showMetaBar && (
           <div class="search-results__meta">
-            <span class="search-results__meta-left" aria-live="polite">
-              {showSummary
-                ? results.error
-                  ? (
-                    <>
-                      <span>Couldn't load results.</span>
-                      <button
-                        type="button"
-                        class="search-results__retry"
-                        onClick={() => results.retry()}
-                      >
-                        Try again
-                      </button>
-                    </>
-                  )
-                  : results.loading && results.results === null
-                    ? "Searching…"
-                    : results.loading
-                      ? "Updating results…"
-                      : results.results
-                        ? formatResultsSummary(params.q, results.results.total)
-                        : null
-                : null}
+            <span class="search-results__meta-left">
+              {selectable && hasResults && (
+                <SelectionHeader
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onToggle={handleToggleAll}
+                  countLabel={selectionCount > 0 ? selectionStatusLabel : ""}
+                />
+              )}
+              {selectable
+                && hasResults
+                && (aiEnabled || community.features.exportExcel) && (
+                  <span class="search-results__meta-div" aria-hidden="true" />
+                )}
+              {aiEnabled && hasResults && (
+                <AiSummaryButton
+                  onClick={handleGenerateSummary}
+                  disabled={aiDisabledReason !== undefined}
+                  disabledReason={aiDisabledReason}
+                />
+              )}
+              {results.results && exportJob.status === "error" && (
+                <span class="search-results__export-status" role="alert">
+                  {exportJob.errorMessage ?? "Export failed."}
+                </span>
+              )}
+              {results.results && (
+                <span class="visually-hidden" role="status" aria-live="polite">
+                  {exportAnnouncement}
+                </span>
+              )}
+              {results.results && community.features.exportExcel && (
+                <ExportMenu
+                  disabled={exportDisabled}
+                  status={exportJob.status}
+                  onExport={handleExport}
+                  disabledReason={exportTooltip}
+                />
+              )}
             </span>
             {(refine || results.results) && (
               <span class="search-results__meta-right">
-                {results.results && exportJob.status === "error" && (
-                  <span
-                    class="search-results__export-status"
-                    role="alert"
-                  >
-                    {exportJob.errorMessage ?? "Export failed."}
-                  </span>
-                )}
-                {results.results && (
-                  <span
-                    class="visually-hidden"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {exportAnnouncement}
-                  </span>
-                )}
-                {results.results && community.features.exportExcel && (
-                  <ExportMenu
-                    disabled={exportDisabled}
-                    status={exportJob.status}
-                    onExport={handleExport}
-                    disabledReason={exportTooltip}
-                  />
-                )}
                 {refine && (
                   <RefineButton
                     count={refine.count}
@@ -500,19 +552,17 @@ function SearchPageInner({ community }: { community: Community }) {
               codingInstitution={community.codingInstitution}
               findingsAndEstimates={community.features.findingsAndEstimates}
               pillExcludedSchemes={community.pillExcludedSchemes}
+              selectable={selectable}
+              selected={selection.isSelected(ref.id)}
+              onToggle={() => selection.toggle(ref.id)}
             />
           ))}
         </div>
-
-        {results.results && (
-          <Pagination
-            currentPage={params.page}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            disabled={results.loading}
-          />
-        )}
       </section>
+
+      {paginationEl && (
+        <div class="search-results__pager">{paginationEl}</div>
+      )}
 
       {filterableSchemes.length > 0 && (
         <FilterDrawer

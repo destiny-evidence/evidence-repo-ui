@@ -25,7 +25,7 @@
 }
 
 .search-hero {
-  padding: 48px 32px 36px;
+  padding: 48px 32px var(--spacing-lg);
   text-align: center;
 }
 
@@ -83,6 +83,46 @@
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+.search-results__meta-div {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px var(--spacing-xs);
+  background: var(--color-border);
+}
+
+/* 3-column grid so pagination stays centered whatever the count's width. */
+.search-results__pagerow {
+  max-width: 960px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: var(--spacing-md);
+  /* No top padding: the hero's bottom padding is the gap above, so the top
+     pagination's gaps stay symmetric. */
+  padding: 0 0 var(--spacing-lg);
+}
+
+.search-results__pager {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--spacing-lg) 0;
+}
+
+/* Wrappers own the vertical spacing; drop the component's own padding. */
+.search-results__pagerow .pagination,
+.search-results__pager .pagination {
+  padding: 0;
+}
+
+.search-results__count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
 }
 
 .search-results__meta-right {
