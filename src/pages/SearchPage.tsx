@@ -386,6 +386,9 @@ function SearchPageInner({ community }: { community: Community }) {
   // filters (a map cell arrives here with those filters pre-applied).
   const aiTerms = deriveSummaryTerms(params, vocab.labels);
   const aiTotal = results.results?.total ?? { count: 0, is_lower_bound: false };
+  // An active selection scopes the summary to it; otherwise the whole set.
+  const summariseSelection = selectionCount > 0;
+  const aiEffectiveCount = summariseSelection ? selectionCount : aiTotal.count;
   // One summary at a time: while one is parked in the background (generating or
   // unread) the button stays disabled and the indicator is the only way back.
   // The rest mirror the summariser's limits — one term minimum, 1–50 references.
@@ -396,9 +399,17 @@ function SearchPageInner({ community }: { community: Community }) {
         ? "Your summary's ready - open it from the indicator to read it."
         : aiTerms.length === 0
           ? "Search or filter by a term to summarise."
-          : aiTotal.count > MAX_SUMMARY_REFERENCES
-            ? `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references - please refine your search.`
+          : aiEffectiveCount > MAX_SUMMARY_REFERENCES
+            ? summariseSelection
+              ? `Your selection has ${selectionCount.toLocaleString()} references; AI summaries cover up to ${MAX_SUMMARY_REFERENCES}. Deselect some, or export instead.`
+              : `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references - please refine your search.`
             : undefined;
+  // A persistent note (below the results) when a too-large selection is why the
+  // button is disabled.
+  const summarySelectionNote =
+    aiEnabled && summariseSelection && selectionCount > MAX_SUMMARY_REFERENCES
+      ? `${selectionCount.toLocaleString()} references selected — AI summaries cover up to ${MAX_SUMMARY_REFERENCES}. Narrow your selection, or export instead.`
+      : null;
 
   function handleGenerateSummary() {
     const { query, filters } = toUnpaginatedSearchQuery(
@@ -409,9 +420,12 @@ function SearchPageInner({ community }: { community: Community }) {
     ai.generate({
       query,
       filters,
+      selection: summariseSelection ? selection.toRequest() : undefined,
       context: {
         terms: aiTerms,
-        count: aiTotal,
+        count: summariseSelection
+          ? { count: selectionCount, is_lower_bound: false }
+          : aiTotal,
         countNoun: community.copy.countNoun,
       },
       originUrl: buildSearchUrl(community.slug, params),
@@ -597,6 +611,12 @@ function SearchPageInner({ community }: { community: Community }) {
           ))}
         </div>
       </section>
+
+      {summarySelectionNote && (
+        <p class="search-results__selection-note" role="status">
+          {summarySelectionNote}
+        </p>
+      )}
 
       {paginationEl && (
         <div class="search-results__pager">{paginationEl}</div>
