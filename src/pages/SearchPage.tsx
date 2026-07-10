@@ -370,15 +370,17 @@ function SearchPageInner({ community }: { community: Community }) {
       });
       return;
     }
+    const fromSearch = params.q ? ` from search "${params.q}"` : "";
+    const subtitle = selected
+      ? `${selectionCount.toLocaleString()} selected references${fromSearch}`
+      : params.q ? `Search: ${params.q}` : null;
     exportJob.start({
       format,
       filename,
       ...source,
       referenceListMeta: {
         title: "Reference list",
-        subtitle: selected
-          ? `${selectionCount.toLocaleString()} selected references`
-          : params.q ? `Search: ${params.q}` : null,
+        subtitle,
         originUrl: buildSearchUrl(community.slug, params),
       },
     });
@@ -404,7 +406,9 @@ function SearchPageInner({ community }: { community: Community }) {
           : aiEffectiveCount > MAX_SUMMARY_REFERENCES
             ? summariseSelection
               ? `Your selection has ${selectionCount.toLocaleString()} references; AI summaries cover up to ${MAX_SUMMARY_REFERENCES}. Deselect some, or export instead.`
-              : `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references - please refine your search.`
+              : selectable
+                ? `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references - refine your search, or select up to ${MAX_SUMMARY_REFERENCES} to summarise.`
+                : `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references - please refine your search.`
             : undefined;
   // A persistent note (below the results) when a too-large selection is why the
   // button is disabled.
