@@ -4,13 +4,27 @@ import { Tooltip } from "@/components/common/Tooltip";
 import type { ExportFormat, ExportStatus } from "@/hooks/useSearchExport";
 import "./ExportMenu.css";
 
+export type ExportScope = "selected" | "all";
+
+export interface ExportScopeOption {
+  value: ExportScope;
+  label: string;
+  available: boolean;
+  /** Why this scope can't be picked; shown beneath a disabled option. */
+  reason?: string;
+}
+
 interface ExportMenuProps {
   /** Gates the whole control (no results, over cap, or a run in progress). */
   disabled: boolean;
   status: ExportStatus;
-  onExport: (format: ExportFormat) => void;
+  onExport: (format: ExportFormat, scope: ExportScope) => void;
   /** Why export is unavailable; shown as a tooltip on the disabled trigger. */
   disabledReason?: string;
+  /** When set, offer a "which references" choice (selected vs all results). */
+  scopes?: ExportScopeOption[];
+  /** Cap explanation shown in the panel (e.g. the 10k export limit). */
+  capNote?: string;
 }
 
 const FORMATS: { value: ExportFormat; name: string; ext: string }[] = [
@@ -43,15 +57,28 @@ export function ExportMenu({
   status,
   onExport,
   disabledReason,
+  scopes,
+  capNote,
 }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
   const [format, setFormat] = useState<ExportFormat>("excel");
+  // Prefer "selected" as the default, mirroring the requirement.
+  const [scope, setScope] = useState<ExportScope>("selected");
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const radioName = useId();
+  const scopeRadioName = useId();
 
   const busy = busyLabel(status);
+
+  // The scope actually in effect: the chosen one if still available, else the
+  // first available option. Without a chooser, always the whole result set.
+  const effectiveScope: ExportScope = !scopes
+    ? "all"
+    : scopes.find((s) => s.value === scope && s.available)?.value
+      ?? scopes.find((s) => s.available)?.value
+      ?? scope;
 
   useEffect(() => {
     if (!open) return;
@@ -80,7 +107,7 @@ export function ExportMenu({
   }, [disabled, open]);
 
   function handleExport() {
-    onExport(format);
+    onExport(format, effectiveScope);
     setOpen(false);
   }
 
@@ -108,9 +135,36 @@ export function ExportMenu({
         class="export-menu__panel"
         id={panelId}
         role="group"
-        aria-label="Export format"
+        aria-label="Export options"
         hidden={!open}
       >
+        {scopes && scopes.length > 0 && (
+          <>
+            <p class="export-menu__label">Which references</p>
+            {scopes.map((s) => (
+              <label
+                key={s.value}
+                class={`export-menu__option${s.available ? "" : " is-disabled"}`}
+              >
+                <input
+                  type="radio"
+                  name={scopeRadioName}
+                  value={s.value}
+                  checked={effectiveScope === s.value}
+                  disabled={!s.available}
+                  onChange={() => setScope(s.value)}
+                />
+                <span class="export-menu__option-name">
+                  {s.label}
+                  {!s.available && s.reason && (
+                    <span class="export-menu__option-reason">{s.reason}</span>
+                  )}
+                </span>
+              </label>
+            ))}
+          </>
+        )}
+
         <p class="export-menu__label">Format</p>
         {FORMATS.map((f) => (
           <label key={f.value} class="export-menu__option">
@@ -125,6 +179,8 @@ export function ExportMenu({
             <span class="export-menu__ext">{f.ext}</span>
           </label>
         ))}
+
+        {capNote && <p class="export-menu__cap-note">{capNote}</p>}
 
         <button type="button" class="export-menu__action" onClick={handleExport}>
           Export

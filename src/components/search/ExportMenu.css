@@ -114,6 +114,28 @@
   color: var(--color-text-tertiary);
 }
 
+.export-menu__option.is-disabled {
+  cursor: default;
+  color: var(--color-text-tertiary);
+}
+
+.export-menu__option.is-disabled:hover {
+  background: none;
+}
+
+.export-menu__option-reason {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+}
+
+.export-menu__cap-note {
+  margin: 8px 6px 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+}
+
 .export-menu__action {
   width: 100%;
   margin-top: 8px;

@@ -1,24 +1,38 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/preact";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/preact";
 import { App } from "@/App";
 import type { SearchResult } from "@/types/models";
 import { makeReference, makeVocabResult } from "../fixtures";
 
 vi.mock("@/services/apiClient", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/apiClient")>();
-  return { ...actual, searchReferences: vi.fn() };
+  return {
+    ...actual,
+    searchReferences: vi.fn(),
+    requestReferenceExport: vi.fn(),
+    getReferenceExport: vi.fn(),
+  };
 });
 vi.mock("@/hooks/useVocabulary", () => ({ useVocabulary: vi.fn() }));
-// Selection ships dark (referenceSelection defaults off); force the gate on so
-// this test exercises the selection UI regardless of the community flag.
+vi.mock("@/services/export/export", () => ({
+  exportReferencesToExcel: vi.fn().mockResolvedValue(undefined),
+}));
+// Force the selection gate on so this test doesn't depend on the community's
+// consumer flags.
 vi.mock("@/components/search/selectionEnabled", () => ({
   selectionEnabled: () => true,
 }));
 
-import { searchReferences } from "@/services/apiClient";
+import {
+  searchReferences,
+  requestReferenceExport,
+  getReferenceExport,
+} from "@/services/apiClient";
 import { useVocabulary } from "@/hooks/useVocabulary";
 
 const mockSearch = vi.mocked(searchReferences);
+const mockRefExport = vi.mocked(requestReferenceExport);
+const mockRefGet = vi.mocked(getReferenceExport);
 const mockVocab = vi.mocked(useVocabulary);
 
 const PAGE_SIZE = 20;
@@ -123,5 +137,55 @@ describe("cross-page selection persistence", () => {
     expect(master()).toBeChecked();
     expect(master().indeterminate).toBe(false);
     expect(screen.getByText("All 3 selected")).toBeInTheDocument();
+  });
+});
+
+describe("exporting the selection", () => {
+  beforeEach(() => {
+    mockSearch.mockResolvedValue({
+      total: { count: 3, is_lower_bound: false },
+      page: { count: 3, number: 1 },
+      references: ["a", "b", "c"].map((id) =>
+        makeReference({ id, bibliographic: { title: id } }),
+      ),
+    });
+    mockRefExport.mockResolvedValue({ id: "job", status: "pending" });
+    mockRefGet.mockResolvedValue({
+      id: "job",
+      status: "completed",
+      result_url: "https://blob/result.jsonl",
+    });
+  });
+
+  test("'Selected' export POSTs exactly the ticked ids to the reference export", async () => {
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: "Select a" })).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select a" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select b" }));
+
+    fireEvent.click(screen.getByRole("button", { name: /^export$/i }));
+    const panel = screen.getByRole("group", { name: /export options/i });
+    // Defaults to "Selected" since a selection exists.
+    expect(within(panel).getByRole("radio", { name: /selected \(2\)/i })).toBeChecked();
+    fireEvent.click(within(panel).getByRole("button", { name: /^export$/i }));
+
+    await waitFor(() =>
+      expect(mockRefExport).toHaveBeenCalledWith(["a", "b"], "jsonl"),
+    );
+  });
+
+  test("'Selected' is disabled with nothing ticked; export falls back to all results", async () => {
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: "Select a" })).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /^export$/i }));
+    const panel = screen.getByRole("group", { name: /export options/i });
+    expect(within(panel).getByRole("radio", { name: /selected \(0\)/i })).toBeDisabled();
+    expect(within(panel).getByRole("radio", { name: /all results/i })).toBeChecked();
   });
 });
