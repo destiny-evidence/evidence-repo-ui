@@ -9,6 +9,12 @@ import { useCallback, useState } from "preact/hooks";
  */
 export type SelectionMode = "include" | "all";
 
+// `all` can't be enumerated client-side; it's resolved against the search by
+// resolveSelectedReferenceIds.
+export type SelectionRequest =
+  | { mode: "include"; ids: string[] }
+  | { mode: "all"; excludedIds: string[] };
+
 export interface ReferenceSelection {
   mode: SelectionMode;
   /** Selected count given the total matching the search. */
@@ -19,6 +25,7 @@ export interface ReferenceSelection {
   /** Select every reference matching the search (`all` mode). */
   selectAll: () => void;
   clear: () => void;
+  toRequest: () => SelectionRequest;
 }
 
 type SelectionState =
@@ -70,5 +77,13 @@ export function useReferenceSelection(): ReferenceSelection {
 
   const clear = useCallback(() => setState(EMPTY), []);
 
-  return { mode: state.mode, count, isSelected, toggle, selectAll, clear };
+  const toRequest = useCallback(
+    (): SelectionRequest =>
+      state.mode === "include"
+        ? { mode: "include", ids: [...state.included] }
+        : { mode: "all", excludedIds: [...state.excluded] },
+    [state],
+  );
+
+  return { mode: state.mode, count, isSelected, toggle, selectAll, clear, toRequest };
 }
