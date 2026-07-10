@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { type SearchFilters } from "@/services/apiClient";
 import { exportReferencesToExcel } from "@/services/export/export";
-import { runSearchExportToCompletion } from "@/services/export/searchExportJob";
+import {
+  runReferenceExportToCompletion,
+  runSearchExportToCompletion,
+} from "@/services/export/searchExportJob";
 import {
   downloadRisExport,
   downloadReferenceListPdf,
@@ -31,9 +34,13 @@ export type ExportFormat = "excel" | "ris" | "reference-list";
 
 export interface StartExportOptions {
   format: ExportFormat;
-  query: string;
-  filters: Omit<SearchFilters, "page">;
   filename: string;
+  // The reference source. `resolveReferenceIds`, when set, exports exactly
+  // those ids (resolved inside the run so it's abortable); otherwise the
+  // query + filters are exported.
+  query?: string;
+  filters?: Omit<SearchFilters, "page">;
+  resolveReferenceIds?: (signal: AbortSignal) => Promise<string[]>;
   // Excel only:
   vocabularyUrl?: string;
   contextUrl?: string;
@@ -121,25 +128,33 @@ export function useSearchExport(): UseSearchExportResult {
 
     const isCurrentRun = () => runIdRef.current === runId;
 
-    runSearchExportToCompletion(
-      options.query,
-      options.filters,
-      serverFormatFor(options.format),
-      {
-        signal: controller.signal,
-        onPolling: () => {
-          if (isCurrentRun()) setStatus("polling");
-        },
+    const serverFormat = serverFormatFor(options.format);
+    const runOptions = {
+      signal: controller.signal,
+      onPolling: () => {
+        if (isCurrentRun()) setStatus("polling");
       },
-    )
-      .then(async (resultUrl) => {
-        if (!isCurrentRun()) return;
-        setStatus("downloading");
-        await downloadForFormat(resultUrl, options);
-        if (!isCurrentRun()) return;
-        setStatus("done");
-      })
-      .catch((err: unknown) => {
+    };
+
+    (async () => {
+      const resultUrl = options.resolveReferenceIds
+        ? await runReferenceExportToCompletion(
+            await options.resolveReferenceIds(controller.signal),
+            serverFormat,
+            runOptions,
+          )
+        : await runSearchExportToCompletion(
+            options.query ?? "*",
+            options.filters ?? {},
+            serverFormat,
+            runOptions,
+          );
+      if (!isCurrentRun()) return;
+      setStatus("downloading");
+      await downloadForFormat(resultUrl, options);
+      if (!isCurrentRun()) return;
+      setStatus("done");
+    })().catch((err: unknown) => {
         // A cancelled/superseded run must not overwrite fresh state.
         if (controller.signal.aborted || !isCurrentRun()) return;
         setErrorMessage(

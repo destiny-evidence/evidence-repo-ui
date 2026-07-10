@@ -5,10 +5,12 @@ import {
   searchReferenceFacets,
   crossFacets,
   getReference,
+  requestReferenceExport,
 } from "@/services/apiClient";
 import type {
   Reference,
   ReferenceCrossFacetResult,
+  ReferenceExportRead,
   ReferenceFacetResult,
   SearchResult,
 } from "@/types/models";
@@ -16,13 +18,16 @@ import type {
 vi.mock("@/api/client", () => ({
   api: {
     get: vi.fn(),
+    post: vi.fn(),
   },
 }));
 
 const mockedGet = vi.mocked(api.get);
+const mockedPost = vi.mocked(api.post);
 
 beforeEach(() => {
   mockedGet.mockReset();
+  mockedPost.mockReset();
 });
 
 describe("searchReferences", () => {
@@ -283,6 +288,25 @@ describe("getReference", () => {
     await getReference("doi:10.1000/abc123");
     expect(mockedGet).toHaveBeenCalledWith(
       "/v1/references/?identifier=doi%3A10.1000%2Fabc123",
+    );
+  });
+});
+
+describe("requestReferenceExport", () => {
+  const job: ReferenceExportRead = { id: "job-1", status: "pending" };
+
+  test("POSTs the id list as the body; omits export_format for jsonl", async () => {
+    mockedPost.mockResolvedValue(job);
+    await requestReferenceExport(["a", "b"]);
+    expect(mockedPost).toHaveBeenCalledWith("/v1/references/exports/", ["a", "b"]);
+  });
+
+  test("adds export_format when not jsonl", async () => {
+    mockedPost.mockResolvedValue(job);
+    await requestReferenceExport(["a"], "ris");
+    expect(mockedPost).toHaveBeenCalledWith(
+      "/v1/references/exports/?export_format=ris",
+      ["a"],
     );
   });
 });
