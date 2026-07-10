@@ -299,8 +299,10 @@ function SearchPageInner({ community }: { community: Community }) {
     || exportJob.status === "polling"
     || exportJob.status === "downloading";
   const allExportAvailable = hasResults && !overCap;
+  const selectionEnumerable =
+    selection.mode === "include" || !selectionTotal.is_lower_bound;
   const selectedExportAvailable =
-    selectionCount > 0 && selectionCount <= EXPORT_MAX_RESULTS;
+    selectionCount > 0 && selectionCount <= EXPORT_MAX_RESULTS && selectionEnumerable;
   const capReason = `Over the ${EXPORT_MAX_RESULTS.toLocaleString()} export limit.`;
   // Only offer the scope chooser where selection is available; otherwise the
   // menu exports the whole result set, as before.

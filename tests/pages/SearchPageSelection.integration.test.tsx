@@ -188,4 +188,28 @@ describe("exporting the selection", () => {
     expect(within(panel).getByRole("radio", { name: /selected \(0\)/i })).toBeDisabled();
     expect(within(panel).getByRole("radio", { name: /all results/i })).toBeChecked();
   });
+
+  test("select-all over a lower-bound total leaves export disabled (neither scope is enumerable)", async () => {
+    // The API caps the count and flags is_lower_bound: the full set isn't
+    // enumerable, so neither "selected" nor "all results" can export it, and
+    // the trigger stays disabled rather than exporting a truncated set.
+    mockSearch.mockResolvedValue({
+      total: { count: 10000, is_lower_bound: true },
+      page: { count: 3, number: 1 },
+      references: ["a", "b", "c"].map((id) =>
+        makeReference({ id, bibliographic: { title: id } }),
+      ),
+    });
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: "Select a" })).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select all references" }));
+
+    const trigger = screen.getByRole("button", { name: /^export$/i });
+    expect(trigger).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(trigger);
+    expect(screen.queryByRole("group", { name: /export options/i })).toBeNull();
+  });
 });
