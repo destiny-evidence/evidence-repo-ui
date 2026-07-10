@@ -40,6 +40,32 @@ describe("FindingsSection", () => {
     expect(container.querySelector(".finding-card .comparison-row")).toBeNull();
   });
 
+  test("renders nothing when the only finding has no renderable content", () => {
+    const { container } = renderSection([
+      makeFinding({
+        intervention: null,
+        control: null,
+        context: null,
+        outcome: null,
+      }),
+    ]);
+    expect(container.innerHTML).toBe("");
+  });
+
+  test("omits findings with no renderable content", () => {
+    renderSection([
+      makeFinding(),
+      makeFinding({
+        intervention: null,
+        control: null,
+        context: null,
+        outcome: null,
+      }),
+    ]);
+    expect(screen.getByText("Finding 1")).toBeDefined();
+    expect(screen.queryByText("Finding 2")).toBeNull();
+  });
+
   test("renders without shared block when interventions differ", () => {
     renderSection([
       makeFinding(),

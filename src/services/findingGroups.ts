@@ -3,12 +3,43 @@ import type {
   InterventionData,
   ControlConditionData,
   ContextData,
+  OutcomeData,
 } from "@/types/investigation";
 
 export interface SharedContext {
   intervention: InterventionData;
   control: ControlConditionData;
   context: ContextData;
+}
+
+export function hasSampleData(finding: FindingData): boolean {
+  return Boolean(
+    finding.sampleSizes?.length ||
+      finding.attritions?.length ||
+      finding.costs?.length ||
+      finding.groupDifferences?.length ||
+      (finding.sampleFeatures && finding.sampleFeatures.length > 0),
+  );
+}
+
+export function hasOutcomeContent(outcome: OutcomeData | null): boolean {
+  return Boolean(
+    outcome &&
+      ((outcome.outcomes && outcome.outcomes.length > 0) ||
+        outcome.name ||
+        outcome.description),
+  );
+}
+
+export function isFindingRenderable(finding: FindingData): boolean {
+  return Boolean(
+    finding.intervention ||
+      finding.control ||
+      finding.context ||
+      (finding.effectEstimates && finding.effectEstimates.length > 0) ||
+      hasOutcomeContent(finding.outcome) ||
+      hasSampleData(finding),
+  );
 }
 
 /**

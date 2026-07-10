@@ -1,5 +1,5 @@
 import { useMemo } from "preact/hooks";
-import { findSharedContext } from "@/services/findingGroups";
+import { findSharedContext, isFindingRenderable } from "@/services/findingGroups";
 import { SharedContextBlock } from "./SharedContextBlock";
 import { FindingCard } from "../finding/FindingCard";
 import type { FindingData } from "@/types/investigation";
@@ -20,9 +20,13 @@ export function FindingsSection({
   definitions,
   retracted,
 }: FindingsSectionProps) {
-  const shared = useMemo(() => findSharedContext(findings), [findings]);
+  const renderable = useMemo(
+    () => findings.filter(isFindingRenderable),
+    [findings],
+  );
+  const shared = useMemo(() => findSharedContext(renderable), [renderable]);
 
-  if (findings.length === 0) return null;
+  if (renderable.length === 0) return null;
 
   return (
     <div class={`findings-section${retracted ? " lg-retracted" : ""}`}>
@@ -34,7 +38,7 @@ export function FindingsSection({
           definitions={definitions}
         />
       )}
-      {findings.map((finding, i) => (
+      {renderable.map((finding, i) => (
         <FindingCard
           key={`${finding.outcome?.name ?? "finding"}-${i}`}
           finding={finding}
