@@ -4,6 +4,7 @@ import { ContextDetails } from "./ContextDetails";
 import { SampleDetails } from "./SampleDetails";
 import { OutcomeDetails } from "./OutcomeDetails";
 import { EffectEstimateCard } from "./EffectEstimateCard";
+import { hasOutcomeContent, hasSampleData } from "@/services/findingGroups";
 import type {
   ArmData,
   EffectEstimateData,
@@ -42,16 +43,6 @@ interface FindingCardProps {
   definitions?: Map<string, string>;
 }
 
-function hasSampleData(finding: FindingData): boolean {
-  return Boolean(
-    finding.sampleSizes?.length ||
-      finding.attritions?.length ||
-      finding.costs?.length ||
-      finding.groupDifferences?.length ||
-      (finding.sampleFeatures && finding.sampleFeatures.length > 0),
-  );
-}
-
 export function FindingCard({
   finding,
   index,
@@ -63,7 +54,7 @@ export function FindingCard({
   const { intervention, control, context, outcome } = finding;
   const showSample = hasSampleData(finding);
   const estimates = finding.effectEstimates ?? [];
-  const showOutcomeSection = Boolean(outcome) || estimates.length > 0;
+  const showOutcomeSection = hasOutcomeContent(outcome) || estimates.length > 0;
 
   return (
     <article class="finding-card lg-card">

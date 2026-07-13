@@ -18,6 +18,7 @@ import { InvestigationCard } from "@/components/investigation/InvestigationCard"
 import { FindingsSection } from "@/components/investigation/FindingsSection";
 import { TaxonomyCodesCard } from "@/components/investigation/TaxonomyCodesCard";
 import { groupAppliedConcepts } from "@/services/taxonomyCodesUtils";
+import { isFindingRenderable } from "@/services/findingGroups";
 import { NotFoundPage } from "./NotFoundPage";
 import "./RecordDetailPage.css";
 
@@ -148,7 +149,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
             vocabUnavailable={vocabUnavailable}
           />
         )}
-        {investigation && investigation.findings.length > 0 && (
+        {investigation && investigation.findings.some(isFindingRenderable) && (
           <>
             {curieLabelsUnavailable && (
               <p class="record-detail-page__vocab-banner" role="status">

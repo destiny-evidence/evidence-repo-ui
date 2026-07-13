@@ -435,8 +435,10 @@ export function buildFindingRows(
  * Build Outcome rows: one per EffectEstimate, with the parent finding's
  * outcome metadata and the per-condition arm data (n, mean, sd, se)
  * denormalized onto the row. A finding with N effect estimates produces N
- * rows; findings without any effect estimates still produce a single row
- * so the outcome and arm data aren't lost.
+ * rows; a finding with outcome or arm data but no effect estimates still
+ * produces a single row so that data isn't lost. A finding with no outcome,
+ * arm, or effect data produces no rows, so a fully outcomeless reference
+ * yields an empty Outcomes tab.
  */
 export function buildOutcomeRows(
   referenceId: string,
@@ -454,6 +456,15 @@ export function buildOutcomeRows(
     const outcomeConceptsSupporting = joinSupportingTexts(outcomeBlock["outcome"]);
 
     const armData = ensureArray(finding["hasArmData"]).filter(isDict) as PlainRecord[];
+    const estimates = ensureArray(finding["hasEffectEstimate"]).filter(isDict) as PlainRecord[];
+
+    const outcomeName =
+      typeof outcomeBlock["name"] === "string" ? (outcomeBlock["name"] as string) : null;
+    const outcomeDescription =
+      typeof outcomeBlock["description"] === "string" ? (outcomeBlock["description"] as string) : null;
+    const hasOutcomeContent = Boolean(outcomeName || outcomeDescription || outcomeConcepts !== "");
+    if (!hasOutcomeContent && armData.length === 0 && estimates.length === 0) continue;
+
     const armLookup = new Map<string, PlainRecord>();
     for (const arm of armData) {
       const id = refId(arm["forCondition"]);
@@ -462,7 +473,6 @@ export function buildOutcomeRows(
     const interventionArm = armLookup.get(refId(finding["evaluates"]) ?? "") ?? {};
     const controlArm = armLookup.get(refId(finding["comparedTo"]) ?? "") ?? {};
 
-    const estimates = ensureArray(finding["hasEffectEstimate"]).filter(isDict) as PlainRecord[];
     // findings with no effect estimate still emit one row (outcome/arm data preserved)
     const effectEstimates = estimates.length ? estimates : [{}];
     for (const effect of effectEstimates) {
@@ -470,8 +480,8 @@ export function buildOutcomeRows(
       rows.push({
         reference_id: referenceId,
         arm_id: armId,
-        outcome_name: typeof outcomeBlock["name"] === "string" ? (outcomeBlock["name"] as string) : null,
-        outcome_description: typeof outcomeBlock["description"] === "string" ? (outcomeBlock["description"] as string) : null,
+        outcome_name: outcomeName,
+        outcome_description: outcomeDescription,
         outcome_concepts: outcomeConcepts,
         outcome_concepts_supportingText: outcomeConceptsSupporting,
         effect_metric: label(first(effect["effectSizeMetric"]), vocab) as CellValue,

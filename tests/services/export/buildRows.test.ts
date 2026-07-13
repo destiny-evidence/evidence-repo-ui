@@ -478,6 +478,17 @@ describe("buildOutcomeRows", () => {
     expect(rows[0]!.point_estimate).toBeNull();
   });
 
+  test("emits no rows for a finding with no outcome, arm, or effect data", () => {
+    const findings: Finding[] = [
+      {
+        evaluates: { "@id": "_:i1" },
+        comparedTo: { "@id": "_:c1" },
+      },
+    ];
+    const rows = buildOutcomeRows("ref-1", findings, [1], VOCAB);
+    expect(rows).toEqual([]);
+  });
+
   test("resolves intervention and control arm data via forCondition", () => {
     const findings: Finding[] = [
       {

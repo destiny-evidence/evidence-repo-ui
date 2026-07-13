@@ -38,6 +38,16 @@ describe("FindingCard", () => {
     expect(screen.getByText("50")).toBeDefined();
   });
 
+  test("hides the Outcome section for an outcomeless finding", () => {
+    renderCard({ finding: { outcome: null } });
+    // Intervention + context still render.
+    expect(screen.getByText("Test Intervention")).toBeDefined();
+    expect(screen.getByText("Primary")).toBeDefined();
+    expect(screen.getByText("50")).toBeDefined();
+    // No Outcome section header when there's no outcome or effect data.
+    expect(screen.queryByText("Outcome")).toBeNull();
+  });
+
   test("shows back-reference when isShared is true", () => {
     renderCard({ isShared: true });
     expect(
