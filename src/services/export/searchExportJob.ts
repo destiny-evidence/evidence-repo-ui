@@ -8,11 +8,14 @@
  */
 
 import {
+  getReferenceExport,
   getSearchExport,
+  requestReferenceExport,
   requestSearchExport,
   type ServerExportFormat,
   type SearchFilters,
 } from "@/services/apiClient";
+import type { SearchExportStatus } from "@/types/models";
 
 const POLL_INTERVAL_MS = 2000;
 
@@ -43,19 +46,21 @@ export interface RunExportOptions {
   onPolling?: () => void;
 }
 
-/**
- * Queue an export of `query`/`filters` in `exportFormat`, poll until it
- * completes, and resolve with the result blob URL. Rejects with an AbortError
- * if `signal` aborts, or an Error carrying the backend message on failure.
- */
-export async function runSearchExportToCompletion(
-  query: string,
-  filters: Omit<SearchFilters, "page">,
-  exportFormat: ServerExportFormat,
-  options: RunExportOptions = {},
+interface ExportJob {
+  id: string;
+  status: SearchExportStatus;
+  result_url?: string | null;
+  error?: string | null;
+}
+
+// Shared request → poll → result-url loop for both export flavours.
+async function runToCompletion(
+  request: () => Promise<ExportJob>,
+  poll: (id: string) => Promise<ExportJob>,
+  options: RunExportOptions,
 ): Promise<string> {
   const { signal, onPolling } = options;
-  let job = await requestSearchExport(query, filters, exportFormat);
+  let job = await request();
 
   let announced = false;
   while (job.status === "pending" || job.status === "running") {
@@ -65,7 +70,7 @@ export async function runSearchExportToCompletion(
       announced = true;
     }
     await delay(POLL_INTERVAL_MS, signal);
-    job = await getSearchExport(job.id);
+    job = await poll(job.id);
   }
 
   if (job.status === "failed") {
@@ -78,4 +83,35 @@ export async function runSearchExportToCompletion(
     throw new Error("Export finished but no download URL was returned.");
   }
   return job.result_url;
+}
+
+/**
+ * Queue an export of `query`/`filters` in `exportFormat`, poll until it
+ * completes, and resolve with the result blob URL. Rejects with an AbortError
+ * if `signal` aborts, or an Error carrying the backend message on failure.
+ */
+export function runSearchExportToCompletion(
+  query: string,
+  filters: Omit<SearchFilters, "page">,
+  exportFormat: ServerExportFormat,
+  options: RunExportOptions = {},
+): Promise<string> {
+  return runToCompletion(
+    () => requestSearchExport(query, filters, exportFormat),
+    getSearchExport,
+    options,
+  );
+}
+
+// Same lifecycle as runSearchExportToCompletion, for an explicit id list.
+export function runReferenceExportToCompletion(
+  referenceIds: string[],
+  exportFormat: ServerExportFormat,
+  options: RunExportOptions = {},
+): Promise<string> {
+  return runToCompletion(
+    () => requestReferenceExport(referenceIds, exportFormat),
+    getReferenceExport,
+    options,
+  );
 }

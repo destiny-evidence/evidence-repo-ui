@@ -3,6 +3,7 @@ import type {
   Reference,
   ReferenceCrossFacetResult,
   ReferenceFacetResult,
+  ReferenceExportRead,
   ReferenceIdSearchResult,
   SearchExportRead,
   SearchResult,
@@ -156,6 +157,26 @@ export async function requestSearchExport(
 export async function getSearchExport(id: string): Promise<SearchExportRead> {
   return api.get<SearchExportRead>(
     `/v1/references/search/exports/${encodeURIComponent(id)}/`,
+  );
+}
+
+// Export an explicit set of references by id (max 10k), rather than a search.
+export async function requestReferenceExport(
+  referenceIds: string[],
+  exportFormat: ServerExportFormat = "jsonl",
+): Promise<ReferenceExportRead> {
+  const query = exportFormat !== "jsonl" ? `?export_format=${exportFormat}` : "";
+  return api.post<ReferenceExportRead>(
+    `/v1/references/exports/${query}`,
+    referenceIds,
+  );
+}
+
+export async function getReferenceExport(
+  id: string,
+): Promise<ReferenceExportRead> {
+  return api.get<ReferenceExportRead>(
+    `/v1/references/exports/${encodeURIComponent(id)}/`,
   );
 }
 

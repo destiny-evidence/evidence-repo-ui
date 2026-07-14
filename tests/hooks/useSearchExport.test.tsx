@@ -9,6 +9,8 @@ vi.mock("@/services/apiClient", async (importOriginal) => {
     ...actual,
     requestSearchExport: vi.fn(),
     getSearchExport: vi.fn(),
+    requestReferenceExport: vi.fn(),
+    getReferenceExport: vi.fn(),
   };
 });
 
@@ -19,6 +21,8 @@ vi.mock("@/services/export/export", () => ({
 import {
   requestSearchExport,
   getSearchExport,
+  requestReferenceExport,
+  getReferenceExport,
 } from "@/services/apiClient";
 import { exportReferencesToExcel } from "@/services/export/export";
 
@@ -34,6 +38,7 @@ function startArgs(
     vocabularyUrl: string;
     contextUrl: string;
     variant: "esea" | "hpv";
+    resolveReferenceIds: (signal: AbortSignal) => Promise<string[]>;
   }> = {},
 ) {
   return {
@@ -50,6 +55,8 @@ function startArgs(
 
 const mockRequest = vi.mocked(requestSearchExport);
 const mockGet = vi.mocked(getSearchExport);
+const mockRefRequest = vi.mocked(requestReferenceExport);
+const mockRefGet = vi.mocked(getReferenceExport);
 const mockExport = vi.mocked(exportReferencesToExcel);
 
 function pending(id = "job-1"): SearchExportRead {
@@ -74,6 +81,8 @@ function failed(id = "job-1", error = "boom"): SearchExportRead {
 beforeEach(() => {
   mockRequest.mockReset();
   mockGet.mockReset();
+  mockRefRequest.mockReset();
+  mockRefGet.mockReset();
   mockExport.mockReset().mockResolvedValue(undefined);
   vi.useFakeTimers();
 });
@@ -188,6 +197,22 @@ describe("useSearchExport", () => {
     // No throw means the cancellation guard stopped the poll chain. Preact
     // silently no-ops setState on an unmounted component, so the absence of
     // an error is the assertion.
+  });
+
+  test("resolveReferenceIds path exports the resolved ids, not the search", async () => {
+    mockRefRequest.mockResolvedValue(completed("ref-1"));
+    const resolveReferenceIds = vi.fn().mockResolvedValue(["a", "b", "c"]);
+
+    const { result } = renderHook(() => useSearchExport());
+    act(() => {
+      result.current.start(startArgs({ resolveReferenceIds }));
+    });
+
+    await vi.waitFor(() => expect(result.current.status).toBe("done"));
+    expect(resolveReferenceIds).toHaveBeenCalledWith(expect.any(AbortSignal));
+    expect(mockRefRequest).toHaveBeenCalledWith(["a", "b", "c"], "jsonl");
+    // The search export path is untouched.
+    expect(mockRequest).not.toHaveBeenCalled();
   });
 
   test("missing result_url on completed surfaces an error", async () => {

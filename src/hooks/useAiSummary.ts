@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { requestSummary } from "@/services/summariserClient";
 import { searchReferenceIds, type SearchFilters } from "@/services/apiClient";
+import { resolveSelectedReferenceIds } from "@/services/referenceSelection";
+import type { SelectionRequest } from "@/hooks/useReferenceSelection";
+import type { ReferenceSource } from "@/hooks/useReferenceListExport";
 import type { SummariseResponse } from "@/services/summariser";
 import type { SearchResultTotal } from "@/types/models";
 
@@ -20,6 +23,8 @@ export interface AiSummaryInput {
   /** Search query + filters identifying the references to summarise. */
   query: string | undefined;
   filters: Omit<SearchFilters, "page">;
+  /** When set, summarise this selection instead of the whole search. */
+  selection?: SelectionRequest;
   /** Display context, captured now so a later search can't make it drift. */
   context: AiSummaryContext;
   /** URL of the originating search, so the drawer can link back to it. */
@@ -37,10 +42,10 @@ export interface UseAiSummaryResult {
   /** URL of the search the active summary came from (null when idle). */
   originUrl: string | null;
   /**
-   * The originating search, retained so the drawer can request the same
-   * reference set as a RIS export for its bibliography. Null when idle.
+   * The summarised reference set, retained so the drawer can request it as a
+   * RIS export for its bibliography. Null when idle.
    */
-  search: { query: string | undefined; filters: Omit<SearchFilters, "page"> } | null;
+  referenceSource: ReferenceSource | null;
   /** The drawer is visible when there's an active summary and it isn't minimized. */
   drawerOpen: boolean;
   generate: (input: AiSummaryInput) => void;
@@ -64,7 +69,7 @@ export function useAiSummary(): UseAiSummaryResult {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [context, setContext] = useState<AiSummaryContext | null>(null);
   const [originUrl, setOriginUrl] = useState<string | null>(null);
-  const [search, setSearch] = useState<UseAiSummaryResult["search"]>(null);
+  const [referenceSource, setReferenceSource] = useState<ReferenceSource | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   // Guards against a stale request resolving after dismiss/regenerate.
@@ -80,7 +85,7 @@ export function useAiSummary(): UseAiSummaryResult {
     setErrorMessage(null);
     setContext(null);
     setOriginUrl(null);
-    setSearch(null);
+    setReferenceSource(null);
   }, []);
 
   const generate = useCallback((input: AiSummaryInput) => {
@@ -98,22 +103,42 @@ export function useAiSummary(): UseAiSummaryResult {
     // generates or runs in the background) can't change what the drawer shows.
     setContext(input.context);
     setOriginUrl(input.originUrl);
-    setSearch({ query: input.query, filters: input.filters });
+    setReferenceSource(null);
 
-    // Resolve every matching reference id, then summarise them. Both steps
-    // honour the abort signal, so dismiss/regenerate cancels in-flight work.
+    // Resolve the reference ids (selection or whole search), then summarise
+    // them. Both steps honour the abort signal, so dismiss/regenerate cancels
+    // in-flight work. The bibliography reads referenceSource, set here so it
+    // lists exactly the summarised set.
     (async () => {
       try {
-        const { reference_ids } = await searchReferenceIds(
-          input.query,
-          input.filters,
-          controller.signal,
-        );
-        if (stale()) return;
+        let referenceIds: string[];
+        if (input.selection) {
+          referenceIds = await resolveSelectedReferenceIds(
+            input.selection,
+            input.query,
+            input.filters,
+            controller.signal,
+          );
+          if (stale()) return;
+          setReferenceSource({ kind: "ids", referenceIds });
+        } else {
+          const res = await searchReferenceIds(
+            input.query,
+            input.filters,
+            controller.signal,
+          );
+          if (stale()) return;
+          referenceIds = res.reference_ids;
+          setReferenceSource({
+            kind: "search",
+            query: input.query,
+            filters: input.filters,
+          });
+        }
         const res = await requestSummary(
           {
             terms: input.context.terms.map((name) => ({ name })),
-            referenceIds: reference_ids,
+            referenceIds,
           },
           controller.signal,
         );
@@ -144,7 +169,7 @@ export function useAiSummary(): UseAiSummaryResult {
     errorMessage,
     context,
     originUrl,
-    search,
+    referenceSource,
     drawerOpen: status !== "idle" && !minimized,
     generate,
     open,

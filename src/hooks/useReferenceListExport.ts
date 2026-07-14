@@ -2,7 +2,10 @@ import { useEffect, useState } from "preact/hooks";
 
 import type { SearchFilters } from "@/services/apiClient";
 import type { ApaReferenceInput } from "@/services/citation/apa";
-import { runSearchExportToCompletion } from "@/services/export/searchExportJob";
+import {
+  runReferenceExportToCompletion,
+  runSearchExportToCompletion,
+} from "@/services/export/searchExportJob";
 import { fetchRisAsApaInputs } from "@/services/export/risExport";
 
 export type ReferenceListStatus = "idle" | "loading" | "ready" | "error";
@@ -13,20 +16,19 @@ export interface UseReferenceListExportResult {
   error: string | null;
 }
 
-export interface ReferenceListSearch {
-  query: string | undefined;
-  filters: Omit<SearchFilters, "page">;
-}
+// The references to list: a whole search, or an explicit id list (a selection).
+export type ReferenceSource =
+  | { kind: "search"; query: string | undefined; filters: Omit<SearchFilters, "page"> }
+  | { kind: "ids"; referenceIds: string[] };
 
 /**
- * Loads a search's references as APA inputs by running a RIS export for it and
- * parsing the result — the same pipeline (and the same backend bibliography) as
- * the results-page Reference-list PDF. Used by the AI summary to build its
- * References section from the search that produced it. Re-runs when `search`
- * changes; aborts in-flight work on change/unmount.
+ * Loads a set of references as APA inputs by running a RIS export and parsing
+ * the result — the same pipeline as the results-page Reference-list PDF. Used
+ * by the AI summary to build its References section from the same set it
+ * summarised. Re-runs when `source` changes; aborts on change/unmount.
  */
 export function useReferenceListExport(
-  search: ReferenceListSearch | null,
+  source: ReferenceSource | null,
   enabled: boolean,
 ): UseReferenceListExportResult {
   const [state, setState] = useState<UseReferenceListExportResult>({
@@ -35,12 +37,12 @@ export function useReferenceListExport(
     error: null,
   });
 
-  // Stable key so the effect re-runs only on a genuinely different search,
-  // not on every render's fresh filters object.
-  const key = enabled && search ? JSON.stringify(search) : null;
+  // Stable key so the effect re-runs only on a genuinely different source,
+  // not on every render's fresh object.
+  const key = enabled && source ? JSON.stringify(source) : null;
 
   useEffect(() => {
-    if (!enabled || !search) {
+    if (!enabled || !source) {
       setState({ status: "idle", inputs: [], error: null });
       return;
     }
@@ -48,13 +50,18 @@ export function useReferenceListExport(
     setState({ status: "loading", inputs: [], error: null });
     (async () => {
       try {
-        const resultUrl = await runSearchExportToCompletion(
-          // requestSearchExport omits the browse shim its callers apply.
-          search.query?.trim() || "*",
-          search.filters,
-          "ris",
-          { signal: controller.signal },
-        );
+        const resultUrl =
+          source.kind === "ids"
+            ? await runReferenceExportToCompletion(source.referenceIds, "ris", {
+                signal: controller.signal,
+              })
+            : await runSearchExportToCompletion(
+                // requestSearchExport omits the browse shim its callers apply.
+                source.query?.trim() || "*",
+                source.filters,
+                "ris",
+                { signal: controller.signal },
+              );
         const inputs = await fetchRisAsApaInputs(resultUrl);
         if (!controller.signal.aborted) {
           setState({ status: "ready", inputs, error: null });

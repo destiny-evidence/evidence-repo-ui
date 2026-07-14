@@ -84,6 +84,55 @@ describe("useAiSummary", () => {
       { terms: [{ name: "Afghanistan" }], referenceIds: ["a", "b", "c"] },
       expect.anything(),
     );
+    // The bibliography source is the whole search.
+    expect(result.current.referenceSource).toEqual({
+      kind: "search",
+      query: input.query,
+      filters: input.filters,
+    });
+  });
+
+  test("an include selection summarises those ids directly, without a search", async () => {
+    mockRequest.mockResolvedValue(MOCK_SUMMARY);
+
+    const { result } = renderHook(() => useAiSummary());
+    act(() =>
+      result.current.generate({
+        ...input,
+        selection: { mode: "include", ids: ["x", "y"] },
+      }),
+    );
+
+    await waitFor(() => expect(result.current.status).toBe("done"));
+    expect(mockIds).not.toHaveBeenCalled();
+    expect(mockRequest).toHaveBeenCalledWith(
+      { terms: [{ name: "Afghanistan" }], referenceIds: ["x", "y"] },
+      expect.anything(),
+    );
+    // The bibliography lists exactly the selected ids.
+    expect(result.current.referenceSource).toEqual({
+      kind: "ids",
+      referenceIds: ["x", "y"],
+    });
+  });
+
+  test("an all selection summarises the search's ids minus exclusions", async () => {
+    resolveIds(["a", "b", "c", "d"]);
+    mockRequest.mockResolvedValue(MOCK_SUMMARY);
+
+    const { result } = renderHook(() => useAiSummary());
+    act(() =>
+      result.current.generate({
+        ...input,
+        selection: { mode: "all", excludedIds: ["b"] },
+      }),
+    );
+
+    await waitFor(() => expect(result.current.status).toBe("done"));
+    expect(mockRequest).toHaveBeenCalledWith(
+      { terms: [{ name: "Afghanistan" }], referenceIds: ["a", "c", "d"] },
+      expect.anything(),
+    );
   });
 
   test("run in background hides the drawer but keeps the result on completion", async () => {

@@ -43,4 +43,22 @@ describe("useReferenceSelection", () => {
     expect(result.current.count(100)).toBe(0);
     expect(result.current.isSelected("a")).toBe(false);
   });
+
+  test("toRequest describes include and all modes", () => {
+    const { result } = renderHook(() => useReferenceSelection());
+
+    act(() => result.current.toggle("a"));
+    act(() => result.current.toggle("b"));
+    expect(result.current.toRequest()).toEqual({
+      mode: "include",
+      ids: ["a", "b"],
+    });
+
+    act(() => result.current.selectAll());
+    act(() => result.current.toggle("x"));
+    expect(result.current.toRequest()).toEqual({
+      mode: "all",
+      excludedIds: ["x"],
+    });
+  });
 });

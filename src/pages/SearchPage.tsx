@@ -24,7 +24,7 @@ import {
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
-import { ExportMenu } from "@/components/search/ExportMenu";
+import { ExportMenu, type ExportScope } from "@/components/search/ExportMenu";
 import { RefineButton } from "@/components/search/RefineButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
@@ -35,6 +35,7 @@ import { aiSummariesEnabled } from "@/components/ai-summary/aiSummariesEnabled";
 import { SelectionHeader } from "@/components/search/SelectionHeader";
 import { selectionEnabled } from "@/components/search/selectionEnabled";
 import { useSelectionContext } from "@/components/search/SelectionProvider";
+import { resolveSelectedReferenceIds } from "@/services/referenceSelection";
 import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
 import { formatTotal } from "@/utils/searchTotal";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
@@ -264,63 +265,6 @@ function SearchPageInner({ community }: { community: Community }) {
   }
 
   const hasResults = results.results !== null && results.results.references.length > 0;
-  const overCap =
-    results.results !== null
-    && results.results.total.is_lower_bound
-    && results.results.total.count >= EXPORT_MAX_RESULTS;
-  const exportBusy =
-    exportJob.status === "requesting"
-    || exportJob.status === "polling"
-    || exportJob.status === "downloading";
-  // Gate on results.loading too: useSearch keeps prior results visible while
-  // a new fetch is in flight, so `hasResults` / `overCap` would otherwise
-  // reflect the previous search and let an export through against stale state.
-  const exportDisabled =
-    !hasResults || overCap || exportBusy || results.loading;
-  const exportTooltip = ((): string | undefined => {
-    // Suppress while refetching: would otherwise assert a stale count.
-    if (results.loading) return undefined;
-    if (overCap) {
-      return `Refine your search — exports are limited to ${EXPORT_MAX_RESULTS.toLocaleString()} results.`;
-    }
-    if (!hasResults) return "No results to export.";
-    return undefined;
-  })();
-  const exportAnnouncement = exportAnnouncementFor(exportJob.status);
-
-  function handleExport(format: ExportFormat) {
-    const { query, filters } = toUnpaginatedSearchQuery(
-      params,
-      community.defaultAnnotations,
-    );
-    const { stem, ext } = EXPORT_FILE[format];
-    const filename = formatExportFilename(stem, community.slug, ext);
-    if (format === "excel") {
-      exportJob.start({
-        format,
-        query,
-        filters,
-        filename,
-        vocabularyUrl: community.vocabularyUrl,
-        contextUrl: community.contextUrl,
-        variant: community.exportVariant,
-        codingInstitution: community.codingInstitution,
-        pinnedFilters: community.pinnedFilters,
-      });
-      return;
-    }
-    exportJob.start({
-      format,
-      query,
-      filters,
-      filename,
-      referenceListMeta: {
-        title: "Reference list",
-        subtitle: params.q ? `Search: ${params.q}` : null,
-        originUrl: buildSearchUrl(community.slug, params),
-      },
-    });
-  }
 
   // The AI-summary entry point. Requires a configured summariser so users never
   // see placeholder data: unset VITE_SUMMARISER_BASE ⇒ the feature stays hidden
@@ -346,10 +290,109 @@ function SearchPageInner({ community }: { community: Community }) {
     else selection.selectAll();
   }
 
+  const overCap =
+    results.results !== null
+    && results.results.total.is_lower_bound
+    && results.results.total.count >= EXPORT_MAX_RESULTS;
+  const exportBusy =
+    exportJob.status === "requesting"
+    || exportJob.status === "polling"
+    || exportJob.status === "downloading";
+  const allExportAvailable = hasResults && !overCap;
+  const selectionEnumerable =
+    selection.mode === "include" || !selectionTotal.is_lower_bound;
+  const selectedExportAvailable =
+    selectionCount > 0 && selectionCount <= EXPORT_MAX_RESULTS && selectionEnumerable;
+  const capReason = `Over the ${EXPORT_MAX_RESULTS.toLocaleString()} export limit.`;
+  // Only offer the scope chooser where selection is available; otherwise the
+  // menu exports the whole result set, as before.
+  const exportScopes = selectable && hasResults
+    ? [
+        {
+          value: "selected" as const,
+          label: `Selected (${selectionCount.toLocaleString()})`,
+          available: selectedExportAvailable,
+          reason: selectionCount === 0
+            ? "Select references to export just those."
+            : capReason,
+        },
+        {
+          value: "all" as const,
+          label: `All results (${formatTotal(selectionTotal)})`,
+          available: allExportAvailable,
+          reason: overCap ? capReason : undefined,
+        },
+      ]
+    : undefined;
+  const anyScopeAvailable = exportScopes
+    ? exportScopes.some((s) => s.available)
+    : allExportAvailable;
+  // Gate on results.loading too: useSearch keeps prior results visible while
+  // a new fetch is in flight, so counts would otherwise reflect the previous
+  // search and let an export through against stale state.
+  const exportDisabled = exportBusy || results.loading || !anyScopeAvailable;
+  const exportTooltip = ((): string | undefined => {
+    // Suppress while refetching: would otherwise assert a stale count.
+    if (results.loading || anyScopeAvailable) return undefined;
+    if (!hasResults) return "No results to export.";
+    return `Refine your search — exports are limited to ${EXPORT_MAX_RESULTS.toLocaleString()} references.`;
+  })();
+  const exportCapNote = exportScopes
+    ? `Exports are limited to ${EXPORT_MAX_RESULTS.toLocaleString()} references.`
+    : undefined;
+  const exportAnnouncement = exportAnnouncementFor(exportJob.status);
+
+  function handleExport(format: ExportFormat, scope: ExportScope) {
+    const { query, filters } = toUnpaginatedSearchQuery(
+      params,
+      community.defaultAnnotations,
+    );
+    const { stem, ext } = EXPORT_FILE[format];
+    const filename = formatExportFilename(stem, community.slug, ext);
+    const selected = scope === "selected";
+    const request = selection.toRequest();
+    const source = selected
+      ? {
+          resolveReferenceIds: (signal: AbortSignal) =>
+            resolveSelectedReferenceIds(request, query, filters, signal),
+        }
+      : { query, filters };
+    if (format === "excel") {
+      exportJob.start({
+        format,
+        filename,
+        ...source,
+        vocabularyUrl: community.vocabularyUrl,
+        contextUrl: community.contextUrl,
+        variant: community.exportVariant,
+        codingInstitution: community.codingInstitution,
+        pinnedFilters: community.pinnedFilters,
+      });
+      return;
+    }
+    const fromSearch = params.q ? ` from search "${params.q}"` : "";
+    const subtitle = selected
+      ? `${selectionCount.toLocaleString()} selected references${fromSearch}`
+      : params.q ? `Search: ${params.q}` : null;
+    exportJob.start({
+      format,
+      filename,
+      ...source,
+      referenceListMeta: {
+        title: "Reference list",
+        subtitle,
+        originUrl: buildSearchUrl(community.slug, params),
+      },
+    });
+  }
+
   // Terms framing the summary: the free-text query plus any applied concept
   // filters (a map cell arrives here with those filters pre-applied).
   const aiTerms = deriveSummaryTerms(params, vocab.labels);
   const aiTotal = results.results?.total ?? { count: 0, is_lower_bound: false };
+  // An active selection scopes the summary to it; otherwise the whole set.
+  const summariseSelection = selectionCount > 0;
+  const aiEffectiveCount = summariseSelection ? selectionCount : aiTotal.count;
   // One summary at a time: while one is parked in the background (generating or
   // unread) the button stays disabled and the indicator is the only way back.
   // The rest mirror the summariser's limits — one term minimum, 1–50 references.
@@ -360,9 +403,19 @@ function SearchPageInner({ community }: { community: Community }) {
         ? "Your summary's ready - open it from the indicator to read it."
         : aiTerms.length === 0
           ? "Search or filter by a term to summarise."
-          : aiTotal.count > MAX_SUMMARY_REFERENCES
-            ? `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references - please refine your search.`
+          : aiEffectiveCount > MAX_SUMMARY_REFERENCES
+            ? summariseSelection
+              ? `Your selection has ${selectionCount.toLocaleString()} references; AI summaries cover up to ${MAX_SUMMARY_REFERENCES}. Deselect some, or export instead.`
+              : selectable
+                ? `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references - refine your search, or select up to ${MAX_SUMMARY_REFERENCES} to summarise.`
+                : `AI summaries cover up to ${MAX_SUMMARY_REFERENCES} references - please refine your search.`
             : undefined;
+  // A persistent note (below the results) when a too-large selection is why the
+  // button is disabled.
+  const summarySelectionNote =
+    aiEnabled && summariseSelection && selectionCount > MAX_SUMMARY_REFERENCES
+      ? `${selectionCount.toLocaleString()} references selected — AI summaries cover up to ${MAX_SUMMARY_REFERENCES}. Narrow your selection, or export instead.`
+      : null;
 
   function handleGenerateSummary() {
     const { query, filters } = toUnpaginatedSearchQuery(
@@ -373,9 +426,12 @@ function SearchPageInner({ community }: { community: Community }) {
     ai.generate({
       query,
       filters,
+      selection: summariseSelection ? selection.toRequest() : undefined,
       context: {
         terms: aiTerms,
-        count: aiTotal,
+        count: summariseSelection
+          ? { count: selectionCount, is_lower_bound: false }
+          : aiTotal,
         countNoun: community.copy.countNoun,
       },
       originUrl: buildSearchUrl(community.slug, params),
@@ -500,6 +556,8 @@ function SearchPageInner({ community }: { community: Community }) {
                   status={exportJob.status}
                   onExport={handleExport}
                   disabledReason={exportTooltip}
+                  scopes={exportScopes}
+                  capNote={exportCapNote}
                 />
               )}
             </span>
@@ -559,6 +617,12 @@ function SearchPageInner({ community }: { community: Community }) {
           ))}
         </div>
       </section>
+
+      {summarySelectionNote && (
+        <p class="search-results__selection-note" role="status">
+          {summarySelectionNote}
+        </p>
+      )}
 
       {paginationEl && (
         <div class="search-results__pager">{paginationEl}</div>

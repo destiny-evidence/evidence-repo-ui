@@ -256,3 +256,13 @@ export interface SearchExportRead {
   truncated: boolean;
   error?: string | null;
 }
+
+// Export of an explicit id list. Same shape as SearchExportRead, minus
+// truncated (an id list can't be truncated).
+export interface ReferenceExportRead {
+  id: string;
+  status: SearchExportStatus;
+  result_url?: string | null;
+  n_references?: number | null;
+  error?: string | null;
+}

@@ -43,10 +43,10 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
     ai.status === "generating" ? ai.runInBackground : ai.dismiss;
   const context = ai.context;
 
-  // The summary's bibliography: a RIS export of the same search. Preloaded
-  // alongside generation.
+  // The summary's bibliography: a RIS export of the same reference set.
+  // Preloaded alongside generation.
   const references = useReferenceListExport(
-    ai.search,
+    ai.referenceSource,
     ai.status === "generating" || ai.status === "done",
   );
 

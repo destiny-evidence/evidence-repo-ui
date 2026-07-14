@@ -221,7 +221,7 @@ describe("SearchPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /search/i }));
 
     await waitFor(() =>
-      expect(screen.getByText(/results/i)).toHaveTextContent(/3 results/i)
+      expect(screen.getByText("results")).toHaveTextContent(/3 results/i)
     );
     expect(window.location.search).toBe("?q=phonics");
     // Corpus subtitle is unchanged throughout the transition.
@@ -296,7 +296,7 @@ describe("SearchPage", () => {
     renderSearchPage();
 
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-    expect(screen.getByText(/results/i)).toHaveTextContent(/10,000\+ results/i);
+    expect(screen.getByText("results")).toHaveTextContent(/10,000\+ results/i);
   });
 
   test("changing sort commits an unsubmitted draft query", async () => {
@@ -540,10 +540,10 @@ describe("SearchPage", () => {
   describe("export menu", () => {
     // The trigger and the in-panel action share the label "Export"; open via the
     // trigger (the only "Export" button while closed), pick a format if given,
-    // then click the action inside the "Export format" group.
+    // then click the action inside the "Export options" group.
     function openAndExport(formatLabel?: RegExp) {
       fireEvent.click(screen.getByRole("button", { name: /^export$/i }));
-      const panel = screen.getByRole("group", { name: /export format/i });
+      const panel = screen.getByRole("group", { name: /export options/i });
       if (formatLabel) {
         fireEvent.click(within(panel).getByRole("radio", { name: formatLabel }));
       }
@@ -709,7 +709,7 @@ describe("SearchPage", () => {
       expect(btn).toHaveAttribute("aria-disabled", "true");
       expect(btn.parentElement).toHaveAttribute(
         "data-tooltip",
-        expect.stringMatching(/limited to 10,000 results/i),
+        expect.stringMatching(/limited to 10,000 references/i),
       );
     });
 

@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, within, cleanup } from "@testing-library/preact";
-import { ExportMenu } from "@/components/search/ExportMenu";
+import { ExportMenu, type ExportScopeOption } from "@/components/search/ExportMenu";
 import type { ExportStatus } from "@/hooks/useSearchExport";
 
 beforeEach(cleanup);
@@ -10,6 +10,8 @@ function setup(
     disabled: boolean;
     status: ExportStatus;
     disabledReason: string;
+    scopes: ExportScopeOption[];
+    capNote: string;
   }> = {},
 ) {
   const onExport = vi.fn();
@@ -19,14 +21,20 @@ function setup(
       status={props.status ?? "idle"}
       onExport={onExport}
       disabledReason={props.disabledReason}
+      scopes={props.scopes}
+      capNote={props.capNote}
     />,
   );
   return { onExport };
 }
 
-function openAndExport(formatLabel?: RegExp) {
+function openPanel() {
   fireEvent.click(screen.getByRole("button", { name: /^export$/i }));
-  const panel = screen.getByRole("group", { name: /export format/i });
+  return screen.getByRole("group", { name: /export options/i });
+}
+
+function openAndExport(formatLabel?: RegExp) {
+  const panel = openPanel();
   if (formatLabel) {
     fireEvent.click(within(panel).getByRole("radio", { name: formatLabel }));
   }
@@ -34,21 +42,48 @@ function openAndExport(formatLabel?: RegExp) {
 }
 
 describe("ExportMenu", () => {
-  test("defaults to Excel", () => {
+  test("defaults to Excel and 'all' scope", () => {
     const { onExport } = setup();
     openAndExport();
-    expect(onExport).toHaveBeenCalledWith("excel");
+    expect(onExport).toHaveBeenCalledWith("excel", "all");
   });
 
   test("exports the chosen format", () => {
     const { onExport } = setup();
     openAndExport(/^ris/i);
-    expect(onExport).toHaveBeenCalledWith("ris");
+    expect(onExport).toHaveBeenCalledWith("ris", "all");
 
     cleanup();
     const second = setup();
     openAndExport(/excel/i);
-    expect(second.onExport).toHaveBeenCalledWith("excel");
+    expect(second.onExport).toHaveBeenCalledWith("excel", "all");
+  });
+
+  test("prefers 'selected' scope when available, else falls back to 'all'", () => {
+    const scopes: ExportScopeOption[] = [
+      { value: "selected", label: "Selected (3)", available: true },
+      { value: "all", label: "All results (900)", available: true },
+    ];
+    const { onExport } = setup({ scopes, capNote: "Exports are limited to 10,000 references." });
+    openAndExport();
+    expect(onExport).toHaveBeenCalledWith("excel", "selected");
+  });
+
+  test("sends 'all' when 'selected' is unavailable, and disables that radio", () => {
+    const scopes: ExportScopeOption[] = [
+      {
+        value: "selected",
+        label: "Selected (0)",
+        available: false,
+        reason: "Select references to export just those.",
+      },
+      { value: "all", label: "All results (900)", available: true },
+    ];
+    const { onExport } = setup({ scopes });
+    const panel = openPanel();
+    expect(within(panel).getByRole("radio", { name: /selected/i })).toBeDisabled();
+    fireEvent.click(within(panel).getByRole("button", { name: /^export$/i }));
+    expect(onExport).toHaveBeenCalledWith("excel", "all");
   });
 
   test("a disabled trigger doesn't open and explains why via a tooltip", () => {
@@ -56,7 +91,7 @@ describe("ExportMenu", () => {
     const trigger = screen.getByRole("button", { name: /^export$/i });
     expect(trigger).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(trigger);
-    expect(screen.queryByRole("group", { name: /export format/i })).toBeNull();
+    expect(screen.queryByRole("group", { name: /export options/i })).toBeNull();
     expect(trigger.parentElement).toHaveAttribute(
       "data-tooltip",
       "No results to export.",
