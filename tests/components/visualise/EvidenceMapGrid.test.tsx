@@ -205,4 +205,56 @@ describe("EvidenceMapGrid", () => {
       label: "Secondary",
     });
   });
+
+  const definedColumns: AxisCategory[] = [
+    { key: "thm:literacy", label: "Literacy", definition: "Reading and writing" },
+    { key: "thm:numeracy", label: "Numeracy" },
+  ];
+
+  function headerTooltipFor(container: Element, label: string): string | null {
+    const labelSpan = Array.from(
+      container.querySelectorAll(".evidence-map__col-head-label"),
+    ).find((el) => el.textContent === label);
+    return labelSpan?.closest(".tooltip")?.getAttribute("data-tooltip") ?? null;
+  }
+
+  test("a clickable header leads its tooltip with the concept definition, then the action", () => {
+    const { container } = render(
+      <EvidenceMapGrid
+        rows={rows}
+        columns={definedColumns}
+        getCount={getCount}
+        maxCount={12}
+        view="table"
+        countNoun="investigations"
+        rowAxisLabel="Education level"
+        columnAxisLabel="Education theme"
+        onColumnClick={vi.fn()}
+      />,
+    );
+    expect(headerTooltipFor(container, "Literacy")).toBe(
+      "Reading and writing\n\nClick to view matching investigations",
+    );
+    // No definition ⇒ just the action line.
+    expect(headerTooltipFor(container, "Numeracy")).toBe(
+      "Click to view matching investigations",
+    );
+  });
+
+  test("a non-clickable header still shows the definition alone", () => {
+    const { container } = render(
+      <EvidenceMapGrid
+        rows={rows}
+        columns={definedColumns}
+        getCount={getCount}
+        maxCount={12}
+        view="table"
+        countNoun="investigations"
+        rowAxisLabel="Education level"
+        columnAxisLabel="Education theme"
+      />,
+    );
+    expect(headerTooltipFor(container, "Literacy")).toBe("Reading and writing");
+    expect(headerTooltipFor(container, "Numeracy")).toBeNull();
+  });
 });

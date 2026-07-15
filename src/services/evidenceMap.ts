@@ -27,6 +27,10 @@ export function parseAxis(token: string): EvidenceMapAxis {
 export interface AxisCategory {
   key: string;
   label: string;
+  // The concept's SKOS definition, when the vocabulary carries one. Surfaced in
+  // the row/column header tooltip so a reader can see the scope of that axis
+  // value. Absent for countries and for cell-only keys the axis doesn't enumerate.
+  definition?: string;
 }
 
 export interface EvidenceMapModel {
@@ -128,7 +132,11 @@ function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
     for (const concept of concepts) {
       if (seen.has(concept.uri)) continue;
       seen.add(concept.uri);
-      out.push({ key: concept.uri, label: concept.label });
+      out.push({
+        key: concept.uri,
+        label: concept.label,
+        definition: concept.definition,
+      });
       if (concept.narrower) walk(concept.narrower);
     }
   };

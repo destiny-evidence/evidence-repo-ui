@@ -160,6 +160,7 @@ describe("resolveMapAxis", () => {
           {
             uri: "https://vocab.esea.education/OutcomeScheme/C2",
             label: "Enrolment",
+            definition: "Children enrolled in school",
           },
         ],
       },
@@ -193,6 +194,12 @@ describe("resolveMapAxis", () => {
     expect(axis.labelFor("https://vocab.esea.education/OutcomeScheme/C1")).toBe(
       "Access to Education",
     );
+    // Concept definitions carry through so the grid can show them in the tooltip.
+    expect(axis.categories.map((c) => c.definition)).toEqual([
+      undefined,
+      "Children enrolled in school",
+      undefined,
+    ]);
   });
 
   test("emits each concept once, even when reachable under two parents", () => {
