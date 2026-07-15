@@ -70,6 +70,18 @@ function headerAriaLabel(label: string, countNoun: string): string {
   return `${label}: view matching ${countNoun}.`;
 }
 
+// Header tooltip: the concept's definition (so the reader sees the scope of that
+// row/column) above the click action.
+function headerTooltip(
+  definition: string | undefined,
+  countNoun: string,
+  clickable: boolean,
+): string | undefined {
+  const action = clickable ? `Click to view matching ${countNoun}` : undefined;
+  if (definition && action) return `${definition}\n\n${action}`;
+  return definition ?? action;
+}
+
 export function EvidenceMapGrid({
   rows,
   columns,
@@ -86,8 +98,6 @@ export function EvidenceMapGrid({
   onRowClick,
   onColumnClick,
 }: EvidenceMapGridProps) {
-  const headerTooltip = `Click to view matching ${countNoun}`;
-
   // Track the hovered cell so we can highlight its full row and column — a
   // clear crosshair when the grid grows past a screenful.
   const [hover, setHover] = useState<{ row: string; column: string } | null>(
@@ -148,7 +158,11 @@ export function EvidenceMapGrid({
                   <HeaderLabel
                     label={column.label}
                     labelClass="evidence-map__col-head-label"
-                    tooltip={headerTooltip}
+                    tooltip={headerTooltip(
+                      column.definition,
+                      countNoun,
+                      onColumnClick !== undefined,
+                    )}
                     ariaLabel={headerAriaLabel(column.label, countNoun)}
                     onClick={
                       onColumnClick ? () => onColumnClick(column) : undefined
@@ -170,7 +184,11 @@ export function EvidenceMapGrid({
                   <HeaderLabel
                     label={row.label}
                     labelClass="evidence-map__row-head-label"
-                    tooltip={headerTooltip}
+                    tooltip={headerTooltip(
+                      row.definition,
+                      countNoun,
+                      onRowClick !== undefined,
+                    )}
                     ariaLabel={headerAriaLabel(row.label, countNoun)}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                   />
@@ -221,7 +239,9 @@ export function EvidenceMapGrid({
 }
 
 // A row/column header label. When clickable it's a button (the click target is
-// the label; the whole cell shades on hover — see CSS) with a Tooltip.
+// the label; the whole cell shades on hover — see CSS); otherwise a plain span.
+// Either way its tooltip carries the concept's definition when the axis has one,
+// so a non-clickable header (over-filtered / refetching) still explains its scope.
 function HeaderLabel({
   label,
   labelClass,
@@ -231,12 +251,12 @@ function HeaderLabel({
 }: {
   label: string;
   labelClass?: string;
-  tooltip: string;
+  tooltip: string | undefined;
   ariaLabel: string;
   onClick?: () => void;
 }) {
   const labelSpan = <span class={labelClass}>{label}</span>;
-  if (!onClick) return labelSpan;
+  if (!onClick) return <Tooltip text={tooltip}>{labelSpan}</Tooltip>;
   return (
     <Tooltip text={tooltip}>
       <button
