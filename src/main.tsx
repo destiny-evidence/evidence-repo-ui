@@ -3,7 +3,7 @@ import { App } from "./App";
 import { initMatomo } from "./analytics/matomo";
 import { AuthError, Landing, Loading } from "./auth/AuthGate";
 import { initKeycloak } from "./auth/keycloak";
-import { MATOMO_CONTAINER_URL } from "./config";
+import { MATOMO_SITE_ID, MATOMO_URL } from "./config";
 import "./styles/reset.css";
 import "./styles/fonts.css";
 import "./styles/variables.css";
@@ -14,7 +14,7 @@ const root = document.getElementById("app")!;
 
 render(<Loading />, root);
 
-initMatomo(MATOMO_CONTAINER_URL);
+initMatomo(MATOMO_URL, MATOMO_SITE_ID);
 
 initKeycloak()
   .then((authenticated) =>
