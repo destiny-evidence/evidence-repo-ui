@@ -35,6 +35,8 @@ Stack: Vite + Preact + TypeScript
 | `VITE_KEYCLOAK_URL` | _(required)_ | Keycloak base URL, e.g. `https://auth.evidence-repository.org` |
 | `VITE_KEYCLOAK_REALM` | _(required)_ | Keycloak realm, e.g. `destiny` |
 | `VITE_KEYCLOAK_CLIENT_ID` | _(required)_ | Keycloak public client ID, e.g. `evidence-repo-ui-client-development` |
+| `VITE_MATOMO_URL` | unset | Matomo base URL, e.g. `https://futureevidence.matomo.cloud/` |
+| `VITE_MATOMO_SITE_ID` | unset | Site id of the matomo measurable to send tracking to e.g. `5` for the dev measurable |
 
 ## Authentication
 

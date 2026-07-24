@@ -1,18 +1,31 @@
 declare global {
   interface Window {
-    _mtm?: Array<Record<string, unknown>>;
+    _paq?: Array<unknown[]>;
   }
 }
 
-export function initMatomo(containerUrl: string | undefined): void {
-  if (!containerUrl) return;
+/**
+ * Initialise the Matomo JavaScript tracker
+ *
+ * The Matomo site id controls which Matomo measurable we send tracking to.
+ * If either argument is empty, analytics is disabled and no script is injected.
+ */
+export function initMatomo(
+  matomoUrl: string | undefined,
+  siteId: string | undefined,
+): void {
+  if (!matomoUrl || !siteId) return;
 
-  const _mtm = (window._mtm = window._mtm || []);
-  _mtm.push({ "mtm.startTime": new Date().getTime(), event: "mtm.Start" });
+  const base = matomoUrl.endsWith("/") ? matomoUrl : matomoUrl + "/";
+  const _paq = (window._paq = window._paq || []);
+  _paq.push(["trackPageView"]);
+  _paq.push(["enableLinkTracking"]);
+  _paq.push(["setTrackerUrl", base + "matomo.php"]);
+  _paq.push(["setSiteId", siteId]);
 
   const g = document.createElement("script");
   const s = document.getElementsByTagName("script")[0];
   g.async = true;
-  g.src = containerUrl;
+  g.src = base + "matomo.js";
   s.parentNode!.insertBefore(g, s);
 }

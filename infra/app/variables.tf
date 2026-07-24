@@ -94,8 +94,14 @@ variable "keycloak_client_id" {
   type        = string
 }
 
-variable "matomo_container_url" {
-  description = "Matomo Tag Manager container URL for this environment; empty disables analytics"
+variable "matomo_url" {
+  description = "Matomo instance base URL (e.g. https://futureevidence.matomo.cloud/); same for every environment. Empty disables analytics."
+  type        = string
+  default     = "https://futureevidence.matomo.cloud/"
+}
+
+variable "matomo_site_id" {
+  description = "Matomo Site ID for this environment; differs per environment. Empty disables analytics."
   type        = string
   default     = ""
 }

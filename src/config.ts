@@ -4,7 +4,11 @@ export const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL;
 export const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM;
 export const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID;
 
-export const MATOMO_CONTAINER_URL = import.meta.env.VITE_MATOMO_CONTAINER_URL;
+// Matomo JS tracker config.
+// MATOMO_URL is the instance base.
+// MATOMO_SITE_ID controls which measurable we send tracking to
+export const MATOMO_URL = import.meta.env.VITE_MATOMO_URL;
+export const MATOMO_SITE_ID = import.meta.env.VITE_MATOMO_SITE_ID;
 
 export const FEEDBACK_FORM_URL: string | undefined =
   import.meta.env.VITE_FEEDBACK_FORM_URL;
