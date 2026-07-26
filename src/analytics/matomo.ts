@@ -18,10 +18,15 @@ export function initMatomo(
 
   const base = matomoUrl.endsWith("/") ? matomoUrl : matomoUrl + "/";
   const _paq = (window._paq = window._paq || []);
-  _paq.push(["trackPageView"]);
-  _paq.push(["enableLinkTracking"]);
   _paq.push(["setTrackerUrl", base + "matomo.php"]);
   _paq.push(["setSiteId", siteId]);
+
+  // Privacy settings must occur prior to any tracking pushes.
+  _paq.push(["disableCookies"]);
+  _paq.push(["setDoNotTrack", true]);
+
+  _paq.push(["trackPageView"]);
+  _paq.push(["enableLinkTracking"]);
 
   const g = document.createElement("script");
   const s = document.getElementsByTagName("script")[0];
