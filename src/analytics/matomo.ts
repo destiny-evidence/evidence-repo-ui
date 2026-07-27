@@ -1,3 +1,4 @@
+import { URL_CHANGE_EVENT } from "@/services/navigation";
 import type { AnalyticsEvent } from "./events";
 
 declare global {
@@ -48,4 +49,30 @@ export function track(event: AnalyticsEvent): void {
   if (!analyticsEnabled()) return;
   const { name, value } = event as { name?: string; value?: number };
   window._paq!.push(["trackEvent", event.category, event.action, name, value]);
+}
+
+/**
+ * Track a Matomo pageview for the current SPA route.
+ */
+export function trackSpaPageView(): void {
+  if (!analyticsEnabled()) return;
+  window._paq!.push(["setCustomUrl", window.location.href]);
+  window._paq!.push(["setDocumentTitle", document.title]);
+  window._paq!.push(["trackPageView"]);
+}
+
+/**
+ * Fire a Matomo pageview on every SPA route change.
+ *
+ * Dedupe on the last-tracked URL to send exactly one pageview per distinct URL.
+ * A navigate() URL_CHANGE_EVENT it more than once, so this stops double-counting.
+ */
+export function initSpaPageviews(): void {
+  if (!analyticsEnabled()) return;
+  let lastTrackedUrl = window.location.href;
+  window.addEventListener(URL_CHANGE_EVENT, () => {
+    if (window.location.href === lastTrackedUrl) return;
+    lastTrackedUrl = window.location.href;
+    trackSpaPageView();
+  });
 }
