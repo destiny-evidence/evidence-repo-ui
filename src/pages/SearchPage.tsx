@@ -7,9 +7,11 @@ import {
   toQueryString,
   buildSearchUrl,
   toUnpaginatedSearchQuery,
+  sortKey,
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
+import { track } from "@/analytics/matomo";
 import { backToVisualiseUrl } from "@/services/evidenceMap";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useHistoryState } from "@/hooks/useHistoryState";
@@ -260,6 +262,7 @@ function SearchPageInner({ community }: { community: Community }) {
   }
 
   function handleSortChange(sort: SortOption | undefined) {
+    track({ category: "Search", action: "Sort Changed", name: sortKey(sort) });
     const committed = draft.commitDraft();
     navigate(buildSearchUrl(community.slug, { ...params, ...committed, sort, page: 1 }));
   }

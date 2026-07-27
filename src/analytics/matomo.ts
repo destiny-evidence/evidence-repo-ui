@@ -1,3 +1,5 @@
+import type { AnalyticsEvent } from "./events";
+
 declare global {
   interface Window {
     _paq?: Array<unknown[]>;
@@ -33,4 +35,17 @@ export function initMatomo(
   g.async = true;
   g.src = base + "matomo.js";
   s.parentNode!.insertBefore(g, s);
+}
+
+function analyticsEnabled(): boolean {
+  return window._paq !== undefined;
+}
+
+/**
+ * Push an AnalyticsEvent to Matomo
+ */
+export function track(event: AnalyticsEvent): void {
+  if (!analyticsEnabled()) return;
+  const { name, value } = event as { name?: string; value?: number };
+  window._paq!.push(["trackEvent", event.category, event.action, name, value]);
 }

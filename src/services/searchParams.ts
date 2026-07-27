@@ -9,6 +9,11 @@ export const SORT_BACKEND: Record<SortOption, string> = {
   oldest: "publication_year",
 };
 
+// Canonical machine name for a sort, including the undefined (relevance)
+export function sortKey(sort: SortOption | undefined): string {
+  return sort ?? "relevance";
+}
+
 // Resolves the `sort` array sent to the API. With no free-text query
 // Elasticsearch scores every doc 1, so a "relevance" (undefined) sort
 // produces arbitrary ordering. Fall back to `newest` in that case.
