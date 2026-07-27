@@ -65,7 +65,7 @@ export function trackSpaPageView(): void {
  * Fire a Matomo pageview on every SPA route change.
  *
  * Dedupe on the last-tracked URL to send exactly one pageview per distinct URL.
- * A navigate() URL_CHANGE_EVENT it more than once, so this stops double-counting.
+ * A navigate() emits URL_CHANGE_EVENT more than once, so this stops double-counting.
  */
 export function initSpaPageviews(): void {
   if (!analyticsEnabled()) return;
