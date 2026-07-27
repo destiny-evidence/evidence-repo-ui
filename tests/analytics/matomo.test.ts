@@ -18,6 +18,30 @@ describe("track", () => {
       ["trackEvent", "Search", "Sort Changed", "newest", undefined],
     ]);
   });
+
+  test("carries a numeric value and omits name when absent", () => {
+    window._paq = [];
+    track({ category: "Search", action: "Page Changed", value: 3 });
+    expect(window._paq).toEqual([
+      ["trackEvent", "Search", "Page Changed", undefined, 3],
+    ]);
+  });
+
+  test("carries both name and value", () => {
+    window._paq = [];
+    track({ category: "Search", action: "Performed", name: "no-results", value: 0 });
+    expect(window._paq).toEqual([
+      ["trackEvent", "Search", "Performed", "no-results", 0],
+    ]);
+  });
+
+  test("label-only event pushes neither name nor value", () => {
+    window._paq = [];
+    track({ category: "Filters", action: "Reset All" });
+    expect(window._paq).toEqual([
+      ["trackEvent", "Filters", "Reset All", undefined, undefined],
+    ]);
+  });
 });
 
 describe("trackSpaPageView", () => {

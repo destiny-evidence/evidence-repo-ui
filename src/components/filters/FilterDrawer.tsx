@@ -2,6 +2,7 @@ import { Drawer } from "@/components/common/Drawer";
 import { FilterCardList } from "./FilterCardList";
 import { FilterActions } from "./FilterActions";
 import { useFilterDraft, type AppliedFilters } from "./useFilterDraft";
+import { track } from "@/analytics/matomo";
 import type { SearchParams } from "@/services/searchParams";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import type { PinnedFilter } from "@/types/models";
@@ -92,7 +93,10 @@ function FilterDrawerPanel({
       }
       footer={
         <FilterActions
-          onReset={draft.reset}
+          onReset={() => {
+            track({ category: "Filters", action: "Reset All" });
+            draft.reset();
+          }}
           onApply={handleApply}
           applyDisabled={!draft.canApply}
         />

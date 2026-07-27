@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import { useAuth } from "@/auth/AuthContext";
 import type { Community } from "@/types/models";
@@ -12,6 +12,7 @@ import {
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
 import { track } from "@/analytics/matomo";
+import { activeFilterKeys } from "@/analytics/searchEvents";
 import { backToVisualiseUrl } from "@/services/evidenceMap";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useHistoryState } from "@/hooks/useHistoryState";
@@ -177,6 +178,24 @@ function SearchPageInner({ community }: { community: Community }) {
     syncSearchIdentity(selectionIdentity);
   }, [syncSearchIdentity, selectionIdentity]);
 
+  // One "Search Performed" per distinct search (query + filters), not per fetch:
+  // useSearch refetches on paging/sorting too, so dedupe on the same identity
+  // used above. No query text is sent — only the result count and a
+  // has-results/no-results bucket.
+  const lastSearchTracked = useRef<string | null>(null);
+  useEffect(() => {
+    if (results.loading || results.error || !results.results) return;
+    if (lastSearchTracked.current === selectionIdentity) return;
+    lastSearchTracked.current = selectionIdentity;
+    const { count } = results.results.total;
+    track({
+      category: "Search",
+      action: "Performed",
+      name: count === 0 ? "no-results" : "results",
+      value: count,
+    });
+  }, [results.results, results.loading, results.error, selectionIdentity]);
+
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
   // shared cache, so the Refine button is almost always ready by the time
   // the user reaches for it. The drawer itself never renders a loading
@@ -195,10 +214,16 @@ function SearchPageInner({ community }: { community: Community }) {
     [vocab.schemes, community.filterExcludedSchemes],
   );
 
+  const activeFilterCount =
+    totalSelectedCount(params.conceptFilters, filterableSchemes)
+    + totalSelectedCountryCount(params.countryCodes)
+    + totalSelectedYearCount(params.startYear, params.endYear);
+
   // Treat clicking Refine like submitting the search bar: commit any pending
   // Q edit before opening the drawer so the drawer's facet-count fetch and
   // the post-Apply navigation reflect what the user has typed.
   function handleOpenDrawer() {
+    track({ category: "Filters", action: "Drawer Opened", value: activeFilterCount });
     const committed = draft.commitDraft();
     if (params.q !== committed.q) {
       navigate(
@@ -208,15 +233,12 @@ function SearchPageInner({ community }: { community: Community }) {
     setDrawerOpen(true);
   }
 
-  const refine = buildRefineConfig(
-    vocab,
-    totalSelectedCount(params.conceptFilters, filterableSchemes)
-      + totalSelectedCountryCount(params.countryCodes)
-      + totalSelectedYearCount(params.startYear, params.endYear),
-    handleOpenDrawer,
-  );
+  const refine = buildRefineConfig(vocab, activeFilterCount, handleOpenDrawer);
 
   function handleApplyFilters(next: AppliedFilters) {
+    for (const key of activeFilterKeys(next, filterableSchemes)) {
+      track({ category: "Filters", action: "Applied", name: key });
+    }
     const committed = draft.commitDraft();
     navigate(
       buildSearchUrl(community.slug, {
@@ -258,6 +280,7 @@ function SearchPageInner({ community }: { community: Community }) {
   }
 
   function handlePageChange(page: number) {
+    track({ category: "Search", action: "Page Changed", value: page });
     navigate(buildSearchUrl(community.slug, { ...params, page }));
   }
 
@@ -289,8 +312,13 @@ function SearchPageInner({ community }: { community: Community }) {
     : `${selectionCount.toLocaleString()} selected`;
   // Any active selection clears; only an empty one selects all (Gmail-style).
   function handleToggleAll() {
-    if (selectionCount > 0) selection.clear();
-    else selection.selectAll();
+    if (selectionCount > 0) {
+      track({ category: "Selection", action: "Cleared", value: 0 });
+      selection.clear();
+    } else {
+      track({ category: "Selection", action: "Select All", value: selectionTotal.count });
+      selection.selectAll();
+    }
   }
 
   const overCap =
@@ -444,6 +472,7 @@ function SearchPageInner({ community }: { community: Community }) {
   // Page size comes from the API response (page.count) so the UI stays in
   // sync if the backend ever changes its fixed page size. Math.max guards
   // against page.count = 0 to avoid divide-by-zero / Infinity totalPages.
+  const pageSize = results.results?.page.count ?? 0;
   const totalPages = results.results
     ? Math.max(
         1,
@@ -605,17 +634,26 @@ function SearchPageInner({ community }: { community: Community }) {
             </div>
           )}
 
-          {results.results?.references.map((ref) => (
+          {results.results?.references.map((ref, index) => (
             <ResultRow
               key={ref.id}
               communitySlug={community.slug}
               reference={ref}
+              // 1-based rank across pages, for click-through-by-position.
+              position={(params.page - 1) * pageSize + index + 1}
               codingInstitution={community.codingInstitution}
               findingsAndEstimates={community.features.findingsAndEstimates}
               pillExcludedSchemes={community.pillExcludedSchemes}
               selectable={selectable}
               selected={selection.isSelected(ref.id)}
-              onToggle={() => selection.toggle(ref.id)}
+              onToggle={() => {
+                track({
+                  category: "Selection",
+                  action: "Toggled",
+                  name: selection.isSelected(ref.id) ? "deselect" : "select",
+                });
+                selection.toggle(ref.id);
+              }}
             />
           ))}
         </div>
