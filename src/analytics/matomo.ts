@@ -1,5 +1,5 @@
 import { URL_CHANGE_EVENT } from "@/services/navigation";
-import type { AnalyticsEvent } from "./events";
+import type { AnalyticsEvent, AnalyticsEventPayload } from "./events";
 
 declare global {
   interface Window {
@@ -47,7 +47,7 @@ function analyticsEnabled(): boolean {
  */
 export function track(event: AnalyticsEvent): void {
   if (!analyticsEnabled()) return;
-  const { name, value } = event as { name?: string; value?: number };
+  const { name, value } = event as AnalyticsEventPayload;
   window._paq!.push(["trackEvent", event.category, event.action, name, value]);
 }
 
@@ -70,12 +70,14 @@ export function trackSpaPageView(): void {
  * route. A navigate() emits URL_CHANGE_EVENT more than once so this stops
  * double-counting.
  */
-export function initSpaPageviews(): void {
-  if (!analyticsEnabled()) return;
+export function initSpaPageviews(): () => void {
+  if (!analyticsEnabled()) return () => {};
   let lastTrackedPath = window.location.pathname;
-  window.addEventListener(URL_CHANGE_EVENT, () => {
+  const handler = () => {
     if (window.location.pathname === lastTrackedPath) return;
     lastTrackedPath = window.location.pathname;
     trackSpaPageView();
-  });
+  };
+  window.addEventListener(URL_CHANGE_EVENT, handler);
+  return () => window.removeEventListener(URL_CHANGE_EVENT, handler);
 }

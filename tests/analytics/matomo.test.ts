@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, onTestFinished, test } from "vitest";
 import {
   track,
   trackSpaPageView,
@@ -6,8 +6,6 @@ import {
 } from "@/analytics/matomo";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 
-// track() guards on window._paq, which initMatomo only creates when analytics
-// is configured. These tests drive that guard by setting/clearing _paq directly.
 afterEach(() => {
   delete window._paq;
 });
@@ -19,14 +17,6 @@ describe("track", () => {
     expect(window._paq).toEqual([
       ["trackEvent", "Search", "Sort Changed", "newest", undefined],
     ]);
-  });
-
-  test("no-ops (no push, no throw) when analytics is disabled", () => {
-    expect(window._paq).toBeUndefined();
-    expect(() =>
-      track({ category: "Search", action: "Sort Changed", name: "newest" }),
-    ).not.toThrow();
-    expect(window._paq).toBeUndefined();
   });
 });
 
@@ -40,11 +30,6 @@ describe("trackSpaPageView", () => {
       ["trackPageView"],
     ]);
   });
-
-  test("no-ops when analytics is disabled", () => {
-    expect(() => trackSpaPageView()).not.toThrow();
-    expect(window._paq).toBeUndefined();
-  });
 });
 
 const pageViews = () =>
@@ -54,7 +39,8 @@ describe("initSpaPageviews", () => {
   test("fires one pageview per distinct path", () => {
     history.replaceState(null, "", "/hpv");
     window._paq = [];
-    initSpaPageviews();
+    const dispose = initSpaPageviews();
+    onTestFinished(dispose);
 
     // navigate() emits URL_CHANGE_EVENT more than once for a single navigation.
     history.pushState(null, "", "/hpv/visualise");
@@ -72,9 +58,14 @@ describe("initSpaPageviews", () => {
     window.dispatchEvent(new Event(URL_CHANGE_EVENT));
     expect(pageViews()).toHaveLength(2);
   });
+});
 
-  test("no-ops when analytics is disabled", () => {
-    expect(() => initSpaPageviews()).not.toThrow();
-    expect(window._paq).toBeUndefined();
-  });
+test.each([
+  ["track", () => track({ category: "Search", action: "Sort Changed", name: "x" })],
+  ["trackSpaPageView", trackSpaPageView],
+  ["initSpaPageviews", initSpaPageviews],
+])("%s no-ops when analytics is disabled", (_name, fn) => {
+  expect(window._paq).toBeUndefined();
+  expect(fn).not.toThrow();
+  expect(window._paq).toBeUndefined();
 });
