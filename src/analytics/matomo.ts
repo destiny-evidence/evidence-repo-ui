@@ -56,7 +56,9 @@ export function track(event: AnalyticsEvent): void {
  */
 export function trackSpaPageView(): void {
   if (!analyticsEnabled()) return;
-  window._paq!.push(["setCustomUrl", window.location.href]);
+  // Omit query string fromm url tracking
+  const url = window.location.origin + window.location.pathname;
+  window._paq!.push(["setCustomUrl", url]);
   window._paq!.push(["setDocumentTitle", document.title]);
   window._paq!.push(["trackPageView"]);
 }
@@ -64,15 +66,16 @@ export function trackSpaPageView(): void {
 /**
  * Fire a Matomo pageview on every SPA route change.
  *
- * Dedupe on the last-tracked URL to send exactly one pageview per distinct URL.
- * A navigate() emits URL_CHANGE_EVENT more than once, so this stops double-counting.
+ * Dedupe on the last-tracked path to send exactly one pageview per distinct
+ * route. A navigate() emits URL_CHANGE_EVENT more than once so this stops
+ * double-counting.
  */
 export function initSpaPageviews(): void {
   if (!analyticsEnabled()) return;
-  let lastTrackedUrl = window.location.href;
+  let lastTrackedPath = window.location.pathname;
   window.addEventListener(URL_CHANGE_EVENT, () => {
-    if (window.location.href === lastTrackedUrl) return;
-    lastTrackedUrl = window.location.href;
+    if (window.location.pathname === lastTrackedPath) return;
+    lastTrackedPath = window.location.pathname;
     trackSpaPageView();
   });
 }

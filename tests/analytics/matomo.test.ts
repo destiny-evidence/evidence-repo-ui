@@ -35,7 +35,7 @@ describe("trackSpaPageView", () => {
     window._paq = [];
     trackSpaPageView();
     expect(window._paq).toEqual([
-      ["setCustomUrl", window.location.href],
+      ["setCustomUrl", window.location.origin + window.location.pathname],
       ["setDocumentTitle", document.title],
       ["trackPageView"],
     ]);
@@ -51,9 +51,7 @@ const pageViews = () =>
   (window._paq ?? []).filter((cmd) => cmd[0] === "trackPageView");
 
 describe("initSpaPageviews", () => {
-  // Seeds lastTrackedUrl on the current URL and adds a single URL_CHANGE_EVENT
-  // listener (called once, as in main.tsx), so the burst-dedupe holds.
-  test("fires one pageview per distinct URL, deduping the navigate() burst", () => {
+  test("fires one pageview per distinct path", () => {
     history.replaceState(null, "", "/hpv");
     window._paq = [];
     initSpaPageviews();
@@ -64,8 +62,13 @@ describe("initSpaPageviews", () => {
     window.dispatchEvent(new Event(URL_CHANGE_EVENT));
     expect(pageViews()).toHaveLength(1);
 
-    // A genuinely different URL fires another.
+    // A genuinely different path fires another.
     history.pushState(null, "", "/hpv/references/1");
+    window.dispatchEvent(new Event(URL_CHANGE_EVENT));
+    expect(pageViews()).toHaveLength(2);
+
+    // A query-only change on the same path does not.
+    history.pushState(null, "", "/hpv/references/1?tab=abstract");
     window.dispatchEvent(new Event(URL_CHANGE_EVENT));
     expect(pageViews()).toHaveLength(2);
   });
