@@ -14,6 +14,8 @@ export interface CommunityFeatures {
   // Gates the result-row selection UI (checkboxes + selection controls). Only
   // useful alongside export or AI summaries, which consume the selection.
   referenceSelection: boolean;
+  // Gates the fake-door "Request additional coding" panel on the detail page (#218).
+  enrichmentRequests: boolean;
 }
 
 // One axis of the evidence map.

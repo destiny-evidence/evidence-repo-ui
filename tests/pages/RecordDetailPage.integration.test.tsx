@@ -385,4 +385,26 @@ describe("RecordDetailPage", () => {
       screen.queryByText(/codes are shown as raw identifiers/),
     ).toBeNull();
   });
+
+  test.each([
+    ["/esea", true],
+    ["/hpv", false],
+  ])(
+    "%s record offers the request-coding button: %s",
+    (path, expected) => {
+      history.replaceState(null, "", path);
+      mockUseReference.mockReturnValue({
+        reference: makeReference({ bibliographic: { title: "A ref" } }),
+        loading: false,
+        error: null,
+      });
+
+      renderRecordDetail("abc");
+
+      const button = screen.queryByRole("button", {
+        name: "Request additional coding",
+      });
+      expect(button !== null).toBe(expected);
+    },
+  );
 });

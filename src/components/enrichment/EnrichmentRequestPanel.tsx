@@ -1,5 +1,6 @@
 import { useRef, useState } from "preact/hooks";
 import { EnrichmentRequestModal } from "./EnrichmentRequestModal";
+import "./EnrichmentRequest.css";
 
 interface EnrichmentRequestPanelProps {
   referenceId: string;
