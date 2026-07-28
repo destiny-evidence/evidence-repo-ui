@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { App } from "./App";
-import { initMatomo } from "./analytics/matomo";
+import { initMatomo, initSpaPageviews } from "./analytics/matomo";
 import { AuthError, Landing, Loading } from "./auth/AuthGate";
 import { initKeycloak } from "./auth/keycloak";
 import { MATOMO_SITE_ID, MATOMO_URL } from "./config";
@@ -15,6 +15,7 @@ const root = document.getElementById("app")!;
 render(<Loading />, root);
 
 initMatomo(MATOMO_URL, MATOMO_SITE_ID);
+initSpaPageviews();
 
 initKeycloak()
   .then((authenticated) =>
