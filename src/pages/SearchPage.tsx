@@ -12,7 +12,7 @@ import {
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
 import { track } from "@/analytics/matomo";
-import { activeFilterKeys } from "@/analytics/searchEvents";
+import { activeFilterKeys, hasActiveSearch } from "@/analytics/searchEvents";
 import { backToVisualiseUrl } from "@/services/evidenceMap";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useHistoryState } from "@/hooks/useHistoryState";
@@ -178,15 +178,19 @@ function SearchPageInner({ community }: { community: Community }) {
     syncSearchIdentity(selectionIdentity);
   }, [syncSearchIdentity, selectionIdentity]);
 
-  // One "Search Performed" per distinct search (query + filters), not per fetch:
-  // useSearch refetches on paging/sorting too, so dedupe on the same identity
-  // used above. No query text is sent — only the result count and a
-  // has-results/no-results bucket.
+  // One "Search Performed" per distinct search (query + filters), not per fetch.
+  // Key off resultsParams (the search the current results were fetched for), not
+  // the live params: useSearch keeps prior results on screen while a new query
+  // is in flight, so the live identity can run ahead of the count. Paging/sorting
+  // keep the same identity, so they don't re-fire. No query text is sent — only
+  // the result count and a has-results/no-results bucket.
   const lastSearchTracked = useRef<string | null>(null);
   useEffect(() => {
-    if (results.loading || results.error || !results.results) return;
-    if (lastSearchTracked.current === selectionIdentity) return;
-    lastSearchTracked.current = selectionIdentity;
+    const fetched = results.resultsParams;
+    if (!results.results || !fetched || !hasActiveSearch(fetched)) return;
+    const identity = `${community.slug}?${toQueryString({ ...fetched, page: 1, sort: undefined })}`;
+    if (lastSearchTracked.current === identity) return;
+    lastSearchTracked.current = identity;
     const { count } = results.results.total;
     track({
       category: "Search",
@@ -194,7 +198,7 @@ function SearchPageInner({ community }: { community: Community }) {
       name: count === 0 ? "no-results" : "results",
       value: count,
     });
-  }, [results.results, results.loading, results.error, selectionIdentity]);
+  }, [results.results, results.resultsParams, community.slug]);
 
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
   // shared cache, so the Refine button is almost always ready by the time
@@ -313,7 +317,7 @@ function SearchPageInner({ community }: { community: Community }) {
   // Any active selection clears; only an empty one selects all (Gmail-style).
   function handleToggleAll() {
     if (selectionCount > 0) {
-      track({ category: "Selection", action: "Cleared", value: 0 });
+      track({ category: "Selection", action: "Cleared", value: selectionCount });
       selection.clear();
     } else {
       track({ category: "Selection", action: "Select All", value: selectionTotal.count });
