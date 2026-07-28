@@ -11,7 +11,7 @@
 
 .enrichment-request__heading {
   font-size: var(--font-size-body);
-  font-weight: 600;
+  font-weight: 500;
   margin: 0 0 var(--spacing-xs);
 }
 
@@ -28,9 +28,9 @@
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-md);
   color: var(--color-bg-surface);
-  font-family: inherit;
+  font-family: var(--font-body);
   font-size: var(--font-size-small);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -42,7 +42,6 @@
 .enrichment-modal {
   position: fixed;
   inset: 0;
-  /* Matches Drawer: above the AppShell header (100) and FeedbackFAB (200). */
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -81,6 +80,7 @@
   font-family: var(--font-display);
   font-size: var(--font-size-xl);
   font-weight: 400;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -90,7 +90,7 @@
   background: none;
   border: none;
   color: var(--color-text-tertiary);
-  font-size: var(--font-size-lg);
+  font-size: 14px;
   line-height: 1;
   cursor: pointer;
 }
@@ -118,7 +118,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-family: inherit;
+  font-family: var(--font-body);
   font-size: var(--font-size-small);
   font-weight: 500;
   cursor: pointer;
