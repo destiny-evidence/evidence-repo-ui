@@ -8,9 +8,17 @@ import {
 } from "@testing-library/preact";
 import { EnrichmentRequestPanel } from "@/components/enrichment/EnrichmentRequestPanel";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  delete window._paq;
+});
 
 const REFERENCE_ID = "019a4c8f-3d21-7c6e-9b4a-1f2e5d7c8a90";
+
+// A defined _paq is what analyticsEnabled() reads as "Matomo is loaded".
+const mockAnalytics = () => (window._paq = []);
+const trackedEvents = () =>
+  (window._paq ?? []).filter((cmd) => cmd[0] === "trackEvent");
 
 const openModal = () =>
   fireEvent.click(
@@ -89,5 +97,42 @@ describe("EnrichmentRequestPanel", () => {
 
     fireEvent.click(within(footer()).getByRole("button"));
     expect(document.activeElement).toBe(trigger);
+  });
+
+  test("tracks a click event carrying the reference id", () => {
+    mockAnalytics();
+    render(<EnrichmentRequestPanel referenceId={REFERENCE_ID} />);
+
+    openModal();
+
+    expect(trackedEvents()).toContainEqual([
+      "trackEvent",
+      "Enrichment",
+      "Request Coding Clicked",
+      REFERENCE_ID,
+      undefined,
+    ]);
+  });
+
+  test("tracks one shown event per reference, not per render", () => {
+    const OTHER_REFERENCE_ID = "019a4c90-7b12-7e3f-8c05-6d4a2b9f1e77";
+    const shownEvents = () =>
+      trackedEvents().filter((cmd) => cmd[2] === "Request Coding Shown");
+    mockAnalytics();
+
+    const { rerender } = render(
+      <EnrichmentRequestPanel referenceId={REFERENCE_ID} />,
+    );
+    expect(shownEvents()).toEqual([
+      ["trackEvent", "Enrichment", "Request Coding Shown", REFERENCE_ID, undefined],
+    ]);
+
+    // Re-rendering the same reference is not a new impression.
+    rerender(<EnrichmentRequestPanel referenceId={REFERENCE_ID} />);
+    expect(shownEvents()).toHaveLength(1);
+
+    rerender(<EnrichmentRequestPanel referenceId={OTHER_REFERENCE_ID} />);
+    expect(shownEvents()).toHaveLength(2);
+    expect(shownEvents()[1]![3]).toBe(OTHER_REFERENCE_ID);
   });
 });

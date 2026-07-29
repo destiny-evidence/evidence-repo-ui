@@ -1,4 +1,5 @@
-import { useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { track } from "@/analytics/matomo";
 import { EnrichmentRequestModal } from "./EnrichmentRequestModal";
 import "./EnrichmentRequest.css";
 
@@ -9,9 +10,28 @@ interface EnrichmentRequestPanelProps {
 /**
  * Fake-door entry point for requesting extended coding of a reference.
  */
-export function EnrichmentRequestPanel(_props: EnrichmentRequestPanelProps) {
+export function EnrichmentRequestPanel({
+  referenceId,
+}: EnrichmentRequestPanelProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    track({
+      category: "Enrichment",
+      action: "Request Coding Shown",
+      name: referenceId,
+    });
+  }, [referenceId]);
+
+  function openModal() {
+    track({
+      category: "Enrichment",
+      action: "Request Coding Clicked",
+      name: referenceId,
+    });
+    setModalOpen(true);
+  }
 
   return (
     <div class="enrichment-request">
@@ -25,7 +45,7 @@ export function EnrichmentRequestPanel(_props: EnrichmentRequestPanelProps) {
         ref={triggerRef}
         type="button"
         class="enrichment-request__button"
-        onClick={() => setModalOpen(true)}
+        onClick={openModal}
       >
         Request additional coding
       </button>
