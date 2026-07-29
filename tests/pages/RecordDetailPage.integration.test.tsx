@@ -407,4 +407,28 @@ describe("RecordDetailPage", () => {
       expect(button !== null).toBe(expected);
     },
   );
+
+  test("ESEA record with ample coding and estimates offers no request-coding button", () => {
+    history.replaceState(null, "", "/esea");
+    mockUseReference.mockReturnValue({
+      reference: makeReference({
+        bibliographic: { title: "Well coded ref" },
+        investigation: {
+          hasAppliedConcept: Array.from({ length: 20 }, (_, i) => ({
+            "@id": `esea:C${i}`,
+          })),
+          hasFinding: [{ hasEffectEstimate: [{ pointEstimate: 0.4 }] }],
+        },
+      }),
+      loading: false,
+      error: null,
+    });
+
+    renderRecordDetail("abc");
+
+    expect(screen.getByText("Well coded ref")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Request additional coding" }),
+    ).toBeNull();
+  });
 });

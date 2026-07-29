@@ -26,7 +26,6 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   // Selection UI still only shows where a consumer (AI summary / selection
   // export) is enabled — see selectionEnabled.
   referenceSelection: true,
-  enrichmentRequests: false,
 };
 
 // The HPV geographic ConceptSchemes (country + regional/classification). Full
@@ -73,12 +72,7 @@ const COMMUNITIES: Community[] = [
     ],
     pillExcludedSchemes: [],
     geographicSchemes: [],
-    features: {
-      ...DEFAULT_FEATURES,
-      evidenceMap: true,
-      exportExcel: true,
-      enrichmentRequests: true,
-    },
+    features: { ...DEFAULT_FEATURES, evidenceMap: true, exportExcel: true },
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",

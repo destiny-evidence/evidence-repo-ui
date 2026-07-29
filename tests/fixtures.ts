@@ -66,7 +66,6 @@ export function makeCommunity(
       exportExcel: true,
       countryFacetFilter: true,
       referenceSelection: false,
-      enrichmentRequests: false,
       ...features,
     },
     copy: {
