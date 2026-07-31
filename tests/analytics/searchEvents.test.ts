@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { activeFilterKeys, hasActiveSearch } from "@/analytics/searchEvents";
+import { addedFilterKeys, hasActiveSearch } from "@/analytics/searchEvents";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { makeSearchParams } from "../fixtures";
@@ -28,35 +28,59 @@ const EMPTY: AppliedFilters = {
   endYear: undefined,
 };
 
-describe("activeFilterKeys", () => {
-  test("returns nothing when no filters are active", () => {
-    expect(activeFilterKeys(EMPTY, [SCHEME_A, SCHEME_B])).toEqual([]);
-  });
-
-  test("one key per active concept scheme, plus country and year-range", () => {
-    const keys = activeFilterKeys(
-      {
-        conceptFilters: [[URI_JOURNAL, URI_THESIS], [URI_STUDY]],
-        countryCodes: ["KE"],
-        startYear: 2000,
-        endYear: undefined,
-      },
-      [SCHEME_A, SCHEME_B],
-    );
-    expect(new Set(keys)).toEqual(
-      new Set([SCHEME_A.uri, SCHEME_B.uri, "country", "year-range"]),
+describe("addedFilterKeys", () => {
+  test("surfaces newly-set country and year-range, but not the unchanged scheme", () => {
+    const previous: AppliedFilters = { ...EMPTY, conceptFilters: [[URI_JOURNAL]] };
+    const next: AppliedFilters = {
+      conceptFilters: [[URI_JOURNAL]],
+      countryCodes: ["KE"],
+      startYear: 2000,
+      endYear: undefined,
+    };
+    expect(new Set(addedFilterKeys(previous, next, [SCHEME_A, SCHEME_B]))).toEqual(
+      new Set(["country", "year-range"]),
     );
   });
 
-  test("a one-sided year range still counts as year-range", () => {
+  test("a second concept within an already-active scheme is a new filter", () => {
+    const previous: AppliedFilters = { ...EMPTY, conceptFilters: [[URI_JOURNAL]] };
+    const next: AppliedFilters = { ...EMPTY, conceptFilters: [[URI_JOURNAL, URI_THESIS]] };
+    expect(addedFilterKeys(previous, next, [SCHEME_A])).toEqual([SCHEME_A.uri]);
+  });
+
+  test("a second country is a new filter", () => {
+    const previous: AppliedFilters = { ...EMPTY, countryCodes: ["KE"] };
+    const next: AppliedFilters = { ...EMPTY, countryCodes: ["KE", "UG"] };
+    expect(addedFilterKeys(previous, next, [SCHEME_A])).toEqual(["country"]);
+  });
+
+  test("a newly-filtered scheme surfaces its key", () => {
+    const previous: AppliedFilters = { ...EMPTY, conceptFilters: [[URI_JOURNAL]] };
+    const next: AppliedFilters = {
+      ...EMPTY,
+      conceptFilters: [[URI_JOURNAL], [URI_STUDY]],
+    };
+    expect(addedFilterKeys(previous, next, [SCHEME_A, SCHEME_B])).toEqual([
+      SCHEME_B.uri,
+    ]);
+  });
+
+  test("a changed year range counts, an unchanged one does not", () => {
+    const set: AppliedFilters = { ...EMPTY, startYear: 2000, endYear: 2010 };
+    expect(addedFilterKeys(set, set, [SCHEME_A])).toEqual([]);
     expect(
-      activeFilterKeys({ ...EMPTY, endYear: 2020 }, [SCHEME_A]),
+      addedFilterKeys(set, { ...set, endYear: 2020 }, [SCHEME_A]),
     ).toEqual(["year-range"]);
   });
 
-  test("concept URIs outside any supplied scheme are dropped", () => {
+  test("no change yields no keys", () => {
+    const same: AppliedFilters = { ...EMPTY, countryCodes: ["KE"] };
+    expect(addedFilterKeys(same, same, [SCHEME_A])).toEqual([]);
+  });
+
+  test("concept URIs outside any supplied scheme are ignored", () => {
     expect(
-      activeFilterKeys({ ...EMPTY, conceptFilters: [["https://unknown/x"]] }, [
+      addedFilterKeys(EMPTY, { ...EMPTY, conceptFilters: [["https://unknown/x"]] }, [
         SCHEME_A,
       ]),
     ).toEqual([]);

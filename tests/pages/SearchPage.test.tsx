@@ -257,6 +257,24 @@ describe("SearchPage", () => {
     replaceSpy.mockRestore();
   });
 
+  test("Record / Opened reports 1-based rank across pages", async () => {
+    // Page 2 rows rank from 21, not from 1: pins the (page - 1) * 20 + index
+    // math against a regression to page.count (the current page's hit count).
+    history.replaceState(null, "", "/esea?q=phonics&page=2");
+    mockBoth({ results: makeResult(47, ["r1", "r2", "r3"]) });
+    window._paq = [];
+    renderSearchPage();
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("link", { name: "Title r1" }));
+
+    const opened = (window._paq ?? []).filter(
+      (e) => e[0] === "trackEvent" && e[1] === "Record" && e[2] === "Opened",
+    );
+    expect(opened).toEqual([["trackEvent", "Record", "Opened", undefined, 21]]);
+    window._paq = undefined;
+  });
+
   test("unknown community renders NotFoundPage", () => {
     history.replaceState(null, "", "/unknown-slug");
     renderSearchPage();

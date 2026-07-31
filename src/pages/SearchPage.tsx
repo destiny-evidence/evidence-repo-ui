@@ -12,7 +12,7 @@ import {
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
 import { track } from "@/analytics/matomo";
-import { activeFilterKeys, hasActiveSearch } from "@/analytics/searchEvents";
+import { addedFilterKeys, hasActiveSearch } from "@/analytics/searchEvents";
 import { backToVisualiseUrl } from "@/services/evidenceMap";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useHistoryState } from "@/hooks/useHistoryState";
@@ -54,6 +54,12 @@ interface SearchPageProps {
 // 10k is destiny-repository's max_result_window; deep pagination + exports
 // past that are explicitly out of scope. Mirrors the search backend cap.
 const EXPORT_MAX_RESULTS = 10000;
+
+// The backend serves a fixed 20 results per page and exposes no page-size
+// field. `page.count` is the number of hits on the current page (fewer on the
+// last page), not the page size, so rank and page-count math use this
+// constant rather than that value.
+const RESULTS_PER_PAGE = 20;
 
 // The summariser accepts at most 50 references per request (1–50).
 const MAX_SUMMARY_REFERENCES = 50;
@@ -240,7 +246,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const refine = buildRefineConfig(vocab, activeFilterCount, handleOpenDrawer);
 
   function handleApplyFilters(next: AppliedFilters) {
-    for (const key of activeFilterKeys(next, filterableSchemes)) {
+    for (const key of addedFilterKeys(params, next, filterableSchemes)) {
       track({ category: "Filters", action: "Applied", name: key });
     }
     const committed = draft.commitDraft();
@@ -473,16 +479,13 @@ function SearchPageInner({ community }: { community: Community }) {
     });
   }
 
-  // Page size comes from the API response (page.count) so the UI stays in
-  // sync if the backend ever changes its fixed page size. Math.max guards
-  // against page.count = 0 to avoid divide-by-zero / Infinity totalPages.
-  const pageSize = results.results?.page.count ?? 0;
   const totalPages = results.results
-    ? Math.max(
-        1,
-        Math.ceil(results.results.total.count / Math.max(1, results.results.page.count)),
-      )
+    ? Math.max(1, Math.ceil(results.results.total.count / RESULTS_PER_PAGE))
     : 1;
+
+  // Rank rows against the page the visible results were fetched for, not the
+  // live URL page, which can run ahead while a refetch is in flight.
+  const resultsPage = results.resultsParams?.page ?? params.page;
 
   // Null on a single page so the grid cell / bottom wrapper don't render empty.
   const paginationEl = results.results && totalPages > 1 ? (
@@ -644,7 +647,7 @@ function SearchPageInner({ community }: { community: Community }) {
               communitySlug={community.slug}
               reference={ref}
               // 1-based rank across pages, for click-through-by-position.
-              position={(params.page - 1) * pageSize + index + 1}
+              position={(resultsPage - 1) * RESULTS_PER_PAGE + index + 1}
               codingInstitution={community.codingInstitution}
               findingsAndEstimates={community.features.findingsAndEstimates}
               pillExcludedSchemes={community.pillExcludedSchemes}
