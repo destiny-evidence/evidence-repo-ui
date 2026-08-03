@@ -2,6 +2,7 @@ import "./InvestigationCard.css";
 import { AbstractSection } from "./AbstractSection";
 import { TagGroup } from "../common/TagGroup";
 import { WarningIcon, ExternalLinkIcon } from "../common/icons";
+import type { ComponentChildren } from "preact";
 import type {
   AbstractContentEnhancement,
   Authorship,
@@ -25,6 +26,8 @@ interface InvestigationCardProps {
   isRetracted: boolean;
   hasInvestigation: boolean;
   vocabUnavailable: boolean;
+  /** Rendered at the foot of the card, after the coding institution. */
+  footer?: ComponentChildren;
 }
 
 function formatVenue(
@@ -73,6 +76,7 @@ export function InvestigationCard({
   isRetracted,
   hasInvestigation,
   vocabUnavailable,
+  footer,
 }: InvestigationCardProps) {
   const venueText = formatVenue(venue, pagination);
   const docTypeTags = dedupeByUri(documentTypes).map(
@@ -151,6 +155,7 @@ export function InvestigationCard({
             )}
           </>
         )}
+        {footer}
       </article>
     </>
   );

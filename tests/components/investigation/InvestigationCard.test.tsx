@@ -232,6 +232,25 @@ describe("InvestigationCard", () => {
     expect(screen.queryByTestId("investigation-coder-text")).toBeNull();
   });
 
+  test("renders the footer slot last inside the card", () => {
+    const { container } = render(
+      <InvestigationCard
+        {...DEFAULT_PROPS}
+        codingInstitution="ESEA"
+        footer={<p data-testid="card-footer">Footer slot</p>}
+      />,
+    );
+
+    const card = container.querySelector(".investigation-card");
+    const footer = screen.getByTestId("card-footer");
+    const coder = screen.getByTestId("investigation-coder-text");
+    expect(card).toContainElement(footer);
+    expect(
+      coder.compareDocumentPosition(footer) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   test("renders gracefully with missing optional fields", () => {
     const { container } = render(
       <InvestigationCard

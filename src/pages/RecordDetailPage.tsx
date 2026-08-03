@@ -17,6 +17,11 @@ import { useContextPrefixes } from "@/hooks/useContextPrefixes";
 import { InvestigationCard } from "@/components/investigation/InvestigationCard";
 import { FindingsSection } from "@/components/investigation/FindingsSection";
 import { TaxonomyCodesCard } from "@/components/investigation/TaxonomyCodesCard";
+import { EnrichmentRequestPanel } from "@/components/enrichment/EnrichmentRequestPanel";
+import {
+  countCodedAnnotations,
+  enrichmentRequestsEnabled,
+} from "@/components/enrichment/enrichmentRequestsEnabled";
 import { groupAppliedConcepts } from "@/services/taxonomyCodesUtils";
 import { isFindingRenderable } from "@/services/findingGroups";
 import { NotFoundPage } from "./NotFoundPage";
@@ -142,6 +147,14 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
           isRetracted={isRetracted}
           hasInvestigation={hasLinkedData}
           vocabUnavailable={curieLabelsUnavailable}
+          footer={
+            enrichmentRequestsEnabled(community, investigation) && (
+              <EnrichmentRequestPanel
+                referenceId={reference.id}
+                codedAnnotations={countCodedAnnotations(investigation)}
+              />
+            )
+          }
         />
         {taxonomyGroups.length > 0 && (
           <TaxonomyCodesCard

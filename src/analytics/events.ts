@@ -23,4 +23,18 @@ export type AnalyticsEvent =
   | { category: "Selection"; action: "Cleared"; value: number }
   // value: 1-based result rank
   | { category: "Record"; action: "Opened"; value?: number }
-  | { category: "Record"; action: "DOI Clicked" };
+  | { category: "Record"; action: "DOI Clicked" }
+  // name: reference_id, value: coded concepts on the record
+  | {
+      category: "Enrichment";
+      action: "Request Coding Shown";
+      name: string;
+      value: number;
+    }
+  // name: reference_id, value: coded concepts on the record
+  | {
+      category: "Enrichment";
+      action: "Request Coding Clicked";
+      name: string;
+      value: number;
+    };
