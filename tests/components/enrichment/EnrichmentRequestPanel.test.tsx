@@ -14,6 +14,17 @@ afterEach(() => {
 });
 
 const REFERENCE_ID = "019a4c8f-3d21-7c6e-9b4a-1f2e5d7c8a90";
+const CODED_ANNOTATIONS = 7;
+
+const panel = (
+  referenceId = REFERENCE_ID,
+  codedAnnotations = CODED_ANNOTATIONS,
+) => (
+  <EnrichmentRequestPanel
+    referenceId={referenceId}
+    codedAnnotations={codedAnnotations}
+  />
+);
 
 // A defined _paq is what analyticsEnabled() reads as "Matomo is loaded".
 const mockAnalytics = () => (window._paq = []);
@@ -34,7 +45,7 @@ const footer = () => region("footer");
 
 describe("EnrichmentRequestPanel", () => {
   test("directs the user to request additional coding in the case of missing data.", () => {
-    render(<EnrichmentRequestPanel referenceId={REFERENCE_ID} />);
+    render(panel());
 
     expect(screen.getByText("Missing data elements?")).toBeDefined();
     expect(
@@ -46,13 +57,13 @@ describe("EnrichmentRequestPanel", () => {
   });
 
   test("shows no modal until the button is clicked", () => {
-    render(<EnrichmentRequestPanel referenceId={REFERENCE_ID} />);
+    render(panel());
 
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   test("opens a modal explaining the feature is under consideration", () => {
-    render(<EnrichmentRequestPanel referenceId={REFERENCE_ID} />);
+    render(panel());
     fireEvent.click(
       screen.getByRole("button", { name: "Request additional coding" }),
     );
@@ -69,7 +80,7 @@ describe("EnrichmentRequestPanel", () => {
     ["the header dismiss control", () => within(header()).getByRole("button")],
     ["the footer close button", () => within(footer()).getByRole("button")],
   ])("closes the modal from %s", (_name, closeControl) => {
-    render(<EnrichmentRequestPanel referenceId={REFERENCE_ID} />);
+    render(panel());
     openModal();
 
     fireEvent.click(closeControl());
@@ -78,7 +89,7 @@ describe("EnrichmentRequestPanel", () => {
   });
 
   test("closes the modal on Escape", () => {
-    render(<EnrichmentRequestPanel referenceId={REFERENCE_ID} />);
+    render(panel());
     openModal();
 
     fireEvent.keyDown(window, { key: "Escape" });
@@ -87,7 +98,7 @@ describe("EnrichmentRequestPanel", () => {
   });
 
   test("moves focus into the modal and back to the trigger on close", () => {
-    render(<EnrichmentRequestPanel referenceId={REFERENCE_ID} />);
+    render(panel());
     const trigger = screen.getByRole("button", {
       name: "Request additional coding",
     });
@@ -99,9 +110,9 @@ describe("EnrichmentRequestPanel", () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  test("tracks a click event carrying the reference id", () => {
+  test("tracks a click event carrying the reference id and coding depth", () => {
     mockAnalytics();
-    render(<EnrichmentRequestPanel referenceId={REFERENCE_ID} />);
+    render(panel());
 
     openModal();
 
@@ -110,7 +121,7 @@ describe("EnrichmentRequestPanel", () => {
       "Enrichment",
       "Request Coding Clicked",
       REFERENCE_ID,
-      undefined,
+      CODED_ANNOTATIONS,
     ]);
   });
 
@@ -120,19 +131,29 @@ describe("EnrichmentRequestPanel", () => {
       trackedEvents().filter((cmd) => cmd[2] === "Request Coding Shown");
     mockAnalytics();
 
-    const { rerender } = render(
-      <EnrichmentRequestPanel referenceId={REFERENCE_ID} />,
-    );
+    const { rerender } = render(panel());
     expect(shownEvents()).toEqual([
-      ["trackEvent", "Enrichment", "Request Coding Shown", REFERENCE_ID, undefined],
+      [
+        "trackEvent",
+        "Enrichment",
+        "Request Coding Shown",
+        REFERENCE_ID,
+        CODED_ANNOTATIONS,
+      ],
     ]);
 
     // Re-rendering the same reference is not a new impression.
-    rerender(<EnrichmentRequestPanel referenceId={REFERENCE_ID} />);
+    rerender(panel());
     expect(shownEvents()).toHaveLength(1);
 
-    rerender(<EnrichmentRequestPanel referenceId={OTHER_REFERENCE_ID} />);
+    rerender(panel(OTHER_REFERENCE_ID, 3));
     expect(shownEvents()).toHaveLength(2);
-    expect(shownEvents()[1]![3]).toBe(OTHER_REFERENCE_ID);
+    expect(shownEvents()[1]).toEqual([
+      "trackEvent",
+      "Enrichment",
+      "Request Coding Shown",
+      OTHER_REFERENCE_ID,
+      3,
+    ]);
   });
 });

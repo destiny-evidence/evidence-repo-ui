@@ -5,6 +5,7 @@ import "./EnrichmentRequest.css";
 
 interface EnrichmentRequestPanelProps {
   referenceId: string;
+  codedAnnotations: number;
 }
 
 /**
@@ -12,6 +13,7 @@ interface EnrichmentRequestPanelProps {
  */
 export function EnrichmentRequestPanel({
   referenceId,
+  codedAnnotations,
 }: EnrichmentRequestPanelProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -21,6 +23,7 @@ export function EnrichmentRequestPanel({
       category: "Enrichment",
       action: "Request Coding Shown",
       name: referenceId,
+      value: codedAnnotations,
     });
   }, [referenceId]);
 
@@ -29,6 +32,7 @@ export function EnrichmentRequestPanel({
       category: "Enrichment",
       action: "Request Coding Clicked",
       name: referenceId,
+      value: codedAnnotations,
     });
     setModalOpen(true);
   }
