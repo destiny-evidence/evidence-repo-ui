@@ -12,7 +12,7 @@ import {
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
 import { track } from "@/analytics/matomo";
-import { addedFilterKeys, hasActiveSearch } from "@/analytics/searchEvents";
+import { activeFilters, hasActiveSearch } from "@/analytics/searchEvents";
 import { backToVisualiseUrl } from "@/services/evidenceMap";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useHistoryState } from "@/hooks/useHistoryState";
@@ -224,6 +224,30 @@ function SearchPageInner({ community }: { community: Community }) {
     [vocab.schemes, community.filterExcludedSchemes],
   );
 
+  // Filters on the search, once per distinct search — keyed and deduped like
+  // "Search Performed" above, so they count for the search they actually ran on,
+  // whether typed, refined in the drawer, or arriving via a deep link /
+  // evidence-map jump-in. Each specific value and its category are tracked
+  // separately, since Matomo can't roll values up to categories itself. Waits
+  // for the vocabulary, without which concept filters can't be resolved.
+  const lastFiltersTracked = useRef<string | null>(null);
+  useEffect(() => {
+    const fetched = results.resultsParams;
+    if (!results.results || !fetched || !hasActiveSearch(fetched) || vocab.loading) {
+      return;
+    }
+    const identity = `${community.slug}?${toQueryString({ ...fetched, page: 1, sort: undefined })}`;
+    if (lastFiltersTracked.current === identity) return;
+    lastFiltersTracked.current = identity;
+    const { values, categories } = activeFilters(fetched, filterableSchemes);
+    for (const value of values) {
+      track({ category: "Filters", action: "Applied", name: value });
+    }
+    for (const key of categories) {
+      track({ category: "Filters", action: "Category Applied", name: key });
+    }
+  }, [results.results, results.resultsParams, community.slug, vocab.loading, filterableSchemes]);
+
   const activeFilterCount =
     totalSelectedCount(params.conceptFilters, filterableSchemes)
     + totalSelectedCountryCount(params.countryCodes)
@@ -246,9 +270,6 @@ function SearchPageInner({ community }: { community: Community }) {
   const refine = buildRefineConfig(vocab, activeFilterCount, handleOpenDrawer);
 
   function handleApplyFilters(next: AppliedFilters) {
-    for (const key of addedFilterKeys(params, next, filterableSchemes)) {
-      track({ category: "Filters", action: "Applied", name: key });
-    }
     const committed = draft.commitDraft();
     navigate(
       buildSearchUrl(community.slug, {

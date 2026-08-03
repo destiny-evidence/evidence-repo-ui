@@ -16,35 +16,33 @@ export function hasActiveSearch(params: SearchParams): boolean {
   );
 }
 
-// Analytics keys for the filters this Apply newly added, relative to what was
-// already committed. A key is "added" when its selection gains a value that
-// wasn't there before — a new concept within a scheme (even one already
-// filtered), a new country code, or a newly-set/changed year range — so
-// refining an existing facet still registers while re-applying an unchanged set
-// does not. One `Filters / Applied` event is emitted per key: a concept scheme
-// by its uri (schemes have no separate id), plus "country" and "year-range".
-export function addedFilterKeys(
-  previous: AppliedFilters,
-  next: AppliedFilters,
+// The filters active in a committed search, at both granularities we track:
+// `values` is the specific selections (each concept uri, each country code, and
+// "year-range" when set — a range has no enumerable value), feeding one
+// `Filters / Applied` event each; `categories` is the facet each belongs to (the
+// concept scheme uri, since schemes have no separate id, plus "country" and
+// "year-range"), feeding one `Filters / Category Applied` event each. Both are
+// emitted because Matomo can't roll values up to their category itself. Concept
+// uris outside any supplied scheme are dropped from both.
+export function activeFilters(
+  filters: AppliedFilters,
   schemes: ConceptScheme[],
-): string[] {
-  const keys: string[] = [];
+): { values: string[]; categories: string[] } {
+  const values: string[] = [];
+  const categories: string[] = [];
 
-  const before = parseConceptFilters(previous.conceptFilters, schemes);
-  for (const [schemeUri, uris] of parseConceptFilters(next.conceptFilters, schemes)) {
-    const prev = before.get(schemeUri);
-    if ([...uris].some((uri) => !prev?.has(uri))) keys.push(schemeUri);
+  for (const [schemeUri, uris] of parseConceptFilters(filters.conceptFilters, schemes)) {
+    categories.push(schemeUri);
+    values.push(...uris);
+  }
+  if (filters.countryCodes.length > 0) {
+    categories.push("country");
+    values.push(...filters.countryCodes);
+  }
+  if (filters.startYear !== undefined || filters.endYear !== undefined) {
+    categories.push("year-range");
+    values.push("year-range");
   }
 
-  const beforeCountries = new Set(previous.countryCodes);
-  if (next.countryCodes.some((code) => !beforeCountries.has(code))) {
-    keys.push("country");
-  }
-
-  const yearSet = next.startYear !== undefined || next.endYear !== undefined;
-  const yearChanged =
-    next.startYear !== previous.startYear || next.endYear !== previous.endYear;
-  if (yearSet && yearChanged) keys.push("year-range");
-
-  return keys;
+  return { values, categories };
 }

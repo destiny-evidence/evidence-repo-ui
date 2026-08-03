@@ -12,8 +12,10 @@ export type AnalyticsEvent =
   | { category: "Search"; action: "Page Changed"; value: number }
   // value: active filter count when opened
   | { category: "Filters"; action: "Drawer Opened"; value: number }
-  // name: filter key (concept-scheme uri | country | year-range); one per active filter
+  // name: specific value (concept uri | country code | year-range); one per active value
   | { category: "Filters"; action: "Applied"; name: string }
+  // name: category (concept-scheme uri | country | year-range); one per active category
+  | { category: "Filters"; action: "Category Applied"; name: string }
   | { category: "Filters"; action: "Reset All" }
   // name: select | deselect
   | { category: "Selection"; action: "Toggled"; name: string }

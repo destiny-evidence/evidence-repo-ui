@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { addedFilterKeys, hasActiveSearch } from "@/analytics/searchEvents";
+import { activeFilters, hasActiveSearch } from "@/analytics/searchEvents";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { makeSearchParams } from "../fixtures";
@@ -28,62 +28,52 @@ const EMPTY: AppliedFilters = {
   endYear: undefined,
 };
 
-describe("addedFilterKeys", () => {
-  test("surfaces newly-set country and year-range, but not the unchanged scheme", () => {
-    const previous: AppliedFilters = { ...EMPTY, conceptFilters: [[URI_JOURNAL]] };
-    const next: AppliedFilters = {
-      conceptFilters: [[URI_JOURNAL]],
-      countryCodes: ["KE"],
-      startYear: 2000,
-      endYear: undefined,
-    };
-    expect(new Set(addedFilterKeys(previous, next, [SCHEME_A, SCHEME_B]))).toEqual(
-      new Set(["country", "year-range"]),
+describe("activeFilters", () => {
+  test("returns nothing when no filters are active", () => {
+    expect(activeFilters(EMPTY, [SCHEME_A, SCHEME_B])).toEqual({
+      values: [],
+      categories: [],
+    });
+  });
+
+  test("values are the specific selections, categories the facets they belong to", () => {
+    const { values, categories } = activeFilters(
+      {
+        conceptFilters: [[URI_JOURNAL, URI_THESIS], [URI_STUDY]],
+        countryCodes: ["KE", "UG"],
+        startYear: 2000,
+        endYear: undefined,
+      },
+      [SCHEME_A, SCHEME_B],
+    );
+    expect(new Set(values)).toEqual(
+      new Set([URI_JOURNAL, URI_THESIS, URI_STUDY, "KE", "UG", "year-range"]),
+    );
+    expect(new Set(categories)).toEqual(
+      new Set([SCHEME_A.uri, SCHEME_B.uri, "country", "year-range"]),
     );
   });
 
-  test("a second concept within an already-active scheme is a new filter", () => {
-    const previous: AppliedFilters = { ...EMPTY, conceptFilters: [[URI_JOURNAL]] };
-    const next: AppliedFilters = { ...EMPTY, conceptFilters: [[URI_JOURNAL, URI_THESIS]] };
-    expect(addedFilterKeys(previous, next, [SCHEME_A])).toEqual([SCHEME_A.uri]);
+  test("multiple concepts in a scheme are many values but one category", () => {
+    const { values, categories } = activeFilters(
+      { ...EMPTY, conceptFilters: [[URI_JOURNAL, URI_THESIS]] },
+      [SCHEME_A],
+    );
+    expect(new Set(values)).toEqual(new Set([URI_JOURNAL, URI_THESIS]));
+    expect(categories).toEqual([SCHEME_A.uri]);
   });
 
-  test("a second country is a new filter", () => {
-    const previous: AppliedFilters = { ...EMPTY, countryCodes: ["KE"] };
-    const next: AppliedFilters = { ...EMPTY, countryCodes: ["KE", "UG"] };
-    expect(addedFilterKeys(previous, next, [SCHEME_A])).toEqual(["country"]);
-  });
-
-  test("a newly-filtered scheme surfaces its key", () => {
-    const previous: AppliedFilters = { ...EMPTY, conceptFilters: [[URI_JOURNAL]] };
-    const next: AppliedFilters = {
-      ...EMPTY,
-      conceptFilters: [[URI_JOURNAL], [URI_STUDY]],
-    };
-    expect(addedFilterKeys(previous, next, [SCHEME_A, SCHEME_B])).toEqual([
-      SCHEME_B.uri,
-    ]);
-  });
-
-  test("a changed year range counts, an unchanged one does not", () => {
-    const set: AppliedFilters = { ...EMPTY, startYear: 2000, endYear: 2010 };
-    expect(addedFilterKeys(set, set, [SCHEME_A])).toEqual([]);
-    expect(
-      addedFilterKeys(set, { ...set, endYear: 2020 }, [SCHEME_A]),
-    ).toEqual(["year-range"]);
-  });
-
-  test("no change yields no keys", () => {
-    const same: AppliedFilters = { ...EMPTY, countryCodes: ["KE"] };
-    expect(addedFilterKeys(same, same, [SCHEME_A])).toEqual([]);
+  test("a one-sided year range still counts as year-range in both", () => {
+    expect(activeFilters({ ...EMPTY, endYear: 2020 }, [SCHEME_A])).toEqual({
+      values: ["year-range"],
+      categories: ["year-range"],
+    });
   });
 
   test("concept URIs outside any supplied scheme are ignored", () => {
     expect(
-      addedFilterKeys(EMPTY, { ...EMPTY, conceptFilters: [["https://unknown/x"]] }, [
-        SCHEME_A,
-      ]),
-    ).toEqual([]);
+      activeFilters({ ...EMPTY, conceptFilters: [["https://unknown/x"]] }, [SCHEME_A]),
+    ).toEqual({ values: [], categories: [] });
   });
 });
 
