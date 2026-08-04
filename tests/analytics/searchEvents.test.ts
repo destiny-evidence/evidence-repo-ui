@@ -47,7 +47,7 @@ describe("activeFilters", () => {
       [SCHEME_A, SCHEME_B],
     );
     expect(new Set(values)).toEqual(
-      new Set([URI_JOURNAL, URI_THESIS, URI_STUDY, "KE", "UG", "year-range"]),
+      new Set([URI_JOURNAL, URI_THESIS, URI_STUDY, "KE", "UG", "2000-"]),
     );
     expect(new Set(categories)).toEqual(
       new Set([SCHEME_A.uri, SCHEME_B.uri, "country", "year-range"]),
@@ -63,9 +63,9 @@ describe("activeFilters", () => {
     expect(categories).toEqual([SCHEME_A.uri]);
   });
 
-  test("a one-sided year range still counts as year-range in both", () => {
+  test("a one-sided year range: value carries the open range, category stays generic", () => {
     expect(activeFilters({ ...EMPTY, endYear: 2020 }, [SCHEME_A])).toEqual({
-      values: ["year-range"],
+      values: ["-2020"],
       categories: ["year-range"],
     });
   });

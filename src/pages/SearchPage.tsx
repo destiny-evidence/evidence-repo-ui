@@ -228,8 +228,9 @@ function SearchPageInner({ community }: { community: Community }) {
   // "Search Performed" above, so they count for the search they actually ran on,
   // whether typed, refined in the drawer, or arriving via a deep link /
   // evidence-map jump-in. Each specific value and its category are tracked
-  // separately, since Matomo can't roll values up to categories itself. Waits
-  // for the vocabulary, without which concept filters can't be resolved.
+  // separately, since Matomo can't roll values up to categories itself. Gated on
+  // the vocabulary having settled; if it failed to load, concept filters can't be
+  // resolved and are dropped, but country and year still count.
   const lastFiltersTracked = useRef<string | null>(null);
   useEffect(() => {
     const fetched = results.resultsParams;
