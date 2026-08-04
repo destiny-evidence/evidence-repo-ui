@@ -29,6 +29,10 @@ function paramsKey(
 
 export function useSearch(params: SearchParams): {
   results: SearchResult | null;
+  // The params `results` were fetched for — may lag `params` while a new fetch
+  // is in flight (prior results stay on screen). Consumers that must pair a
+  // result set with the search it belongs to should key off this, not `params`.
+  resultsParams: SearchParams | null;
   loading: boolean;
   error: Error | null;
   retry: () => void;
@@ -40,6 +44,7 @@ export function useSearch(params: SearchParams): {
     community?.defaultAnnotations ?? [],
   );
   const [results, setResults] = useState<SearchResult | null>(null);
+  const [resultsParams, setResultsParams] = useState<SearchParams | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [retryTick, setRetryTick] = useState(0);
@@ -69,7 +74,11 @@ export function useSearch(params: SearchParams): {
     if (sort !== undefined) filters.sort = sort;
 
     searchReferences(params.q || undefined, filters)
-      .then((r) => { if (!cancelled) setResults(r); })
+      .then((r) => {
+        if (cancelled) return;
+        setResults(r);
+        setResultsParams(params);
+      })
       .catch((e) => {
         if (cancelled) return;
         setError(e);
@@ -89,7 +98,8 @@ export function useSearch(params: SearchParams): {
   // existing dim-while-updating UX). SearchPage sidesteps this because it
   // unmounts on the route-level gate. retry's identity is stable (useCallback
   // with empty deps), so returning it in idle is safe.
-  if (!community) return { results: null, loading: false, error: null, retry };
+  if (!community)
+    return { results: null, resultsParams: null, loading: false, error: null, retry };
 
-  return { results, loading, error, retry };
+  return { results, resultsParams, loading, error, retry };
 }

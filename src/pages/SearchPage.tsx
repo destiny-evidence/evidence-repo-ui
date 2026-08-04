@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import { useAuth } from "@/auth/AuthContext";
 import type { Community } from "@/types/models";
@@ -12,6 +12,7 @@ import {
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
 import { track } from "@/analytics/matomo";
+import { activeFilters, hasActiveSearch } from "@/analytics/searchEvents";
 import { backToVisualiseUrl } from "@/services/evidenceMap";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useHistoryState } from "@/hooks/useHistoryState";
@@ -53,6 +54,12 @@ interface SearchPageProps {
 // 10k is destiny-repository's max_result_window; deep pagination + exports
 // past that are explicitly out of scope. Mirrors the search backend cap.
 const EXPORT_MAX_RESULTS = 10000;
+
+// The backend serves a fixed 20 results per page and exposes no page-size
+// field. `page.count` is the number of hits on the current page (fewer on the
+// last page), not the page size, so rank and page-count math use this
+// constant rather than that value.
+const RESULTS_PER_PAGE = 20;
 
 // The summariser accepts at most 50 references per request (1–50).
 const MAX_SUMMARY_REFERENCES = 50;
@@ -177,6 +184,28 @@ function SearchPageInner({ community }: { community: Community }) {
     syncSearchIdentity(selectionIdentity);
   }, [syncSearchIdentity, selectionIdentity]);
 
+  // One "Search Performed" per distinct search (query + filters), not per fetch.
+  // Key off resultsParams (the search the current results were fetched for), not
+  // the live params: useSearch keeps prior results on screen while a new query
+  // is in flight, so the live identity can run ahead of the count. Paging/sorting
+  // keep the same identity, so they don't re-fire. No query text is sent — only
+  // the result count and a has-results/no-results bucket.
+  const lastSearchTracked = useRef<string | null>(null);
+  useEffect(() => {
+    const fetched = results.resultsParams;
+    if (!results.results || !fetched || !hasActiveSearch(fetched)) return;
+    const identity = `${community.slug}?${toQueryString({ ...fetched, page: 1, sort: undefined })}`;
+    if (lastSearchTracked.current === identity) return;
+    lastSearchTracked.current = identity;
+    const { count } = results.results.total;
+    track({
+      category: "Search",
+      action: "Performed",
+      name: count === 0 ? "no-results" : "results",
+      value: count,
+    });
+  }, [results.results, results.resultsParams, community.slug]);
+
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
   // shared cache, so the Refine button is almost always ready by the time
   // the user reaches for it. The drawer itself never renders a loading
@@ -195,10 +224,41 @@ function SearchPageInner({ community }: { community: Community }) {
     [vocab.schemes, community.filterExcludedSchemes],
   );
 
+  // Filters on the search, once per distinct search — keyed and deduped like
+  // "Search Performed" above, so they count for the search they actually ran on,
+  // whether typed, refined in the drawer, or arriving via a deep link /
+  // evidence-map jump-in. Each specific value and its category are tracked
+  // separately, since Matomo can't roll values up to categories itself. Gated on
+  // the vocabulary having settled; if it failed to load, concept filters can't be
+  // resolved and are dropped, but country and year still count.
+  const lastFiltersTracked = useRef<string | null>(null);
+  useEffect(() => {
+    const fetched = results.resultsParams;
+    if (!results.results || !fetched || !hasActiveSearch(fetched) || vocab.loading) {
+      return;
+    }
+    const identity = `${community.slug}?${toQueryString({ ...fetched, page: 1, sort: undefined })}`;
+    if (lastFiltersTracked.current === identity) return;
+    lastFiltersTracked.current = identity;
+    const { values, categories } = activeFilters(fetched, filterableSchemes);
+    for (const value of values) {
+      track({ category: "Filters", action: "Applied", name: value });
+    }
+    for (const key of categories) {
+      track({ category: "Filters", action: "Category Applied", name: key });
+    }
+  }, [results.results, results.resultsParams, community.slug, vocab.loading, filterableSchemes]);
+
+  const activeFilterCount =
+    totalSelectedCount(params.conceptFilters, filterableSchemes)
+    + totalSelectedCountryCount(params.countryCodes)
+    + totalSelectedYearCount(params.startYear, params.endYear);
+
   // Treat clicking Refine like submitting the search bar: commit any pending
   // Q edit before opening the drawer so the drawer's facet-count fetch and
   // the post-Apply navigation reflect what the user has typed.
   function handleOpenDrawer() {
+    track({ category: "Filters", action: "Drawer Opened", value: activeFilterCount });
     const committed = draft.commitDraft();
     if (params.q !== committed.q) {
       navigate(
@@ -208,13 +268,7 @@ function SearchPageInner({ community }: { community: Community }) {
     setDrawerOpen(true);
   }
 
-  const refine = buildRefineConfig(
-    vocab,
-    totalSelectedCount(params.conceptFilters, filterableSchemes)
-      + totalSelectedCountryCount(params.countryCodes)
-      + totalSelectedYearCount(params.startYear, params.endYear),
-    handleOpenDrawer,
-  );
+  const refine = buildRefineConfig(vocab, activeFilterCount, handleOpenDrawer);
 
   function handleApplyFilters(next: AppliedFilters) {
     const committed = draft.commitDraft();
@@ -258,6 +312,7 @@ function SearchPageInner({ community }: { community: Community }) {
   }
 
   function handlePageChange(page: number) {
+    track({ category: "Search", action: "Page Changed", value: page });
     navigate(buildSearchUrl(community.slug, { ...params, page }));
   }
 
@@ -289,8 +344,13 @@ function SearchPageInner({ community }: { community: Community }) {
     : `${selectionCount.toLocaleString()} selected`;
   // Any active selection clears; only an empty one selects all (Gmail-style).
   function handleToggleAll() {
-    if (selectionCount > 0) selection.clear();
-    else selection.selectAll();
+    if (selectionCount > 0) {
+      track({ category: "Selection", action: "Cleared", value: selectionCount });
+      selection.clear();
+    } else {
+      track({ category: "Selection", action: "Select All", value: selectionTotal.count });
+      selection.selectAll();
+    }
   }
 
   const overCap =
@@ -441,15 +501,13 @@ function SearchPageInner({ community }: { community: Community }) {
     });
   }
 
-  // Page size comes from the API response (page.count) so the UI stays in
-  // sync if the backend ever changes its fixed page size. Math.max guards
-  // against page.count = 0 to avoid divide-by-zero / Infinity totalPages.
   const totalPages = results.results
-    ? Math.max(
-        1,
-        Math.ceil(results.results.total.count / Math.max(1, results.results.page.count)),
-      )
+    ? Math.max(1, Math.ceil(results.results.total.count / RESULTS_PER_PAGE))
     : 1;
+
+  // Rank rows against the page the visible results were fetched for, not the
+  // live URL page, which can run ahead while a refetch is in flight.
+  const resultsPage = results.resultsParams?.page ?? params.page;
 
   // Null on a single page so the grid cell / bottom wrapper don't render empty.
   const paginationEl = results.results && totalPages > 1 ? (
@@ -605,17 +663,26 @@ function SearchPageInner({ community }: { community: Community }) {
             </div>
           )}
 
-          {results.results?.references.map((ref) => (
+          {results.results?.references.map((ref, index) => (
             <ResultRow
               key={ref.id}
               communitySlug={community.slug}
               reference={ref}
+              // 1-based rank across pages, for click-through-by-position.
+              position={(resultsPage - 1) * RESULTS_PER_PAGE + index + 1}
               codingInstitution={community.codingInstitution}
               findingsAndEstimates={community.features.findingsAndEstimates}
               pillExcludedSchemes={community.pillExcludedSchemes}
               selectable={selectable}
               selected={selection.isSelected(ref.id)}
-              onToggle={() => selection.toggle(ref.id)}
+              onToggle={() => {
+                track({
+                  category: "Selection",
+                  action: "Toggled",
+                  name: selection.isSelected(ref.id) ? "deselect" : "select",
+                });
+                selection.toggle(ref.id);
+              }}
             />
           ))}
         </div>

@@ -108,6 +108,35 @@ describe("useSearch", () => {
     await waitFor(() => expect(result.current.results?.total.count).toBe(20));
   });
 
+  // Guards the "Search Performed" analytics: resultsParams must never run ahead
+  // of results, or a new search would be tracked with the previous count.
+  test("resultsParams stays paired with the results currently shown", async () => {
+    const resolvers: ((v: SearchResult) => void)[] = [];
+    mockSearch.mockImplementation(
+      () => new Promise<SearchResult>((r) => { resolvers.push(r); }),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ p }) => useSearch(p),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { p: baseParams },
+      },
+    );
+    resolvers[0](makeResult(10));
+    await waitFor(() => expect(result.current.results?.total.count).toBe(10));
+    expect(result.current.resultsParams?.q).toBe("phonics");
+
+    // New query in flight: prior results stay, and resultsParams stays with them.
+    rerender({ p: makeSearchParams({ q: "reading" }) });
+    expect(result.current.results?.total.count).toBe(10);
+    expect(result.current.resultsParams?.q).toBe("phonics");
+
+    resolvers[1](makeResult(0));
+    await waitFor(() => expect(result.current.results?.total.count).toBe(0));
+    expect(result.current.resultsParams?.q).toBe("reading");
+  });
+
   test("clears results to null on settled error", async () => {
     mockSearch.mockResolvedValueOnce(makeResult(10));
     const { result, rerender } = renderHook(

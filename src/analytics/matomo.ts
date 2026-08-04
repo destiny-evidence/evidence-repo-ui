@@ -28,7 +28,8 @@ export function initMatomo(
   _paq.push(["disableCookies"]);
   _paq.push(["setDoNotTrack", true]);
 
-  _paq.push(["trackPageView"]);
+  // Landing pageview is deferred until after auth resolves: initMatomo also runs
+  // on the pre-redirect load of a login-required route, which would double-count.
   _paq.push(["enableLinkTracking"]);
 
   const g = document.createElement("script");

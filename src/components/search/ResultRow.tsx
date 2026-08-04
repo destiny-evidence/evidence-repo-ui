@@ -18,11 +18,15 @@ import { conceptsToTags } from "@/services/conceptLabels";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
 import { TagGroup } from "@/components/common/TagGroup";
+import { track } from "@/analytics/matomo";
 import "./ResultRow.css";
 
 interface ResultRowProps {
   communitySlug: string;
   reference: Reference;
+  // 1-based rank in the results list, tracked when the row is opened. Omitted
+  // when rendered outside a ranked list, so no position is reported.
+  position?: number;
   codingInstitution?: CodingInstitutionConfig;
   // When false, hides the finding/estimate stat-badges.
   findingsAndEstimates?: boolean;
@@ -80,6 +84,7 @@ function aggregatePillConcepts(
 export function ResultRow({
   communitySlug,
   reference,
+  position,
   codingInstitution: codingConfig,
   findingsAndEstimates = true,
   pillExcludedSchemes = NO_PILL_EXCLUSIONS,
@@ -178,6 +183,7 @@ export function ResultRow({
         class="row-link"
         href={`/${communitySlug}/references/${reference.id}`}
         aria-label={title}
+        onClick={() => track({ category: "Record", action: "Opened", value: position })}
       >
         <div class="row-title">
           {title}
@@ -201,6 +207,7 @@ export function ResultRow({
             aria-label={`DOI: ${doi}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => track({ category: "Record", action: "DOI Clicked" })}
           >
             DOI ↗
           </a>

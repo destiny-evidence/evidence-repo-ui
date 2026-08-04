@@ -3,6 +3,7 @@ import {
   track,
   trackSpaPageView,
   initSpaPageviews,
+  initMatomo,
 } from "@/analytics/matomo";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 
@@ -16,6 +17,30 @@ describe("track", () => {
     track({ category: "Search", action: "Sort Changed", name: "newest" });
     expect(window._paq).toEqual([
       ["trackEvent", "Search", "Sort Changed", "newest", undefined],
+    ]);
+  });
+
+  test("carries a numeric value and omits name when absent", () => {
+    window._paq = [];
+    track({ category: "Search", action: "Page Changed", value: 3 });
+    expect(window._paq).toEqual([
+      ["trackEvent", "Search", "Page Changed", undefined, 3],
+    ]);
+  });
+
+  test("carries both name and value", () => {
+    window._paq = [];
+    track({ category: "Search", action: "Performed", name: "no-results", value: 0 });
+    expect(window._paq).toEqual([
+      ["trackEvent", "Search", "Performed", "no-results", 0],
+    ]);
+  });
+
+  test("label-only event pushes neither name nor value", () => {
+    window._paq = [];
+    track({ category: "Filters", action: "Reset All" });
+    expect(window._paq).toEqual([
+      ["trackEvent", "Filters", "Reset All", undefined, undefined],
     ]);
   });
 });
@@ -57,6 +82,25 @@ describe("initSpaPageviews", () => {
     history.pushState(null, "", "/hpv/references/1?tab=abstract");
     window.dispatchEvent(new Event(URL_CHANGE_EVENT));
     expect(pageViews()).toHaveLength(2);
+  });
+});
+
+describe("initMatomo", () => {
+  test("configures the tracker but does not enqueue a pageview", () => {
+    // The tracker snippet inserts itself before an existing <script>; give it one.
+    const anchor = document.createElement("script");
+    document.head.appendChild(anchor);
+    onTestFinished(() => {
+      document.querySelectorAll('script[src*="matomo"]').forEach((s) => s.remove());
+      anchor.remove();
+    });
+
+    initMatomo("https://matomo.example/", "5");
+
+    expect(pageViews()).toHaveLength(0);
+    // Tracker setup is still enqueued.
+    expect(window._paq).toContainEqual(["setSiteId", "5"]);
+    expect(window._paq).toContainEqual(["enableLinkTracking"]);
   });
 });
 
