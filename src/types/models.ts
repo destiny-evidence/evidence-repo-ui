@@ -146,10 +146,16 @@ export interface CrossFacetTotals {
   mapped: SearchResultTotal;
 }
 
-export interface ReferenceCrossFacetResult {
-  // `total` is the deprecated alias for `totals.mapped`. Read both through `crossFacetTotals`.
+// As the endpoint returns it. `total` is a deprecated alias for `totals.mapped`.
+export interface ReferenceCrossFacetResponse {
   totals?: CrossFacetTotals;
   total: SearchResultTotal;
+  cells: CrossFacetCell[];
+}
+
+// Forward-compatible shape of the above with `total` collapsed into `totals`.
+export interface ReferenceCrossFacetResult {
+  totals: CrossFacetTotals;
   cells: CrossFacetCell[];
 }
 

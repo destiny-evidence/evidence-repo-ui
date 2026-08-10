@@ -9,7 +9,7 @@ import {
 } from "@/services/apiClient";
 import type {
   Reference,
-  ReferenceCrossFacetResult,
+  ReferenceCrossFacetResponse,
   ReferenceExportRead,
   ReferenceFacetResult,
   SearchResult,
@@ -207,8 +207,13 @@ describe("searchReferenceFacets", () => {
 });
 
 describe("crossFacets", () => {
-  const result: ReferenceCrossFacetResult = {
-    total: { count: 42, is_lower_bound: false },
+  // The post-split wire shape: `totals` plus the deprecated `total` alias.
+  const result: ReferenceCrossFacetResponse = {
+    totals: {
+      search: { count: 42, is_lower_bound: false },
+      mapped: { count: 30, is_lower_bound: false },
+    },
+    total: { count: 30, is_lower_bound: false },
     cells: [{ axes: ["AFE", "ex:Theme"], count: 7 }],
   };
 
@@ -253,10 +258,29 @@ describe("crossFacets", () => {
     expect(params.get("country")).toBe("DE,FR");
   });
 
-  test("returns the result from api.get", async () => {
+  test("returns the cells and both totals, dropping the deprecated alias", async () => {
     mockedGet.mockResolvedValue(result);
     const res = await crossFacets("x", {}, { axes: ["countries", "countries"] });
-    expect(res).toBe(result);
+    expect(res).toEqual({
+      totals: {
+        search: { count: 42, is_lower_bound: false },
+        mapped: { count: 30, is_lower_bound: false },
+      },
+      cells: [{ axes: ["AFE", "ex:Theme"], count: 7 }],
+    });
+  });
+
+  test("synthesises both totals from `total` on a backend predating the split", async () => {
+    const preSplit: ReferenceCrossFacetResponse = {
+      total: { count: 1961, is_lower_bound: true },
+      cells: [],
+    };
+    mockedGet.mockResolvedValue(preSplit);
+    const res = await crossFacets("x", {}, { axes: ["countries", "countries"] });
+    expect(res.totals).toEqual({
+      search: { count: 1961, is_lower_bound: true },
+      mapped: { count: 1961, is_lower_bound: true },
+    });
   });
 });
 

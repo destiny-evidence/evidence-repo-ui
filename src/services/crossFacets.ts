@@ -1,8 +1,3 @@
-import type {
-  CrossFacetTotals,
-  ReferenceCrossFacetResult,
-} from "@/types/models";
-
 export const AXIS_COUNTRIES = "countries";
 export const AXIS_REGIONS = "country_wb_regions";
 
@@ -20,15 +15,6 @@ export interface CrossFacetAxisPair {
 export interface CrossFacetQueryAxes {
   axes: [string, string];
   vocabularyUrl?: string;
-}
-
-export function crossFacetTotals(
-  result: ReferenceCrossFacetResult,
-): CrossFacetTotals {
-  return {
-    search: result.totals?.search ?? result.total,
-    mapped: result.totals?.mapped ?? result.total,
-  };
 }
 
 function axisToken(axis: CrossFacetAxis): string {

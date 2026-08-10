@@ -1,6 +1,7 @@
 import { api } from "@/api/client";
 import type {
   Reference,
+  ReferenceCrossFacetResponse,
   ReferenceCrossFacetResult,
   ReferenceFacetResult,
   ReferenceExportRead,
@@ -122,9 +123,14 @@ export async function crossFacets(
   // Repeated `axes=` param, in order — the backend reads it as a 2-tuple.
   for (const axis of axes.axes) params.append("axes", axis);
   if (axes.vocabularyUrl) params.set("vocabulary", axes.vocabularyUrl);
-  return api.get<ReferenceCrossFacetResult>(
+  const body = await api.get<ReferenceCrossFacetResponse>(
     `/v1/references/search/cross-facets/?${params.toString()}`,
   );
+  return {
+    cells: body.cells,
+    // Forward-compatible: the backend will eventually drop `total` in favour of `totals.mapped`.
+    totals: body.totals ?? { search: body.total, mapped: body.total },
+  };
 }
 
 // Server-side export payload: JSONL (streamed into the Excel workbook) or RIS

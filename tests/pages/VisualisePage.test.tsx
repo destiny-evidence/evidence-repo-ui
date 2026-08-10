@@ -82,7 +82,6 @@ function crossFacetResult(
       search: { count: search, is_lower_bound: false },
       mapped: { count: mapped, is_lower_bound: false },
     },
-    total: { count: mapped, is_lower_bound: false },
     cells: cells.map(([row, column, count]) => ({ axes: [row, column], count })),
   };
 }
