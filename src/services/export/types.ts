@@ -43,6 +43,7 @@ export interface InvestigationRow {
   reference_id: string;
   source: string | null;
   title: string | null;
+  abstract: string | null;
   authors: string | null;
   publication_year: number | null;
   doi: string | null;

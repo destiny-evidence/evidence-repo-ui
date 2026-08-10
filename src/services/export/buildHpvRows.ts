@@ -23,6 +23,7 @@ import {
 } from "@/services/vocabulary/vocabularyService";
 import type { PinnedFilter, Reference } from "@/types/models";
 
+import { truncateForCell } from "./buildRows.ts";
 import type { CellValue, ConceptResolver } from "./types.ts";
 
 export const HPV_SHEET_NAME = "References";
@@ -79,6 +80,7 @@ function buildReferenceRow(
   const authors = bib?.authorship
     ? bib.authorship.map((a) => a.display_name).join("; ")
     : null;
+  const abstract = extractAbstract(reference)?.abstract;
   const row: SheetRow = {
     "Reference ID": String(reference.id),
     Title: bib?.title ?? null,
@@ -87,7 +89,7 @@ function buildReferenceRow(
     Journal: bib?.publication_venue?.display_name ?? null,
     DOI: extractDoi(reference.identifiers),
     "EPPI ItemId": extractOtherIdentifier(reference.identifiers, "EPPI ItemId"),
-    Abstract: extractAbstract(reference)?.abstract ?? null,
+    Abstract: abstract ? truncateForCell(abstract) : null,
   };
 
   const linked = extractLinkedDataEnhancement(reference);

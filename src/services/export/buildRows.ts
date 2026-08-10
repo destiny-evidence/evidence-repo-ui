@@ -4,6 +4,7 @@
  */
 
 import {
+  extractAbstract,
   extractDoi,
   extractOpenAlexId,
   isDict,
@@ -33,6 +34,7 @@ export const SHEET_HEADERS = {
     "reference_id",
     "source",
     "title",
+    "abstract",
     "authors",
     "publication_year",
     "doi",
@@ -105,6 +107,20 @@ const ARM_KEY_FIELDS = [
 ] as const;
 
 type PlainRecord = Record<string, unknown>;
+
+// Excel rejects a cell string longer than this, so an over-long abstract would
+// otherwise produce a workbook Excel refuses to open.
+const EXCEL_CELL_LIMIT = 32767;
+const TRUNCATION_NOTICE = "... [truncated by export]";
+
+/**
+ * Clamp a cell string to Excel's per-cell limit, replacing the tail with a
+ * notice so a reader can tell truncation from a short abstract.
+ */
+export function truncateForCell(text: string): string {
+  if (text.length <= EXCEL_CELL_LIMIT) return text;
+  return text.slice(0, EXCEL_CELL_LIMIT - TRUNCATION_NOTICE.length) + TRUNCATION_NOTICE;
+}
 
 /** Normalise a JSON-LD value to a list: absent → [], array → itself, single → [value]. */
 export function ensureArray(v: unknown): unknown[] {
@@ -358,10 +374,12 @@ export function buildInvestigationRow(
   const authors = bibliographic?.authorship
     ? bibliographic.authorship.map((a) => a.display_name).join("; ")
     : null;
+  const abstract = extractAbstract(reference)?.abstract;
   return {
     reference_id: String(reference.id),
     source: codingInstitution?.fromLinkedData(reference, linked) ?? null,
     title: bibliographic?.title ?? null,
+    abstract: abstract ? truncateForCell(abstract) : null,
     authors: authors || null,
     publication_year: bibliographic?.publication_year ?? null,
     doi: extractDoi(reference.identifiers ?? null),
