@@ -3,8 +3,10 @@ import {
   AXIS_COUNTRIES,
   AXIS_REGIONS,
   axisPairToParams,
+  crossFacetTotals,
   type CrossFacetAxis,
 } from "@/services/crossFacets";
+import type { ReferenceCrossFacetResult } from "@/types/models";
 
 const VOCAB = "https://vocab.example/v1/vocabulary.ttl";
 const SCHEME = "https://vocab.example/scheme/Themes";
@@ -43,5 +45,33 @@ describe("axisPairToParams", () => {
     },
   ])("$label", ({ row, column, expected }) => {
     expect(axisPairToParams({ row, column }, VOCAB)).toEqual(expected);
+  });
+});
+
+describe("crossFacetTotals", () => {
+  test("reads both totals when the backend sends them", () => {
+    const result: ReferenceCrossFacetResult = {
+      totals: {
+        search: { count: 1961, is_lower_bound: false },
+        mapped: { count: 1332, is_lower_bound: false },
+      },
+      total: { count: 1332, is_lower_bound: false },
+      cells: [],
+    };
+    expect(crossFacetTotals(result)).toEqual({
+      search: { count: 1961, is_lower_bound: false },
+      mapped: { count: 1332, is_lower_bound: false },
+    });
+  });
+
+  test("falls back to `total` for both on a backend predating the split", () => {
+    const result: ReferenceCrossFacetResult = {
+      total: { count: 1961, is_lower_bound: true },
+      cells: [],
+    };
+    expect(crossFacetTotals(result)).toEqual({
+      search: { count: 1961, is_lower_bound: true },
+      mapped: { count: 1961, is_lower_bound: true },
+    });
   });
 });

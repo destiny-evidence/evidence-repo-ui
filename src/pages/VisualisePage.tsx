@@ -22,6 +22,7 @@ import {
 } from "@/services/evidenceMap";
 import {
   AXIS_COUNTRIES,
+  crossFacetTotals,
   type CrossFacetAxis,
   type CrossFacetAxisPair,
 } from "@/services/crossFacets";
@@ -255,6 +256,9 @@ function EvidenceMapView({
   }
 
   const noun = community.copy.countNoun;
+  // `search` counts everything the filters matched, `mapped` only the references
+  // plotted on the map — the pair the corner and the empty states report on.
+  const totals = result ? crossFacetTotals(result) : null;
   // Scheme axes draw their categories from the vocabulary, so a greyed grid can
   // render even when no cells come back (the no-coverage state).
   const hasGrid =
@@ -282,9 +286,9 @@ function EvidenceMapView({
           </p>
         ) : !result && loading ? (
           <p class="evidence-map-view__status">Loading…</p>
-        ) : !result ? null : (
+        ) : !result || !totals ? null : (
           <>
-            {result.total.count === 0 ? (
+            {totals.search.count === 0 ? (
               // Over-filtered: nothing matches the filters. The greyed grid still
               // renders below (when the axes' categories are known) so the chosen
               // axes stay visible, with a "Reset all" shortcut (wireframe #93).
@@ -308,7 +312,7 @@ function EvidenceMapView({
               // over the greyed-out grid.
               <p class="evidence-map-view__note" role="status">
                 <span class="evidence-map-view__note-count">
-                  {formatTotal(result.total)}
+                  {formatTotal(totals.search)}
                 </span>{" "}
                 {noun} match your filters, but none have a value for both{" "}
                 {rowAxis.title} and {columnAxis.title} — nothing to plot on these
@@ -325,7 +329,7 @@ function EvidenceMapView({
                 countNoun={noun}
                 rowAxisLabel={rowAxis.title}
                 columnAxisLabel={columnAxis.title}
-                total={formatTotal(result.total)}
+                total={formatTotal(totals.mapped)}
                 updating={loading}
                 // While refetching, the grid still shows the prior result but
                 // params/axes are already the new ones — a stale-cell click would
@@ -335,24 +339,24 @@ function EvidenceMapView({
                 // (stale keys) and in the over-filtered state, where adding a
                 // filter to a 0-result set is pointless.
                 onRowClick={
-                  loading || result.total.count === 0
+                  loading || totals.search.count === 0
                     ? undefined
                     : handleRowClick
                 }
                 onColumnClick={
-                  loading || result.total.count === 0
+                  loading || totals.search.count === 0
                     ? undefined
                     : handleColumnClick
                 }
-                dimmed={result.total.count === 0}
+                dimmed={totals.search.count === 0}
               />
             ) : result.cells.length > 0 ? (
               // Data exists but the vocabulary hasn't supplied categories yet.
               <p class="evidence-map-view__total">
                 <span class="evidence-map-view__total-count">
-                  {formatTotal(result.total)}
+                  {formatTotal(totals.mapped)}
                 </span>{" "}
-                {noun}
+                unique {noun}
               </p>
             ) : null}
           </>
