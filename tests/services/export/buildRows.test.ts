@@ -1,6 +1,7 @@
 import { describe, test, expect } from "vitest";
 
 import {
+  SHEET_HEADERS,
   assignArmIds,
   buildFindingRows,
   buildInvestigationRow,
@@ -131,6 +132,16 @@ function linkedEnh(
   };
 }
 
+function abstractEnh(
+  abstract: string,
+  overrides: Partial<Enhancement> = {},
+): Enhancement {
+  return makeEnh(
+    { enhancement_type: "abstract", process: "other", abstract },
+    { id: "abs-1", ...overrides },
+  );
+}
+
 describe("assignArmIds", () => {
   test("assigns sequential 1-based IDs in encounter order", () => {
     const findings: Finding[] = [
@@ -206,6 +217,40 @@ describe("buildInvestigationRow", () => {
     expect(row.documentType).toBe("Journal Article");
     expect(row.studyDesign).toBe("Randomised Controlled Trial");
     expect(row.vocabulary).toBe("https://vocab.esea.education/v1");
+  });
+
+  test("exports the abstract in the column immediately after title", () => {
+    const linked = linkedEnh({});
+    const bib = bibEnh();
+    const ref = makeRef({
+      enhancements: [bib, linked, abstractEnh("Children sang, then read.")],
+    });
+    const row = buildInvestigationRow(ref, bib.content, linked, {}, VOCAB);
+    expect(row.abstract).toBe("Children sang, then read.");
+
+    const headers = SHEET_HEADERS.investigation;
+    expect(headers.indexOf("abstract")).toBe(headers.indexOf("title") + 1);
+  });
+
+  test("abstract is null when the reference has no abstract enhancement", () => {
+    const linked = linkedEnh({});
+    const bib = bibEnh();
+    const ref = makeRef({ enhancements: [bib, linked] });
+    expect(buildInvestigationRow(ref, bib.content, linked, {}, VOCAB).abstract).toBeNull();
+  });
+
+  // Excel refuses to open a workbook containing an over-long cell, so an
+  // outsized abstract has to be cut rather than passed through.
+  test("truncates an abstract past Excel's cell limit and says so", () => {
+    const linked = linkedEnh({});
+    const bib = bibEnh();
+    const ref = makeRef({
+      enhancements: [bib, linked, abstractEnh("a".repeat(40000))],
+    });
+    const abstract = buildInvestigationRow(ref, bib.content, linked, {}, VOCAB).abstract;
+    expect(abstract).not.toBeNull();
+    expect(abstract!.length).toBe(32767);
+    expect(abstract!.endsWith("... [truncated by export]")).toBe(true);
   });
 
   // Resolver behaviour and edge cases live in
