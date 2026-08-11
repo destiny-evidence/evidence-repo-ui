@@ -24,7 +24,8 @@ interface EvidenceMapGridProps {
   countNoun: string;
   rowAxisLabel: string;
   columnAxisLabel: string;
-  // Preformatted total (e.g. "247"); shown in the corner alongside the axes.
+  // Preformatted count of the references plotted on the map (e.g. "247"); shown
+  // in the corner alongside the axes.
   total?: string;
   // Dims the grid while a new result is being fetched (the prior grid stays up).
   updating?: boolean;
@@ -120,7 +121,7 @@ export function EvidenceMapGrid({
               <th class="evidence-map__corner" scope="col">
                 {total !== undefined && (
                   <span class="evidence-map__total">
-                    <span class="evidence-map__total-count">{total}</span>{" "}
+                    <span class="evidence-map__total-count">{total}</span> unique{" "}
                     {countNoun}
                   </span>
                 )}

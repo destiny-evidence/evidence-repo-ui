@@ -45,3 +45,4 @@ describe("axisPairToParams", () => {
     expect(axisPairToParams({ row, column }, VOCAB)).toEqual(expected);
   });
 });
+

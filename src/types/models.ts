@@ -139,8 +139,23 @@ export interface CrossFacetCell {
   count: number;
 }
 
-export interface ReferenceCrossFacetResult {
+export interface CrossFacetTotals {
+  // Every reference matching the query and filters.
+  search: SearchResultTotal;
+  // The subset carrying a value on both axes, so plotted on the map.
+  mapped: SearchResultTotal;
+}
+
+// As the endpoint returns it. `total` is a deprecated alias for `totals.mapped`.
+export interface ReferenceCrossFacetResponse {
+  totals?: CrossFacetTotals;
   total: SearchResultTotal;
+  cells: CrossFacetCell[];
+}
+
+// Forward-compatible shape of the above with `total` collapsed into `totals`.
+export interface ReferenceCrossFacetResult {
+  totals: CrossFacetTotals;
   cells: CrossFacetCell[];
 }
 

@@ -41,7 +41,10 @@ function result(
   ...cells: [string, string, number][]
 ): ReferenceCrossFacetResult {
   return {
-    total: { count: 99, is_lower_bound: false },
+    totals: {
+      search: { count: 99, is_lower_bound: false },
+      mapped: { count: 99, is_lower_bound: false },
+    },
     cells: cells.map(([a0, a1, count]) => ({ axes: [a0, a1], count })),
   };
 }
@@ -52,7 +55,7 @@ beforeEach(() => {
 });
 
 describe("useCrossFacets", () => {
-  test("forwards filters, resolves axes against the Turtle vocab, returns cells + total", async () => {
+  test("forwards filters, resolves axes against the Turtle vocab, returns cells + totals", async () => {
     mockCrossFacets.mockResolvedValue(result(["AFE", SCHEME, 7]));
     const { result: hook } = renderHook(
       () => useCrossFacets(baseParams, regionVsScheme),
@@ -60,7 +63,7 @@ describe("useCrossFacets", () => {
     );
     await waitFor(() => expect(hook.current.loading).toBe(false));
 
-    expect(hook.current.result?.total.count).toBe(99);
+    expect(hook.current.result?.totals.mapped.count).toBe(99);
     expect(hook.current.result?.cells).toEqual([
       { axes: ["AFE", SCHEME], count: 7 },
     ]);

@@ -70,12 +70,18 @@ const SCHEMES: ConceptScheme[] = [
   },
 ];
 
+// `mapped` is the count plotted on the map; `search` (defaulting to it) the
+// count matching the filters, which is larger when references miss an axis.
 function crossFacetResult(
-  total: number,
+  mapped: number,
   cells: [string, string, number][],
+  search: number = mapped,
 ): ReferenceCrossFacetResult {
   return {
-    total: { count: total, is_lower_bound: false },
+    totals: {
+      search: { count: search, is_lower_bound: false },
+      mapped: { count: mapped, is_lower_bound: false },
+    },
     cells: cells.map(([row, column, count]) => ({ axes: [row, column], count })),
   };
 }
@@ -150,8 +156,11 @@ describe("VisualisePage map", () => {
       loading: false,
       error: null,
     });
-    render(<VisualisePage />);
-    expect(screen.getByText("20")).toBeInTheDocument();
+    const { container } = render(<VisualisePage />);
+    // The corner reports what's on the map, not what matched the filters.
+    expect(container.querySelector(".evidence-map__total")?.textContent).toBe(
+      "20 unique results",
+    );
     // Column/row labels resolved via the vocabulary.
     expect(screen.getByRole("columnheader", { name: "Literacy" })).toBeInTheDocument();
     expect(screen.getByRole("rowheader", { name: "Primary" })).toBeInTheDocument();
@@ -159,6 +168,22 @@ describe("VisualisePage map", () => {
     expect(
       screen.getByText(/click a cell to view matching/i),
     ).toBeInTheDocument();
+  });
+
+  test("corner counts the mapped subset, not everything matching the filters", () => {
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(
+        1332,
+        [["level:primary", "theme:literacy", 5]],
+        1961,
+      ),
+      loading: false,
+      error: null,
+    });
+    const { container } = render(<VisualisePage />);
+    expect(container.querySelector(".evidence-map__total")?.textContent).toBe(
+      "1,332 unique results",
+    );
   });
 
   test("renders zero-hit rows and columns from the vocabulary", () => {
@@ -274,14 +299,21 @@ describe("VisualisePage map", () => {
       loading: false,
       error: null,
     });
-    // References match the filters, but the endpoint returned no cells.
+    // References match the filters, but none carry a value on both axes.
     mockUseCrossFacets.mockReturnValue({
-      result: crossFacetResult(7, []),
+      result: crossFacetResult(0, [], 7),
       loading: false,
       error: null,
     });
     const { container } = render(<VisualisePage />);
     expect(screen.getByText(/none have a value for both/i)).toBeInTheDocument();
+    // The note counts what matched the filters; the corner what's on the map.
+    expect(
+      container.querySelector(".evidence-map-view__note-count")?.textContent,
+    ).toBe("7");
+    expect(container.querySelector(".evidence-map__total")?.textContent).toBe(
+      "0 unique results",
+    );
     // Not the over-filtered warning — loosening filters wouldn't help.
     expect(container.querySelector(".evidence-map-view__banner")).toBeNull();
     // The grid still renders (greyed) so the chosen axes stay visible.
