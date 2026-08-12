@@ -39,7 +39,11 @@ export function AiSummaryMiniChip({ ai }: AiSummaryMiniChipProps) {
           View
         </button>
       ) : (
-        <button type="button" class="ai-mini__cancel" onClick={ai.dismiss}>
+        <button
+          type="button"
+          class="ai-mini__cancel"
+          onClick={() => ai.dismiss("chip")}
+        >
           Cancel
         </button>
       )}

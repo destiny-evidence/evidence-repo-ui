@@ -28,7 +28,7 @@ export function AiSummaryProvider({ children }: { children: ComponentChildren })
     } else if (ownerSlug.current === null) {
       ownerSlug.current = currentSlug;
     } else if (ownerSlug.current !== currentSlug) {
-      ai.dismiss();
+      ai.dismiss("community-switch");
     }
   }, [ai.status, ai.dismiss, currentSlug]);
 

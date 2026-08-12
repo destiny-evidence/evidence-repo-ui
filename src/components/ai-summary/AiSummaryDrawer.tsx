@@ -2,6 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import { Drawer } from "@/components/common/Drawer";
 import { Spinner } from "@/components/common/Spinner";
 import { DownloadIcon, WarningIcon } from "@/components/common/icons";
+import { track } from "@/analytics/matomo";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 import type {
@@ -40,7 +41,9 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
   // does. While generating, close drops it to the background chip; once there's
   // nothing running, close clears the finished summary.
   const handleClose =
-    ai.status === "generating" ? ai.runInBackground : ai.dismiss;
+    ai.status === "generating"
+      ? () => ai.runInBackground("close")
+      : () => ai.dismiss();
   const context = ai.context;
 
   // The summary's bibliography: a RIS export of the same reference set.
@@ -208,6 +211,8 @@ function SavePdfButton({
         originUrl,
         references.inputs,
       );
+      // After the await: a failed render never reached the user as a download.
+      track({ category: "AISummary", action: "Downloaded" });
     } catch {
       setFailed(true);
     } finally {
@@ -249,13 +254,17 @@ function DrawerFooter({
   if (ai.status === "generating") {
     return (
       <footer class="ai-drawer__footer">
-        <button type="button" class="ai-btn" onClick={ai.dismiss}>
+        <button
+          type="button"
+          class="ai-btn"
+          onClick={() => ai.dismiss("drawer")}
+        >
           Cancel
         </button>
         <button
           type="button"
           class="ai-btn ai-btn--primary ai-btn--push"
-          onClick={ai.runInBackground}
+          onClick={() => ai.runInBackground("button")}
         >
           Run in background
         </button>
@@ -276,7 +285,11 @@ function DrawerFooter({
         />
       )}
       {showOpenSearch && (
-        <a class="ai-btn" href={ai.originUrl ?? undefined}>
+        <a
+          class="ai-btn"
+          href={ai.originUrl ?? undefined}
+          onClick={() => track({ category: "AISummary", action: "Search Opened" })}
+        >
           Open this search ↗
         </a>
       )}
@@ -286,6 +299,7 @@ function DrawerFooter({
           href={AI_SUMMARY_FLAG_FORM_URL}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => track({ category: "AISummary", action: "Flagged" })}
         >
           ⚑ Flag this summary
         </a>
