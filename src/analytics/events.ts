@@ -17,6 +17,27 @@ export type AnalyticsEvent =
   // name: category (concept-scheme uri | country | year-range); one per active category
   | { category: "Filters"; action: "Category Applied"; name: string }
   | { category: "Filters"; action: "Reset All" }
+  // name: `${rowDim} x ${colDim}` — every view, defaults included: what gets
+  // looked at, not what gets chosen.
+  | { category: "EvidenceMap"; action: "Map Viewed"; name: string }
+  // name: `${rowDim} x ${colDim}` — the pair switched to; only on a real change.
+  | { category: "EvidenceMap"; action: "Axes Changed"; name: string }
+  // name: specific value (concept uri | country code | year-range); one per active value
+  | { category: "EvidenceMap"; action: "Filter Applied"; name: string }
+  // name: category (concept-scheme uri | country | year-range); one per active category
+  | { category: "EvidenceMap"; action: "Filter Category Applied"; name: string }
+  // name: bubble | table
+  | { category: "EvidenceMap"; action: "View Toggled"; name: string }
+  // name: `${rowValue} x ${columnValue}` — the cell's two axis values
+  | { category: "EvidenceMap"; action: "Cell Clicked"; name: string }
+  // name: axis value clicked in the header
+  | { category: "EvidenceMap"; action: "Row Clicked"; name: string }
+  | { category: "EvidenceMap"; action: "Column Clicked"; name: string }
+  // name: panel (draft reset) | banner (over-filtered shortcut)
+  | { category: "EvidenceMap"; action: "Reset All"; name: string }
+  // name: over-filtered (nothing matches the filters) | no-coverage (matches
+  // exist, but none carry a value on both axes)
+  | { category: "EvidenceMap"; action: "No Coverage"; name: string }
   // name: select | deselect
   | { category: "Selection"; action: "Toggled"; name: string }
   // value: selected count after selecting all

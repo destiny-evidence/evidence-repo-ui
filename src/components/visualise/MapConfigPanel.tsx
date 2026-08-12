@@ -5,6 +5,7 @@ import {
   useFilterDraft,
   type AppliedFilters,
 } from "@/components/filters/useFilterDraft";
+import { track } from "@/analytics/matomo";
 import { axisToken, localName, parseAxis } from "@/services/evidenceMap";
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
 import {
@@ -123,6 +124,9 @@ export function MapConfigPanel({
   const canApply = (axesDirty || draft.dirty) && draft.yearValidation.ok;
 
   function handleReset() {
+    // Named apart from the over-filtered banner's one-click reset: this one only
+    // clears the draft, so it needn't end in a committed view.
+    track({ category: "EvidenceMap", action: "Reset All", name: "panel" });
     setRowDraft(defaultAxes.row);
     setColumnDraft(defaultAxes.column);
     draft.reset();
