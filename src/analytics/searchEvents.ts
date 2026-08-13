@@ -1,6 +1,6 @@
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import {
-  indexConceptLabels,
+  indexConceptPaths,
   parseConceptFilters,
 } from "@/components/filters/conceptSchemeFilterState";
 import {
@@ -23,18 +23,20 @@ export function hasActiveSearch(params: SearchParams): boolean {
   );
 }
 
+// Concept values carry their whole branch, root first, so a nested concept says
+// where it sits.
+const PATH_SEPARATOR = " > ";
+
 // The filters active in a committed search, at both granularities we track:
-// `values` is the specific selections — each concept, each country, and the
-// `start-end` year range — feeding one `Applied` event each; `categories` is the
-// facet each belongs to (the concept scheme, plus "Country" and "Year range"),
-// feeding one `Category Applied` event each. Both are emitted because Matomo
-// can't roll values up to their category itself. Concept uris outside any
-// supplied scheme are dropped from both.
+// `values` is the specific selections — each concept's path, each country, and
+// the `start-end` year range — feeding one `Applied` event each; `categories` is
+// the facet each belongs to (the concept scheme, plus "Country" and "Year
+// range"), feeding one `Category Applied` event each.
 export function activeFilters(
   filters: AppliedFilters,
   schemes: ConceptScheme[],
 ): { values: string[]; categories: string[] } {
-  const conceptLabels = indexConceptLabels(schemes);
+  const conceptPaths = indexConceptPaths(schemes);
   const values: string[] = [];
   const categories: string[] = [];
 
@@ -43,7 +45,9 @@ export function activeFilters(
     // Neither lookup can miss — both read the schemes parseConceptFilters
     // matched against. The uri is filler to satisfy the types.
     categories.push(scheme ? schemeDisplayLabel(scheme.label) : schemeUri);
-    for (const uri of uris) values.push(conceptLabels.get(uri) ?? uri);
+    for (const uri of uris) {
+      values.push(conceptPaths.get(uri)?.join(PATH_SEPARATOR) ?? uri);
+    }
   }
   if (filters.countryCodes.length > 0) {
     categories.push("Country");

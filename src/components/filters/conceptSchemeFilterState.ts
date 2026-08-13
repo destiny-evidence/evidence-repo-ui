@@ -81,16 +81,23 @@ export function toConceptFilterGroups(
   return group.length > 0 ? [group] : [];
 }
 
-/** Every concept in every scheme, by uri → label. Nested concepts included. */
-export function indexConceptLabels(
+/**
+ * Every concept in every scheme, by uri → the labels from its scheme's top
+ * concept down to itself. A top concept's path is just its own label. The scheme
+ * is not included; callers that want it have it already.
+ */
+export function indexConceptPaths(
   schemes: ConceptScheme[],
-): Map<string, string> {
-  const index = new Map<string, string>();
-  for (const scheme of schemes) {
-    for (const concept of walkConcepts(scheme.topConcepts)) {
-      index.set(concept.uri, concept.label);
+): Map<string, string[]> {
+  const index = new Map<string, string[]>();
+  const visit = (concepts: Concept[], ancestors: string[]) => {
+    for (const concept of concepts) {
+      const path = [...ancestors, concept.label];
+      index.set(concept.uri, path);
+      if (concept.narrower) visit(concept.narrower, path);
     }
-  }
+  };
+  for (const scheme of schemes) visit(scheme.topConcepts, []);
   return index;
 }
 
