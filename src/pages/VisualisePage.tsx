@@ -15,6 +15,7 @@ import {
   buildEvidenceMapModel,
   parseAxis,
   resolveMapAxis,
+  type ResolvedAxis,
   cellSearchParams,
   axisSearchParams,
   backToVisualiseState,
@@ -74,10 +75,17 @@ function resolveAxes(search: string, defaults: EvidenceMapAxes): EvidenceMapAxes
   return { row: parseAxis(row), column: parseAxis(column) };
 }
 
-// The axis pair as analytics reports it — also what "did the axes change?" is
-// decided on.
-function axisPairName(axes: EvidenceMapAxes): string {
+// Identity of an axis pair — what "did the axes change?" is decided on. Tokens,
+// not the titles analytics reports, so two schemes sharing a title still read as
+// a change.
+function axisPairToken(axes: EvidenceMapAxes): string {
   return `${axisToken(axes.row)} x ${axisToken(axes.column)}`;
+}
+
+// The axis pair as analytics reports it: scheme titles, so Matomo reads
+// "Education Level x Education Theme" rather than a pair of uris (#239).
+function axisPairTitle(row: ResolvedAxis, column: ResolvedAxis): string {
+  return `${row.title} x ${column.title}`;
 }
 
 // Canonical query string: the filter params followed by the explicit axes, so
@@ -222,7 +230,7 @@ function EvidenceMapView({
     track({
       category: "EvidenceMap",
       action: "Map Viewed",
-      name: axisPairName(displayAxes),
+      name: axisPairTitle(rowAxis, columnAxis),
     });
 
     const { values, categories } = activeFilters(trackedParams, filterableSchemes);
@@ -250,7 +258,15 @@ function EvidenceMapView({
         name: "no-coverage",
       });
     }
-  }, [result, trackedParams, displayAxes, vocab.loading, filterableSchemes]);
+  }, [
+    result,
+    trackedParams,
+    displayAxes,
+    rowAxis,
+    columnAxis,
+    vocab.loading,
+    filterableSchemes,
+  ]);
 
   // Commit the panel's drafted axes + filters to the URL; the map re-renders
   // off the new params (page reset, like the search page).
@@ -263,11 +279,14 @@ function EvidenceMapView({
   }) {
     // Deliberately-chosen axes, as opposed to the ones a view merely landed on —
     // the map's own default pair would otherwise dominate `Map Viewed`.
-    if (axisPairName(nextAxes) !== axisPairName(axes)) {
+    if (axisPairToken(nextAxes) !== axisPairToken(axes)) {
       track({
         category: "EvidenceMap",
         action: "Axes Changed",
-        name: axisPairName(nextAxes),
+        name: axisPairTitle(
+          resolveMapAxis(nextAxes.row, vocab.schemes, vocab.labels),
+          resolveMapAxis(nextAxes.column, vocab.schemes, vocab.labels),
+        ),
       });
     }
     const nextParams: SearchParams = {
@@ -290,7 +309,7 @@ function EvidenceMapView({
     track({
       category: "EvidenceMap",
       action: "Cell Clicked",
-      name: `${row.key} x ${column.key}`,
+      name: `${row.label} x ${column.label}`,
     });
     deepLinkToSearch(cellSearchParams(params, axes, row, column));
   }
@@ -298,7 +317,7 @@ function EvidenceMapView({
   // Same deep-link, but filtered by a single axis category (a row/column header
   // click) rather than both.
   function handleRowClick(row: AxisCategory) {
-    track({ category: "EvidenceMap", action: "Row Clicked", name: row.key });
+    track({ category: "EvidenceMap", action: "Row Clicked", name: row.label });
     deepLinkToSearch(axisSearchParams(params, axes.row, row));
   }
 
@@ -306,7 +325,7 @@ function EvidenceMapView({
     track({
       category: "EvidenceMap",
       action: "Column Clicked",
-      name: column.key,
+      name: column.label,
     });
     deepLinkToSearch(axisSearchParams(params, axes.column, column));
   }

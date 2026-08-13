@@ -369,11 +369,11 @@ describe("VisualisePage analytics", () => {
     const { rerender } = render(<VisualisePage />);
 
     expect(mapEvents()).toEqual([
-      ["trackEvent", "EvidenceMap", "Map Viewed", "scheme:level x scheme:theme", undefined],
-      ["trackEvent", "EvidenceMap", "Filter Applied", "level:primary", undefined],
-      ["trackEvent", "EvidenceMap", "Filter Applied", "KE", undefined],
-      ["trackEvent", "EvidenceMap", "Filter Category Applied", "scheme:level", undefined],
-      ["trackEvent", "EvidenceMap", "Filter Category Applied", "country", undefined],
+      ["trackEvent", "EvidenceMap", "Map Viewed", "Education Level x Education Theme", undefined],
+      ["trackEvent", "EvidenceMap", "Filter Applied", "Primary", undefined],
+      ["trackEvent", "EvidenceMap", "Filter Applied", "Kenya", undefined],
+      ["trackEvent", "EvidenceMap", "Filter Category Applied", "Education Level", undefined],
+      ["trackEvent", "EvidenceMap", "Filter Category Applied", "Country", undefined],
     ]);
 
     // Same view re-rendered: no re-count.
@@ -395,8 +395,8 @@ describe("VisualisePage analytics", () => {
     render(<VisualisePage />);
 
     expect(mapEvents("Filter Applied").map((e) => e[3])).toEqual([
-      "level:primary",
-      "KE",
+      "Primary",
+      "Kenya",
     ]);
   });
 
@@ -458,12 +458,10 @@ describe("VisualisePage analytics", () => {
     );
 
     expect(mapEvents("View Toggled").map((e) => e[3])).toEqual(["table"]);
-    expect(mapEvents("Column Clicked").map((e) => e[3])).toEqual([
-      "theme:literacy",
-    ]);
-    expect(mapEvents("Row Clicked").map((e) => e[3])).toEqual(["level:primary"]);
+    expect(mapEvents("Column Clicked").map((e) => e[3])).toEqual(["Literacy"]);
+    expect(mapEvents("Row Clicked").map((e) => e[3])).toEqual(["Primary"]);
     expect(mapEvents("Cell Clicked").map((e) => e[3])).toEqual([
-      "level:primary x theme:literacy",
+      "Primary x Literacy",
     ]);
   });
 
@@ -488,7 +486,7 @@ describe("VisualisePage analytics", () => {
     )!;
     fireEvent.click(within(banner).getByRole("button", { name: "Reset all" }));
     expect(mapEvents("Axes Changed").map((e) => e[3])).toEqual([
-      "scheme:level x scheme:theme",
+      "Education Level x Education Theme",
     ]);
   });
 
