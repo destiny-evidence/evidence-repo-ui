@@ -27,6 +27,19 @@ export function hasActiveSearch(params: SearchParams): boolean {
 // where it sits.
 const PATH_SEPARATOR = " > ";
 
+/**
+ * A concept's branch as analytics names it. `fallback` covers values the index
+ * can't place — a country code, or a cell key the axis doesn't enumerate.
+ * Shared with the evidence map so its clicks and its filters read alike.
+ */
+export function conceptPathName(
+  paths: ReadonlyMap<string, string[]>,
+  uri: string,
+  fallback: string,
+): string {
+  return paths.get(uri)?.join(PATH_SEPARATOR) ?? fallback;
+}
+
 // The filters active in a committed search, at both granularities we track:
 // `values` is the specific selections — each concept's path, each country, and
 // the `start-end` year range — feeding one `Applied` event each; `categories` is
@@ -46,7 +59,7 @@ export function activeFilters(
     // matched against. The uri is filler to satisfy the types.
     categories.push(scheme ? schemeDisplayLabel(scheme.label) : schemeUri);
     for (const uri of uris) {
-      values.push(conceptPaths.get(uri)?.join(PATH_SEPARATOR) ?? uri);
+      values.push(conceptPathName(conceptPaths, uri, uri));
     }
   }
   if (filters.countryCodes.length > 0) {

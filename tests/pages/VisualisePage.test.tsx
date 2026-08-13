@@ -71,6 +71,23 @@ const SCHEMES: ConceptScheme[] = [
   },
 ];
 
+// The theme scheme with Literacy nested under Learning, so a reported value can
+// be told apart from a bare leaf label.
+const NESTED_SCHEMES: ConceptScheme[] = [
+  SCHEMES[0],
+  {
+    uri: "scheme:theme",
+    label: "Education Theme Scheme",
+    topConcepts: [
+      {
+        uri: "theme:learning",
+        label: "Learning",
+        narrower: [{ uri: "theme:literacy", label: "Literacy" }],
+      },
+    ],
+  },
+];
+
 // `mapped` is the count plotted on the map; `search` (defaulting to it) the
 // count matching the filters, which is larger when references miss an axis.
 function crossFacetResult(
@@ -369,7 +386,7 @@ describe("VisualisePage analytics", () => {
     const { rerender } = render(<VisualisePage />);
 
     expect(mapEvents()).toEqual([
-      ["trackEvent", "EvidenceMap", "Map Viewed", "Education Level x Education Theme", undefined],
+      ["trackEvent", "EvidenceMap", "Map Viewed", "Education Level × Education Theme", undefined],
       ["trackEvent", "EvidenceMap", "Filter Applied", "Primary", undefined],
       ["trackEvent", "EvidenceMap", "Filter Applied", "Kenya", undefined],
       ["trackEvent", "EvidenceMap", "Filter Category Applied", "Education Level", undefined],
@@ -461,7 +478,38 @@ describe("VisualisePage analytics", () => {
     expect(mapEvents("Column Clicked").map((e) => e[3])).toEqual(["Literacy"]);
     expect(mapEvents("Row Clicked").map((e) => e[3])).toEqual(["Primary"]);
     expect(mapEvents("Cell Clicked").map((e) => e[3])).toEqual([
-      "Primary x Literacy",
+      "Primary × Literacy",
+    ]);
+  });
+
+  test("a clicked value carries its branch, the way a filter on it would", () => {
+    mockUseUrlParams.mockReturnValue("");
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: NESTED_SCHEMES,
+      loading: false,
+      error: null,
+    });
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(6, [["level:primary", "theme:literacy", 6]]),
+      resultParams: parseSearchParams(""),
+      loading: false,
+      error: null,
+    });
+    render(<VisualisePage />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Literacy: view matching results." }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Primary, Literacy:/ }));
+
+    expect(mapEvents("Column Clicked").map((e) => e[3])).toEqual([
+      "Learning > Literacy",
+    ]);
+    expect(mapEvents("Cell Clicked").map((e) => e[3])).toEqual([
+      "Primary × Learning > Literacy",
     ]);
   });
 
@@ -486,7 +534,7 @@ describe("VisualisePage analytics", () => {
     )!;
     fireEvent.click(within(banner).getByRole("button", { name: "Reset all" }));
     expect(mapEvents("Axes Changed").map((e) => e[3])).toEqual([
-      "Education Level x Education Theme",
+      "Education Level × Education Theme",
     ]);
   });
 

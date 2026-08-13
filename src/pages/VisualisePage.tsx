@@ -32,7 +32,8 @@ import type {
   EvidenceMapAxis,
 } from "@/types/models";
 import { track } from "@/analytics/matomo";
-import { activeFilters } from "@/analytics/searchEvents";
+import { activeFilters, conceptPathName } from "@/analytics/searchEvents";
+import { indexConceptPaths } from "@/components/filters/conceptSchemeFilterState";
 import { formatTotal } from "@/utils/searchTotal";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
 import { ViewToggle, type MapView } from "@/components/visualise/ViewToggle";
@@ -82,10 +83,11 @@ function axisPairToken(axes: EvidenceMapAxes): string {
   return `${axisToken(axes.row)} x ${axisToken(axes.column)}`;
 }
 
-// The axis pair as analytics reports it: scheme titles, so Matomo reads
-// "Education Level x Education Theme" rather than a pair of uris (#239).
+const PAIR_SEPARATOR = " × ";
+
+// The axis pair as analytics reports it
 function axisPairTitle(row: ResolvedAxis, column: ResolvedAxis): string {
-  return `${row.title} x ${column.title}`;
+  return `${row.title}${PAIR_SEPARATOR}${column.title}`;
 }
 
 // Canonical query string: the filter params followed by the explicit axes, so
@@ -143,6 +145,13 @@ function EvidenceMapView({
         (s) => !community.filterExcludedSchemes.includes(s.uri),
       ),
     [vocab.schemes, community.filterExcludedSchemes],
+  );
+
+  // Branch paths for every concept the vocabulary knows — not just the
+  // filterable subset, since an axis can be pointed at any scheme by URL.
+  const conceptPaths = useMemo(
+    () => indexConceptPaths(vocab.schemes ?? []),
+    [vocab.schemes],
   );
 
   const axisPair = useMemo<CrossFacetAxisPair>(
@@ -309,7 +318,7 @@ function EvidenceMapView({
     track({
       category: "EvidenceMap",
       action: "Cell Clicked",
-      name: `${row.label} x ${column.label}`,
+      name: `${categoryName(row)}${PAIR_SEPARATOR}${categoryName(column)}`,
     });
     deepLinkToSearch(cellSearchParams(params, axes, row, column));
   }
@@ -317,7 +326,11 @@ function EvidenceMapView({
   // Same deep-link, but filtered by a single axis category (a row/column header
   // click) rather than both.
   function handleRowClick(row: AxisCategory) {
-    track({ category: "EvidenceMap", action: "Row Clicked", name: row.label });
+    track({
+      category: "EvidenceMap",
+      action: "Row Clicked",
+      name: categoryName(row),
+    });
     deepLinkToSearch(axisSearchParams(params, axes.row, row));
   }
 
@@ -325,9 +338,15 @@ function EvidenceMapView({
     track({
       category: "EvidenceMap",
       action: "Column Clicked",
-      name: column.label,
+      name: categoryName(column),
     });
     deepLinkToSearch(axisSearchParams(params, axes.column, column));
+  }
+
+  // Clicked axis values report the same way filters do — the concept's whole
+  // branch. A countries axis has no branch, so it falls back to the label.
+  function categoryName(category: AxisCategory): string {
+    return conceptPathName(conceptPaths, category.key, category.label);
   }
 
   // Navigate into Search with the given params, stashing the map's own URL in
