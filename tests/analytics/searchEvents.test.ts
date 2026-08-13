@@ -46,12 +46,42 @@ describe("activeFilters", () => {
       },
       [SCHEME_A, SCHEME_B],
     );
+    // Labels, not uris — these land in Matomo as-is and are read unaided.
     expect(new Set(values)).toEqual(
-      new Set([URI_JOURNAL, URI_THESIS, URI_STUDY, "KE", "UG", "2000-"]),
+      new Set(["Journal Article", "Thesis", "RCT", "Kenya", "Uganda", "2000-"]),
     );
     expect(new Set(categories)).toEqual(
-      new Set([SCHEME_A.uri, SCHEME_B.uri, "country", "year-range"]),
+      new Set(["Document type", "Study design", "Country", "Year range"]),
     );
+  });
+
+  test("a nested concept resolves to its label, not its uri", () => {
+    const scheme: ConceptScheme = {
+      uri: "https://vocab.esea.education/OutcomeScheme",
+      label: "Outcome Scheme",
+      topConcepts: [
+        {
+          uri: "https://vocab.esea.education/OutcomeScheme/C1",
+          label: "Learning",
+          narrower: [
+            {
+              uri: "https://vocab.esea.education/OutcomeScheme/C2",
+              label: "Literacy",
+            },
+          ],
+        },
+      ],
+    };
+    const { values, categories } = activeFilters(
+      {
+        ...EMPTY,
+        conceptFilters: [["https://vocab.esea.education/OutcomeScheme/C2"]],
+      },
+      [scheme],
+    );
+    expect(values).toEqual(["Literacy"]);
+    // "Scheme" is implementation detail of SKOS, dropped for the reader.
+    expect(categories).toEqual(["Outcome"]);
   });
 
   test("multiple concepts in a scheme are many values but one category", () => {
@@ -59,14 +89,14 @@ describe("activeFilters", () => {
       { ...EMPTY, conceptFilters: [[URI_JOURNAL, URI_THESIS]] },
       [SCHEME_A],
     );
-    expect(new Set(values)).toEqual(new Set([URI_JOURNAL, URI_THESIS]));
-    expect(categories).toEqual([SCHEME_A.uri]);
+    expect(new Set(values)).toEqual(new Set(["Journal Article", "Thesis"]));
+    expect(categories).toEqual(["Document type"]);
   });
 
   test("a one-sided year range: value carries the open range, category stays generic", () => {
     expect(activeFilters({ ...EMPTY, endYear: 2020 }, [SCHEME_A])).toEqual({
       values: ["-2020"],
-      categories: ["year-range"],
+      categories: ["Year range"],
     });
   });
 

@@ -81,6 +81,19 @@ export function toConceptFilterGroups(
   return group.length > 0 ? [group] : [];
 }
 
+/** Every concept in every scheme, by uri → label. Nested concepts included. */
+export function indexConceptLabels(
+  schemes: ConceptScheme[],
+): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const scheme of schemes) {
+    for (const concept of walkConcepts(scheme.topConcepts)) {
+      index.set(concept.uri, concept.label);
+    }
+  }
+  return index;
+}
+
 function indexConceptUrisByScheme(
   schemes: ConceptScheme[],
 ): Map<string, string> {

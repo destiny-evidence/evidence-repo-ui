@@ -289,9 +289,10 @@ describe("SearchPage", () => {
     const filterEvents = (window._paq ?? []).filter(
       (e) => e[0] === "trackEvent" && e[1] === "Filters" && e[2] !== "Drawer Opened",
     );
+    // Reported by label, so Matomo is readable without a uri lookup (#239).
     expect(filterEvents).toEqual([
-      ["trackEvent", "Filters", "Applied", URI_LEARNING, undefined],
-      ["trackEvent", "Filters", "Category Applied", OUTCOME_SCHEME_FIXTURE.uri, undefined],
+      ["trackEvent", "Filters", "Applied", "Educational Outcomes and Learning", undefined],
+      ["trackEvent", "Filters", "Category Applied", "Outcome", undefined],
     ]);
     window._paq = undefined;
   });
