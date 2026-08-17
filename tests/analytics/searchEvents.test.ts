@@ -21,6 +21,29 @@ const SCHEME_B: ConceptScheme = {
   topConcepts: [{ uri: URI_STUDY, label: "RCT" }],
 };
 
+// Three levels deep, so a path can't accidentally pass by carrying only the
+// immediate parent.
+const URI_LEARNING = "https://vocab.esea.education/OutcomeScheme/C1";
+const URI_LITERACY = "https://vocab.esea.education/OutcomeScheme/C2";
+const URI_PHONICS = "https://vocab.esea.education/OutcomeScheme/C3";
+const NESTED_SCHEME: ConceptScheme = {
+  uri: "https://vocab.esea.education/OutcomeScheme",
+  label: "Outcome Scheme",
+  topConcepts: [
+    {
+      uri: URI_LEARNING,
+      label: "Learning",
+      narrower: [
+        {
+          uri: URI_LITERACY,
+          label: "Literacy",
+          narrower: [{ uri: URI_PHONICS, label: "Phonics" }],
+        },
+      ],
+    },
+  ],
+};
+
 const EMPTY: AppliedFilters = {
   conceptFilters: [],
   countryCodes: [],
@@ -47,11 +70,37 @@ describe("activeFilters", () => {
       [SCHEME_A, SCHEME_B],
     );
     expect(new Set(values)).toEqual(
-      new Set([URI_JOURNAL, URI_THESIS, URI_STUDY, "KE", "UG", "2000-"]),
+      new Set(["Journal Article", "Thesis", "RCT", "Kenya", "Uganda", "2000-"]),
     );
     expect(new Set(categories)).toEqual(
-      new Set([SCHEME_A.uri, SCHEME_B.uri, "country", "year-range"]),
+      new Set(["Document type", "Study design", "Country", "Year range"]),
     );
+  });
+
+  test("a nested concept carries its whole branch, root first", () => {
+    const { values, categories } = activeFilters(
+      { ...EMPTY, conceptFilters: [[URI_PHONICS]] },
+      [NESTED_SCHEME],
+    );
+    expect(values).toEqual(["Learning > Literacy > Phonics"]);
+    // "Scheme" is implementation detail of SKOS, dropped for the reader.
+    expect(categories).toEqual(["Outcome"]);
+  });
+
+  test("a top concept is its own path, with no separator", () => {
+    expect(
+      activeFilters({ ...EMPTY, conceptFilters: [[URI_LEARNING]] }, [
+        NESTED_SCHEME,
+      ]).values,
+    ).toEqual(["Learning"]);
+  });
+
+  test("selecting a parent does not enumerate its children", () => {
+    expect(
+      activeFilters({ ...EMPTY, conceptFilters: [[URI_LITERACY]] }, [
+        NESTED_SCHEME,
+      ]).values,
+    ).toEqual(["Learning > Literacy"]);
   });
 
   test("multiple concepts in a scheme are many values but one category", () => {
@@ -59,20 +108,22 @@ describe("activeFilters", () => {
       { ...EMPTY, conceptFilters: [[URI_JOURNAL, URI_THESIS]] },
       [SCHEME_A],
     );
-    expect(new Set(values)).toEqual(new Set([URI_JOURNAL, URI_THESIS]));
-    expect(categories).toEqual([SCHEME_A.uri]);
+    expect(new Set(values)).toEqual(new Set(["Journal Article", "Thesis"]));
+    expect(categories).toEqual(["Document type"]);
   });
 
   test("a one-sided year range: value carries the open range, category stays generic", () => {
     expect(activeFilters({ ...EMPTY, endYear: 2020 }, [SCHEME_A])).toEqual({
       values: ["-2020"],
-      categories: ["year-range"],
+      categories: ["Year range"],
     });
   });
 
   test("concept URIs outside any supplied scheme are ignored", () => {
     expect(
-      activeFilters({ ...EMPTY, conceptFilters: [["https://unknown/x"]] }, [SCHEME_A]),
+      activeFilters({ ...EMPTY, conceptFilters: [["https://unknown/x"]] }, [
+        SCHEME_A,
+      ]),
     ).toEqual({ values: [], categories: [] });
   });
 });
@@ -87,8 +138,12 @@ describe("hasActiveSearch", () => {
   });
 
   test("true for a filter-only browse", () => {
-    expect(hasActiveSearch(makeSearchParams({ countryCodes: ["DE"] }))).toBe(true);
-    expect(hasActiveSearch(makeSearchParams({ conceptFilters: [["x"]] }))).toBe(true);
+    expect(hasActiveSearch(makeSearchParams({ countryCodes: ["DE"] }))).toBe(
+      true,
+    );
+    expect(hasActiveSearch(makeSearchParams({ conceptFilters: [["x"]] }))).toBe(
+      true,
+    );
     expect(hasActiveSearch(makeSearchParams({ startYear: 2000 }))).toBe(true);
     expect(hasActiveSearch(makeSearchParams({ endYear: 2020 }))).toBe(true);
   });

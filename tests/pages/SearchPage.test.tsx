@@ -290,8 +290,8 @@ describe("SearchPage", () => {
       (e) => e[0] === "trackEvent" && e[1] === "Filters" && e[2] !== "Drawer Opened",
     );
     expect(filterEvents).toEqual([
-      ["trackEvent", "Filters", "Applied", URI_LEARNING, undefined],
-      ["trackEvent", "Filters", "Category Applied", OUTCOME_SCHEME_FIXTURE.uri, undefined],
+      ["trackEvent", "Filters", "Applied", "Educational Outcomes and Learning", undefined],
+      ["trackEvent", "Filters", "Category Applied", "Outcome", undefined],
     ]);
     window._paq = undefined;
   });
