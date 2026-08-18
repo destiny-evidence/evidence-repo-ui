@@ -58,7 +58,7 @@ describe("EnrichmentRequestPanel", () => {
     expect(screen.getByText("Need more data?")).toBeDefined();
     expect(
       screen.getByText(
-        "Our reviewers can go back to the full paper and extract more - outcomes, themes or effect estimates.",
+        "Our reviewers can go back to the full paper and extract more — outcomes, themes or effect estimates.",
       ),
     ).toBeDefined();
     expect(requestLink()).toHaveTextContent("Request more data");
@@ -82,8 +82,24 @@ describe("EnrichmentRequestPanel", () => {
     expect(params.get("entry.3")).toBe("test.user@example.org");
   });
 
-  test("renders nothing when no form is configured", () => {
-    formTemplate = undefined;
+  // Asserts our half of the contract only: the tracker skips anchors whose
+  // class matches /(^| )(piwik|matomo)[_-]ignore( |$)/, and matomo.js is never
+  // loaded here, so the skip itself can only be confirmed against a real
+  // instance.
+  test("keeps the prefilled href out of Matomo link tracking", () => {
+    render(panel());
+
+    expect(requestLink().className).toMatch(
+      /(^| )(piwik|matomo)[_-]ignore( |$)/,
+    );
+  });
+
+  test.each([
+    ["unset", undefined],
+    ["unparseable", "not-a-url"],
+    ["not https", "javascript:alert(1)"],
+  ])("renders nothing when the form URL is %s", (_label, template) => {
+    formTemplate = template;
     mockAnalytics();
 
     const { container } = render(panel());

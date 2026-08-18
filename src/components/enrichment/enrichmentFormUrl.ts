@@ -17,15 +17,16 @@ const isPrefillable = (token: string): token is keyof Prefill =>
 
 /**
  * Fill a Google Forms pre-filled link template with this request's answers.
- * Returns undefined for a template that isn't a URL, so a misconfigured
- * environment hides the request panel rather than offering a broken link.
+ * Anything but an https URL yields undefined, which hides the request panel —
+ * a misconfigured environment must not put a broken link, or a scheme like
+ * javascript:, into an href.
  */
 export function buildEnrichmentFormUrl(
   template: string,
   values: Prefill,
 ): string | undefined {
   try {
-    new URL(template);
+    if (new URL(template).protocol !== "https:") return undefined;
   } catch {
     return undefined;
   }

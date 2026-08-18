@@ -48,7 +48,17 @@ describe("buildEnrichmentFormUrl", () => {
     expect(url).toBe("https://forms.test/viewform?entry.9={institution}");
   });
 
-  test.each([["not-a-url"], [""], ["/forms/viewform"]])(
+  // new URL() alone accepts all of these, so the https check is what rejects
+  // the schemes that would otherwise reach an href.
+  test.each([
+    ["not-a-url"],
+    [""],
+    ["/forms/viewform"],
+    ["http://forms.test/viewform"],
+    ["javascript:alert(1)"],
+    ["data:text/html,<script>alert(1)</script>"],
+    ["mailto:eef@example.org"],
+  ])(
     "returns undefined for the unusable template %j",
     (template) => {
       expect(

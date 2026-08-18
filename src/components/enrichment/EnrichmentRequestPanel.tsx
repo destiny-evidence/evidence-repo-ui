@@ -34,15 +34,19 @@ export function EnrichmentRequestPanel({
         })
       : undefined;
 
+  // Keyed on visibility rather than on formUrl, whose value changes when the
+  // auth claims arrive — that would report a second impression for one record.
+  const formConfigured = Boolean(formUrl);
+
   useEffect(() => {
-    if (!formUrl) return;
+    if (!formConfigured) return;
     track({
       category: "Enrichment",
       action: "Request Coding Shown",
       name: referenceId,
       value: codedAnnotations,
     });
-  }, [referenceId, !formUrl]);
+  }, [referenceId, formConfigured]);
 
   if (!formUrl) return null;
 
@@ -51,12 +55,16 @@ export function EnrichmentRequestPanel({
       <div class="enrichment-request__prompt">
         <p class="enrichment-request__heading">Need more data?</p>
         <p class="enrichment-request__subheading">
-          Our reviewers can go back to the full paper and extract more -
+          Our reviewers can go back to the full paper and extract more —
           outcomes, themes or effect estimates.
         </p>
       </div>
+      {/* The prefill puts the user's name and email in the query string, which
+          Matomo would otherwise record as an outlink URL. matomo_ignore drops
+          this link from link tracking; it must be on the anchor itself.
+          https://developer.matomo.org/guides/tracking-javascript-guide */}
       <a
-        class="enrichment-request__button"
+        class="enrichment-request__button matomo_ignore"
         href={formUrl}
         target="_blank"
         rel="noopener noreferrer"
