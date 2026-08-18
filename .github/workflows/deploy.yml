@@ -111,7 +111,7 @@ jobs:
 
   notify:
     # Production only: pushes to main deploy to staging and stay silent.
-    if: ${{ always() && inputs.environment == 'development' }}
+    if: ${{ always() && inputs.environment == 'production' }}
     needs:
       - build
       - deploy
