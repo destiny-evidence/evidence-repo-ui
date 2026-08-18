@@ -5,15 +5,12 @@ const TEMPLATE =
   "https://forms.test/viewform?usp=pp_url&entry.1={referenceUrl}&entry.2={name}&entry.3={email}";
 const REFERENCE_URL = "https://data.test/esea/references/019a4c8f?a=b";
 
-const build = (values: Parameters<typeof buildEnrichmentFormUrl>[1]) =>
-  buildEnrichmentFormUrl(TEMPLATE, values);
-
 const paramsOf = (url: string | undefined) =>
   Object.fromEntries(new URL(url!).searchParams);
 
 describe("buildEnrichmentFormUrl", () => {
   test("fills each placeholder with its encoded answer", () => {
-    const url = build({
+    const url = buildEnrichmentFormUrl(TEMPLATE, {
       referenceUrl: REFERENCE_URL,
       name: "Ada Lovelace",
       email: "ada@example.org",
@@ -33,7 +30,9 @@ describe("buildEnrichmentFormUrl", () => {
   });
 
   test("leaves fields the session can't supply blank rather than tokenised", () => {
-    const url = build({ referenceUrl: REFERENCE_URL });
+    const url = buildEnrichmentFormUrl(TEMPLATE, {
+      referenceUrl: REFERENCE_URL,
+    });
 
     expect(url).toContain("entry.2=&entry.3=");
     expect(url).not.toContain("{name}");
