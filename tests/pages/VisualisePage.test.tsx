@@ -1,6 +1,7 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/preact";
 import { VisualisePage } from "@/pages/VisualisePage";
+import { parseSearchParams } from "@/services/searchParams";
 import { makeCommunity } from "../fixtures";
 import type { EvidenceMapAxes, ReferenceCrossFacetResult } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
@@ -66,6 +67,23 @@ const SCHEMES: ConceptScheme[] = [
       { uri: "theme:literacy", label: "Literacy" },
       { uri: "theme:numeracy", label: "Numeracy" },
       { uri: "theme:science", label: "Science" },
+    ],
+  },
+];
+
+// The theme scheme with Literacy nested under Learning, so a reported value can
+// be told apart from a bare leaf label.
+const NESTED_SCHEMES: ConceptScheme[] = [
+  SCHEMES[0],
+  {
+    uri: "scheme:theme",
+    label: "Education Theme Scheme",
+    topConcepts: [
+      {
+        uri: "theme:learning",
+        label: "Learning",
+        narrower: [{ uri: "theme:literacy", label: "Literacy" }],
+      },
     ],
   },
 ];
@@ -324,5 +342,240 @@ describe("VisualisePage map", () => {
     expect(
       screen.queryByText(/click a cell to view matching/i),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("VisualisePage analytics", () => {
+  // An empty queue is what `track()` reads as "analytics enabled".
+  beforeEach(() => {
+    window._paq = [];
+    mockUseCommunity.mockReturnValue(mappedCommunity());
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: SCHEMES,
+      loading: false,
+      error: null,
+    });
+  });
+  afterEach(() => {
+    window._paq = undefined;
+  });
+
+  function mapEvents(action?: string) {
+    return (window._paq ?? []).filter(
+      (e) =>
+        e[0] === "trackEvent" &&
+        e[1] === "EvidenceMap" &&
+        (action === undefined || e[2] === action),
+    );
+  }
+
+  const FILTERED =
+    "?concept=level%3Aprimary&country=KE&row=scheme%3Alevel&column=scheme%3Atheme";
+
+  test("tracks the axis pair and every active filter once per distinct view", () => {
+    mockUseUrlParams.mockReturnValue(FILTERED);
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(4, [["level:primary", "theme:literacy", 4]]),
+      resultParams: parseSearchParams(FILTERED),
+      loading: false,
+      error: null,
+    });
+    const { rerender } = render(<VisualisePage />);
+
+    expect(mapEvents()).toEqual([
+      ["trackEvent", "EvidenceMap", "Map Viewed", "Education Level × Education Theme", undefined],
+      ["trackEvent", "EvidenceMap", "Filter Applied", "Primary", undefined],
+      ["trackEvent", "EvidenceMap", "Filter Applied", "Kenya", undefined],
+      ["trackEvent", "EvidenceMap", "Filter Category Applied", "Education Level", undefined],
+      ["trackEvent", "EvidenceMap", "Filter Category Applied", "Country", undefined],
+    ]);
+
+    // Same view re-rendered: no re-count.
+    rerender(<VisualisePage />);
+    expect(mapEvents()).toHaveLength(5);
+  });
+
+  test("tracks the view on screen, not one still being fetched", () => {
+    // The URL has moved on to Secondary; the rendered map is still Primary's.
+    mockUseUrlParams.mockReturnValue(
+      "?concept=level%3Asecondary&row=scheme%3Alevel&column=scheme%3Atheme",
+    );
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(4, [["level:primary", "theme:literacy", 4]]),
+      resultParams: parseSearchParams(FILTERED),
+      loading: true,
+      error: null,
+    });
+    render(<VisualisePage />);
+
+    expect(mapEvents("Filter Applied").map((e) => e[3])).toEqual([
+      "Primary",
+      "Kenya",
+    ]);
+  });
+
+  test("names the two empty states apart, and fires neither on a populated map", () => {
+    mockUseUrlParams.mockReturnValue("");
+    // Nothing matches the filters at all.
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(0, []),
+      resultParams: parseSearchParams(""),
+      loading: false,
+      error: null,
+    });
+    const { unmount } = render(<VisualisePage />);
+    expect(mapEvents("No Coverage").map((e) => e[3])).toEqual(["over-filtered"]);
+    unmount();
+
+    // References match, but none carry a value on both axes.
+    window._paq = [];
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(0, [], 7),
+      resultParams: parseSearchParams(""),
+      loading: false,
+      error: null,
+    });
+    const second = render(<VisualisePage />);
+    expect(mapEvents("No Coverage").map((e) => e[3])).toEqual(["no-coverage"]);
+    second.unmount();
+
+    window._paq = [];
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(4, [["level:primary", "theme:literacy", 4]]),
+      resultParams: parseSearchParams(""),
+      loading: false,
+      error: null,
+    });
+    render(<VisualisePage />);
+    expect(mapEvents("No Coverage")).toEqual([]);
+  });
+
+  test("tracks the view toggle, cell and header clicks", () => {
+    mockUseUrlParams.mockReturnValue("");
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(9, [["level:primary", "theme:literacy", 6]]),
+      resultParams: parseSearchParams(""),
+      loading: false,
+      error: null,
+    });
+    const { container } = render(<VisualisePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Table" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Literacy: view matching results." }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Primary: view matching results." }),
+    );
+    fireEvent.click(
+      container.querySelector<HTMLButtonElement>(".evidence-map__cell-button")!,
+    );
+
+    expect(mapEvents("View Toggled").map((e) => e[3])).toEqual(["table"]);
+    expect(mapEvents("Column Clicked").map((e) => e[3])).toEqual(["Literacy"]);
+    expect(mapEvents("Row Clicked").map((e) => e[3])).toEqual(["Primary"]);
+    expect(mapEvents("Cell Clicked").map((e) => e[3])).toEqual([
+      "Primary × Literacy",
+    ]);
+  });
+
+  test("a clicked value carries its branch, the way a filter on it would", () => {
+    mockUseUrlParams.mockReturnValue("");
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: NESTED_SCHEMES,
+      loading: false,
+      error: null,
+    });
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(6, [["level:primary", "theme:literacy", 6]]),
+      resultParams: parseSearchParams(""),
+      loading: false,
+      error: null,
+    });
+    render(<VisualisePage />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Literacy: view matching results." }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Primary, Literacy:/ }));
+
+    expect(mapEvents("Column Clicked").map((e) => e[3])).toEqual([
+      "Learning > Literacy",
+    ]);
+    expect(mapEvents("Cell Clicked").map((e) => e[3])).toEqual([
+      "Primary × Learning > Literacy",
+    ]);
+  });
+
+  test("counts a deliberate axis change apart from the views it produces", () => {
+    // The map is on a swapped (non-default) pair, so resetting is a real change.
+    mockUseUrlParams.mockReturnValue(
+      "?row=scheme%3Atheme&column=scheme%3Alevel",
+    );
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(0, []),
+      resultParams: parseSearchParams(""),
+      loading: false,
+      error: null,
+    });
+    const { container } = render(<VisualisePage />);
+
+    // Landing on the swapped pair is a view, not a choice.
+    expect(mapEvents("Axes Changed")).toEqual([]);
+
+    const banner = container.querySelector<HTMLElement>(
+      ".evidence-map-view__banner",
+    )!;
+    fireEvent.click(within(banner).getByRole("button", { name: "Reset all" }));
+    expect(mapEvents("Axes Changed").map((e) => e[3])).toEqual([
+      "Education Level × Education Theme",
+    ]);
+  });
+
+  test("does not count an axis change when only the filters moved", () => {
+    // Already on the default pair: resetting clears filters but not axes.
+    mockUseUrlParams.mockReturnValue("?concept=level%3Aprimary");
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(0, []),
+      resultParams: parseSearchParams("?concept=level%3Aprimary"),
+      loading: false,
+      error: null,
+    });
+    const { container } = render(<VisualisePage />);
+
+    const banner = container.querySelector<HTMLElement>(
+      ".evidence-map-view__banner",
+    )!;
+    fireEvent.click(within(banner).getByRole("button", { name: "Reset all" }));
+    expect(mapEvents("Axes Changed")).toEqual([]);
+  });
+
+  test("distinguishes the banner's one-click reset from the panel's draft reset", () => {
+    mockUseUrlParams.mockReturnValue("");
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(0, []),
+      resultParams: parseSearchParams(""),
+      loading: false,
+      error: null,
+    });
+    const { container } = render(<VisualisePage />);
+
+    const banner = container.querySelector<HTMLElement>(
+      ".evidence-map-view__banner",
+    )!;
+    fireEvent.click(within(banner).getByRole("button", { name: "Reset all" }));
+    const panel = container.querySelector<HTMLElement>(".map-config-panel")!;
+    fireEvent.click(within(panel).getByRole("button", { name: "Reset all" }));
+
+    expect(mapEvents("Reset All").map((e) => e[3])).toEqual([
+      "banner",
+      "panel",
+    ]);
   });
 });

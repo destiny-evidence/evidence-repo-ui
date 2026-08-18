@@ -33,10 +33,11 @@ export function useCrossFacets(
   axes: CrossFacetAxisPair,
 ): {
   result: ReferenceCrossFacetResult | null;
-  // The axes the current `result` was fetched for. While a refetch is in flight
+  // The axes and params the current `result` was fetched for. While a refetch is in flight
   // these stay on the previous axes (with `result`), so a caller resolving cell
   // values never pairs stale cells with the new axes' label functions.
   resultAxes: CrossFacetAxisPair | null;
+  resultParams: SearchParams | null;
   loading: boolean;
   error: Error | null;
 } {
@@ -47,10 +48,12 @@ export function useCrossFacets(
     community?.slug ?? "",
     community?.defaultAnnotations ?? [],
   );
-  // result and its axes move together so they can't drift apart mid-fetch.
+  // result and the query it came from move together so they can't drift apart
+  // mid-fetch.
   const [data, setData] = useState<{
     result: ReferenceCrossFacetResult;
     axes: CrossFacetAxisPair;
+    params: SearchParams;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -74,7 +77,7 @@ export function useCrossFacets(
       axisPairToParams(axes, toTurtleUrl(community.vocabularyUrl)),
     )
       .then((r) => {
-        if (!cancelled) setData({ result: r, axes });
+        if (!cancelled) setData({ result: r, axes, params });
       })
       .catch((e) => {
         if (cancelled) return;
@@ -92,11 +95,18 @@ export function useCrossFacets(
   }, [key]);
 
   if (!community)
-    return { result: null, resultAxes: null, loading: false, error: null };
+    return {
+      result: null,
+      resultAxes: null,
+      resultParams: null,
+      loading: false,
+      error: null,
+    };
 
   return {
     result: data?.result ?? null,
     resultAxes: data?.axes ?? null,
+    resultParams: data?.params ?? null,
     loading,
     error,
   };

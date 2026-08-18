@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCrossFacets } from "@/hooks/useCrossFacets";
@@ -15,6 +15,7 @@ import {
   buildEvidenceMapModel,
   parseAxis,
   resolveMapAxis,
+  type ResolvedAxis,
   cellSearchParams,
   axisSearchParams,
   backToVisualiseState,
@@ -30,6 +31,9 @@ import type {
   EvidenceMapAxes,
   EvidenceMapAxis,
 } from "@/types/models";
+import { track } from "@/analytics/matomo";
+import { activeFilters, conceptPathName } from "@/analytics/searchEvents";
+import { indexConceptPaths } from "@/components/filters/conceptSchemeFilterState";
 import { formatTotal } from "@/utils/searchTotal";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
 import { ViewToggle, type MapView } from "@/components/visualise/ViewToggle";
@@ -70,6 +74,20 @@ function resolveAxes(search: string, defaults: EvidenceMapAxes): EvidenceMapAxes
   const column = params.get(COLUMN_PARAM);
   if (!row || !column) return defaults;
   return { row: parseAxis(row), column: parseAxis(column) };
+}
+
+// Identity of an axis pair — what "did the axes change?" is decided on. Tokens,
+// not the titles analytics reports, so two schemes sharing a title still read as
+// a change.
+function axisPairToken(axes: EvidenceMapAxes): string {
+  return `${axisToken(axes.row)} x ${axisToken(axes.column)}`;
+}
+
+const PAIR_SEPARATOR = " × ";
+
+// The axis pair as analytics reports it
+function axisPairTitle(row: ResolvedAxis, column: ResolvedAxis): string {
+  return `${row.title}${PAIR_SEPARATOR}${column.title}`;
 }
 
 // Canonical query string: the filter params followed by the explicit axes, so
@@ -129,6 +147,13 @@ function EvidenceMapView({
     [vocab.schemes, community.filterExcludedSchemes],
   );
 
+  // Branch paths for every concept the vocabulary knows — not just the
+  // filterable subset, since an axis can be pointed at any scheme by URL.
+  const conceptPaths = useMemo(
+    () => indexConceptPaths(vocab.schemes ?? []),
+    [vocab.schemes],
+  );
+
   const axisPair = useMemo<CrossFacetAxisPair>(
     () => ({
       row: toCrossFacetAxis(axes.row),
@@ -137,8 +162,16 @@ function EvidenceMapView({
     [axes],
   );
 
-  const { result, resultAxes, loading, error } = useCrossFacets(params, axisPair);
+  const { result, resultAxes, resultParams, loading, error } = useCrossFacets(
+    params,
+    axisPair,
+  );
   const [view, setView] = useState<MapView>("bubble");
+
+  function handleViewChange(next: MapView) {
+    track({ category: "EvidenceMap", action: "View Toggled", name: next });
+    setView(next);
+  }
 
   // Resolve labels against the axes `result` was fetched for, not the URL's:
   // during an axis change the URL (and `axes`) flips immediately but `result`
@@ -192,6 +225,58 @@ function EvidenceMapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonical, community.slug]);
 
+  // The query the rendered map came from
+  const trackedParams = resultParams ?? params;
+
+  // Config + filters for each distinct map view, once.
+  const lastViewTracked = useRef<string | null>(null);
+  useEffect(() => {
+    if (!result || vocab.loading) return;
+    const identity = canonicalSearch(trackedParams, displayAxes);
+    if (lastViewTracked.current === identity) return;
+    lastViewTracked.current = identity;
+
+    track({
+      category: "EvidenceMap",
+      action: "Map Viewed",
+      name: axisPairTitle(rowAxis, columnAxis),
+    });
+
+    const { values, categories } = activeFilters(trackedParams, filterableSchemes);
+    for (const value of values) {
+      track({ category: "EvidenceMap", action: "Filter Applied", name: value });
+    }
+    for (const key of categories) {
+      track({
+        category: "EvidenceMap",
+        action: "Filter Category Applied",
+        name: key,
+      });
+    }
+
+    if (result.totals.search.count === 0) {
+      track({
+        category: "EvidenceMap",
+        action: "No Coverage",
+        name: "over-filtered",
+      });
+    } else if (result.cells.length === 0) {
+      track({
+        category: "EvidenceMap",
+        action: "No Coverage",
+        name: "no-coverage",
+      });
+    }
+  }, [
+    result,
+    trackedParams,
+    displayAxes,
+    rowAxis,
+    columnAxis,
+    vocab.loading,
+    filterableSchemes,
+  ]);
+
   // Commit the panel's drafted axes + filters to the URL; the map re-renders
   // off the new params (page reset, like the search page).
   function handleApply({
@@ -201,6 +286,18 @@ function EvidenceMapView({
     axes: EvidenceMapAxes;
     filters: AppliedFilters;
   }) {
+    // Deliberately-chosen axes, as opposed to the ones a view merely landed on —
+    // the map's own default pair would otherwise dominate `Map Viewed`.
+    if (axisPairToken(nextAxes) !== axisPairToken(axes)) {
+      track({
+        category: "EvidenceMap",
+        action: "Axes Changed",
+        name: axisPairTitle(
+          resolveMapAxis(nextAxes.row, vocab.schemes, vocab.labels),
+          resolveMapAxis(nextAxes.column, vocab.schemes, vocab.labels),
+        ),
+      });
+    }
     const nextParams: SearchParams = {
       ...params,
       conceptFilters: filters.conceptFilters,
@@ -218,17 +315,38 @@ function EvidenceMapView({
   // column applied as filters. Stash the map's own URL in history.state so the
   // search page can offer a "Back to Visualise" link to exactly this view.
   function handleCellClick(row: AxisCategory, column: AxisCategory) {
+    track({
+      category: "EvidenceMap",
+      action: "Cell Clicked",
+      name: `${categoryName(row)}${PAIR_SEPARATOR}${categoryName(column)}`,
+    });
     deepLinkToSearch(cellSearchParams(params, axes, row, column));
   }
 
   // Same deep-link, but filtered by a single axis category (a row/column header
   // click) rather than both.
   function handleRowClick(row: AxisCategory) {
+    track({
+      category: "EvidenceMap",
+      action: "Row Clicked",
+      name: categoryName(row),
+    });
     deepLinkToSearch(axisSearchParams(params, axes.row, row));
   }
 
   function handleColumnClick(column: AxisCategory) {
+    track({
+      category: "EvidenceMap",
+      action: "Column Clicked",
+      name: categoryName(column),
+    });
     deepLinkToSearch(axisSearchParams(params, axes.column, column));
+  }
+
+  // Clicked axis values report the same way filters do — the concept's whole
+  // branch. A countries axis has no branch, so it falls back to the label.
+  function categoryName(category: AxisCategory): string {
+    return conceptPathName(conceptPaths, category.key, category.label);
   }
 
   // Navigate into Search with the given params, stashing the map's own URL in
@@ -243,6 +361,7 @@ function EvidenceMapView({
   // The over-filtered banner's inline shortcut — the panel's "Reset all" applied
   // in one click: default axes, no filters.
   function handleResetAll() {
+    track({ category: "EvidenceMap", action: "Reset All", name: "banner" });
     handleApply({
       axes: defaults,
       filters: {
@@ -268,7 +387,7 @@ function EvidenceMapView({
       <div class="evidence-map-view__main">
         <h1 class="visualise-page__title">Evidence map</h1>
         <div class="evidence-map-view__toolbar">
-          <ViewToggle value={view} onChange={setView} />
+          <ViewToggle value={view} onChange={handleViewChange} />
           {showHint && (
             <p class="evidence-map-view__hint">
               Click a cell to view matching {noun}
