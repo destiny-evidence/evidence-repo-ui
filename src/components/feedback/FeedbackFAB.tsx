@@ -1,3 +1,4 @@
+import { track } from "@/analytics/matomo";
 import { FEEDBACK_FORM_URL } from "@/config";
 import "./FeedbackFAB.css";
 
@@ -10,6 +11,7 @@ export function FeedbackFAB() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Send feedback (opens form in a new tab)"
+      onClick={() => track({ category: "Feedback", action: "FAB Clicked" })}
     >
       Feedback
     </a>

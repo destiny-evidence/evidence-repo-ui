@@ -1,6 +1,10 @@
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/preact";
 import { ResourcesMenu } from "@/components/layout/ResourcesMenu";
+
+afterEach(() => {
+  delete window._paq;
+});
 
 const RESOURCES = [
   {
@@ -70,6 +74,18 @@ describe("ResourcesMenu", () => {
     const controlsId = button.getAttribute("aria-controls");
     expect(controlsId).toBeTruthy();
     expect(document.getElementById(controlsId!)).not.toBeNull();
+  });
+
+  test("clicking a resource link reports it by title", () => {
+    // A defined _paq is what analyticsEnabled() reads as "Matomo is loaded".
+    window._paq = [];
+    render(<ResourcesMenu resources={RESOURCES} />);
+    fireEvent.click(screen.getByRole("button", { name: /Resources/ }));
+    fireEvent.click(screen.getByRole("link", { name: /Onboarding toolkit/ }));
+
+    expect(window._paq).toEqual([
+      ["trackEvent", "Resources", "Link Clicked", "Onboarding toolkit", undefined],
+    ]);
   });
 
   test("each resource link opens externally with safe rel", () => {

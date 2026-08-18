@@ -19,11 +19,11 @@ import { useHistoryState } from "@/hooks/useHistoryState";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
 import { useSearch } from "@/hooks/useSearch";
 import { useSearchDraft } from "@/hooks/useSearchDraft";
+import { useSearchExport, type ExportStatus } from "@/hooks/useSearchExport";
 import {
-  useSearchExport,
-  type ExportStatus,
+  EXPORT_FORMATS,
   type ExportFormat,
-} from "@/hooks/useSearchExport";
+} from "@/services/export/exportFormats";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
@@ -100,12 +100,6 @@ function formatExportFilename(
   const d = String(now.getUTCDate()).padStart(2, "0");
   return `evidence-repository-${stem}-${slug}-${y}${m}${d}.${ext}`;
 }
-
-const EXPORT_FILE: Record<ExportFormat, { stem: string; ext: string }> = {
-  excel: { stem: "export", ext: "xlsx" },
-  ris: { stem: "references", ext: "ris" },
-  "reference-list": { stem: "references", ext: "pdf" },
-};
 
 function exportAnnouncementFor(status: ExportStatus): string {
   switch (status) {
@@ -410,7 +404,7 @@ function SearchPageInner({ community }: { community: Community }) {
       params,
       community.defaultAnnotations,
     );
-    const { stem, ext } = EXPORT_FILE[format];
+    const { label, stem, ext } = EXPORT_FORMATS[format];
     const filename = formatExportFilename(stem, community.slug, ext);
     const selected = scope === "selected";
     const request = selection.toRequest();
@@ -420,10 +414,13 @@ function SearchPageInner({ community }: { community: Community }) {
             resolveSelectedReferenceIds(request, query, filters, signal),
         }
       : { query, filters };
+    const resultCount = selected ? selectionCount : selectionTotal.count;
     if (format === "excel") {
       exportJob.start({
         format,
         filename,
+        formatLabel: label,
+        resultCount,
         ...source,
         vocabularyUrl: community.vocabularyUrl,
         contextUrl: community.contextUrl,
@@ -440,6 +437,8 @@ function SearchPageInner({ community }: { community: Community }) {
     exportJob.start({
       format,
       filename,
+      formatLabel: label,
+      resultCount,
       ...source,
       referenceListMeta: {
         title: "Reference list",

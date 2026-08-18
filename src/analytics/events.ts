@@ -60,4 +60,13 @@ export type AnalyticsEvent =
       action: "Request Coding Clicked";
       name: string;
       value: number;
-    };
+    }
+  // name: the format's menu label · value: references the export covers
+  | { category: "Export"; action: "Requested"; name: string; value: number }
+  | { category: "Export"; action: "Completed"; name: string; value: number }
+  | { category: "Export"; action: "Error"; name: string; value: number }
+  // name: resource title
+  | { category: "Resources"; action: "Link Clicked"; name: string }
+  | { category: "Feedback"; action: "FAB Clicked" }
+  // name: Search | Visualise
+  | { category: "Navigation"; action: "Tab Clicked"; name: string };
