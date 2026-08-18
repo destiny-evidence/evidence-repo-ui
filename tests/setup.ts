@@ -9,10 +9,15 @@ vi.stubEnv("VITE_HPV_CONTEXT_URL", "https://test.example/hpv-context");
 vi.stubEnv("VITE_KEYCLOAK_URL", "https://kc.test.example");
 vi.stubEnv("VITE_KEYCLOAK_REALM", "test-realm");
 vi.stubEnv("VITE_KEYCLOAK_CLIENT_ID", "test-client");
+vi.stubEnv(
+  "VITE_ENRICHMENT_FORM_URL",
+  "https://forms.test/viewform?usp=pp_url&entry.1={referenceUrl}&entry.2={name}&entry.3={email}",
+);
 
 const defaultTokenParsed = () => ({
   name: "Test User",
   preferred_username: "testuser",
+  email: "test.user@example.org",
 });
 
 vi.mock("@/auth/keycloak", () => {

@@ -59,7 +59,7 @@ export function hasFindingWithoutEstimates(
 }
 
 /**
- * Whether to offer the fake-door enrichment request for a record.
+ * Whether to offer an enrichment request for a record.
  */
 export function enrichmentRequestsEnabled(
   community: Community | null,

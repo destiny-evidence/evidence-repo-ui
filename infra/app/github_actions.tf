@@ -150,6 +150,15 @@ resource "github_actions_environment_variable" "vite_ai_summary_flag_form_url" {
   value         = var.ai_summary_flag_form_url
 }
 
+# Empty until the coding-request form exists; the UI hides the panel without it.
+resource "github_actions_environment_variable" "vite_enrichment_form_url" {
+  count         = var.enrichment_form_url != "" ? 1 : 0
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_ENRICHMENT_FORM_URL"
+  value         = var.enrichment_form_url
+}
+
 resource "github_actions_environment_variable" "vite_esea_vocabulary_url" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment

@@ -17,6 +17,12 @@ export const FEEDBACK_FORM_URL: string | undefined =
 export const AI_SUMMARY_FLAG_FORM_URL: string | undefined =
   import.meta.env.VITE_AI_SUMMARY_FLAG_FORM_URL;
 
+// Google Forms pre-filled link for coding requests, carrying {referenceUrl},
+// {name} and {email} placeholders in place of its answer values. Unset until
+// the form exists; the UI hides the request panel without it.
+export const ENRICHMENT_FORM_URL: string | undefined =
+  import.meta.env.VITE_ENRICHMENT_FORM_URL;
+
 // Base URL of the evidence-summariser service. Unset until the service is
 // deployed; the UI hides the AI summaries feature while it's absent.
 export const SUMMARISER_BASE: string | undefined =

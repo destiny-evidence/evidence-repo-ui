@@ -60,6 +60,7 @@ jobs:
           VITE_HPV_CONTEXT_URL: ${{ vars.VITE_HPV_CONTEXT_URL }}
           VITE_SUMMARISER_BASE: ${{ vars.VITE_SUMMARISER_BASE }}
           VITE_AI_SUMMARY_FLAG_FORM_URL: ${{ vars.VITE_AI_SUMMARY_FLAG_FORM_URL }}
+          VITE_ENRICHMENT_FORM_URL: ${{ vars.VITE_ENRICHMENT_FORM_URL }}
         run: npm run build
 
       - name: Upload build artifacts
