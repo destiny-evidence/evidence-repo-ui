@@ -13,7 +13,8 @@ export type AiSummaryStatus = "idle" | "generating" | "done" | "error";
 /**
  * Where a dismiss came from. `community-switch` is the provider dropping a
  * summary that no longer belongs to the page — not a user cancelling, so it
- * isn't tracked as one.
+ * isn't tracked as one. Only read while generating, so a dismiss of an
+ * already-finished summary just picks the nearest fit.
  */
 export type DismissSource = "drawer" | "chip" | "community-switch";
 
@@ -65,7 +66,7 @@ export interface UseAiSummaryResult {
   /** Dismiss the drawer to the background chip; generation keeps running. */
   runInBackground: (source: BackgroundSource) => void;
   /** Abort (if running) and clear everything. */
-  dismiss: (source?: DismissSource) => void;
+  dismiss: (source: DismissSource) => void;
 }
 
 /**
@@ -101,7 +102,7 @@ export function useAiSummary(): UseAiSummaryResult {
     [],
   );
 
-  const dismiss = useCallback((source: DismissSource = "drawer") => {
+  const dismiss = useCallback((source: DismissSource) => {
     if (statusRef.current === "generating" && source !== "community-switch") {
       track({
         category: "AISummary",

@@ -162,7 +162,7 @@ describe("useAiSummary", () => {
 
     const { result } = renderHook(() => useAiSummary());
     act(() => result.current.generate(input));
-    act(() => result.current.dismiss());
+    act(() => result.current.dismiss("drawer"));
 
     expect(result.current.status).toBe("idle");
 

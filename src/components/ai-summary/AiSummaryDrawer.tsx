@@ -43,7 +43,7 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
   const handleClose =
     ai.status === "generating"
       ? () => ai.runInBackground("close")
-      : () => ai.dismiss();
+      : () => ai.dismiss("drawer");
   const context = ai.context;
 
   // The summary's bibliography: a RIS export of the same reference set.
