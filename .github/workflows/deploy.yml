@@ -68,8 +68,6 @@ jobs:
           name: frontend-dist
           path: dist
           retention-days: 1
-      - name: Fail deployment
-        run: exit 1
 
   deploy:
     runs-on: ubuntu-latest
