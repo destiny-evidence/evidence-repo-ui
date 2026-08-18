@@ -1,8 +1,5 @@
 import { describe, test, expect } from "vitest";
-import {
-  buildEnrichmentFormUrl,
-  referenceUrl,
-} from "@/components/enrichment/enrichmentFormUrl";
+import { buildEnrichmentFormUrl } from "@/components/enrichment/enrichmentFormUrl";
 
 const TEMPLATE =
   "https://forms.test/viewform?usp=pp_url&entry.1={referenceUrl}&entry.2={name}&entry.3={email}";
@@ -60,12 +57,4 @@ describe("buildEnrichmentFormUrl", () => {
       ).toBeUndefined();
     },
   );
-});
-
-describe("referenceUrl", () => {
-  test("builds the canonical record URL", () => {
-    expect(referenceUrl("https://data.test", "esea", "019a4c8f")).toBe(
-      "https://data.test/esea/references/019a4c8f",
-    );
-  });
 });

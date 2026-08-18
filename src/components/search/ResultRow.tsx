@@ -15,6 +15,7 @@ import {
 } from "@/services/referenceUtils";
 import { parseInvestigation } from "@/services/investigationParser";
 import { conceptsToTags } from "@/services/conceptLabels";
+import { recordDetailPath } from "@/services/navigation";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
 import { TagGroup } from "@/components/common/TagGroup";
@@ -181,7 +182,7 @@ export function ResultRow({
       )}
       <a
         class="row-link"
-        href={`/${communitySlug}/references/${reference.id}`}
+        href={recordDetailPath(communitySlug, reference.id)}
         aria-label={title}
         onClick={() => track({ category: "Record", action: "Opened", value: position })}
       >

@@ -35,6 +35,3 @@ export function buildEnrichmentFormUrl(
       : placeholder,
   );
 }
-
-export const referenceUrl = (origin: string, slug: string, id: string) =>
-  `${origin}/${slug}/references/${id}`;

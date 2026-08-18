@@ -3,7 +3,8 @@ import { track } from "@/analytics/matomo";
 import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
 import { ENRICHMENT_FORM_URL } from "@/config";
-import { buildEnrichmentFormUrl, referenceUrl } from "./enrichmentFormUrl";
+import { recordDetailPath } from "@/services/navigation";
+import { buildEnrichmentFormUrl } from "./enrichmentFormUrl";
 import "./EnrichmentRequest.css";
 
 interface EnrichmentRequestPanelProps {
@@ -25,11 +26,9 @@ export function EnrichmentRequestPanel({
   const formUrl =
     ENRICHMENT_FORM_URL && community
       ? buildEnrichmentFormUrl(ENRICHMENT_FORM_URL, {
-          referenceUrl: referenceUrl(
-            window.location.origin,
-            community.slug,
-            referenceId,
-          ),
+          referenceUrl:
+            window.location.origin +
+            recordDetailPath(community.slug, referenceId),
           name,
           email,
         })

@@ -1,5 +1,17 @@
 import { describe, test, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
-import { navigate, URL_CHANGE_EVENT } from "@/services/navigation";
+import {
+  navigate,
+  recordDetailPath,
+  URL_CHANGE_EVENT,
+} from "@/services/navigation";
+
+describe("recordDetailPath", () => {
+  test("matches the RecordDetailPage route shape", () => {
+    expect(recordDetailPath("esea", "019a4c8f")).toBe(
+      "/esea/references/019a4c8f",
+    );
+  });
+});
 
 describe("navigate", () => {
   let pushSpy: MockInstance;
