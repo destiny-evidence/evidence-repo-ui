@@ -148,3 +148,9 @@ variable "hpv_context_url" {
   default     = "https://vocab.evidence-repository.org/published/019d3e6a-04d6-76e9-9f7a-b8b26c1e0976/2.2/context.jsonld"
 }
 
+
+variable "ci_slack_webhook_url" {
+  description = "Slack webhook URL for deploy notifications to #destiny-ci"
+  type        = string
+  sensitive   = true
+}

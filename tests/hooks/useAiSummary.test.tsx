@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/preact";
 
 vi.mock("@/services/summariserClient", () => ({
@@ -141,7 +141,7 @@ describe("useAiSummary", () => {
 
     const { result } = renderHook(() => useAiSummary());
     act(() => result.current.generate(input));
-    act(() => result.current.runInBackground());
+    act(() => result.current.runInBackground("button"));
 
     expect(result.current.minimized).toBe(true);
     expect(result.current.drawerOpen).toBe(false);
@@ -162,7 +162,7 @@ describe("useAiSummary", () => {
 
     const { result } = renderHook(() => useAiSummary());
     act(() => result.current.generate(input));
-    act(() => result.current.dismiss());
+    act(() => result.current.dismiss("drawer"));
 
     expect(result.current.status).toBe("idle");
 
@@ -197,4 +197,141 @@ describe("useAiSummary", () => {
     expect(mockRequest).not.toHaveBeenCalled();
   });
 
+});
+
+describe("useAiSummary analytics", () => {
+  // A pinned clock the test advances by hand, so durations are exact.
+  let now = 0;
+
+  beforeEach(() => {
+    now = 1_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    // An empty queue is what `track()` reads as "analytics enabled".
+    window._paq = [];
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    window._paq = undefined;
+  });
+
+  function events(action?: string) {
+    return (window._paq ?? []).filter(
+      (e) =>
+        e[0] === "trackEvent" &&
+        e[1] === "AISummary" &&
+        (action === undefined || e[2] === action),
+    );
+  }
+
+  test("times a completed run from request to summary", async () => {
+    resolveIds(["a"]);
+    const d = deferred<typeof MOCK_SUMMARY>();
+    mockRequest.mockReturnValue(d.promise);
+
+    const { result } = renderHook(() => useAiSummary());
+    act(() => result.current.generate(input));
+    // The request counts the references it was asked for, not the ids resolved.
+    expect(events("Generate Requested")).toEqual([
+      ["trackEvent", "AISummary", "Generate Requested", undefined, 3],
+    ]);
+
+    now = 4_500;
+    await act(async () => {
+      d.resolve(MOCK_SUMMARY);
+      await d.promise;
+    });
+
+    expect(events("Completed")).toEqual([
+      ["trackEvent", "AISummary", "Completed", undefined, 3_500],
+    ]);
+  });
+
+  test("times a failed run, and sends no error text", async () => {
+    resolveIds(["a"]);
+    mockRequest.mockRejectedValue(new Error("boom /reference/abc-123"));
+
+    const { result } = renderHook(() => useAiSummary());
+    act(() => result.current.generate(input));
+    now = 2_200;
+
+    await waitFor(() => expect(result.current.status).toBe("error"));
+    expect(events("Error")).toEqual([
+      ["trackEvent", "AISummary", "Error", undefined, 1_200],
+    ]);
+  });
+
+  test("records where a cancellation came from, and how long they waited", async () => {
+    resolveIds(["a"]);
+    mockRequest.mockReturnValue(deferred<typeof MOCK_SUMMARY>().promise);
+
+    const { result } = renderHook(() => useAiSummary());
+    act(() => result.current.generate(input));
+    now = 9_000;
+    act(() => result.current.dismiss("chip"));
+
+    expect(events("Cancelled")).toEqual([
+      ["trackEvent", "AISummary", "Cancelled", "chip", 8_000],
+    ]);
+  });
+
+  test("clearing a finished summary is not a cancellation", async () => {
+    resolveIds(["a"]);
+    mockRequest.mockResolvedValue(MOCK_SUMMARY);
+
+    const { result } = renderHook(() => useAiSummary());
+    act(() => result.current.generate(input));
+    await waitFor(() => expect(result.current.status).toBe("done"));
+    act(() => result.current.dismiss("drawer"));
+
+    expect(events("Cancelled")).toEqual([]);
+  });
+
+  test("a community switch dropping a running job is not a cancellation", () => {
+    resolveIds(["a"]);
+    mockRequest.mockReturnValue(deferred<typeof MOCK_SUMMARY>().promise);
+
+    const { result } = renderHook(() => useAiSummary());
+    act(() => result.current.generate(input));
+    act(() => result.current.dismiss("community-switch"));
+
+    expect(events("Cancelled")).toEqual([]);
+  });
+
+  test("records whether a reopened job had finished or was still running", async () => {
+    resolveIds(["a"]);
+    const d = deferred<typeof MOCK_SUMMARY>();
+    mockRequest.mockReturnValue(d.promise);
+
+    const { result } = renderHook(() => useAiSummary());
+    act(() => result.current.generate(input));
+    act(() => result.current.runInBackground("button"));
+    // Came back while it was still working.
+    act(() => result.current.open());
+
+    act(() => result.current.runInBackground("button"));
+    await act(async () => {
+      d.resolve(MOCK_SUMMARY);
+      await d.promise;
+    });
+    // Came back to a finished summary.
+    act(() => result.current.open());
+
+    expect(events("Reopened").map((e) => e[3])).toEqual([
+      "generating",
+      "done",
+    ]);
+  });
+
+  test("records whether backgrounding was chosen or fell out of closing", () => {
+    resolveIds(["a"]);
+    mockRequest.mockReturnValue(deferred<typeof MOCK_SUMMARY>().promise);
+
+    const { result } = renderHook(() => useAiSummary());
+    act(() => result.current.generate(input));
+    act(() => result.current.runInBackground("close"));
+
+    expect(events("Run In Background")).toEqual([
+      ["trackEvent", "AISummary", "Run In Background", "close", undefined],
+    ]);
+  });
 });

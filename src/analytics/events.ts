@@ -70,3 +70,20 @@ export type AnalyticsEvent =
   | { category: "Feedback"; action: "FAB Clicked" }
   // name: Search | Visualise
   | { category: "Navigation"; action: "Tab Clicked"; name: string };
+  // value: references the summary was asked for
+  | { category: "AISummary"; action: "Generate Requested"; value: number }
+  // value: ms from request to summary
+  | { category: "AISummary"; action: "Completed"; value: number }
+  // name: drawer | chip — which Cancel · value: ms waited before giving up
+  | { category: "AISummary"; action: "Cancelled"; name: string; value: number }
+  // value: ms from request to failure
+  | { category: "AISummary"; action: "Error"; value: number }
+  // name: button | close — the explicit action, or closing the drawer on a
+  // running job, which backgrounds it rather than cancelling
+  | { category: "AISummary"; action: "Run In Background"; name: string }
+  // name: generating | done — whether the job had finished by the time they came
+  // back for it.
+  | { category: "AISummary"; action: "Reopened"; name: string }
+  | { category: "AISummary"; action: "Downloaded" }
+  | { category: "AISummary"; action: "Flagged" }
+  | { category: "AISummary"; action: "Search Opened" };
