@@ -69,7 +69,7 @@ export type AnalyticsEvent =
   | { category: "Resources"; action: "Link Clicked"; name: string }
   | { category: "Feedback"; action: "FAB Clicked" }
   // name: Search | Visualise
-  | { category: "Navigation"; action: "Tab Clicked"; name: string };
+  | { category: "Navigation"; action: "Tab Clicked"; name: string }
   // value: references the summary was asked for
   | { category: "AISummary"; action: "Generate Requested"; value: number }
   // value: ms from request to summary
