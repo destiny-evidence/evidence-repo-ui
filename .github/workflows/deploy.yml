@@ -108,3 +108,47 @@ jobs:
               --domains ${{ vars.CUSTOM_DOMAIN }} \
               --content-paths "/*" \
               --no-wait
+
+  notify:
+    # Production only: pushes to main deploy to staging and stay silent.
+    if: ${{ always() && inputs.environment == 'production' }}
+    needs:
+      - build
+      - deploy
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      STATUS: >-
+        ${{ (contains(needs.*.result, 'failure') && '🚨 DEPLOY FAILED')
+        || (contains(needs.*.result, 'skipped') && '🚨 DEPLOY FAILED')
+        || (contains(needs.*.result, 'cancelled') && '⚠️ Deploy cancelled')
+        || '✅ Deployed' }}
+    steps:
+      - name: Shorten commit sha
+        id: commit
+        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Slack of deploy result
+        uses: slackapi/slack-github-action@v4.0.0
+        with:
+          webhook: ${{ secrets.CI_SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          # The action swallows delivery errors by default; fail loudly instead.
+          errors: true
+          payload: |
+            blocks:
+              - type: header
+                text:
+                  type: plain_text
+                  emoji: true
+                  text: "${{ env.STATUS }} - ${{ github.event.repository.name }} (${{ inputs.environment }})"
+              - type: section
+                fields:
+                  - type: mrkdwn
+                    text: "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ steps.commit.outputs.short_sha }}>"
+                  - type: mrkdwn
+                    text: "*Triggered by:*\n${{ github.triggering_actor }}"
+              - type: context
+                elements:
+                  - type: mrkdwn
+                    text: "${{ github.workflow }} (${{ github.ref_name }}) · <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
