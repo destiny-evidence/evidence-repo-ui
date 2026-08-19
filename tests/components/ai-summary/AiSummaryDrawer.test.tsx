@@ -1,11 +1,22 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/preact";
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  render,
+  screen,
+  fireEvent,
+  cleanup,
+  waitFor,
+} from "@testing-library/preact";
 
 vi.mock("@/config", () => ({
   AI_SUMMARY_FLAG_FORM_URL: "https://forms.example/flag",
 }));
+vi.mock("@/services/export/summaryPdf", () => ({
+  buildSummaryFilename: vi.fn(() => "summary.pdf"),
+  downloadSummaryPdf: vi.fn(async () => {}),
+}));
 
 import { AiSummaryDrawer } from "@/components/ai-summary/AiSummaryDrawer";
+import { downloadSummaryPdf } from "@/services/export/summaryPdf";
 import type { UseAiSummaryResult } from "@/hooks/useAiSummary";
 import { MOCK_SUMMARY } from "@/services/summariserMock";
 
@@ -219,14 +230,16 @@ describe("AiSummaryDrawer", () => {
     const ai = makeAi({ status: "generating", result: null });
     render(<AiSummaryDrawer ai={ai} />);
     fireEvent.click(screen.getByRole("button", { name: "Run in background" }));
-    expect(ai.runInBackground).toHaveBeenCalledTimes(1);
+    expect(ai.runInBackground).toHaveBeenCalledWith("button");
   });
 
   test("closing while generating backgrounds the job rather than aborting it", () => {
     const ai = makeAi({ status: "generating", result: null });
     render(<AiSummaryDrawer ai={ai} />);
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(ai.runInBackground).toHaveBeenCalledTimes(1);
+    // Reported apart from the explicit button: the copy advertises the button,
+    // so it matters which one people actually reach for.
+    expect(ai.runInBackground).toHaveBeenCalledWith("close");
     expect(ai.dismiss).not.toHaveBeenCalled();
   });
 
@@ -234,7 +247,7 @@ describe("AiSummaryDrawer", () => {
     const ai = makeAi({ status: "generating", result: null });
     render(<AiSummaryDrawer ai={ai} />);
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(ai.dismiss).toHaveBeenCalledTimes(1);
+    expect(ai.dismiss).toHaveBeenCalledWith("drawer");
     expect(ai.runInBackground).not.toHaveBeenCalled();
   });
 
@@ -244,5 +257,56 @@ describe("AiSummaryDrawer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(ai.dismiss).toHaveBeenCalledTimes(1);
     expect(ai.runInBackground).not.toHaveBeenCalled();
+  });
+});
+
+describe("AiSummaryDrawer analytics", () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    cleanup();
+    window._paq = [];
+  });
+  afterEach(() => {
+    window._paq = undefined;
+  });
+
+  function events(action?: string) {
+    return (window._paq ?? []).filter(
+      (e) =>
+        e[0] === "trackEvent" &&
+        e[1] === "AISummary" &&
+        (action === undefined || e[2] === action),
+    );
+  }
+
+  test("counts a download only once the PDF is actually produced", async () => {
+    render(<AiSummaryDrawer ai={makeAi()} />);
+    fireEvent.click(screen.getByRole("button", { name: /download/i }));
+
+    await waitFor(() =>
+      expect(events("Downloaded")).toEqual([
+        ["trackEvent", "AISummary", "Downloaded", undefined, undefined],
+      ]),
+    );
+  });
+
+  test("does not count a download the PDF failed to produce", async () => {
+    vi.mocked(downloadSummaryPdf).mockRejectedValueOnce(new Error("nope"));
+    render(<AiSummaryDrawer ai={makeAi()} />);
+    fireEvent.click(screen.getByRole("button", { name: /download/i }));
+
+    await screen.findByText(/couldn’t create pdf|couldn't create pdf/i);
+    expect(events("Downloaded")).toEqual([]);
+  });
+
+  test("counts the flag and open-search CTAs", () => {
+    render(<AiSummaryDrawer ai={makeAi()} />);
+    fireEvent.click(screen.getByRole("link", { name: /flag this summary/i }));
+    const openSearch = screen.getByRole("link", { name: /open this search/i });
+    // Same-document href: let the handler run, but spare jsdom the navigation.
+    openSearch.addEventListener("click", (e) => e.preventDefault());
+    fireEvent.click(openSearch);
+
+    expect(events().map((e) => e[2])).toEqual(["Flagged", "Search Opened"]);
   });
 });
