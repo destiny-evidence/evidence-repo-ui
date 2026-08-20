@@ -61,6 +61,15 @@ export type AnalyticsEvent =
       name: string;
       value: number;
     }
+  // name: the format's menu label · value: references the export covers
+  | { category: "Export"; action: "Requested"; name: string; value: number }
+  | { category: "Export"; action: "Completed"; name: string; value: number }
+  | { category: "Export"; action: "Error"; name: string; value: number }
+  // name: resource title
+  | { category: "Resources"; action: "Link Clicked"; name: string }
+  | { category: "Feedback"; action: "FAB Clicked" }
+  // name: Search | Visualise
+  | { category: "Navigation"; action: "Tab Clicked"; name: string }
   // value: references the summary was asked for
   | { category: "AISummary"; action: "Generate Requested"; value: number }
   // value: ms from request to summary

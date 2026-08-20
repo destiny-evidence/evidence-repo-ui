@@ -1,7 +1,12 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
 import { ChevronDownIcon } from "@/components/common/icons";
 import { Tooltip } from "@/components/common/Tooltip";
-import type { ExportFormat, ExportStatus } from "@/hooks/useSearchExport";
+import type { ExportStatus } from "@/hooks/useSearchExport";
+import {
+  EXPORT_FORMATS,
+  EXPORT_FORMAT_ORDER,
+  type ExportFormat,
+} from "@/services/export/exportFormats";
 import "./ExportMenu.css";
 
 export type ExportScope = "selected" | "all";
@@ -26,12 +31,6 @@ interface ExportMenuProps {
   /** Cap explanation shown in the panel (e.g. the 10k export limit). */
   capNote?: string;
 }
-
-const FORMATS: { value: ExportFormat; name: string; ext: string }[] = [
-  { value: "excel", name: "Excel spreadsheet", ext: ".xlsx" },
-  { value: "reference-list", name: "Reference list", ext: ".pdf" },
-  { value: "ris", name: "RIS", ext: ".ris" },
-];
 
 function busyLabel(status: ExportStatus): string | null {
   switch (status) {
@@ -166,17 +165,19 @@ export function ExportMenu({
         )}
 
         <p class="export-menu__label">Format</p>
-        {FORMATS.map((f) => (
-          <label key={f.value} class="export-menu__option">
+        {EXPORT_FORMAT_ORDER.map((value) => (
+          <label key={value} class="export-menu__option">
             <input
               type="radio"
               name={radioName}
-              value={f.value}
-              checked={format === f.value}
-              onChange={() => setFormat(f.value)}
+              value={value}
+              checked={format === value}
+              onChange={() => setFormat(value)}
             />
-            <span class="export-menu__option-name">{f.name}</span>
-            <span class="export-menu__ext">{f.ext}</span>
+            <span class="export-menu__option-name">
+              {EXPORT_FORMATS[value].label}
+            </span>
+            <span class="export-menu__ext">.{EXPORT_FORMATS[value].ext}</span>
           </label>
         ))}
 

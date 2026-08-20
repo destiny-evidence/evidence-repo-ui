@@ -18,6 +18,11 @@ vi.mock("@/services/export/export", () => ({
   exportReferencesToExcel: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("@/services/export/risExport", () => ({
+  downloadRisExport: vi.fn().mockResolvedValue(undefined),
+  downloadReferenceListPdf: vi.fn().mockResolvedValue(undefined),
+}));
+
 import {
   requestSearchExport,
   getSearchExport,
@@ -28,6 +33,8 @@ import { exportReferencesToExcel } from "@/services/export/export";
 
 const VOCAB_URL = "https://test.example/vocab";
 const CONTEXT_URL = "https://test.example/context";
+const RESULT_COUNT = 137;
+const FORMAT_LABEL = "Excel spreadsheet";
 
 function startArgs(
   overrides: Partial<{
@@ -39,6 +46,8 @@ function startArgs(
     contextUrl: string;
     variant: "esea" | "hpv";
     resolveReferenceIds: (signal: AbortSignal) => Promise<string[]>;
+    resultCount: number;
+    formatLabel: string;
   }> = {},
 ) {
   return {
@@ -46,6 +55,8 @@ function startArgs(
     query: "phonics",
     filters: {},
     filename: "f.xlsx",
+    formatLabel: FORMAT_LABEL,
+    resultCount: RESULT_COUNT,
     vocabularyUrl: VOCAB_URL,
     contextUrl: CONTEXT_URL,
     variant: "esea" as const,
@@ -78,7 +89,12 @@ function failed(id = "job-1", error = "boom"): SearchExportRead {
   return { id, status: "failed", truncated: false, error };
 }
 
+const trackedEvents = () =>
+  (window._paq ?? []).filter((cmd) => cmd[0] === "trackEvent");
+
 beforeEach(() => {
+  // A defined _paq is what analyticsEnabled() reads as "Matomo is loaded".
+  window._paq = [];
   mockRequest.mockReset();
   mockGet.mockReset();
   mockRefRequest.mockReset();
@@ -89,6 +105,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  delete window._paq;
 });
 
 describe("useSearchExport", () => {
@@ -215,6 +232,24 @@ describe("useSearchExport", () => {
     expect(mockRequest).not.toHaveBeenCalled();
   });
 
+  test.each(["reference-list", "ris"] as const)(
+    "%s requests the RIS server format",
+    async (format) => {
+      mockRequest.mockResolvedValue(
+        completed("job-1", "https://blob/result.ris"),
+      );
+
+      const { result } = renderHook(() => useSearchExport());
+      act(() => {
+        result.current.start(startArgs({ format }));
+      });
+
+      await vi.waitFor(() => expect(result.current.status).toBe("done"));
+      expect(mockRequest).toHaveBeenCalledWith("phonics", {}, "ris");
+      expect(mockExport).not.toHaveBeenCalled();
+    },
+  );
+
   test("missing result_url on completed surfaces an error", async () => {
     mockRequest.mockResolvedValue({
       id: "job-1",
@@ -228,5 +263,59 @@ describe("useSearchExport", () => {
     });
     await vi.waitFor(() => expect(result.current.status).toBe("error"));
     expect(result.current.errorMessage).toMatch(/no download URL/i);
+  });
+});
+
+describe("useSearchExport analytics", () => {
+  test("a successful run reports Requested then Completed with the format and count", async () => {
+    mockRequest.mockResolvedValue(completed());
+
+    const { result } = renderHook(() => useSearchExport());
+    act(() => {
+      result.current.start(startArgs());
+    });
+    expect(trackedEvents()).toEqual([
+      ["trackEvent", "Export", "Requested", FORMAT_LABEL, RESULT_COUNT],
+    ]);
+
+    await vi.waitFor(() => expect(result.current.status).toBe("done"));
+    expect(trackedEvents()).toEqual([
+      ["trackEvent", "Export", "Requested", FORMAT_LABEL, RESULT_COUNT],
+      ["trackEvent", "Export", "Completed", FORMAT_LABEL, RESULT_COUNT],
+    ]);
+  });
+
+  test("a failed run reports Error, not Completed", async () => {
+    mockRequest.mockRejectedValue(new Error("network down"));
+
+    const { result } = renderHook(() => useSearchExport());
+    act(() => {
+      result.current.start(startArgs());
+    });
+    await vi.waitFor(() => expect(result.current.status).toBe("error"));
+    expect(trackedEvents()).toEqual([
+      ["trackEvent", "Export", "Requested", FORMAT_LABEL, RESULT_COUNT],
+      ["trackEvent", "Export", "Error", FORMAT_LABEL, RESULT_COUNT],
+    ]);
+  });
+
+  test("a cancelled run stops at Requested", async () => {
+    mockRequest.mockResolvedValue(pending());
+    mockGet.mockResolvedValue(pending());
+
+    const { result } = renderHook(() => useSearchExport());
+    act(() => {
+      result.current.start(startArgs());
+    });
+    await vi.waitFor(() => expect(result.current.status).toBe("polling"));
+    act(() => {
+      result.current.reset();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+    expect(trackedEvents()).toEqual([
+      ["trackEvent", "Export", "Requested", FORMAT_LABEL, RESULT_COUNT],
+    ]);
   });
 });

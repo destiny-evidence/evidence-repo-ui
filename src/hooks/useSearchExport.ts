@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
+import { track } from "@/analytics/matomo";
 import { type SearchFilters } from "@/services/apiClient";
+import type { ExportFormat } from "@/services/export/exportFormats";
 import { exportReferencesToExcel } from "@/services/export/export";
 import {
   runReferenceExportToCompletion,
@@ -25,16 +27,13 @@ export type ExportStatus =
   | "done"
   | "error";
 
-/**
- * UI export choices. `excel` runs the JSONL → workbook pipeline; `ris` and
- * `reference-list` share one backend RIS job, then either save it verbatim or
- * render it as a bibliography PDF.
- */
-export type ExportFormat = "excel" | "ris" | "reference-list";
-
 export interface StartExportOptions {
   format: ExportFormat;
   filename: string;
+  /** The format's display label, reported as the analytics event name. */
+  formatLabel: string;
+  /** References the export covers; reported as the analytics event value. */
+  resultCount: number;
   // The reference source. `resolveReferenceIds`, when set, exports exactly
   // those ids (resolved inside the run so it's abortable); otherwise the
   // query + filters are exported.
@@ -128,6 +127,12 @@ export function useSearchExport(): UseSearchExportResult {
 
     const isCurrentRun = () => runIdRef.current === runId;
 
+    const analytics = {
+      name: options.formatLabel,
+      value: options.resultCount,
+    };
+    track({ category: "Export", action: "Requested", ...analytics });
+
     const serverFormat = serverFormatFor(options.format);
     const runOptions = {
       signal: controller.signal,
@@ -154,14 +159,15 @@ export function useSearchExport(): UseSearchExportResult {
       await downloadForFormat(resultUrl, options);
       if (!isCurrentRun()) return;
       setStatus("done");
+      track({ category: "Export", action: "Completed", ...analytics });
     })().catch((err: unknown) => {
-        // A cancelled/superseded run must not overwrite fresh state.
-        if (controller.signal.aborted || !isCurrentRun()) return;
-        setErrorMessage(
-          err instanceof Error ? err.message : "The export failed.",
-        );
-        setStatus("error");
-      });
+      if (controller.signal.aborted || !isCurrentRun()) return;
+      setErrorMessage(
+        err instanceof Error ? err.message : "The export failed.",
+      );
+      setStatus("error");
+      track({ category: "Export", action: "Error", ...analytics });
+    });
   }, []);
 
   return { status, errorMessage, start, reset };

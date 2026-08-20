@@ -1,5 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { track } from "@/analytics/matomo";
 import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
 import { DEFAULT_COMMUNITY_SLUG } from "@/services/communities";
@@ -39,6 +40,8 @@ export function AppShell({ children }: AppShellProps) {
   // No "/" landing page yet (router only matches /:community/*), so point at
   // the current community root, falling back to the default off a community route.
   const brandHref = `/${community?.slug ?? DEFAULT_COMMUNITY_SLUG}`;
+  const trackTab = (name: string) => () =>
+    track({ category: "Navigation", action: "Tab Clicked", name });
   return (
     <div class="app-shell">
       <header class="app-header">
@@ -56,13 +59,18 @@ export function AppShell({ children }: AppShellProps) {
         </a>
         {community && (
           <nav class="app-nav" aria-label="Primary">
-            <a class={`app-nav__link${searchActive ? " active" : ""}`} href={`/${community.slug}`}>
+            <a
+              class={`app-nav__link${searchActive ? " active" : ""}`}
+              href={`/${community.slug}`}
+              onClick={trackTab("Search")}
+            >
               Search
             </a>
             {community.features.evidenceMap && (
               <a
                 class={`app-nav__link${visualiseActive ? " active" : ""}`}
                 href={`/${community.slug}/visualise`}
+                onClick={trackTab("Visualise")}
               >
                 Visualise
               </a>

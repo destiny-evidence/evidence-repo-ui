@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { track } from "@/analytics/matomo";
 import { ChevronDownIcon, ExternalLinkIcon } from "@/components/common/icons";
 import type { ExternalResource } from "@/types/models";
 import "./ResourcesMenu.css";
@@ -63,6 +64,9 @@ export function ResourcesMenu({ resources }: ResourcesMenuProps) {
             href={r.href}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() =>
+              track({ category: "Resources", action: "Link Clicked", name: r.title })
+            }
           >
             <span class="resource-link__body">
               <span class="resource-link__title">
