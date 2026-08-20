@@ -1,12 +1,25 @@
-import { describe, test, expect, afterEach } from "vitest";
-import {
-  render,
-  screen,
-  cleanup,
-  fireEvent,
-  within,
-} from "@testing-library/preact";
+import { describe, test, expect, afterEach, beforeEach, vi } from "vitest";
+import { render, screen, cleanup, fireEvent } from "@testing-library/preact";
+import { AuthProvider } from "@/auth/AuthContext";
+import { CommunityProvider } from "@/community/CommunityContext";
 import { EnrichmentRequestPanel } from "@/components/enrichment/EnrichmentRequestPanel";
+
+const TEMPLATE =
+  "https://forms.test/viewform?usp=pp_url&entry.1={referenceUrl}&entry.2={name}&entry.3={email}";
+
+let formTemplate: string | undefined;
+
+vi.mock("@/config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/config")>()),
+  get ENRICHMENT_FORM_URL() {
+    return formTemplate;
+  },
+}));
+
+beforeEach(() => {
+  formTemplate = TEMPLATE;
+  history.replaceState(null, "", "/esea");
+});
 
 afterEach(() => {
   cleanup();
@@ -20,10 +33,14 @@ const panel = (
   referenceId = REFERENCE_ID,
   codedAnnotations = CODED_ANNOTATIONS,
 ) => (
-  <EnrichmentRequestPanel
-    referenceId={referenceId}
-    codedAnnotations={codedAnnotations}
-  />
+  <AuthProvider>
+    <CommunityProvider>
+      <EnrichmentRequestPanel
+        referenceId={referenceId}
+        codedAnnotations={codedAnnotations}
+      />
+    </CommunityProvider>
+  </AuthProvider>
 );
 
 // A defined _paq is what analyticsEnabled() reads as "Matomo is loaded".
@@ -31,90 +48,72 @@ const mockAnalytics = () => (window._paq = []);
 const trackedEvents = () =>
   (window._paq ?? []).filter((cmd) => cmd[0] === "trackEvent");
 
-const openModal = () =>
-  fireEvent.click(
-    screen.getByRole("button", { name: "Request additional coding" }),
-  );
-
-// The ✕ and the footer button share the accessible name "Close", so scope
-// queries to the region rather than matching on the name.
-const region = (suffix: string) =>
-  document.querySelector(`.enrichment-modal__${suffix}`) as HTMLElement;
-const header = () => region("header");
-const footer = () => region("footer");
+const requestLink = () =>
+  screen.getByRole("link", { name: /Request more data/ });
 
 describe("EnrichmentRequestPanel", () => {
-  test("directs the user to request additional coding in the case of missing data.", () => {
+  test("offers to have the record coded further", () => {
     render(panel());
 
-    expect(screen.getByText("Missing data elements?")).toBeDefined();
+    expect(screen.getByText("Need more data?")).toBeDefined();
     expect(
-      screen.getByText("Request extended ESEA annotation for this record."),
+      screen.getByText(
+        "Our reviewers can go back to the full paper and extract more — outcomes, themes or effect estimates.",
+      ),
     ).toBeDefined();
-    expect(
-      screen.getByRole("button", { name: "Request additional coding" }),
-    ).toBeDefined();
+    expect(requestLink()).toHaveTextContent("Request more data");
   });
 
-  test("shows no modal until the button is clicked", () => {
+  test("opens the request form in a new tab", () => {
     render(panel());
 
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(requestLink()).toHaveAttribute("target", "_blank");
+    expect(requestLink()).toHaveAttribute("rel", "noopener noreferrer");
   });
 
-  test("opens a modal explaining the feature is under consideration", () => {
+  test("prefills the form with the record and the signed-in user", () => {
     render(panel());
-    fireEvent.click(
-      screen.getByRole("button", { name: "Request additional coding" }),
+
+    const params = new URL(requestLink().getAttribute("href")!).searchParams;
+    expect(params.get("entry.1")).toBe(
+      `${window.location.origin}/esea/references/${REFERENCE_ID}`,
     );
+    expect(params.get("entry.2")).toBe("Test User");
+    expect(params.get("entry.3")).toBe("test.user@example.org");
+  });
 
-    const dialog = screen.getByRole("dialog", {
-      name: "Request additional coding",
-    });
-    expect(dialog).toHaveTextContent(
-      "This feature is currently under consideration. Thank you for expressing your interest — it helps us prioritise future development.",
+  // Asserts our half of the contract only: the tracker skips anchors whose
+  // class matches /(^| )(piwik|matomo)[_-]ignore( |$)/, and matomo.js is never
+  // loaded here, so the skip itself can only be confirmed against a real
+  // instance.
+  test("keeps the prefilled href out of Matomo link tracking", () => {
+    render(panel());
+
+    expect(requestLink().className).toMatch(
+      /(^| )(piwik|matomo)[_-]ignore( |$)/,
     );
   });
 
   test.each([
-    ["the header dismiss control", () => within(header()).getByRole("button")],
-    ["the footer close button", () => within(footer()).getByRole("button")],
-  ])("closes the modal from %s", (_name, closeControl) => {
-    render(panel());
-    openModal();
+    ["unset", undefined],
+    ["unparseable", "not-a-url"],
+    ["not https", "javascript:alert(1)"],
+  ])("renders nothing when the form URL is %s", (_label, template) => {
+    formTemplate = template;
+    mockAnalytics();
 
-    fireEvent.click(closeControl());
+    const { container } = render(panel());
 
-    expect(screen.queryByRole("dialog")).toBeNull();
-  });
-
-  test("closes the modal on Escape", () => {
-    render(panel());
-    openModal();
-
-    fireEvent.keyDown(window, { key: "Escape" });
-
-    expect(screen.queryByRole("dialog")).toBeNull();
-  });
-
-  test("moves focus into the modal and back to the trigger on close", () => {
-    render(panel());
-    const trigger = screen.getByRole("button", {
-      name: "Request additional coding",
-    });
-
-    fireEvent.click(trigger);
-    expect(document.activeElement).toBe(screen.getByRole("dialog"));
-
-    fireEvent.click(within(footer()).getByRole("button"));
-    expect(document.activeElement).toBe(trigger);
+    expect(container).toBeEmptyDOMElement();
+    // No panel means no impression to report.
+    expect(trackedEvents()).toEqual([]);
   });
 
   test("tracks a click event carrying the reference id and coding depth", () => {
     mockAnalytics();
     render(panel());
 
-    openModal();
+    fireEvent.click(requestLink());
 
     expect(trackedEvents()).toContainEqual([
       "trackEvent",

@@ -5,6 +5,9 @@ import { keycloak } from "./keycloak";
 interface AuthState {
   authenticated: boolean;
   username: string | undefined;
+  /** Individual claims; prefer `username` for display. */
+  name: string | undefined;
+  email: string | undefined;
   /** Token carries the ai_summary.writer realm role (gates AI summaries). */
   aiSummaryWriter: boolean;
   logout: () => void;
@@ -12,12 +15,17 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-function readUsername(): string | undefined {
-  const token = keycloak.tokenParsed as
-    | { name?: string; preferred_username?: string; email?: string }
-    | undefined;
-  return token?.name ?? token?.preferred_username ?? token?.email;
+interface ProfileClaims {
+  name?: string;
+  preferred_username?: string;
+  email?: string;
 }
+
+const readProfile = (): ProfileClaims =>
+  (keycloak.tokenParsed as ProfileClaims | undefined) ?? {};
+
+const readUsername = (profile: ProfileClaims): string | undefined =>
+  profile.name ?? profile.preferred_username ?? profile.email;
 
 function hasRealmRole(role: string): boolean {
   const token = keycloak.tokenParsed as
@@ -42,9 +50,12 @@ export function AuthProvider({ children }: { children: ComponentChildren }) {
     };
   }, []);
 
+  const profile = readProfile();
   const value: AuthState = {
     authenticated: !!keycloak.authenticated,
-    username: readUsername(),
+    username: readUsername(profile),
+    name: profile.name,
+    email: profile.email,
     aiSummaryWriter: hasRealmRole("ai_summary.writer"),
     logout: () => keycloak.logout(),
   };

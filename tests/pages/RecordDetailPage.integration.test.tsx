@@ -1,15 +1,18 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { RecordDetailPage } from "@/pages/RecordDetailPage";
+import { AuthProvider } from "@/auth/AuthContext";
 import { CommunityProvider } from "@/community/CommunityContext";
 import { makeReference, makeVocabResult } from "../fixtures";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 
 function renderRecordDetail(id: string) {
   return render(
-    <CommunityProvider>
-      <RecordDetailPage id={id} />
-    </CommunityProvider>,
+    <AuthProvider>
+      <CommunityProvider>
+        <RecordDetailPage id={id} />
+      </CommunityProvider>
+    </AuthProvider>,
   );
 }
 
@@ -390,7 +393,7 @@ describe("RecordDetailPage", () => {
     ["/esea", true],
     ["/hpv", false],
   ])(
-    "%s record offers the request-coding button: %s",
+    "%s record offers the request-coding link: %s",
     (path, expected) => {
       history.replaceState(null, "", path);
       mockUseReference.mockReturnValue({
@@ -401,14 +404,12 @@ describe("RecordDetailPage", () => {
 
       renderRecordDetail("abc");
 
-      const button = screen.queryByRole("button", {
-        name: "Request additional coding",
-      });
-      expect(button !== null).toBe(expected);
+      const link = screen.queryByRole("link", { name: /Request more data/ });
+      expect(link !== null).toBe(expected);
     },
   );
 
-  test("ESEA record with ample coding and estimates offers no request-coding button", () => {
+  test("ESEA record with ample coding and estimates offers no request-coding link", () => {
     history.replaceState(null, "", "/esea");
     mockUseReference.mockReturnValue({
       reference: makeReference({
@@ -428,7 +429,7 @@ describe("RecordDetailPage", () => {
 
     expect(screen.getByText("Well coded ref")).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Request additional coding" }),
+      screen.queryByRole("link", { name: /Request more data/ }),
     ).toBeNull();
   });
 });

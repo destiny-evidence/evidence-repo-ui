@@ -124,6 +124,12 @@ variable "ai_summary_flag_form_url" {
   default     = ""
 }
 
+variable "enrichment_form_url" {
+  description = "Google Forms pre-filled link for coding requests, with {referenceUrl}, {name} and {email} placeholders; empty hides the request panel"
+  type        = string
+  default     = ""
+}
+
 variable "esea_vocabulary_url" {
   description = "URL of the ESEA community's published SKOS vocabulary (.jsonld) — used to resolve concept labels in exports and other vocabulary-driven features"
   type        = string

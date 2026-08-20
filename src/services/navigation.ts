@@ -1,5 +1,9 @@
 export const URL_CHANGE_EVENT = "urlchange";
 
+/** Must stay in step with the RecordDetailPage route declared in App.tsx. */
+export const recordDetailPath = (communitySlug: string, referenceId: string) =>
+  `/${communitySlug}/references/${referenceId}`;
+
 export function navigate(
   url: string,
   options: { mode?: "push" | "replace"; state?: unknown } = {},
