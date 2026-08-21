@@ -19,7 +19,7 @@ export const AI_SUMMARY_FLAG_FORM_URL: string | undefined =
 
 // Google Forms pre-filled link for coding requests, carrying {referenceUrl},
 // {name} and {email} placeholders in place of its answer values. Unset until
-// the form exists; the UI hides the request panel without it.
+// the form exists; the request panel shows the fake door without it.
 export const ENRICHMENT_FORM_URL: string | undefined =
   import.meta.env.VITE_ENRICHMENT_FORM_URL;
 

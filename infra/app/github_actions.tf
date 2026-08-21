@@ -150,7 +150,7 @@ resource "github_actions_environment_variable" "vite_ai_summary_flag_form_url" {
   value         = var.ai_summary_flag_form_url
 }
 
-# Empty until the coding-request form exists; the UI hides the panel without it.
+# Empty until the coding-request form exists; the UI shows the fake door until then.
 resource "github_actions_environment_variable" "vite_enrichment_form_url" {
   count         = var.enrichment_form_url != "" ? 1 : 0
   repository    = github_repository_environment.environment.repository

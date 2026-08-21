@@ -125,7 +125,7 @@ variable "ai_summary_flag_form_url" {
 }
 
 variable "enrichment_form_url" {
-  description = "Google Forms pre-filled link for coding requests, with {referenceUrl}, {name} and {email} placeholders; empty hides the request panel"
+  description = "Google Forms pre-filled link for coding requests, with {referenceUrl}, {name} and {email} placeholders; empty falls back to the fake door"
   type        = string
   default     = ""
 }

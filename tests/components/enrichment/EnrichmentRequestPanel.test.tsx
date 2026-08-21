@@ -237,6 +237,22 @@ describe("EnrichmentRequestPanel", () => {
       expect(document.activeElement).toBe(trigger);
     });
 
+    // Capturing interest is the only reason the fallback exists, so assert the
+    // impression here too and not just on the form path.
+    test("reports the impression as the form does", () => {
+      mockAnalytics();
+
+      render(panel());
+
+      expect(trackedEvents()).toContainEqual([
+        "trackEvent",
+        "Enrichment",
+        "Request Coding Shown",
+        REFERENCE_ID,
+        CODED_ANNOTATIONS,
+      ]);
+    });
+
     test("reports the click as the form link does", () => {
       mockAnalytics();
       render(panel());
