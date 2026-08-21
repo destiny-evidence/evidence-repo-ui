@@ -1,5 +1,11 @@
 import { describe, test, expect, afterEach, beforeEach, vi } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/preact";
+import {
+  render,
+  screen,
+  cleanup,
+  fireEvent,
+  within,
+} from "@testing-library/preact";
 import { AuthProvider } from "@/auth/AuthContext";
 import { CommunityProvider } from "@/community/CommunityContext";
 import { EnrichmentRequestPanel } from "@/components/enrichment/EnrichmentRequestPanel";
@@ -52,7 +58,7 @@ const requestLink = () =>
   screen.getByRole("link", { name: /Request more data/ });
 
 describe("EnrichmentRequestPanel", () => {
-  test("offers to have the record coded further", () => {
+  test("offers to have the record coded further with the form copy", () => {
     render(panel());
 
     expect(screen.getByText("Need more data?")).toBeDefined();
@@ -61,7 +67,6 @@ describe("EnrichmentRequestPanel", () => {
         "Our reviewers can go back to the full paper and extract more — outcomes, themes or effect estimates.",
       ),
     ).toBeDefined();
-    expect(requestLink()).toHaveTextContent("Request more data");
   });
 
   test("opens the request form in a new tab", () => {
@@ -92,21 +97,6 @@ describe("EnrichmentRequestPanel", () => {
     expect(requestLink().className).toMatch(
       /(^| )(piwik|matomo)[_-]ignore( |$)/,
     );
-  });
-
-  test.each([
-    ["unset", undefined],
-    ["unparseable", "not-a-url"],
-    ["not https", "javascript:alert(1)"],
-  ])("renders nothing when the form URL is %s", (_label, template) => {
-    formTemplate = template;
-    mockAnalytics();
-
-    const { container } = render(panel());
-
-    expect(container).toBeEmptyDOMElement();
-    // No panel means no impression to report.
-    expect(trackedEvents()).toEqual([]);
   });
 
   test("tracks a click event carrying the reference id and coding depth", () => {
@@ -154,5 +144,128 @@ describe("EnrichmentRequestPanel", () => {
       OTHER_REFERENCE_ID,
       3,
     ]);
+  });
+
+  describe("fake door", () => {
+    const requestButton = () =>
+      screen.getByRole("button", { name: "Request additional coding" });
+
+    // The ✕ and the footer button share the accessible name "Close", so scope
+    // queries to the region rather than matching on the name.
+    const region = (suffix: string) =>
+      document.querySelector(`.enrichment-modal__${suffix}`) as HTMLElement;
+
+    const openModal = () => fireEvent.click(requestButton());
+
+    beforeEach(() => {
+      formTemplate = undefined;
+    });
+
+    test.each([
+      ["unset", undefined],
+      ["unparseable", "not-a-url"],
+      ["not https", "javascript:alert(1)"],
+    ])("stands in when the form URL is %s", (_label, template) => {
+      formTemplate = template;
+
+      render(panel());
+
+      expect(requestButton()).toBeDefined();
+      expect(
+        screen.queryByRole("link", { name: /Request more data/ }),
+      ).toBeNull();
+    });
+
+    // Deliberately the pre-form wording: it promises less than the form copy
+    // does, which is all the fake door can honour.
+    test("keeps its original prompt", () => {
+      render(panel());
+
+      expect(screen.getByText("Missing data elements?")).toBeDefined();
+      expect(
+        screen.getByText("Request extended ESEA annotation for this record."),
+      ).toBeDefined();
+    });
+
+    test("shows no modal until the button is clicked", () => {
+      render(panel());
+
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    test("opens a modal explaining the feature is under consideration", () => {
+      render(panel());
+      openModal();
+
+      const dialog = screen.getByRole("dialog", {
+        name: "Request additional coding",
+      });
+      expect(dialog).toHaveTextContent(
+        "This feature is currently under consideration. Thank you for expressing your interest — it helps us prioritise future development.",
+      );
+    });
+
+    test.each([
+      ["the header dismiss control", "header"],
+      ["the footer close button", "footer"],
+    ])("closes the modal from %s", (_name, suffix) => {
+      render(panel());
+      openModal();
+
+      fireEvent.click(within(region(suffix)).getByRole("button"));
+
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    test("closes the modal on Escape", () => {
+      render(panel());
+      openModal();
+
+      fireEvent.keyDown(window, { key: "Escape" });
+
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    test("moves focus into the modal and back to the trigger on close", () => {
+      render(panel());
+      const trigger = requestButton();
+
+      fireEvent.click(trigger);
+      expect(document.activeElement).toBe(screen.getByRole("dialog"));
+
+      fireEvent.click(within(region("footer")).getByRole("button"));
+      expect(document.activeElement).toBe(trigger);
+    });
+
+    // Capturing interest is the only reason the fallback exists, so assert the
+    // impression here too and not just on the form path.
+    test("reports the impression as the form does", () => {
+      mockAnalytics();
+
+      render(panel());
+
+      expect(trackedEvents()).toContainEqual([
+        "trackEvent",
+        "Enrichment",
+        "Request Coding Shown",
+        REFERENCE_ID,
+        CODED_ANNOTATIONS,
+      ]);
+    });
+
+    test("reports the click as the form link does", () => {
+      mockAnalytics();
+      render(panel());
+
+      openModal();
+
+      expect(trackedEvents()).toContainEqual([
+        "trackEvent",
+        "Enrichment",
+        "Request Coding Clicked",
+        REFERENCE_ID,
+        CODED_ANNOTATIONS,
+      ]);
+    });
   });
 });
