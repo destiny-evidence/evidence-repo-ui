@@ -50,7 +50,7 @@ export interface InvestigationRow {
   openalex_id: string | null;
   documentType: string;
   studyDesign: string;
-  vocabulary: string;
+  vocabulary: string | null;
 }
 
 export interface ArmRow {

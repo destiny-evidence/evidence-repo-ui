@@ -269,6 +269,21 @@ describe("buildInvestigationRow", () => {
     expect(buildInvestigationRow(ref, null, linked, {}, VOCAB).source).toBeNull();
   });
 
+  test("builds a row from bibliographic data alone when there is no linked data", () => {
+    const bib = bibEnh();
+    const ref = makeRef({ enhancements: [bib] });
+    const coding = rawSourcePatterns([[/(^|[^a-z])eef([^a-z]|$)/, "EEF"]]);
+
+    const row = buildInvestigationRow(ref, bib.content, null, {}, VOCAB, coding);
+    expect(row.title).toBe("Music and literacy");
+    expect(row.authors).toBe("Smith J; Jones K");
+    expect(row.publication_year).toBe(2010);
+    expect(row.source).toBeNull();
+    expect(row.vocabulary).toBeNull();
+    expect(row.documentType).toBe("");
+    expect(row.studyDesign).toBe("");
+  });
+
   test("joins multiple study designs; single document type unchanged", () => {
     const linked = linkedEnh({});
     const bib = bibEnh();

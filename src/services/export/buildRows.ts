@@ -362,11 +362,14 @@ function dedupeRows<T extends object>(rows: T[]): T[] {
  * bibliographic metadata from the latest bibliographic enhancement,
  * external identifiers from the reference, and document/study-design
  * concepts from the linked-data investigation block.
+ *
+ *`linked` is null for a reference with no coding, in this case only 
+ * biblographic info is exported. 
  */
 export function buildInvestigationRow(
   reference: Reference,
   bibliographic: BibliographicMetadataEnhancement | null,
-  linked: Enhancement & { content: LinkedDataEnhancement },
+  linked: (Enhancement & { content: LinkedDataEnhancement }) | null,
   investigation: Investigation,
   vocab: ConceptResolver,
   codingInstitution?: CodingInstitutionConfig,
@@ -377,7 +380,10 @@ export function buildInvestigationRow(
   const abstract = extractAbstract(reference)?.abstract;
   return {
     reference_id: String(reference.id),
-    source: codingInstitution?.fromLinkedData(reference, linked) ?? null,
+    source:
+      (linked
+        ? codingInstitution?.fromLinkedData(reference, linked)
+        : codingInstitution?.fromReference(reference)) ?? null,
     title: bibliographic?.title ?? null,
     abstract: abstract ? truncateForCell(abstract) : null,
     authors: authors || null,
@@ -386,7 +392,7 @@ export function buildInvestigationRow(
     openalex_id: extractOpenAlexId(reference.identifiers ?? null),
     documentType: joinCodedIds(ensureArray(investigation.documentType), vocab),
     studyDesign: joinCodedIds(ensureArray(investigation.studyDesign), vocab),
-    vocabulary: linked.content.vocabulary_uri,
+    vocabulary: linked?.content.vocabulary_uri ?? null,
   };
 }
 
