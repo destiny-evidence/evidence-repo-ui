@@ -114,9 +114,11 @@ function appendSheet<R extends object>(
 /**
  * Stream references and produce the three lists of header-keyed row
  * dicts. Accepts either a synchronous iterable (e.g. an array) or an
- * async iterable (e.g. the JSONL stream reader); `for await...of`
- * handles both. References without a linked-data enhancement are skipped
- * (no structured investigation to export).
+ * async iterable (e.g. the JSONL stream reader); 
+ * 
+ * Every reference produces an Investigation Details row; one
+ * without a linked-data enhancement contributes only its bibliographic
+ * columns and no arm or outcome rows.
  */
 export async function buildAllRows(
   references: ReferenceSource,
@@ -128,10 +130,9 @@ export async function buildAllRows(
   const outcomes: OutcomeRow[] = [];
   for await (const reference of references) {
     const linked = extractLinkedDataEnhancement(reference);
-    if (!linked) continue;
     const bibliographic = extractBibliographic(reference);
     const referenceId = String(reference.id);
-    const inv: Investigation = getInvestigation(linked.content.data);
+    const inv: Investigation = linked ? getInvestigation(linked.content.data) : {};
     const findings = ensureArray(inv["hasFinding"]).filter(isDict) as Finding[];
     const armIds = assignArmIds(findings);
     investigation.push(

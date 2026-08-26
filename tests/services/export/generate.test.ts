@@ -116,26 +116,42 @@ describe("generateWorkbook", () => {
     ]);
   });
 
-  test("skips references that have no linked_data enhancement", async () => {
-    // A reference with bibliographic but no linked_data — the skip path.
-    const skipRef = syntheticReference("ref-skip");
-    const noLinked: Reference = {
-      ...skipRef,
+  test("exports references that have no linked_data enhancement", async () => {
+    const base = syntheticReference("ref-uncoded");
+    const uncoded: Reference = {
+      ...base,
       enhancements:
-        skipRef.enhancements?.filter(
+        base.enhancements?.filter(
           (e) => e.content.enhancement_type !== "linked_data",
         ) ?? null,
     };
     const wb = await generateWorkbook(
-      [noLinked, syntheticReference("ref-keep")],
+      [uncoded, syntheticReference("ref-coded")],
       MINIMAL_VOCAB,
       { variant: "esea" },
     );
-    const inv = wb.Sheets["Investigation Details"]!;
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(inv);
-    // Header row excluded by sheet_to_json; exactly one body row.
-    expect(rows).toHaveLength(1);
-    expect(rows[0]!.reference_id).toBe("ref-keep");
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+      wb.Sheets["Investigation Details"]!,
+    );
+    expect(rows.map((r) => r.reference_id)).toEqual([
+      "ref-uncoded",
+      "ref-coded",
+    ]);
+
+    // Expect bibliographic columns only
+    expect(rows[0]!.title).toBe("Title ref-uncoded");
+    expect(rows[0]!.doi).toBe("10.1/ref-uncoded");
+    expect(rows[0]!.vocabulary ?? "").toBe("");
+    expect(rows[0]!.documentType ?? "").toBe("");
+    expect(rows[0]!.studyDesign ?? "").toBe("");
+
+    // No findings, so the uncoded reference contributes no arm or outcome rows.
+    for (const sheet of ["Investigation Arms", "Outcomes"]) {
+      const detailRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+        wb.Sheets[sheet]!,
+      );
+      expect(detailRows.map((r) => r.reference_id)).toEqual(["ref-coded"]);
+    }
   });
 
   test("accepts an async iterable of references", async () => {
