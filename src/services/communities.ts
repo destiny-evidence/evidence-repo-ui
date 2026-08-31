@@ -16,11 +16,10 @@ function requireEnv(name: string, value: string | undefined): string {
 }
 
 export const DEFAULT_FEATURES: CommunityFeatures = {
-  evidenceMap: false,
+  evidenceMap: true,
   aiSummaries: false,
   selfSignup: false,
   findingsAndEstimates: true,
-  // Off until a community's Excel export is built — the export is Education-shaped today.
   exportExcel: false,
   countryFacetFilter: true,
   // Selection UI still only shows where a consumer (AI summary / selection
@@ -48,7 +47,7 @@ function buildCopy(
   return {
     searchPlaceholder: "Search titles and abstracts",
     drawerTitle: "Refine the evidence",
-    countNoun: "results",
+    countNoun: "investigations",
     corpusDescriptor: `${name.toLowerCase()} research`,
     ...overrides,
   };
@@ -72,7 +71,7 @@ const COMMUNITIES: Community[] = [
     ],
     pillExcludedSchemes: [],
     geographicSchemes: [],
-    features: { ...DEFAULT_FEATURES, evidenceMap: true, exportExcel: true },
+    features: { ...DEFAULT_FEATURES, exportExcel: true },
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",
@@ -83,7 +82,7 @@ const COMMUNITIES: Community[] = [
         schemeUri: "https://vocab.esea.education/EducationThemeScheme",
       },
     },
-    copy: buildCopy("Education", { countNoun: "investigations" }),
+    copy: buildCopy("Education", { }),
     exportVariant: "esea",
     codingInstitution: rawSourcePatterns([
       [/(^|[^a-z])eef([^a-z]|$)/, "EEF"],
@@ -124,7 +123,6 @@ const COMMUNITIES: Community[] = [
     defaultExpandedFilters: [],
     features: {
       ...DEFAULT_FEATURES,
-      evidenceMap: true,
       aiSummaries: true,
       selfSignup: true,
       findingsAndEstimates: false,
@@ -176,6 +174,47 @@ const COMMUNITIES: Community[] = [
       },
     ],
   },
+  {
+    slug: "destiny",
+    name: "DESTINY",
+    // Update to "domain-inclusion/destiny-prototype" before merging.
+    defaultAnnotations: ["inclusion:destiny"],
+    vocabularyUrl: requireEnv(
+      "VITE_DESTINY_VOCABULARY_URL",
+      import.meta.env.VITE_DESTINY_VOCABULARY_URL,
+    ),
+    contextUrl: requireEnv(
+      "VITE_DESTINY_CONTEXT_URL",
+      import.meta.env.VITE_DESTINY_CONTEXT_URL,
+    ),
+    filterExcludedSchemes: [],
+    pillExcludedSchemes: [],
+    geographicSchemes: [
+      "https://vocab.destiny-evidence.org/geographic-location"
+    ],
+    pinnedFilters: [
+    ],
+    defaultExpandedFilters: [],
+    features: {
+      ...DEFAULT_FEATURES,
+      findingsAndEstimates: false,
+      countryFacetFilter: false,
+      exportExcel: false,
+    },
+    defaultEvidenceMapAxes: {
+      row: {
+        kind: "scheme",
+        schemeUri: "https://vocab.destiny-evidence.org/interventions-responses-solutions",
+      },
+      column: {
+        kind: "scheme",
+        schemeUri: "https://vocab.destiny-evidence.org/health-outcomes",
+      },
+    },
+    copy: buildCopy("DESTINY", {}),
+    exportVariant: "destiny",
+    externalResources: [],
+  }
 ];
 
 // findCommunity normalises lookups to lowercase, so an uppercase registered slug would be unreachable.

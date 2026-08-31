@@ -59,7 +59,7 @@ export interface ExternalResource {
 // Selects which client-side Excel workbook a community's export builds.
 // Matches the community slug: "esea" is the investigation-hierarchy workbook,
 // "hpv" the reference-level one.
-export type ExportVariant = "esea" | "hpv";
+export type ExportVariant = "esea" | "hpv" | "destiny";
 
 export interface Community {
   slug: string;
