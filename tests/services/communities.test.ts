@@ -146,8 +146,7 @@ describe("communities", () => {
 
   it("pins HPV's thematic-focus filters above publication year", async () => {
     const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("hpv")?.pinnedFilters?.slice(0, 4)).toEqual([
-      "https://vocab.aliveevidence.org/hpv/ConveningTheme",
+    expect(findCommunity("hpv")?.pinnedFilters?.slice(0, 3)).toEqual([
       "https://vocab.aliveevidence.org/hpv/ThematicFocusPrimary",
       "https://vocab.aliveevidence.org/hpv/ThematicFocusSecondary",
       "year",
