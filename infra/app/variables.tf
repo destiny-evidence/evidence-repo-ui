@@ -154,6 +154,19 @@ variable "hpv_context_url" {
   default     = "https://vocab.evidence-repository.org/published/019d3e6a-04d6-76e9-9f7a-b8b26c1e0976/2.2/context.jsonld"
 }
 
+variable "destiny_vocabulary_url" {
+  description = "URL of the DESTINY community's published SKOS vocabulary (.jsonld)"
+  type        = string
+  default     = "https://vocab.staging.evidence-repository.org/published/01a0321e-8b92-71bc-832f-f7bb9194869f/0.0.1/vocabulary.jsonld"
+}
+
+variable "destiny_context_url" {
+  description = "URL of the DESTINY community's JSON-LD @context (.jsonld)"
+  type        = string
+  default     = "https://vocab.staging.evidence-repository.org/published/01a0321e-8b92-71bc-832f-f7bb9194869f/0.0.1/context.jsonld"
+}
+
+
 
 variable "ci_slack_webhook_url" {
   description = "Slack webhook URL for deploy notifications to #destiny-ci"
