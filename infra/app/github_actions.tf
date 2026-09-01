@@ -187,6 +187,20 @@ resource "github_actions_environment_variable" "vite_hpv_context_url" {
   value         = var.hpv_context_url
 }
 
+resource "github_actions_environment_variable" "vite_destiny_vocabulary_url" {
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_DESTINY_VOCABULARY_URL"
+  value         = var.destiny_vocabulary_url
+}
+
+resource "github_actions_environment_variable" "vite_destiny_context_url" {
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_DESTINY_CONTEXT_URL"
+  value         = var.destiny_context_url
+}
+
 resource "github_actions_environment_variable" "frontdoor_resource_group" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment

@@ -57,8 +57,6 @@ export interface ExternalResource {
 }
 
 // Selects which client-side Excel workbook a community's export builds.
-// Matches the community slug: "esea" is the investigation-hierarchy workbook,
-// "hpv" the reference-level one.
 export type ExportVariant = "esea" | "hpv";
 
 export interface Community {
@@ -68,8 +66,7 @@ export interface Community {
   vocabularyUrl: string;
   contextUrl: string;
   filterExcludedSchemes: string[];
-  // Concept schemes whose concepts are dropped from result-card pills (they stay
-  // filterable in the drawer, they just aren't pills). HPV lists its geo schemes here.
+  // Concept schemes whose concepts are dropped from result-card pills.
   pillExcludedSchemes: string[];
   // Geographic concept schemes (country + regional/classification); shown first
   // (prioritized) on the detail page's Taxonomy codes card, and grouped together
@@ -90,7 +87,7 @@ export interface Community {
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;
   // Which Excel workbook the export builds when features.exportExcel is on.
-  exportVariant: ExportVariant;
+  exportVariant?: ExportVariant;
   externalResources?: ExternalResource[];
 }
 

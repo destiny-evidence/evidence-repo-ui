@@ -1,122 +1,171 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import type { Community } from "@/types/models";
 
+// Single source for the required variables: the stub, the missing-variable
+// cases, and the URL assertions all derive from these entries.
+const ENV = {
+  VITE_ESEA_VOCABULARY_URL: "https://vocab.example/esea-v1",
+  VITE_ESEA_CONTEXT_URL: "https://vocab.example/esea-ctx",
+  VITE_HPV_VOCABULARY_URL: "https://vocab.example/hpv-v1",
+  VITE_HPV_CONTEXT_URL: "https://vocab.example/hpv-ctx",
+  VITE_DESTINY_VOCABULARY_URL: "https://vocab.example/dst-v1",
+  VITE_DESTINY_CONTEXT_URL: "https://vocab.example/dst-ctx",
+} as const;
+
 function stubValidEnv() {
-  vi.stubEnv("VITE_ESEA_VOCABULARY_URL", "https://vocab.example/v1");
-  vi.stubEnv("VITE_ESEA_CONTEXT_URL", "https://vocab.example/ctx");
-  vi.stubEnv("VITE_HPV_VOCABULARY_URL", "https://vocab.example/hpv-v1");
-  vi.stubEnv("VITE_HPV_CONTEXT_URL", "https://vocab.example/hpv-ctx");
+  for (const [name, value] of Object.entries(ENV)) vi.stubEnv(name, value);
 }
 
-// Each test re-evaluates communities.ts against fresh env stubs, so the module
-// registry must be cleared before every dynamic import.
-describe("communities", () => {
+// communities.ts reads env at module scope, so each case here needs the module
+// registry cleared before its dynamic import.
+describe("communities env validation", () => {
   beforeEach(() => {
     vi.resetModules();
     stubValidEnv();
   });
+
   afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it.each(Object.keys(ENV))("throws when %s is missing", async (name) => {
+    vi.stubEnv(name, "");
+    await expect(import("@/services/communities")).rejects.toThrow(name);
+  });
+});
+
+describe("community registry", () => {
+  let mod: typeof import("@/services/communities");
+
+  beforeAll(async () => {
+    vi.resetModules();
+    stubValidEnv();
+    mod = await import("@/services/communities");
+  });
+
+  afterAll(() => {
     vi.unstubAllEnvs();
     vi.resetModules();
   });
 
   it.each([
-    "VITE_ESEA_VOCABULARY_URL",
-    "VITE_ESEA_CONTEXT_URL",
-    "VITE_HPV_VOCABULARY_URL",
-    "VITE_HPV_CONTEXT_URL",
-  ])("throws when %s is missing", async (name) => {
-    vi.stubEnv(name, "");
-    await expect(import("@/services/communities")).rejects.toThrow(name);
+    {
+      slug: "esea",
+      name: "Education",
+      vocabularyUrl: ENV.VITE_ESEA_VOCABULARY_URL,
+      contextUrl: ENV.VITE_ESEA_CONTEXT_URL,
+      countNoun: "investigations",
+      corpusDescriptor: "education research",
+    },
+    {
+      slug: "hpv",
+      name: "HPV Vaccine Delivery",
+      vocabularyUrl: ENV.VITE_HPV_VOCABULARY_URL,
+      contextUrl: ENV.VITE_HPV_CONTEXT_URL,
+      countNoun: "references",
+      corpusDescriptor: "HPV vaccine delivery research",
+    },
+    {
+      slug: "destiny",
+      name: "DESTINY",
+      vocabularyUrl: ENV.VITE_DESTINY_VOCABULARY_URL,
+      contextUrl: ENV.VITE_DESTINY_CONTEXT_URL,
+      countNoun: "investigations",
+      corpusDescriptor: "destiny research",
+    },
+  ])(
+    "resolves $slug with its URLs and copy",
+    ({ slug, countNoun, corpusDescriptor, ...identity }) => {
+      expect(mod.findCommunity(slug)).toMatchObject({
+        ...identity,
+        copy: {
+          countNoun,
+          corpusDescriptor,
+          searchPlaceholder: "Search titles and abstracts",
+        },
+      });
+    },
+  );
+
+  it("resolves a coding institution for ESEA only", () => {
+    expect(mod.findCommunity("esea")?.codingInstitution).toBeDefined();
+    expect(mod.findCommunity("hpv")?.codingInstitution).toBeUndefined();
+    expect(mod.findCommunity("destiny")?.codingInstitution).toBeUndefined();
   });
 
-  it("resolves each community with its URLs, copy, and features", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    const esea = findCommunity("esea");
-    const hpv = findCommunity("hpv");
-
-    expect(esea?.vocabularyUrl).toBe("https://vocab.example/v1");
-    expect(esea?.contextUrl).toBe("https://vocab.example/ctx");
-    // copy: overridden noun, name-derived corpusDescriptor, shared defaults.
-    expect(esea?.copy.countNoun).toBe("investigations");
-    expect(esea?.copy.corpusDescriptor).toBe("education research");
-    expect(esea?.copy.searchPlaceholder).toBe("Search titles and abstracts");
-    expect(typeof esea?.features.evidenceMap).toBe("boolean");
-
-    expect(hpv?.name).toBe("HPV Vaccine Delivery");
-    expect(hpv?.vocabularyUrl).toBe("https://vocab.example/hpv-v1");
-    expect(hpv?.copy.countNoun).toBe("references");
-    expect(hpv?.copy.corpusDescriptor).toBe("HPV vaccine delivery research");
-    expect(hpv?.copy.searchPlaceholder).toBe("Search titles and abstracts");
-    expect(typeof hpv?.features.evidenceMap).toBe("boolean");
-    expect(hpv?.codingInstitution).toBeUndefined();
+  it("resolves community slugs case-insensitively, so uppercase acronym URLs still work", () => {
+    expect(mod.findCommunity("ESEA")?.slug).toBe("esea");
+    expect(mod.findCommunity("Hpv")?.slug).toBe("hpv");
   });
 
-  it("resolves community slugs case-insensitively, so uppercase acronym URLs still work", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("ESEA")?.slug).toBe("esea");
-    expect(findCommunity("Hpv")?.slug).toBe("hpv");
+  it("rejects a registered community slug that is not lowercase", () => {
+    expect(() =>
+      mod.assertLowercaseSlugs([{ slug: "ESEA" } as Community]),
+    ).toThrow(/lowercase/);
   });
 
-  it("rejects a registered community slug that is not lowercase", async () => {
-    const { assertLowercaseSlugs } = await import("@/services/communities");
-    expect(() => assertLowercaseSlugs([{ slug: "ESEA" } as Community])).toThrow(
-      /lowercase/,
-    );
+  it("defaults to the HPV community", () => {
+    expect(mod.DEFAULT_COMMUNITY_SLUG).toBe("hpv");
+    expect(mod.DEFAULT_COMMUNITY.name).toBe("HPV Vaccine Delivery");
   });
 
-  it("defaults to the HPV community", async () => {
-    const { DEFAULT_COMMUNITY, DEFAULT_COMMUNITY_SLUG } = await import(
-      "@/services/communities"
-    );
-    expect(DEFAULT_COMMUNITY_SLUG).toBe("hpv");
-    expect(DEFAULT_COMMUNITY.name).toBe("HPV Vaccine Delivery");
+  it("defaults features to evidence maps, findings/estimates, the country facet and reference selection", () => {
+    expect(mod.DEFAULT_FEATURES).toEqual({
+      evidenceMap: true,
+      aiSummaries: false,
+      selfSignup: false,
+      findingsAndEstimates: true,
+      exportExcel: false,
+      countryFacetFilter: true,
+      referenceSelection: true,
+    });
   });
 
-  it("enables AI summaries only for HPV", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("hpv")?.features.aiSummaries).toBe(true);
-    expect(findCommunity("esea")?.features.aiSummaries).toBe(false);
+  it.each([
+    {
+      slug: "esea",
+      aiSummaries: false,
+      selfSignup: false,
+      findingsAndEstimates: true,
+      exportExcel: true,
+      countryFacetFilter: true
+    },
+    {
+      slug: "hpv",
+      aiSummaries: true,
+      selfSignup: true,
+      findingsAndEstimates: false,
+      exportExcel: true,
+      countryFacetFilter: false
+    },
+    {
+      slug: "destiny",
+      aiSummaries: false,
+      selfSignup: false,
+      findingsAndEstimates: false,
+      exportExcel: false,
+      countryFacetFilter: false
+    },
+  ])("gates features for $slug", ({ slug, ...features }) => {
+    expect(mod.findCommunity(slug)?.features).toMatchObject(features);
   });
 
-  it("opts evidence-map and AI summaries out by default, leaving communities to enable them", async () => {
-    const { DEFAULT_FEATURES } = await import("@/services/communities");
-    expect(DEFAULT_FEATURES.evidenceMap).toBe(false);
-    expect(DEFAULT_FEATURES.aiSummaries).toBe(false);
+  it("selects the per-community export workbook variant", () => {
+    expect(mod.findCommunity("esea")?.exportVariant).toBe("esea");
+    expect(mod.findCommunity("hpv")?.exportVariant).toBe("hpv");
   });
 
-  it("opts Excel export out by default, leaving communities to enable it", async () => {
-    const { DEFAULT_FEATURES } = await import("@/services/communities");
-    expect(DEFAULT_FEATURES.exportExcel).toBe(false);
-  });
-
-  it("gates findings/estimates per community (ESEA on, HPV off)", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("esea")?.features.findingsAndEstimates).toBe(true);
-    expect(findCommunity("hpv")?.features.findingsAndEstimates).toBe(false);
-  });
-
-  it("enables Excel export for both communities", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("esea")?.features.exportExcel).toBe(true);
-    expect(findCommunity("hpv")?.features.exportExcel).toBe(true);
-  });
-
-  it("selects the per-community export workbook variant", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("esea")?.exportVariant).toBe("esea");
-    expect(findCommunity("hpv")?.exportVariant).toBe("hpv");
-  });
-
-  it("gates the facet-backed country filter per community (ESEA on, HPV off)", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("esea")?.features.countryFacetFilter).toBe(true);
-    expect(findCommunity("hpv")?.features.countryFacetFilter).toBe(false);
-  });
-
-  it("defaults HPV's evidence map to WHO Region rows x Thematic Focus — Primary columns", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("hpv")?.defaultEvidenceMapAxes).toEqual({
+  it("defaults HPV's evidence map to WHO Region rows x Thematic Focus — Primary columns", () => {
+    expect(mod.findCommunity("hpv")?.defaultEvidenceMapAxes).toEqual({
       row: {
         kind: "scheme",
         schemeUri: "https://vocab.aliveevidence.org/hpv/WHORegion",
@@ -128,10 +177,25 @@ describe("communities", () => {
     });
   });
 
-  it("declares exactly the 5 HPV geographic schemes, none for ESEA", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("esea")?.geographicSchemes).toEqual([]);
-    const hpvGeo = findCommunity("hpv")?.geographicSchemes ?? [];
+  it("defaults DESTINY's evidence map to interventions/responses/solutions rows x health outcome columns", () => {
+    expect(mod.findCommunity("destiny")?.defaultEvidenceMapAxes).toEqual({
+      row: {
+        kind: "scheme",
+        schemeUri: "https://vocab.destiny-evidence.org/interventions-responses-solutions",
+      },
+      column: {
+        kind: "scheme",
+        schemeUri: "https://vocab.destiny-evidence.org/health-outcomes",
+      },
+    });
+  });
+
+  it("declares expected geographic schemes", () => {
+    expect(mod.findCommunity("esea")?.geographicSchemes).toEqual([]);
+    expect(mod.findCommunity("destiny")?.geographicSchemes).toEqual([
+      "https://vocab.destiny-evidence.org/geographic-location"
+    ]);
+    const hpvGeo = mod.findCommunity("hpv")?.geographicSchemes ?? [];
     expect(hpvGeo).toHaveLength(5);
     expect(hpvGeo).toEqual(
       expect.arrayContaining([
@@ -144,25 +208,25 @@ describe("communities", () => {
     );
   });
 
-  it("pins HPV's thematic-focus filters above publication year", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("hpv")?.pinnedFilters?.slice(0, 3)).toEqual([
+  it("pins HPV's thematic-focus filters above publication year", () => {
+    expect(mod.findCommunity("hpv")?.pinnedFilters?.slice(0, 3)).toEqual([
       "https://vocab.aliveevidence.org/hpv/ThematicFocusPrimary",
       "https://vocab.aliveevidence.org/hpv/ThematicFocusSecondary",
       "year",
     ]);
   });
 
-  it("collapses HPV's filters by default, leaving ESEA on the default", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("hpv")?.defaultExpandedFilters).toEqual([]);
-    expect(findCommunity("esea")?.defaultExpandedFilters).toBeUndefined();
+  it("collapses HPV and DESTINYs filters", () => {
+    expect(mod.findCommunity("hpv")?.defaultExpandedFilters).toEqual([]);
+    expect(mod.findCommunity("destiny")?.defaultExpandedFilters).toEqual([]);
+    expect(mod.findCommunity("esea")?.defaultExpandedFilters).toBeUndefined();
   });
 
-  it("excludes the HPV geographic schemes from result-card pills, none for ESEA", async () => {
-    const { findCommunity } = await import("@/services/communities");
-    expect(findCommunity("esea")?.pillExcludedSchemes).toEqual([]);
-    const hpv = findCommunity("hpv");
+  it("excludes the HPV geographic schemes from result-card pills, none for other communities", () => {
+    expect(mod.findCommunity("esea")?.pillExcludedSchemes).toEqual([]);
+    expect(mod.findCommunity("destiny")?.pillExcludedSchemes).toEqual([]);
+
+    const hpv = mod.findCommunity("hpv");
     // HPV drops its geo schemes from pills; same set as geographicSchemes today,
     // but a distinct field so the pill-exclusion intent is explicit in config.
     expect(hpv?.pillExcludedSchemes).toEqual(hpv?.geographicSchemes);

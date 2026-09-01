@@ -66,8 +66,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
     return parseInvestigation(linkedData.data, prefixes, ls);
   }, [linkedData, context, labels]);
 
-  // Applied concepts grouped by scheme for the HPV Taxonomy codes card.
-  // Data-gated downstream on length > 0, so ESEA (no applied concepts) is untouched.
+  // Applied concepts grouped by scheme for taxonomy codes card.
   const taxonomyGroups = useMemo(
     () =>
       groupAppliedConcepts(
