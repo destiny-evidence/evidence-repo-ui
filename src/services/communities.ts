@@ -192,15 +192,13 @@ const COMMUNITIES: Community[] = [
     geographicSchemes: [
       "https://vocab.destiny-evidence.org/geographic-location"
     ],
-    pinnedFilters: [
-    ],
-    defaultExpandedFilters: [],
     features: {
       ...DEFAULT_FEATURES,
       findingsAndEstimates: false,
       countryFacetFilter: false,
       exportExcel: false,
     },
+    defaultExpandedFilters: [],
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",
