@@ -57,7 +57,7 @@ export interface ExternalResource {
 }
 
 // Selects which client-side Excel workbook a community's export builds.
-export type ExportVariant = "esea" | "hpv" | "destiny";
+export type ExportVariant = "esea" | "hpv";
 
 export interface Community {
   slug: string;
@@ -87,7 +87,7 @@ export interface Community {
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;
   // Which Excel workbook the export builds when features.exportExcel is on.
-  exportVariant: ExportVariant;
+  exportVariant?: ExportVariant;
   externalResources?: ExternalResource[];
 }
 

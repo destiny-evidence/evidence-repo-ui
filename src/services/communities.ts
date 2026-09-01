@@ -210,7 +210,6 @@ const COMMUNITIES: Community[] = [
       },
     },
     copy: buildCopy("DESTINY", {}),
-    exportVariant: "destiny",
     externalResources: [],
   }
 ];

@@ -162,7 +162,6 @@ describe("community registry", () => {
   it("selects the per-community export workbook variant", () => {
     expect(mod.findCommunity("esea")?.exportVariant).toBe("esea");
     expect(mod.findCommunity("hpv")?.exportVariant).toBe("hpv");
-    expect(mod.findCommunity("destiny")?.exportVariant).toBe("destiny");
   });
 
   it("defaults HPV's evidence map to WHO Region rows x Thematic Focus — Primary columns", () => {

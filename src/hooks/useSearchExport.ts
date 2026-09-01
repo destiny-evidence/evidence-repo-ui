@@ -67,17 +67,21 @@ async function downloadForFormat(
   options: StartExportOptions,
 ): Promise<void> {
   switch (options.format) {
-    case "excel":
+    case "excel": {
+      if (!options.variant) {
+        throw new Error("Excel export requires community.exportVariant");
+      }
       await exportReferencesToExcel(
         resultUrl,
         options.vocabularyUrl!,
         options.contextUrl!,
         options.filename,
-        options.variant!,
+        options.variant,
         options.codingInstitution,
         options.pinnedFilters,
       );
       return;
+    }
     case "ris":
       await downloadRisExport(resultUrl, options.filename);
       return;
