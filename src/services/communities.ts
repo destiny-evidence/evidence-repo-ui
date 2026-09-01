@@ -177,8 +177,7 @@ const COMMUNITIES: Community[] = [
   {
     slug: "destiny",
     name: "DESTINY",
-    // Update to "domain-inclusion/destiny-prototype" before merging.
-    defaultAnnotations: ["inclusion:destiny"],
+    defaultAnnotations: ["domain-inclusion/destiny-prototype"],
     vocabularyUrl: requireEnv(
       "VITE_DESTINY_VOCABULARY_URL",
       import.meta.env.VITE_DESTINY_VOCABULARY_URL,
