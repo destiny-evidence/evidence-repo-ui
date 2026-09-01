@@ -57,32 +57,49 @@ describe("community registry", () => {
     vi.resetModules();
   });
 
-  it("resolves each community with its URLs and copy", () => {
-    const esea = mod.findCommunity("esea");
-    const hpv = mod.findCommunity("hpv");
-    const destiny = mod.findCommunity("destiny");
+  it.each([
+    {
+      slug: "esea",
+      name: "Education",
+      vocabularyUrl: ENV.VITE_ESEA_VOCABULARY_URL,
+      contextUrl: ENV.VITE_ESEA_CONTEXT_URL,
+      countNoun: "investigations",
+      corpusDescriptor: "education research",
+    },
+    {
+      slug: "hpv",
+      name: "HPV Vaccine Delivery",
+      vocabularyUrl: ENV.VITE_HPV_VOCABULARY_URL,
+      contextUrl: ENV.VITE_HPV_CONTEXT_URL,
+      countNoun: "references",
+      corpusDescriptor: "HPV vaccine delivery research",
+    },
+    {
+      slug: "destiny",
+      name: "DESTINY",
+      vocabularyUrl: ENV.VITE_DESTINY_VOCABULARY_URL,
+      contextUrl: ENV.VITE_DESTINY_CONTEXT_URL,
+      countNoun: "investigations",
+      corpusDescriptor: "destiny research",
+    },
+  ])(
+    "resolves $slug with its URLs and copy",
+    ({ slug, countNoun, corpusDescriptor, ...identity }) => {
+      expect(mod.findCommunity(slug)).toMatchObject({
+        ...identity,
+        copy: {
+          countNoun,
+          corpusDescriptor,
+          searchPlaceholder: "Search titles and abstracts",
+        },
+      });
+    },
+  );
 
-    expect(esea?.vocabularyUrl).toBe(ENV.VITE_ESEA_VOCABULARY_URL);
-    expect(esea?.contextUrl).toBe(ENV.VITE_ESEA_CONTEXT_URL);
-    expect(esea?.copy.countNoun).toBe("investigations");
-    expect(esea?.copy.corpusDescriptor).toBe("education research");
-    expect(esea?.copy.searchPlaceholder).toBe("Search titles and abstracts");
-
-    expect(hpv?.name).toBe("HPV Vaccine Delivery");
-    expect(hpv?.vocabularyUrl).toBe(ENV.VITE_HPV_VOCABULARY_URL);
-    expect(hpv?.contextUrl).toBe(ENV.VITE_HPV_CONTEXT_URL);
-    expect(hpv?.copy.countNoun).toBe("references");
-    expect(hpv?.copy.corpusDescriptor).toBe("HPV vaccine delivery research");
-    expect(hpv?.copy.searchPlaceholder).toBe("Search titles and abstracts");
-    expect(hpv?.codingInstitution).toBeUndefined();
-
-    expect(destiny?.name).toBe("DESTINY");
-    expect(destiny?.vocabularyUrl).toBe(ENV.VITE_DESTINY_VOCABULARY_URL);
-    expect(destiny?.contextUrl).toBe(ENV.VITE_DESTINY_CONTEXT_URL);
-    expect(destiny?.copy.countNoun).toBe("investigations");
-    expect(destiny?.copy.corpusDescriptor).toBe("destiny research");
-    expect(destiny?.copy.searchPlaceholder).toBe("Search titles and abstracts");
-    expect(destiny?.codingInstitution).toBeUndefined();
+  it("resolves a coding institution for ESEA only", () => {
+    expect(mod.findCommunity("esea")?.codingInstitution).toBeDefined();
+    expect(mod.findCommunity("hpv")?.codingInstitution).toBeUndefined();
+    expect(mod.findCommunity("destiny")?.codingInstitution).toBeUndefined();
   });
 
   it("resolves community slugs case-insensitively, so uppercase acronym URLs still work", () => {
@@ -101,48 +118,51 @@ describe("community registry", () => {
     expect(mod.DEFAULT_COMMUNITY.name).toBe("HPV Vaccine Delivery");
   });
 
-  it("enables AI summaries only for HPV", () => {
-    expect(mod.findCommunity("hpv")?.features.aiSummaries).toBe(true);
-    expect(mod.findCommunity("esea")?.features.aiSummaries).toBe(false);
-    expect(mod.findCommunity("destiny")?.features.aiSummaries).toBe(false);
+  it("defaults features to evidence maps, findings/estimates, the country facet and reference selection", () => {
+    expect(mod.DEFAULT_FEATURES).toEqual({
+      evidenceMap: true,
+      aiSummaries: false,
+      selfSignup: false,
+      findingsAndEstimates: true,
+      exportExcel: false,
+      countryFacetFilter: true,
+      referenceSelection: true,
+    });
   });
 
-  it("opts AI summaries out by default, leaving communities to enable them", () => {
-    expect(mod.DEFAULT_FEATURES.aiSummaries).toBe(false);
-  });
-
-  it("opts evidence maps in by default, leaving communities to disable them", () => {
-    expect(mod.DEFAULT_FEATURES.evidenceMap).toBe(true);
-  });
-
-  it("opts Excel export out by default, leaving communities to enable it", () => {
-    expect(mod.DEFAULT_FEATURES.exportExcel).toBe(false);
-  });
-
-  it("gates findings/estimates per community", () => {
-    expect(mod.findCommunity("esea")?.features.findingsAndEstimates).toBe(true);
-    expect(mod.findCommunity("hpv")?.features.findingsAndEstimates).toBe(false);
-    expect(mod.findCommunity("hpv")?.features.findingsAndEstimates).toBe(false);
-  });
-
-  it("enables Excel export for expected communities", () => {
-    expect(mod.findCommunity("esea")?.features.exportExcel).toBe(true);
-    expect(mod.findCommunity("hpv")?.features.exportExcel).toBe(true);
-    expect(mod.findCommunity("destiny")?.features.exportExcel).toBe(false);
+  it.each([
+    {
+      slug: "esea",
+      aiSummaries: false,
+      selfSignup: false,
+      findingsAndEstimates: true,
+      exportExcel: true,
+      countryFacetFilter: true
+    },
+    {
+      slug: "hpv",
+      aiSummaries: true,
+      selfSignup: true,
+      findingsAndEstimates: false,
+      exportExcel: true,
+      countryFacetFilter: false
+    },
+    {
+      slug: "destiny",
+      aiSummaries: false,
+      selfSignup: false,
+      findingsAndEstimates: false,
+      exportExcel: false,
+      countryFacetFilter: false
+    },
+  ])("gates features for $slug", ({ slug, ...features }) => {
+    expect(mod.findCommunity(slug)?.features).toMatchObject(features);
   });
 
   it("selects the per-community export workbook variant", () => {
     expect(mod.findCommunity("esea")?.exportVariant).toBe("esea");
     expect(mod.findCommunity("hpv")?.exportVariant).toBe("hpv");
     expect(mod.findCommunity("destiny")?.exportVariant).toBe("destiny");
-  });
-
-  it("gates the facet-backed country filter per community", () => {
-    expect(mod.findCommunity("esea")?.features.countryFacetFilter).toBe(true);
-    expect(mod.findCommunity("hpv")?.features.countryFacetFilter).toBe(false);
-    expect(mod.findCommunity("destiny")?.features.countryFacetFilter).toBe(
-      false,
-    );
   });
 
   it("defaults HPV's evidence map to WHO Region rows x Thematic Focus — Primary columns", () => {
