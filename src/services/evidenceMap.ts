@@ -156,6 +156,125 @@ export function buildConceptTree(scheme: ConceptScheme): AxisTreeNode[] {
   return walk(scheme.topConcepts, 0);
 }
 
+export interface VisibleAxisCategory extends AxisCategory {
+  depth: number;
+  hasChildren: boolean;
+  expanded: boolean;
+}
+
+export interface AxisBandCell extends VisibleAxisCategory {
+  // Visible leaves covered along the grid axis.
+  span: number;
+  // Header tiers covered across the grid axis.
+  tierSpan: number;
+}
+
+export interface AxisBands {
+  maxDepth: number;
+  // Column-oriented cells grouped from shallowest to deepest tier.
+  tiers: AxisBandCell[][];
+  // Terminal categories used for grid cells and count lookup.
+  leaves: AxisCategory[];
+  // Row-oriented cells grouped by their matching terminal category.
+  rail: AxisBandCell[][];
+}
+
+export function defaultExpandedKeys(
+  tree: readonly AxisTreeNode[],
+): Set<string> {
+  return new Set(
+    tree
+      .filter((node) => node.children.length > 0)
+      .map((node) => node.category.key),
+  );
+}
+
+export function visibleTreeCategories(
+  tree: readonly AxisTreeNode[],
+  expandedKeys: ReadonlySet<string>,
+): VisibleAxisCategory[] {
+  const categories: VisibleAxisCategory[] = [];
+  const walk = (nodes: readonly AxisTreeNode[]) => {
+    for (const node of nodes) {
+      const hasChildren = node.children.length > 0;
+      const expanded = hasChildren && expandedKeys.has(node.category.key);
+      categories.push({
+        ...node.category,
+        depth: node.depth,
+        hasChildren,
+        expanded,
+      });
+      if (expanded) walk(node.children);
+    }
+  };
+  walk(tree);
+  return categories;
+}
+
+// Derive column tiers and the row rail together so sibling offsets stay aligned.
+export function buildAxisBands(
+  tree: readonly AxisTreeNode[],
+  expandedKeys: ReadonlySet<string>,
+): AxisBands {
+  if (tree.length === 0) {
+    return { maxDepth: 0, tiers: [], leaves: [], rail: [] };
+  }
+
+  const visible = visibleTreeCategories(tree, expandedKeys);
+  const maxDepth = visible.reduce(
+    (deepest, category) => Math.max(deepest, category.depth),
+    0,
+  );
+  const tiers: AxisBandCell[][] = Array.from(
+    { length: maxDepth + 1 },
+    () => [],
+  );
+  const leaves: AxisCategory[] = [];
+  const rail: AxisBandCell[][] = [];
+
+  const walk = (nodes: readonly AxisTreeNode[]) => {
+    for (const node of nodes) {
+      const hasChildren = node.children.length > 0;
+      const expanded = hasChildren && expandedKeys.has(node.category.key);
+      const cell: AxisBandCell = {
+        ...node.category,
+        depth: node.depth,
+        hasChildren,
+        expanded,
+        span: 1,
+        tierSpan: expanded ? 1 : maxDepth - node.depth + 1,
+      };
+      tiers[node.depth].push(cell);
+
+      if (expanded) {
+        const firstLeaf = rail.length;
+        walk(node.children);
+        cell.span = rail.length - firstLeaf;
+        rail[firstLeaf].unshift(cell);
+      } else {
+        leaves.push(node.category);
+        rail.push([cell]);
+      }
+    }
+  };
+  walk(tree);
+  return { maxDepth, tiers, leaves, rail };
+}
+
+// Hidden descendants must not return through the model's cell-only fallback.
+export function restrictCellsToLeaves(
+  cells: readonly CrossFacetCell[],
+  rowLeafKeys: ReadonlySet<string> | null,
+  columnLeafKeys: ReadonlySet<string> | null,
+): readonly CrossFacetCell[] {
+  if (!rowLeafKeys && !columnLeafKeys) return cells;
+  return cells.filter(({ axes: [rowKey, columnKey] }) => {
+    if (rowLeafKeys && !rowLeafKeys.has(rowKey)) return false;
+    if (columnLeafKeys && !columnLeafKeys.has(columnKey)) return false;
+    return true;
+  });
+}
+
 // Flatten the tree in depth-first order so parents remain beside descendants.
 function flattenTree(tree: readonly AxisTreeNode[]): AxisCategory[] {
   const out: AxisCategory[] = [];

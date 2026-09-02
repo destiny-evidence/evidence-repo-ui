@@ -11,6 +11,11 @@ import {
   axisSearchParams,
   backToVisualiseState,
   backToVisualiseUrl,
+  buildAxisBands,
+  buildConceptTree,
+  defaultExpandedKeys,
+  restrictCellsToLeaves,
+  visibleTreeCategories,
   type AxisCategory,
 } from "@/services/evidenceMap";
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
@@ -306,6 +311,200 @@ describe("resolveMapAxis", () => {
     expect(axis.tree).toBeUndefined();
     expect(axis.labelFor("FR")).toBe(countryName("FR"));
     expect(axis.labelFor("FR")).not.toBe("FR");
+  });
+});
+
+describe("partially expanded axis layout", () => {
+  const nestedScheme: ConceptScheme = {
+    uri: "scheme:nested",
+    label: "Nested Scheme",
+    topConcepts: [
+      { uri: "u:zero", label: "Zero" },
+      {
+        uri: "u:a",
+        label: "A",
+        narrower: [
+          {
+            uri: "u:a1",
+            label: "A1",
+            narrower: [
+              { uri: "u:a1a", label: "A1a" },
+              { uri: "u:a1b", label: "A1b" },
+            ],
+          },
+          { uri: "u:a2", label: "A2" },
+        ],
+      },
+      {
+        uri: "u:b",
+        label: "B",
+        narrower: [
+          { uri: "u:b1", label: "B1" },
+          { uri: "u:b2", label: "B2" },
+        ],
+      },
+    ],
+  };
+
+  test("defaults to one level beneath each top concept with children", () => {
+    const tree = buildConceptTree(nestedScheme);
+    const expanded = defaultExpandedKeys(tree);
+    expect([...expanded]).toEqual(["u:a", "u:b"]);
+    expect(buildAxisBands(tree, expanded).leaves.map((leaf) => leaf.key)).toEqual(
+      ["u:zero", "u:a1", "u:a2", "u:b1", "u:b2"],
+    );
+  });
+
+  test("builds multi-level tiers, spans, and a leaf-aligned row rail", () => {
+    const tree = buildConceptTree(nestedScheme);
+    const bands = buildAxisBands(tree, new Set(["u:a", "u:a1"]));
+
+    expect(bands.maxDepth).toBe(2);
+    expect(bands.tiers.map((tier) => tier.map((cell) => cell.key))).toEqual([
+      ["u:zero", "u:a", "u:b"],
+      ["u:a1", "u:a2"],
+      ["u:a1a", "u:a1b"],
+    ]);
+    expect(
+      bands.tiers.map((tier) =>
+        tier.map(({ key, span, tierSpan }) => ({ key, span, tierSpan })),
+      ),
+    ).toEqual([
+      [
+        { key: "u:zero", span: 1, tierSpan: 3 },
+        { key: "u:a", span: 3, tierSpan: 1 },
+        { key: "u:b", span: 1, tierSpan: 3 },
+      ],
+      [
+        { key: "u:a1", span: 2, tierSpan: 1 },
+        { key: "u:a2", span: 1, tierSpan: 2 },
+      ],
+      [
+        { key: "u:a1a", span: 1, tierSpan: 1 },
+        { key: "u:a1b", span: 1, tierSpan: 1 },
+      ],
+    ]);
+    expect(bands.leaves.map((leaf) => leaf.key)).toEqual([
+      "u:zero",
+      "u:a1a",
+      "u:a1b",
+      "u:a2",
+      "u:b",
+    ]);
+    expect(bands.rail.map((rail) => rail.map((cell) => cell.key))).toEqual([
+      ["u:zero"],
+      ["u:a", "u:a1", "u:a1a"],
+      ["u:a1b"],
+      ["u:a2"],
+      ["u:b"],
+    ]);
+  });
+
+  test("a leading terminal sibling does not move a later band's rail", () => {
+    const tree = buildConceptTree(nestedScheme);
+    const bands = buildAxisBands(tree, new Set(["u:a"]));
+    expect(bands.rail.map((rail) => rail.map((cell) => cell.key))).toEqual([
+      ["u:zero"],
+      ["u:a", "u:a1"],
+      ["u:a2"],
+      ["u:b"],
+    ]);
+  });
+
+  test("childless and empty axes remain safe terminal layouts", () => {
+    const tree = buildConceptTree(nestedScheme);
+    const visible = visibleTreeCategories(tree, new Set(["u:zero"]));
+    expect(visible[0]).toMatchObject({
+      key: "u:zero",
+      hasChildren: false,
+      expanded: false,
+    });
+    expect(buildAxisBands(tree, new Set(["u:zero"])).leaves[0].key).toBe(
+      "u:zero",
+    );
+    expect(buildAxisBands([], new Set(["u:unknown"]))).toEqual({
+      maxDepth: 0,
+      tiers: [],
+      leaves: [],
+      rail: [],
+    });
+  });
+
+  test("keeps all-zero visible leaves in the model", () => {
+    const tree = buildConceptTree(nestedScheme);
+    const bands = buildAxisBands(tree, defaultExpandedKeys(tree));
+    expect(bands.tiers[0].find((cell) => cell.key === "u:b")).toMatchObject({
+      expanded: true,
+      span: 2,
+    });
+    const { leaves } = bands;
+    const model = buildEvidenceMapModel(
+      [],
+      axisOf(leaves),
+      axisOf([{ key: "x", label: "X" }]),
+    );
+    expect(model.rows.map((row) => row.key)).toEqual([
+      "u:zero",
+      "u:a1",
+      "u:a2",
+      "u:b1",
+      "u:b2",
+    ]);
+    expect(model.getCount("u:b1", "x")).toBeUndefined();
+  });
+});
+
+describe("restrictCellsToLeaves", () => {
+  const nestedCells = [
+    cell("u:a", "x", 50),
+    cell("u:a1", "x", 30),
+    cell("u:a2", "x", 25),
+    cell("u:b", "x", 7),
+    cell("u:a", "y", 11),
+  ];
+
+  test("keeps only visible intersections and restricts each axis independently", () => {
+    expect(
+      restrictCellsToLeaves(
+        nestedCells,
+        new Set(["u:a", "u:b"]),
+        new Set(["x"]),
+      ),
+    ).toEqual([cell("u:a", "x", 50), cell("u:b", "x", 7)]);
+    expect(restrictCellsToLeaves(nestedCells, null, null)).toBe(nestedCells);
+  });
+
+  test("uses the API's parent count and never sums child cells into it", () => {
+    const collapsedCells = restrictCellsToLeaves(
+      nestedCells,
+      new Set(["u:a", "u:b"]),
+      new Set(["x"]),
+    );
+    const collapsed = buildEvidenceMapModel(
+      collapsedCells,
+      axisOf([{ key: "u:a", label: "A" }, { key: "u:b", label: "B" }]),
+      axisOf([{ key: "x", label: "X" }]),
+    );
+    expect(collapsed.getCount("u:a", "x")).toBe(50);
+
+    const expandedCells = restrictCellsToLeaves(
+      nestedCells,
+      new Set(["u:a1", "u:a2", "u:b"]),
+      new Set(["x"]),
+    );
+    const expanded = buildEvidenceMapModel(
+      expandedCells,
+      axisOf([
+        { key: "u:a1", label: "A1" },
+        { key: "u:a2", label: "A2" },
+        { key: "u:b", label: "B" },
+      ]),
+      axisOf([{ key: "x", label: "X" }]),
+    );
+    expect(expanded.getCount("u:a1", "x")).toBe(30);
+    expect(expanded.getCount("u:a2", "x")).toBe(25);
+    expect(expanded.rows.map((row) => row.key)).not.toContain("u:a");
+    expect(expanded.maxCount).toBe(30);
   });
 });
 
