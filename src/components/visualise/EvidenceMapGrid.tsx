@@ -3,6 +3,8 @@ import {
   bubbleRadius,
   formatCompact,
   legendTicks,
+  type AxisBandCell,
+  type AxisBands,
   type AxisCategory,
 } from "@/services/evidenceMap";
 import { Tooltip } from "../common/Tooltip";
@@ -37,6 +39,11 @@ interface EvidenceMapGridProps {
   // into Search filtered by that single axis category.
   onRowClick?: (row: AxisCategory) => void;
   onColumnClick?: (column: AxisCategory) => void;
+  // Optional hierarchy geometry; rows and columns match the respective leaves.
+  rowBands?: AxisBands;
+  columnBands?: AxisBands;
+  onToggleRow?: (key: string) => void;
+  onToggleColumn?: (key: string) => void;
 }
 
 // Bubble view shows a compact count, so its tooltip leads with the exact value;
@@ -98,11 +105,51 @@ export function EvidenceMapGrid({
   onCellClick,
   onRowClick,
   onColumnClick,
+  rowBands,
+  columnBands,
+  onToggleRow,
+  onToggleColumn,
 }: EvidenceMapGridProps) {
   // Track the hovered cell so we can highlight its full row and column — a
   // clear crosshair when the grid grows past a screenful.
   const [hover, setHover] = useState<{ row: string; column: string } | null>(
     null,
+  );
+  const nestedColumns =
+    columnBands && columnBands.tiers.length > 0 ? columnBands : undefined;
+  const rowRail = rowBands?.rail ?? null;
+  const columnTierCount = nestedColumns?.tiers.length ?? 1;
+  const rowTierCount = rowBands ? rowBands.maxDepth + 1 : 1;
+
+  const corner = (
+    <>
+      {total !== undefined && (
+        <span class="evidence-map__total">
+          <span class="evidence-map__total-count">{total}</span> unique{" "}
+          {countNoun}
+        </span>
+      )}
+      <span class="evidence-map__axis-key">
+        <span class="evidence-map__axis">
+          <span class="evidence-map__axis-role lg-label">
+            <span class="evidence-map__axis-icon" aria-hidden="true">
+              ↔
+            </span>{" "}
+            Columns
+          </span>
+          <span class="evidence-map__axis-name">{columnAxisLabel}</span>
+        </span>
+        <span class="evidence-map__axis">
+          <span class="evidence-map__axis-role lg-label">
+            <span class="evidence-map__axis-icon" aria-hidden="true">
+              ↕
+            </span>{" "}
+            Rows
+          </span>
+          <span class="evidence-map__axis-name">{rowAxisLabel}</span>
+        </span>
+      </span>
+    </>
   );
 
   return (
@@ -117,83 +164,99 @@ export function EvidenceMapGrid({
           onMouseLeave={() => setHover(null)}
         >
           <thead>
-            <tr>
-              <th class="evidence-map__corner" scope="col">
-                {total !== undefined && (
-                  <span class="evidence-map__total">
-                    <span class="evidence-map__total-count">{total}</span> unique{" "}
-                    {countNoun}
-                  </span>
-                )}
-                <span class="evidence-map__axis-key">
-                  <span class="evidence-map__axis">
-                    <span class="evidence-map__axis-role lg-label">
-                      <span class="evidence-map__axis-icon" aria-hidden="true">
-                        ↔
-                      </span>{" "}
-                      Columns
-                    </span>
-                    <span class="evidence-map__axis-name">
-                      {columnAxisLabel}
-                    </span>
-                  </span>
-                  <span class="evidence-map__axis">
-                    <span class="evidence-map__axis-role lg-label">
-                      <span class="evidence-map__axis-icon" aria-hidden="true">
-                        ↕
-                      </span>{" "}
-                      Rows
-                    </span>
-                    <span class="evidence-map__axis-name">{rowAxisLabel}</span>
-                  </span>
-                </span>
-              </th>
-              {columns.map((column) => (
+            {nestedColumns ? (
+              nestedColumns.tiers.map((tier, tierIndex) => (
+                <tr key={tierIndex}>
+                  {tierIndex === 0 && (
+                    <th
+                      class="evidence-map__corner"
+                      rowSpan={
+                        columnTierCount > 1 ? columnTierCount : undefined
+                      }
+                      colSpan={rowTierCount > 1 ? rowTierCount : undefined}
+                    >
+                      {corner}
+                    </th>
+                  )}
+                  {tier.map((cell) => (
+                    <ColumnHeaderCell
+                      key={cell.key}
+                      cell={cell}
+                      hoverColumn={hover?.column}
+                      countNoun={countNoun}
+                      onToggle={onToggleColumn}
+                      onColumnClick={onColumnClick}
+                    />
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
                 <th
-                  key={column.key}
-                  class={`evidence-map__col-head${
-                    onColumnClick ? " evidence-map__col-head--clickable" : ""
-                  }${hover?.column === column.key ? " is-active" : ""}`}
-                  scope="col"
+                  class="evidence-map__corner"
+                  colSpan={rowTierCount > 1 ? rowTierCount : undefined}
                 >
-                  <HeaderLabel
-                    label={column.label}
-                    labelClass="evidence-map__col-head-label"
-                    tooltip={headerTooltip(
-                      column.definition,
-                      countNoun,
-                      onColumnClick !== undefined,
-                    )}
-                    ariaLabel={headerAriaLabel(column.label, countNoun)}
-                    onClick={
-                      onColumnClick ? () => onColumnClick(column) : undefined
-                    }
-                  />
+                  {corner}
                 </th>
-              ))}
-            </tr>
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    class={`evidence-map__col-head${
+                      onColumnClick
+                        ? " evidence-map__col-head--clickable"
+                        : ""
+                    }${hover?.column === column.key ? " is-active" : ""}`}
+                    scope="col"
+                  >
+                    <HeaderLabel
+                      label={column.label}
+                      labelClass="evidence-map__col-head-label"
+                      tooltip={headerTooltip(
+                        column.definition,
+                        countNoun,
+                        onColumnClick !== undefined,
+                      )}
+                      ariaLabel={headerAriaLabel(column.label, countNoun)}
+                      onClick={
+                        onColumnClick ? () => onColumnClick(column) : undefined
+                      }
+                    />
+                  </th>
+                ))}
+              </tr>
+            )}
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {rows.map((row, rowIndex) => (
               <tr key={row.key}>
-                <th
-                  class={`evidence-map__row-head${
-                    onRowClick ? " evidence-map__row-head--clickable" : ""
-                  }${hover?.row === row.key ? " is-active" : ""}`}
-                  scope="row"
-                >
-                  <HeaderLabel
-                    label={row.label}
-                    labelClass="evidence-map__row-head-label"
-                    tooltip={headerTooltip(
-                      row.definition,
-                      countNoun,
-                      onRowClick !== undefined,
-                    )}
-                    ariaLabel={headerAriaLabel(row.label, countNoun)}
-                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                {rowRail ? (
+                  <RowRailCells
+                    cells={rowRail[rowIndex]}
+                    hoverRow={hover?.row}
+                    countNoun={countNoun}
+                    onToggle={onToggleRow}
+                    onRowClick={onRowClick}
                   />
-                </th>
+                ) : (
+                  <th
+                    class={`evidence-map__row-head${
+                      onRowClick ? " evidence-map__row-head--clickable" : ""
+                    }${hover?.row === row.key ? " is-active" : ""}`}
+                    scope="row"
+                  >
+                    <HeaderLabel
+                      label={row.label}
+                      labelClass="evidence-map__row-head-label"
+                      tooltip={headerTooltip(
+                        row.definition,
+                        countNoun,
+                        onRowClick !== undefined,
+                      )}
+                      ariaLabel={headerAriaLabel(row.label, countNoun)}
+                      onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    />
+                  </th>
+                )}
                 {columns.map((column) => {
                   const count = getCount(row.key, column.key);
                   const empty = count === undefined || count <= 0;
@@ -269,6 +332,161 @@ function HeaderLabel({
         {labelSpan}
       </button>
     </Tooltip>
+  );
+}
+
+function tieredHeaderTooltip(
+  cell: AxisBandCell,
+  countNoun: string,
+  clickable: boolean,
+): string {
+  const detail = headerTooltip(cell.definition, countNoun, clickable);
+  return detail ? `${cell.label}\n\n${detail}` : cell.label;
+}
+
+function axisCategory(cell: AxisBandCell): AxisCategory {
+  return cell.definition !== undefined
+    ? { key: cell.key, label: cell.label, definition: cell.definition }
+    : { key: cell.key, label: cell.label };
+}
+
+function ExpandToggle({
+  expanded,
+  label,
+  onToggle,
+}: {
+  expanded: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      class="evidence-map__expand-toggle"
+      aria-expanded={expanded}
+      aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
+      onClick={onToggle}
+    >
+      <span aria-hidden="true">{expanded ? "−" : "+"}</span>
+    </button>
+  );
+}
+
+function TieredHeaderContent({
+  cell,
+  labelClass,
+  countNoun,
+  onToggle,
+  onClick,
+}: {
+  cell: AxisBandCell;
+  labelClass: string;
+  countNoun: string;
+  onToggle: ((key: string) => void) | undefined;
+  onClick: (() => void) | undefined;
+}) {
+  const isBand = cell.expanded && cell.hasChildren;
+  const clickable = !isBand && onClick !== undefined;
+  return (
+    <div class="evidence-map__tiered-head-content">
+      {cell.hasChildren && onToggle && (
+        <ExpandToggle
+          expanded={cell.expanded}
+          label={cell.label}
+          onToggle={() => onToggle(cell.key)}
+        />
+      )}
+      <HeaderLabel
+        label={cell.label}
+        labelClass={labelClass}
+        tooltip={tieredHeaderTooltip(cell, countNoun, clickable)}
+        ariaLabel={headerAriaLabel(cell.label, countNoun)}
+        onClick={clickable ? onClick : undefined}
+      />
+    </div>
+  );
+}
+
+function ColumnHeaderCell({
+  cell,
+  hoverColumn,
+  countNoun,
+  onToggle,
+  onColumnClick,
+}: {
+  cell: AxisBandCell;
+  hoverColumn: string | undefined;
+  countNoun: string;
+  onToggle: ((key: string) => void) | undefined;
+  onColumnClick: ((column: AxisCategory) => void) | undefined;
+}) {
+  const isBand = cell.expanded && cell.hasChildren;
+  const clickable = !isBand && onColumnClick !== undefined;
+  return (
+    <th
+      colSpan={cell.span > 1 ? cell.span : undefined}
+      rowSpan={cell.tierSpan > 1 ? cell.tierSpan : undefined}
+      class={`evidence-map__col-head evidence-map__col-head--tiered${
+        clickable ? " evidence-map__col-head--clickable" : ""
+      }${!isBand && hoverColumn === cell.key ? " is-active" : ""}`}
+      scope={isBand ? "colgroup" : "col"}
+      style={{ "--evidence-map-tier-index": cell.depth }}
+    >
+      <TieredHeaderContent
+        cell={cell}
+        labelClass="evidence-map__col-head-label"
+        countNoun={countNoun}
+        onToggle={onToggle}
+        onClick={
+          clickable ? () => onColumnClick(axisCategory(cell)) : undefined
+        }
+      />
+    </th>
+  );
+}
+
+function RowRailCells({
+  cells,
+  hoverRow,
+  countNoun,
+  onToggle,
+  onRowClick,
+}: {
+  cells: AxisBandCell[];
+  hoverRow: string | undefined;
+  countNoun: string;
+  onToggle: ((key: string) => void) | undefined;
+  onRowClick: ((row: AxisCategory) => void) | undefined;
+}) {
+  return (
+    <>
+      {cells.map((cell) => {
+        const isBand = cell.expanded && cell.hasChildren;
+        const clickable = !isBand && onRowClick !== undefined;
+        return (
+          <th
+            key={cell.key}
+            rowSpan={cell.span > 1 ? cell.span : undefined}
+            colSpan={cell.tierSpan > 1 ? cell.tierSpan : undefined}
+            class={`evidence-map__row-head evidence-map__row-head--tiered${
+              clickable ? " evidence-map__row-head--clickable" : ""
+            }${!isBand && hoverRow === cell.key ? " is-active" : ""}`}
+            scope={isBand ? "rowgroup" : "row"}
+            style={{ "--evidence-map-tier-index": cell.depth }}
+          >
+            <TieredHeaderContent
+              cell={cell}
+              labelClass="evidence-map__row-head-label"
+              countNoun={countNoun}
+              onToggle={onToggle}
+              onClick={
+                clickable ? () => onRowClick(axisCategory(cell)) : undefined
+              }
+            />
+          </th>
+        );
+      })}
+    </>
   );
 }
 

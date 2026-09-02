@@ -1,7 +1,13 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/preact";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
-import type { AxisCategory } from "@/services/evidenceMap";
+import {
+  buildAxisBands,
+  buildConceptTree,
+  type AxisBands,
+  type AxisCategory,
+} from "@/services/evidenceMap";
+import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 
 const rows: AxisCategory[] = [
   { key: "lvl:primary", label: "Primary" },
@@ -256,5 +262,328 @@ describe("EvidenceMapGrid", () => {
     );
     expect(headerTooltipFor(container, "Literacy")).toBe("Reading and writing");
     expect(headerTooltipFor(container, "Numeracy")).toBeNull();
+  });
+});
+
+describe("EvidenceMapGrid nested axis bands", () => {
+  const rowScheme: ConceptScheme = {
+    uri: "scheme:rows",
+    label: "Rows Scheme",
+    topConcepts: [
+      {
+        uri: "row:responses",
+        label: "Interventions / responses / solutions",
+        narrower: [
+          { uri: "row:policy", label: "Policy" },
+          { uri: "row:technology", label: "Technology / infrastructure" },
+        ],
+      },
+      { uri: "row:other", label: "Other response" },
+    ],
+  };
+  const columnScheme: ConceptScheme = {
+    uri: "scheme:columns",
+    label: "Columns Scheme",
+    topConcepts: [
+      {
+        uri: "column:health",
+        label: "Communicable, maternal, neonatal, and nutritional diseases",
+        narrower: [
+          {
+            uri: "column:mortality",
+            label: "Mortality",
+            definition: "Deaths in the population",
+          },
+          { uri: "column:morbidity", label: "Morbidity" },
+        ],
+      },
+      { uri: "column:wellbeing", label: "Wellbeing" },
+    ],
+  };
+  const rowTree = buildConceptTree(rowScheme);
+  const columnTree = buildConceptTree(columnScheme);
+  const nestedCount = () => 1;
+
+  function nestedGrid({
+    rowBands = buildAxisBands(rowTree, new Set(["row:responses"])),
+    columnBands = buildAxisBands(columnTree, new Set(["column:health"])),
+    view = "table",
+    onToggleRow,
+    onToggleColumn,
+    onRowClick,
+    onColumnClick,
+  }: {
+    rowBands?: AxisBands;
+    columnBands?: AxisBands;
+    view?: "bubble" | "table";
+    onToggleRow?: (key: string) => void;
+    onToggleColumn?: (key: string) => void;
+    onRowClick?: (row: AxisCategory) => void;
+    onColumnClick?: (column: AxisCategory) => void;
+  } = {}) {
+    return (
+      <EvidenceMapGrid
+        rows={rowBands.leaves}
+        columns={columnBands.leaves}
+        rowBands={rowBands}
+        columnBands={columnBands}
+        getCount={nestedCount}
+        maxCount={1}
+        view={view}
+        countNoun="investigations"
+        rowAxisLabel="Rows"
+        columnAxisLabel="Columns"
+        onToggleRow={onToggleRow}
+        onToggleColumn={onToggleColumn}
+        onRowClick={onRowClick}
+        onColumnClick={onColumnClick}
+      />
+    );
+  }
+
+  test("column bands use colSpan, tier span, and column-group semantics", () => {
+    const { container } = render(nestedGrid());
+    expect(container.querySelectorAll("thead tr")).toHaveLength(2);
+
+    const band = screen
+      .getByText(
+        "Communicable, maternal, neonatal, and nutritional diseases",
+      )
+      .closest("th")!;
+    expect(band).toHaveAttribute("scope", "colgroup");
+    expect(band).toHaveAttribute("colspan", "2");
+    expect(band).not.toHaveAttribute("rowspan");
+
+    const terminal = screen.getByText("Wellbeing").closest("th")!;
+    expect(terminal).toHaveAttribute("scope", "col");
+    expect(terminal).toHaveAttribute("rowspan", "2");
+    expect(container.querySelector(".evidence-map__corner")).toHaveAttribute(
+      "rowspan",
+      "2",
+    );
+    expect(container.querySelector(".evidence-map__corner")).not.toHaveAttribute(
+      "scope",
+    );
+  });
+
+  test("row bands use rowSpan, tier span, and row-group semantics", () => {
+    const { container } = render(nestedGrid());
+    const band = screen
+      .getByText("Interventions / responses / solutions")
+      .closest("th")!;
+    expect(band).toHaveAttribute("scope", "rowgroup");
+    expect(band).toHaveAttribute("rowspan", "2");
+    expect(band).not.toHaveAttribute("colspan");
+
+    const terminal = screen.getByText("Other response").closest("th")!;
+    expect(terminal).toHaveAttribute("scope", "row");
+    expect(terminal).toHaveAttribute("colspan", "2");
+    expect(container.querySelector(".evidence-map__corner")).toHaveAttribute(
+      "colspan",
+      "2",
+    );
+  });
+
+  test("a collapsed branch has independent expand and Search actions", () => {
+    const onToggleColumn = vi.fn();
+    const onColumnClick = vi.fn();
+    const columnBands = buildAxisBands(columnTree, new Set());
+    render(
+      nestedGrid({ columnBands, onToggleColumn, onColumnClick }),
+    );
+
+    const expand = screen.getByRole("button", {
+      name: "Expand Communicable, maternal, neonatal, and nutritional diseases",
+    });
+    expect(expand).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(expand);
+    expect(onToggleColumn).toHaveBeenCalledWith("column:health");
+    expect(onColumnClick).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Communicable.*view matching investigations/,
+      }),
+    );
+    expect(onColumnClick).toHaveBeenCalledWith({
+      key: "column:health",
+      label: "Communicable, maternal, neonatal, and nutritional diseases",
+    });
+  });
+
+  test("an expanded band only collapses while its visible children open Search", () => {
+    const onToggleRow = vi.fn();
+    const onToggleColumn = vi.fn();
+    const onRowClick = vi.fn();
+    const onColumnClick = vi.fn();
+    render(
+      nestedGrid({
+        onToggleRow,
+        onToggleColumn,
+        onRowClick,
+        onColumnClick,
+      }),
+    );
+
+    const columnCollapse = screen.getByRole("button", {
+      name: "Collapse Communicable, maternal, neonatal, and nutritional diseases",
+    });
+    expect(columnCollapse).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(columnCollapse);
+    expect(onToggleColumn).toHaveBeenCalledWith("column:health");
+    expect(
+      screen.queryByRole("button", {
+        name: /Communicable.*view matching investigations/,
+      }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Mortality: view matching investigations.",
+      }),
+    );
+    expect(onColumnClick).toHaveBeenCalledWith({
+      key: "column:mortality",
+      label: "Mortality",
+      definition: "Deaths in the population",
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Policy: view matching investigations.",
+      }),
+    );
+    expect(onRowClick).toHaveBeenCalledWith({
+      key: "row:policy",
+      label: "Policy",
+    });
+    expect(onToggleRow).not.toHaveBeenCalled();
+  });
+
+  test("column-band and row-rail labels retain their full text in tooltips", () => {
+    const { container } = render(nestedGrid());
+    const columnLabel = Array.from(
+      container.querySelectorAll(".evidence-map__col-head-label"),
+    ).find((element) => element.textContent?.startsWith("Communicable"))!;
+    expect(columnLabel.closest(".tooltip")).toHaveAttribute(
+      "data-tooltip",
+      "Communicable, maternal, neonatal, and nutritional diseases",
+    );
+    const rowLabel = Array.from(
+      container.querySelectorAll(".evidence-map__row-head-label"),
+    ).find((element) => element.textContent?.startsWith("Interventions"))!;
+    expect(rowLabel.closest(".tooltip")).toHaveAttribute(
+      "data-tooltip",
+      "Interventions / responses / solutions",
+    );
+  });
+
+  test("Bubble and Table change cells without changing nested headers or callbacks", () => {
+    const onToggleColumn = vi.fn();
+    const onColumnClick = vi.fn();
+    const { container, rerender } = render(
+      nestedGrid({ view: "bubble", onToggleColumn, onColumnClick }),
+    );
+    const signature = () =>
+      Array.from(
+        container.querySelectorAll<HTMLElement>(
+          ".evidence-map__col-head--tiered, .evidence-map__row-head--tiered",
+        ),
+      ).map((header) => ({
+        text: header.textContent,
+        scope: header.getAttribute("scope"),
+        rowSpan: header.getAttribute("rowspan"),
+        colSpan: header.getAttribute("colspan"),
+      }));
+    const bubbleSignature = signature();
+    expect(container.querySelector(".evidence-map__bubble")).not.toBeNull();
+
+    rerender(nestedGrid({ view: "table", onToggleColumn, onColumnClick }));
+    expect(signature()).toEqual(bubbleSignature);
+    expect(container.querySelector(".evidence-map__count")).not.toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Collapse Communicable, maternal, neonatal, and nutritional diseases",
+      }),
+    );
+    expect(onToggleColumn).toHaveBeenCalledWith("column:health");
+  });
+
+  test("omitting nested layouts preserves the flat header structure", () => {
+    const { container } = renderGrid("table");
+    expect(container.querySelectorAll("thead tr")).toHaveLength(1);
+    expect(
+      container.querySelector(".evidence-map__col-head--tiered"),
+    ).toBeNull();
+    expect(
+      container.querySelector(".evidence-map__row-head--tiered"),
+    ).toBeNull();
+    expect(container.querySelector(".evidence-map__expand-toggle")).toBeNull();
+    expect(container.querySelector(".evidence-map__corner")).not.toHaveAttribute(
+      "scope",
+    );
+  });
+
+  test("one hierarchical axis aligns with one flat country-like axis", () => {
+    const flatCountries: AxisCategory[] = [
+      { key: "AU", label: "Australia" },
+      { key: "NZ", label: "New Zealand" },
+    ];
+    const columnBands = buildAxisBands(
+      columnTree,
+      new Set(["column:health"]),
+    );
+    const rowBands = buildAxisBands(rowTree, new Set(["row:responses"]));
+    const common = {
+      getCount: nestedCount,
+      maxCount: 1,
+      view: "table" as const,
+      countNoun: "investigations",
+    };
+    const { container, rerender } = render(
+      <EvidenceMapGrid
+        {...common}
+        rows={flatCountries}
+        columns={columnBands.leaves}
+        columnBands={columnBands}
+        rowAxisLabel="Countries"
+        columnAxisLabel="Outcomes"
+      />,
+    );
+
+    expect(container.querySelectorAll("thead tr")).toHaveLength(2);
+    expect(container.querySelectorAll(".evidence-map__row-head--tiered"))
+      .toHaveLength(0);
+    expect(container.querySelector(".evidence-map__corner")).toHaveAttribute(
+      "rowspan",
+      "2",
+    );
+    expect(screen.getByText("Australia").closest("th")).toHaveAttribute(
+      "scope",
+      "row",
+    );
+
+    rerender(
+      <EvidenceMapGrid
+        {...common}
+        rows={rowBands.leaves}
+        columns={flatCountries}
+        rowBands={rowBands}
+        rowAxisLabel="Responses"
+        columnAxisLabel="Countries"
+      />,
+    );
+
+    expect(container.querySelectorAll("thead tr")).toHaveLength(1);
+    expect(container.querySelectorAll(".evidence-map__col-head--tiered"))
+      .toHaveLength(0);
+    expect(container.querySelector(".evidence-map__corner")).toHaveAttribute(
+      "colspan",
+      "2",
+    );
+    expect(screen.getByText("Australia").closest("th")).toHaveAttribute(
+      "scope",
+      "col",
+    );
   });
 });
