@@ -209,9 +209,11 @@ const COMMUNITIES: Community[] = [
       ...DEFAULT_FEATURES,
       findingsAndEstimates: false,
       countryFacetFilter: false,
-      exportExcel: false,
       nestedEvidenceMapAxes: true,
+      exportExcel: true,
     },
+    exportVariant: "applied-concept",
+    exportIdentifiers: [{ header: "OpenAlex ID", type: "open_alex" }],
     defaultExpandedFilters: [],
     defaultEvidenceMapAxes: {
       row: {

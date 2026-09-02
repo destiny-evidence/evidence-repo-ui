@@ -161,7 +161,7 @@ describe("community registry", () => {
       aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: false,
-      exportExcel: false,
+      exportExcel: true,
       countryFacetFilter: false,
       nestedEvidenceMapAxes: true,
     },
@@ -172,11 +172,18 @@ describe("community registry", () => {
   it("selects the per-community export workbook variant", () => {
     expect(mod.findCommunity("esea")?.exportVariant).toBe("esea");
     expect(mod.findCommunity("hpv")?.exportVariant).toBe("applied-concept");
+    expect(mod.findCommunity("destiny")?.exportVariant).toBe("applied-concept");
   });
 
   it("gives HPV exports the EPPI ItemId identifier column", () => {
     expect(mod.findCommunity("hpv")?.exportIdentifiers).toEqual([
       { header: "EPPI ItemId", type: "other", otherName: "EPPI ItemId" },
+    ]);
+  });
+
+  it("gives Destiny exports the OpenAlex identifier column", () => {
+    expect(mod.findCommunity("destiny")?.exportIdentifiers).toEqual([
+      { header: "OpenAlex ID", type: "open_alex" },
     ]);
   });
 
