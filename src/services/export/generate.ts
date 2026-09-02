@@ -18,6 +18,7 @@ import {
 import {
   buildAppliedConceptRows,
   APPLIED_CONCEPT_SHEET_NAME,
+  type AppliedConceptRowOptions,
 } from "./buildAppliedConceptRows.ts";
 import {
   extractBibliographic,
@@ -28,6 +29,7 @@ import {
 import type {
   CodingInstitutionConfig,
   ExportVariant,
+  IdentifierColumn,
   PinnedFilter,
   Reference,
 } from "@/types/models";
@@ -180,12 +182,12 @@ async function buildEducationWorkbook(
 async function buildAppliedConceptWorkbook(
   references: ReferenceSource,
   vocab: ConceptResolver,
-  pinnedFilters?: PinnedFilter[],
+  options: AppliedConceptRowOptions,
 ): Promise<XLSX.WorkBook> {
   const { headers, rows } = await buildAppliedConceptRows(
     references,
     vocab,
-    pinnedFilters,
+    options,
   );
   const wb = XLSX.utils.book_new();
   appendSheet(wb, APPLIED_CONCEPT_SHEET_NAME, headers, rows);
@@ -196,6 +198,7 @@ export interface WorkbookOptions {
   variant: ExportVariant;
   codingInstitution?: CodingInstitutionConfig;
   pinnedFilters?: PinnedFilter[];
+  identifierColumns?: readonly IdentifierColumn[];
 }
 
 /**
@@ -218,12 +221,15 @@ export async function generateWorkbook(
   switch (options.variant) {
     case "esea":
       return buildEducationWorkbook(references, vocab, options.codingInstitution);
-    case "hpv":
-      return buildAppliedConceptWorkbook(
-        references,
-        vocab,
-        options.pinnedFilters,
-      );
+    case "applied-concept":
+      return buildAppliedConceptWorkbook(references, vocab, {
+        pinnedFilters: options.pinnedFilters,
+        identifierColumns: options.identifierColumns,
+      });
+    default: {
+      const unhandled: never = options.variant;
+      throw new Error(`Unknown export variant: ${String(unhandled)}`);
+    }
   }
 }
 

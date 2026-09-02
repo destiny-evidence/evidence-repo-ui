@@ -12,8 +12,8 @@ import {
   extractAbstract,
   extractBibliographic,
   extractDoi,
+  extractIdentifier,
   extractLinkedDataEnhancement,
-  extractOtherIdentifier,
   getInvestigation,
 } from "@/services/referenceUtils";
 import { parseAppliedConcepts } from "@/services/investigationParser";
@@ -21,7 +21,11 @@ import {
   schemeDisplayLabel,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
-import type { PinnedFilter, Reference } from "@/types/models";
+import type {
+  IdentifierColumn,
+  PinnedFilter,
+  Reference,
+} from "@/types/models";
 
 import { truncateForCell } from "./buildRows.ts";
 import type { CellValue, ConceptResolver } from "./types.ts";
@@ -35,17 +39,33 @@ type SheetRow = Record<string, CellValue>;
 type ReferenceSource = Iterable<Reference> | AsyncIterable<Reference>;
 
 // Human-readable to sit alongside the vocabulary-derived scheme columns; the
-// esea workbook instead uses technical keys.
-const BIBLIOGRAPHIC_HEADERS = [
+// esea workbook instead uses technical keys. The community's identifier
+// columns are spliced between "DOI" and "Abstract".
+const HEADERS_BEFORE_IDENTIFIERS = [
   "Reference ID",
   "Title",
   "Authors",
   "Publication year",
   "Journal",
   "DOI",
-  "EPPI ItemId",
-  "Abstract",
 ] as const;
+const HEADERS_AFTER_IDENTIFIERS = ["Abstract"] as const;
+
+export interface AppliedConceptRowOptions {
+  // Orders the scheme columns to match the community's filter drawer.
+  pinnedFilters?: PinnedFilter[];
+  identifierColumns?: readonly IdentifierColumn[];
+}
+
+function bibliographicHeaders(
+  identifierColumns: readonly IdentifierColumn[],
+): string[] {
+  return [
+    ...HEADERS_BEFORE_IDENTIFIERS,
+    ...identifierColumns.map((c) => c.header),
+    ...HEADERS_AFTER_IDENTIFIERS,
+  ];
+}
 
 interface SchemeColumn {
   uri: string;
@@ -57,11 +77,12 @@ interface SchemeColumn {
 function buildSchemeColumns(
   schemes: ConceptScheme[],
   pinnedFilters: PinnedFilter[] | undefined,
+  bibHeaders: readonly string[],
 ): SchemeColumn[] {
   const ordered = orderFilterItems(schemes, { pinned: pinnedFilters }).flatMap(
     (item) => (item.kind === "scheme" ? [item.scheme] : []),
   );
-  const used = new Set<string>([...BIBLIOGRAPHIC_HEADERS, OTHER_CODES_HEADER]);
+  const used = new Set<string>([...bibHeaders, OTHER_CODES_HEADER]);
   return ordered.map((scheme) => {
     let header = schemeDisplayLabel(scheme.label);
     if (used.has(header)) header = `${header} (${scheme.uri})`;
@@ -75,6 +96,7 @@ function buildAppliedConceptRow(
   vocab: ConceptResolver,
   inScheme: Map<string, string>,
   schemeHeaderByUri: Map<string, string>,
+  identifierColumns: readonly IdentifierColumn[],
 ): SheetRow {
   const bib = extractBibliographic(reference);
   const authors = bib?.authorship
@@ -88,9 +110,11 @@ function buildAppliedConceptRow(
     "Publication year": bib?.publication_year ?? null,
     Journal: bib?.publication_venue?.display_name ?? null,
     DOI: extractDoi(reference.identifiers),
-    "EPPI ItemId": extractOtherIdentifier(reference.identifiers, "EPPI ItemId"),
     Abstract: abstract ? truncateForCell(abstract) : null,
   };
+  for (const column of identifierColumns) {
+    row[column.header] = extractIdentifier(reference.identifiers, column);
+  }
 
   const linked = extractLinkedDataEnhancement(reference);
   if (linked) {
@@ -110,7 +134,9 @@ function buildAppliedConceptRow(
       else buckets.set(header, [value]);
     }
     for (const [header, values] of buckets) {
-      row[header] = values.join("; ");
+      // A record coded transitively across a deep scheme can join into a cell
+      // longer than Excel accepts.
+      row[header] = truncateForCell(values.join("; "));
     }
   }
 
@@ -118,15 +144,19 @@ function buildAppliedConceptRow(
 }
 
 /**
- * Stream references into a header list and one row per reference. `pinnedFilters`
- * orders the scheme columns to match the community's filter drawer.
+ * Stream references into a header list and one row per reference.
  */
 export async function buildAppliedConceptRows(
   references: ReferenceSource,
   vocab: ConceptResolver,
-  pinnedFilters?: PinnedFilter[],
+  { pinnedFilters, identifierColumns = [] }: AppliedConceptRowOptions = {},
 ): Promise<{ headers: string[]; rows: SheetRow[] }> {
-  const schemeColumns = buildSchemeColumns(vocab.schemes ?? [], pinnedFilters);
+  const bibHeaders = bibliographicHeaders(identifierColumns);
+  const schemeColumns = buildSchemeColumns(
+    vocab.schemes ?? [],
+    pinnedFilters,
+    bibHeaders,
+  );
   const schemeHeaderByUri = new Map(
     schemeColumns.map((c) => [c.uri, c.header]),
   );
@@ -135,14 +165,17 @@ export async function buildAppliedConceptRows(
   const rows: SheetRow[] = [];
   for await (const reference of references) {
     rows.push(
-      buildAppliedConceptRow(reference, vocab, inScheme, schemeHeaderByUri),
+      buildAppliedConceptRow(
+        reference,
+        vocab,
+        inScheme,
+        schemeHeaderByUri,
+        identifierColumns,
+      ),
     );
   }
 
-  const headers = [
-    ...BIBLIOGRAPHIC_HEADERS,
-    ...schemeColumns.map((c) => c.header),
-  ];
+  const headers = [...bibHeaders, ...schemeColumns.map((c) => c.header)];
   // Omit the catch-all unless something landed there — usually nothing does.
   if (rows.some((row) => row[OTHER_CODES_HEADER] !== undefined)) {
     headers.push(OTHER_CODES_HEADER);

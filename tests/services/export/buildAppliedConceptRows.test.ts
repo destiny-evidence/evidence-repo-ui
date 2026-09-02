@@ -6,6 +6,7 @@ import type {
   BibliographicMetadataEnhancement,
   Enhancement,
   EnhancementContent,
+  IdentifierColumn,
   Reference,
 } from "@/types/models";
 
@@ -122,16 +123,32 @@ function hpvRef(id: string, conceptCuries: string[]): Reference {
   });
 }
 
-const BIB_HEADERS = [
+const BIB_HEADERS_BEFORE_IDENTIFIERS = [
   "Reference ID",
   "Title",
   "Authors",
   "Publication year",
   "Journal",
   "DOI",
-  "EPPI ItemId",
-  "Abstract",
 ];
+
+// The bibliographic block with `identifiers` spliced in ahead of "Abstract".
+function bibHeaders(...identifiers: string[]): string[] {
+  return [...BIB_HEADERS_BEFORE_IDENTIFIERS, ...identifiers, "Abstract"];
+}
+
+const BIB_HEADERS = bibHeaders();
+
+const EPPI_COLUMN: IdentifierColumn = {
+  header: "EPPI ItemId",
+  type: "other",
+  otherName: "EPPI ItemId",
+};
+
+const OPEN_ALEX_COLUMN: IdentifierColumn = {
+  header: "OpenAlex ID",
+  type: "open_alex",
+};
 
 describe("buildAppliedConceptRows", () => {
   test("derives one scheme column per scheme, alphabetical, no Other codes when empty", async () => {
@@ -146,10 +163,9 @@ describe("buildAppliedConceptRows", () => {
   });
 
   test("orders scheme columns by pinnedFilters, then alphabetically", async () => {
-    const { headers } = await buildAppliedConceptRows([], VOCAB, [
-      `${NS}TargetPopulation`,
-      "year",
-    ]);
+    const { headers } = await buildAppliedConceptRows([], VOCAB, {
+      pinnedFilters: [`${NS}TargetPopulation`, "year"],
+    });
     expect(headers).toEqual([
       ...BIB_HEADERS,
       "Target Population",
@@ -164,10 +180,12 @@ describe("buildAppliedConceptRows", () => {
   });
 
   test("emits one row per reference with bibliographic columns populated", async () => {
-    const { rows } = await buildAppliedConceptRows(
+    const { headers, rows } = await buildAppliedConceptRows(
       [hpvRef("ref-1", [])],
       VOCAB,
+      { identifierColumns: [EPPI_COLUMN] },
     );
+    expect(headers.slice(0, 8)).toEqual(bibHeaders("EPPI ItemId"));
     expect(rows).toHaveLength(1);
     const row = rows[0]!;
     expect(row["Reference ID"]).toBe("ref-1");
@@ -178,6 +196,43 @@ describe("buildAppliedConceptRows", () => {
     expect(row["DOI"]).toBe("10.1/ref-1");
     expect(row["EPPI ItemId"]).toBe("EPPI-ref-1");
     expect(row["Abstract"]).toBe("Study summary ref-1");
+  });
+
+  test("reads a typed identifier column, blank where the reference has none", async () => {
+    const withOpenAlex = makeRef({
+      ...hpvRef("ref-1", []),
+      identifiers: [
+        { identifier: "10.1/ref-1", identifier_type: "doi" },
+        { identifier: "W123", identifier_type: "open_alex" },
+      ],
+    });
+    const { headers, rows } = await buildAppliedConceptRows(
+      [withOpenAlex, hpvRef("ref-2", [])],
+      VOCAB,
+      { identifierColumns: [OPEN_ALEX_COLUMN] },
+    );
+    expect(headers.slice(0, 8)).toEqual(bibHeaders("OpenAlex ID"));
+    expect(rows[0]!["OpenAlex ID"]).toBe("W123");
+    expect(rows[1]!["OpenAlex ID"]).toBeNull();
+  });
+
+  test("omits the identifier slot entirely when no columns are configured", async () => {
+    const { headers, rows } = await buildAppliedConceptRows(
+      [hpvRef("ref-1", [])],
+      VOCAB,
+    );
+    expect(headers.slice(0, 7)).toEqual(BIB_HEADERS);
+    // The reference carries an EPPI ItemId; without a column it is not written.
+    expect(rows[0]!["EPPI ItemId"]).toBeUndefined();
+  });
+
+  test("writes identifier columns between DOI and Abstract, in configured order", async () => {
+    const { headers } = await buildAppliedConceptRows([], VOCAB, {
+      identifierColumns: [OPEN_ALEX_COLUMN, EPPI_COLUMN],
+    });
+    expect(headers.slice(0, 9)).toEqual(
+      bibHeaders("OpenAlex ID", "EPPI ItemId"),
+    );
   });
 
   test("groups applied concepts into their scheme columns, joined with '; '", async () => {
@@ -256,5 +311,42 @@ describe("buildAppliedConceptRows", () => {
       "Delivery Actor",
       `Delivery Actor (${NS}DeliveryActorB)`,
     ]);
+  });
+
+  test("URI-suffixes a scheme header that collides with an identifier column", async () => {
+    const { headers } = await buildAppliedConceptRows(
+      [],
+      {
+        ...VOCAB,
+        schemes: [
+          { uri: `${NS}Eppi`, label: "EPPI ItemId", topConcepts: [] },
+        ],
+      },
+      { identifierColumns: [EPPI_COLUMN] },
+    );
+    expect(headers).toEqual([
+      ...bibHeaders("EPPI ItemId"),
+      `EPPI ItemId (${NS}Eppi)`,
+    ]);
+  });
+
+  test("truncates a scheme cell that exceeds Excel's per-cell limit", async () => {
+    // 400 concepts x ~100 chars each overruns the 32767-character cell limit.
+    const labels = new Map(LABELS);
+    const inScheme = new Map(IN_SCHEME);
+    const curies: string[] = [];
+    for (let i = 0; i < 400; i++) {
+      const uri = `${NS}long${i}`;
+      labels.set(uri, `Concept ${String(i).padStart(3, "0")} ${"x".repeat(90)}`);
+      inScheme.set(uri, `${NS}DeliveryActor`);
+      curies.push(`hpv:long${i}`);
+    }
+    const { rows } = await buildAppliedConceptRows(
+      [hpvRef("ref-1", curies)],
+      { ...VOCAB, labels, inScheme },
+    );
+    const cell = rows[0]!["Delivery Actor"] as string;
+    expect(cell).toHaveLength(32767);
+    expect(cell.endsWith("... [truncated by export]")).toBe(true);
   });
 });

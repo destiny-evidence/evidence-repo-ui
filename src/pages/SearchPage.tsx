@@ -427,6 +427,7 @@ function SearchPageInner({ community }: { community: Community }) {
         variant: community.exportVariant,
         codingInstitution: community.codingInstitution,
         pinnedFilters: community.pinnedFilters,
+        identifierColumns: community.exportIdentifiers,
       });
       return;
     }

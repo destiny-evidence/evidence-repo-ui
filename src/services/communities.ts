@@ -153,7 +153,11 @@ const COMMUNITIES: Community[] = [
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
     }),
-    exportVariant: "hpv",
+    exportVariant: "applied-concept",
+    // HPV records carry an EPPI ItemId.
+    exportIdentifiers: [
+      { header: "EPPI ItemId", type: "other", otherName: "EPPI ItemId" },
+    ],
     externalResources: [
       {
         title: "Report v3 June 2026",

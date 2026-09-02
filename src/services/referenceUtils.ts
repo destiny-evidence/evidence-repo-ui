@@ -6,6 +6,7 @@ import type {
   BibliographicMetadataEnhancement,
   LinkedDataEnhancement,
   ExternalIdentifier,
+  IdentifierRef,
   Pagination,
 } from "@/types/models";
 import {
@@ -153,39 +154,31 @@ export function extractFindingsAndEstimatesCount(
   return { findings: findings.length, estimates };
 }
 
+// Return the first identifier matching `ref`, or null. The repository mints
+// identifiers as strings, so a non-string value reads as absent.
+export function extractIdentifier(
+  identifiers: ExternalIdentifier[] | null,
+  ref: IdentifierRef,
+): string | null {
+  if (!identifiers) return null;
+  const match = identifiers.find(
+    (i) =>
+      i.identifier_type === ref.type &&
+      (ref.type !== "other" || i.other_identifier_name === ref.otherName),
+  );
+  return typeof match?.identifier === "string" ? match.identifier : null;
+}
+
 export function extractDoi(
   identifiers: ExternalIdentifier[] | null,
 ): string | null {
-  if (!identifiers) return null;
-  const doi = identifiers.find(
-    (i) => i.identifier_type === "doi",
-  );
-  return typeof doi?.identifier === "string" ? doi.identifier : null;
+  return extractIdentifier(identifiers, { type: "doi" });
 }
 
 export function extractOpenAlexId(
   identifiers: ExternalIdentifier[] | null,
 ): string | null {
-  if (!identifiers) return null;
-  const openAlex = identifiers.find(
-    (i) => i.identifier_type === "open_alex",
-  );
-  return typeof openAlex?.identifier === "string" ? openAlex.identifier : null;
-}
-
-// `other`-typed identifiers are distinguished by `other_identifier_name`
-// (e.g. "EPPI ItemId"); return the first match's value.
-export function extractOtherIdentifier(
-  identifiers: ExternalIdentifier[] | null,
-  otherIdentifierName: string,
-): string | number | null {
-  if (!identifiers) return null;
-  const match = identifiers.find(
-    (i) =>
-      i.identifier_type === "other" &&
-      i.other_identifier_name === otherIdentifierName,
-  );
-  return match?.identifier ?? null;
+  return extractIdentifier(identifiers, { type: "open_alex" });
 }
 
 // Editorial citation format: `volume(issue), first_page–last_page`.

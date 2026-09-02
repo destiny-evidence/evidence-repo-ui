@@ -7,8 +7,8 @@ import {
   extractLinkedData,
   extractLinkedDataEnhancement,
   extractDoi,
+  extractIdentifier,
   extractOpenAlexId,
-  extractOtherIdentifier,
   formatPagination,
   getInvestigation,
 } from "@/services/referenceUtils";
@@ -205,48 +205,47 @@ describe("extractOpenAlexId", () => {
   });
 });
 
-describe("extractOtherIdentifier", () => {
+describe("extractIdentifier", () => {
+  const IDENTIFIERS = [
+    { identifier: "10.1/x", identifier_type: "doi" },
+    { identifier: "W123", identifier_type: "open_alex" },
+    {
+      identifier: "482931",
+      identifier_type: "other",
+      other_identifier_name: "EPPI ItemId",
+    },
+  ];
+
   test("returns null when identifiers is null", () => {
-    expect(extractOtherIdentifier(null, "EPPI ItemId")).toBeNull();
+    expect(extractIdentifier(null, { type: "open_alex" })).toBeNull();
   });
 
-  test("returns null when no matching other identifier exists", () => {
+  test("matches a typed identifier", () => {
+    expect(extractIdentifier(IDENTIFIERS, { type: "open_alex" })).toBe("W123");
+  });
+
+  test("matches an other-typed identifier by name", () => {
     expect(
-      extractOtherIdentifier(
-        [{ identifier: "10.1/x", identifier_type: "doi" }],
-        "EPPI ItemId",
-      ),
+      extractIdentifier(IDENTIFIERS, {
+        type: "other",
+        otherName: "EPPI ItemId",
+      }),
+    ).toBe("482931");
+  });
+
+  test("reads a non-string identifier as absent", () => {
+    expect(
+      extractIdentifier([{ identifier: 12345, identifier_type: "pm_id" }], {
+        type: "pm_id",
+      }),
     ).toBeNull();
   });
 
-  test("returns null when the other_identifier_name differs", () => {
+  test("returns null when nothing matches", () => {
+    expect(extractIdentifier(IDENTIFIERS, { type: "pm_id" })).toBeNull();
     expect(
-      extractOtherIdentifier(
-        [
-          {
-            identifier: "abc",
-            identifier_type: "other",
-            other_identifier_name: "arxiv",
-          },
-        ],
-        "EPPI ItemId",
-      ),
+      extractIdentifier(IDENTIFIERS, { type: "other", otherName: "arxiv" }),
     ).toBeNull();
-  });
-
-  test("returns the value of the matching other identifier", () => {
-    expect(
-      extractOtherIdentifier(
-        [
-          {
-            identifier: 482931,
-            identifier_type: "other",
-            other_identifier_name: "EPPI ItemId",
-          },
-        ],
-        "EPPI ItemId",
-      ),
-    ).toBe(482931);
   });
 });
 

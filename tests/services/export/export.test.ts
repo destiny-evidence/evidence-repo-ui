@@ -193,7 +193,7 @@ describe("exportReferencesToExcel", () => {
 
   test("triggers a download with the given filename and xlsx MIME type", async () => {
     const { captured } = installSpies();
-    await exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", "esea");
+    await exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea" });
 
     expect(captured.filename).toBe("out.xlsx");
     expect(captured.blob).not.toBeNull();
@@ -215,7 +215,7 @@ describe("exportReferencesToExcel", () => {
       "https://vocab.example.org/v1/",
     ]) {
       const { fetchSpy } = installSpies();
-      await exportReferencesToExcel(JSONL_URL, input, CONTEXT_URL, "out.xlsx", "esea");
+      await exportReferencesToExcel(JSONL_URL, input, CONTEXT_URL, "out.xlsx", { variant: "esea" });
       const vocabCalls = fetchSpy.mock.calls
         .map((c) => (typeof c[0] === "string" ? c[0] : c[0]!.toString()))
         .filter((u) => u.includes("vocab") && !u.includes("context"));
@@ -227,7 +227,7 @@ describe("exportReferencesToExcel", () => {
 
   test("fetches the vocabulary, context, and JSONL", async () => {
     const { fetchSpy } = installSpies();
-    await exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", "esea");
+    await exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea" });
     const urls = fetchSpy.mock.calls.map((c) =>
       typeof c[0] === "string" ? c[0] : c[0]!.toString(),
     );
@@ -241,7 +241,7 @@ describe("exportReferencesToExcel", () => {
       vocabBody: { status: 404, statusText: "Not Found", body: "nope" },
     });
     await expect(
-      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", "esea"),
+      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea" }),
     ).rejects.toThrow(/Failed to fetch vocabulary: 404/);
   });
 
@@ -250,7 +250,7 @@ describe("exportReferencesToExcel", () => {
       contextBody: { status: 404, statusText: "Not Found", body: "nope" },
     });
     await expect(
-      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", "esea"),
+      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea" }),
     ).rejects.toThrow(/Failed to fetch context: 404/);
   });
 
@@ -259,7 +259,7 @@ describe("exportReferencesToExcel", () => {
       jsonlBody: { status: 500, statusText: "Server Error", body: "" },
     });
     await expect(
-      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", "esea"),
+      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea" }),
     ).rejects.toThrow(/HTTP 500/);
   });
 
@@ -270,7 +270,7 @@ describe("exportReferencesToExcel", () => {
       VOCAB_URL,
       CONTEXT_URL,
       "chunked.xlsx",
-      "esea",
+      { variant: "esea" },
     );
     expect(captured.filename).toBe("chunked.xlsx");
     expect(captured.blob!.size).toBeGreaterThan(0);
@@ -350,8 +350,7 @@ describe.each([
       VOCAB_URL,
       CONTEXT_URL,
       `${stem}.xlsx`,
-      "esea",
-      CODING,
+      { variant: "esea", codingInstitution: CODING },
     );
 
     expect(captured.blobBytes).not.toBeNull();

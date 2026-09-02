@@ -171,8 +171,24 @@ describe("community registry", () => {
 
   it("selects the per-community export workbook variant", () => {
     expect(mod.findCommunity("esea")?.exportVariant).toBe("esea");
-    expect(mod.findCommunity("hpv")?.exportVariant).toBe("hpv");
+    expect(mod.findCommunity("hpv")?.exportVariant).toBe("applied-concept");
   });
+
+  it("gives HPV exports the EPPI ItemId identifier column", () => {
+    expect(mod.findCommunity("hpv")?.exportIdentifiers).toEqual([
+      { header: "EPPI ItemId", type: "other", otherName: "EPPI ItemId" },
+    ]);
+  });
+
+  it.each(["esea", "hpv", "destiny"])(
+    "%s defines an export variant wherever exports are enabled",
+    (slug) => {
+      const community = mod.findCommunity(slug)!;
+      if (community.features.exportExcel) {
+        expect(community.exportVariant).toBeDefined();
+      }
+    },
+  );
 
   it("defaults HPV's evidence map to WHO Region rows x Thematic Focus — Primary columns", () => {
     expect(mod.findCommunity("hpv")?.defaultEvidenceMapAxes).toEqual({
