@@ -106,6 +106,33 @@
   gap: var(--spacing-lg);
 }
 
+.evidence-map-view__collapse {
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.evidence-map-view__collapse:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.evidence-map-view__collapse:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.evidence-map-view__collapse:disabled {
+  color: var(--color-text-tertiary);
+  cursor: default;
+  opacity: 0.55;
+}
+
 /* Pinned to the right of the toolbar — the wireframe's top-right hint. */
 .evidence-map-view__hint {
   margin: 0 0 0 auto;

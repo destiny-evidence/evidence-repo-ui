@@ -5,6 +5,10 @@ import { parseSearchParams } from "@/services/searchParams";
 import { makeCommunity } from "../fixtures";
 import type { EvidenceMapAxes, ReferenceCrossFacetResult } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
+import {
+  AXIS_COUNTRIES,
+  type CrossFacetAxisPair,
+} from "@/services/crossFacets";
 
 const { mockUseCommunity, mockUseCrossFacets, mockUseVocabulary, mockUseUrlParams, mockNavigate } =
   vi.hoisted(() => ({
@@ -34,6 +38,16 @@ vi.mock("@/services/navigation", async (importOriginal) => {
 const AXES: EvidenceMapAxes = {
   row: { kind: "scheme", schemeUri: "scheme:level" },
   column: { kind: "scheme", schemeUri: "scheme:theme" },
+};
+
+const CROSS_AXES: CrossFacetAxisPair = {
+  row: { kind: "scheme", schemeUri: "scheme:level" },
+  column: { kind: "scheme", schemeUri: "scheme:theme" },
+};
+
+const TOPIC_CROSS_AXES: CrossFacetAxisPair = {
+  row: CROSS_AXES.row,
+  column: { kind: "scheme", schemeUri: "scheme:topic" },
 };
 
 function mappedCommunity(overrides = {}) {
@@ -87,6 +101,104 @@ const NESTED_SCHEMES: ConceptScheme[] = [
     ],
   },
 ];
+
+const PAGE_NESTED_SCHEMES: ConceptScheme[] = [
+  {
+    uri: "scheme:level",
+    label: "Education Level Scheme",
+    topConcepts: [
+      {
+        uri: "level:education",
+        label: "Education",
+        narrower: [
+          {
+            uri: "level:primary",
+            label: "Primary",
+            narrower: [
+              { uri: "level:lower-primary", label: "Lower primary" },
+              { uri: "level:upper-primary", label: "Upper primary" },
+            ],
+          },
+          { uri: "level:secondary", label: "Secondary" },
+        ],
+      },
+    ],
+  },
+  {
+    uri: "scheme:theme",
+    label: "Education Theme Scheme",
+    topConcepts: [
+      {
+        uri: "theme:themes",
+        label: "Themes",
+        narrower: [
+          {
+            uri: "theme:literacy",
+            label: "Literacy",
+            narrower: [
+              { uri: "theme:reading", label: "Reading" },
+              { uri: "theme:writing", label: "Writing" },
+            ],
+          },
+          { uri: "theme:numeracy", label: "Numeracy" },
+        ],
+      },
+    ],
+  },
+  {
+    uri: "scheme:topic",
+    label: "Education Topic Scheme",
+    topConcepts: [
+      {
+        uri: "topic:topics",
+        label: "Topics",
+        narrower: [
+          {
+            uri: "topic:access",
+            label: "Access",
+            narrower: [
+              { uri: "topic:school", label: "School access" },
+              { uri: "topic:home", label: "Home access" },
+            ],
+          },
+          { uri: "topic:quality", label: "Quality" },
+        ],
+      },
+    ],
+  },
+];
+
+const PAGE_NESTED_CELLS: [string, string, number][] = [
+  ["level:education", "theme:themes", 90],
+  ["level:primary", "theme:literacy", 40],
+  ["level:primary", "theme:reading", 24],
+  ["level:primary", "theme:writing", 16],
+  ["level:primary", "theme:numeracy", 20],
+  ["level:lower-primary", "theme:literacy", 22],
+  ["level:upper-primary", "theme:literacy", 18],
+  ["level:secondary", "theme:literacy", 10],
+  ["level:secondary", "theme:numeracy", 20],
+];
+
+function nestedVocabulary() {
+  mockUseVocabulary.mockReturnValue({
+    labels: LABELS,
+    broader: null,
+    definitions: null,
+    schemes: PAGE_NESTED_SCHEMES,
+    loading: false,
+    error: null,
+  });
+}
+
+function nestedAxesCommunity() {
+  mockUseCommunity.mockReturnValue(
+    mappedCommunity({
+      features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+    }),
+  );
+  nestedVocabulary();
+}
 
 // `mapped` is the count plotted on the map; `search` (defaulting to it) the
 // count matching the filters, which is larger when references miss an axis.
@@ -345,6 +457,401 @@ describe("VisualisePage map", () => {
   });
 });
 
+describe("VisualisePage nested-axis state", () => {
+  beforeEach(nestedAxesCommunity);
+
+  function nestedResultState(
+    overrides: Partial<ReturnType<typeof mockUseCrossFacets>> = {},
+  ) {
+    return {
+      result: crossFacetResult(90, PAGE_NESTED_CELLS),
+      resultAxes: CROSS_AXES,
+      resultParams: parseSearchParams(""),
+      loading: false,
+      error: null,
+      ...overrides,
+    };
+  }
+
+  test("opens hierarchical axes one level while a flag-off map stays flat", () => {
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    const first = render(<VisualisePage />);
+    const table = within(screen.getByRole("table"));
+
+    expect(
+      table.getByRole("button", { name: "Collapse Education" }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(
+      table.getByRole("button", { name: "Collapse Themes" }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(
+      table.getByRole("button", { name: "Expand Primary" }),
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(
+      table.getByRole("button", { name: "Expand Literacy" }),
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(table.queryByText("Lower primary")).not.toBeInTheDocument();
+    expect(table.queryByText("Reading")).not.toBeInTheDocument();
+    first.unmount();
+
+    mockUseCommunity.mockReturnValue(mappedCommunity());
+    render(<VisualisePage />);
+    expect(
+      screen.queryByRole("button", { name: "Collapse Education" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Collapse all" }))
+      .not.toBeInTheDocument();
+    expect(screen.getByRole("rowheader", { name: "Lower primary" }))
+      .toBeInTheDocument();
+  });
+
+  test("expansion and Collapse all change both local layouts without navigating", () => {
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    render(<VisualisePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Education" }));
+    expect(screen.getByRole("button", { name: "Expand Education" }))
+      .toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Expand Education" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand Primary" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand Literacy" }));
+    expect(screen.getByRole("rowheader", { name: "Lower primary" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Reading" }))
+      .toBeInTheDocument();
+
+    mockNavigate.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
+
+    expect(
+      screen.getByRole("button", { name: "Expand Education" }),
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.getByRole("button", { name: "Expand Themes" }),
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Collapse all" }))
+      .toBeDisabled();
+    const collapsedCell = screen.getByRole("button", {
+      name: "Education, Themes: 90 results. View matching results.",
+    });
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+    fireEvent.click(collapsedCell);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/test?concept=level%3Aeducation&concept=theme%3Athemes",
+      {
+        state: {
+          backToVisualise:
+            "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
+        },
+      },
+    );
+  });
+
+  test("Bubble/Table and filter-only results preserve expansion on both axes", () => {
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    const { rerender } = render(<VisualisePage />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand Primary" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand Literacy" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Table" }));
+    expect(screen.getByRole("button", { name: "Collapse Primary" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Collapse Literacy" }))
+      .toBeInTheDocument();
+
+    const filtered =
+      "?concept=level%3Asecondary&row=scheme%3Alevel&column=scheme%3Atheme";
+    mockUseUrlParams.mockReturnValue(filtered);
+    mockUseCrossFacets.mockReturnValue(
+      nestedResultState({ loading: true }),
+    );
+    rerender(<VisualisePage />);
+    expect(screen.getByRole("button", { name: "Collapse Primary" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Collapse Literacy" }))
+      .toBeInTheDocument();
+
+    mockUseCrossFacets.mockReturnValue(
+      nestedResultState({ resultParams: parseSearchParams(filtered) }),
+    );
+    rerender(<VisualisePage />);
+    expect(screen.getByRole("button", { name: "Collapse Primary" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Collapse Literacy" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Table" }))
+      .toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Bubble" }));
+    expect(screen.getByRole("button", { name: "Collapse Primary" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Collapse Literacy" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bubble" }))
+      .toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("accepting a one-axis change resets only that axis", () => {
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    const { rerender, container } = render(<VisualisePage />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand Primary" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand Literacy" }));
+
+    mockUseUrlParams.mockReturnValue(
+      "?row=scheme%3Alevel&column=scheme%3Atopic",
+    );
+    // This is the render before useCrossFacets' effect flips loading to true.
+    // The result snapshot already proves the old grid is stale.
+    mockUseCrossFacets.mockReturnValue(nestedResultState({ loading: false }));
+    rerender(<VisualisePage />);
+
+    const pendingTable = within(screen.getByRole("table"));
+    expect(pendingTable.getByRole("button", { name: "Collapse Literacy" }))
+      .toBeInTheDocument();
+    expect(pendingTable.queryByText("Topics")).not.toBeInTheDocument();
+    expect(
+      pendingTable.queryByRole("button", {
+        name: "Reading: view matching results.",
+      }),
+    ).not.toBeInTheDocument();
+    expect(container.querySelector(".evidence-map.is-updating"))
+      .not.toBeNull();
+    const panel = container.querySelector<HTMLElement>(".map-config-panel")!;
+    expect(
+      (within(panel).getByLabelText("Columns (x)") as HTMLSelectElement).value,
+    ).toBe("scheme:topic");
+
+    mockUseCrossFacets.mockReturnValue({
+      ...nestedResultState(),
+      result: crossFacetResult(30, [
+        ["level:lower-primary", "topic:access", 12],
+        ["level:upper-primary", "topic:access", 8],
+        ["level:secondary", "topic:quality", 10],
+      ]),
+      resultAxes: TOPIC_CROSS_AXES,
+    });
+    rerender(<VisualisePage />);
+
+    const acceptedTable = within(screen.getByRole("table"));
+    expect(acceptedTable.getByRole("button", { name: "Collapse Primary" }))
+      .toBeInTheDocument();
+    expect(acceptedTable.getByText("Lower primary")).toBeInTheDocument();
+    expect(acceptedTable.getByRole("button", { name: "Collapse Topics" }))
+      .toBeInTheDocument();
+    expect(acceptedTable.getByRole("button", { name: "Expand Access" }))
+      .toBeInTheDocument();
+    expect(acceptedTable.queryByText("Literacy")).not.toBeInTheDocument();
+  });
+
+  test("preserves a fully collapsed axis when only the other axis changes", () => {
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    const { rerender } = render(<VisualisePage />);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Education" }));
+
+    mockUseUrlParams.mockReturnValue(
+      "?row=scheme%3Alevel&column=scheme%3Atopic",
+    );
+    mockUseCrossFacets.mockReturnValue({
+      ...nestedResultState(),
+      result: crossFacetResult(30, [
+        ["level:education", "topic:access", 20],
+        ["level:education", "topic:quality", 10],
+      ]),
+      resultAxes: TOPIC_CROSS_AXES,
+    });
+    rerender(<VisualisePage />);
+
+    const table = within(screen.getByRole("table"));
+    expect(table.getByRole("button", { name: "Expand Education" }))
+      .toBeInTheDocument();
+    expect(table.queryByText("Primary")).not.toBeInTheDocument();
+    expect(table.getByRole("button", { name: "Collapse Topics" }))
+      .toBeInTheDocument();
+  });
+
+  test("keeps a scheme axis nested when the other changes to Countries", () => {
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    const { rerender } = render(<VisualisePage />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand Primary" }));
+
+    mockUseUrlParams.mockReturnValue(
+      `?row=scheme%3Alevel&column=${AXIS_COUNTRIES}`,
+    );
+    mockUseCrossFacets.mockReturnValue({
+      ...nestedResultState(),
+      result: crossFacetResult(30, [
+        ["level:lower-primary", "AU", 12],
+        ["level:upper-primary", "NZ", 8],
+        ["level:secondary", "AU", 10],
+      ]),
+      resultAxes: {
+        row: CROSS_AXES.row,
+        column: { kind: "literal", token: AXIS_COUNTRIES },
+      },
+    });
+    rerender(<VisualisePage />);
+
+    const table = within(screen.getByRole("table"));
+    expect(table.getByRole("button", { name: "Collapse Primary" }))
+      .toBeInTheDocument();
+    expect(table.getByRole("columnheader", { name: "Australia" }))
+      .toBeInTheDocument();
+    expect(table.getByRole("columnheader", { name: "New Zealand" }))
+      .toBeInTheDocument();
+    expect(table.queryByRole("button", { name: /Expand Australia/ }))
+      .not.toBeInTheDocument();
+  });
+
+  test("falls back to flat cell values when an applied scheme is unknown", () => {
+    mockUseUrlParams.mockReturnValue(
+      "?row=scheme%3Alevel&column=scheme%3Aunknown",
+    );
+    mockUseCrossFacets.mockReturnValue({
+      ...nestedResultState(),
+      result: crossFacetResult(12, [
+        ["level:primary", "unknown:value", 12],
+      ]),
+      resultAxes: {
+        row: CROSS_AXES.row,
+        column: { kind: "scheme", schemeUri: "scheme:unknown" },
+      },
+    });
+    render(<VisualisePage />);
+
+    const table = within(screen.getByRole("table"));
+    expect(table.getByRole("button", { name: "Collapse Education" }))
+      .toBeInTheDocument();
+    expect(table.getByRole("columnheader", { name: "unknown:value" }))
+      .toBeInTheDocument();
+    expect(table.queryByRole("button", { name: /Expand unknown:value/ }))
+      .not.toBeInTheDocument();
+  });
+
+  test("an axis swap resets both hierarchies instead of transposing state", () => {
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    const { rerender } = render(<VisualisePage />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand Primary" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand Literacy" }));
+
+    mockUseUrlParams.mockReturnValue(
+      "?row=scheme%3Atheme&column=scheme%3Alevel",
+    );
+    mockUseCrossFacets.mockReturnValue({
+      ...nestedResultState(),
+      result: crossFacetResult(30, [
+        ["theme:literacy", "level:primary", 20],
+        ["theme:numeracy", "level:secondary", 10],
+      ]),
+      resultAxes: {
+        row: CROSS_AXES.column,
+        column: CROSS_AXES.row,
+      },
+    });
+    rerender(<VisualisePage />);
+
+    const table = within(screen.getByRole("table"));
+    expect(table.getByRole("button", { name: "Expand Literacy" }))
+      .toBeInTheDocument();
+    expect(table.getByRole("button", { name: "Expand Primary" }))
+      .toBeInTheDocument();
+    expect(table.queryByText("Reading")).not.toBeInTheDocument();
+    expect(table.queryByText("Lower primary")).not.toBeInTheDocument();
+  });
+
+  test("keeps row and column expansion independent for the same scheme", () => {
+    mockUseUrlParams.mockReturnValue(
+      "?row=scheme%3Alevel&column=scheme%3Alevel",
+    );
+    mockUseCrossFacets.mockReturnValue({
+      ...nestedResultState(),
+      result: crossFacetResult(20, [
+        ["level:primary", "level:primary", 12],
+        ["level:secondary", "level:secondary", 8],
+      ]),
+      resultAxes: { row: CROSS_AXES.row, column: CROSS_AXES.row },
+    });
+    render(<VisualisePage />);
+
+    const expandPrimary = screen.getAllByRole("button", {
+      name: "Expand Primary",
+    });
+    expect(expandPrimary).toHaveLength(2);
+    fireEvent.click(expandPrimary[0]);
+    expect(screen.getAllByRole("button", { name: "Collapse Primary" }))
+      .toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Expand Primary" }))
+      .toHaveLength(1);
+  });
+
+  test("adopts the default hierarchy when vocabulary arrives after the result", () => {
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: null,
+      loading: true,
+      error: null,
+    });
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    const { rerender } = render(<VisualisePage />);
+    expect(screen.queryByRole("button", { name: "Collapse Education" }))
+      .not.toBeInTheDocument();
+
+    nestedVocabulary();
+    rerender(<VisualisePage />);
+    expect(screen.getByRole("button", { name: "Collapse Education" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Expand Primary" }))
+      .toBeInTheDocument();
+  });
+
+  test("opens only the applied axis scheme cards, including during an axis request", () => {
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({
+        features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+        defaultExpandedFilters: ["year", "scheme:topic"],
+      }),
+    );
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    const { container, rerender } = render(<VisualisePage />);
+    const panel = () =>
+      within(container.querySelector<HTMLElement>(".map-config-panel")!);
+
+    expect(panel().getByRole("button", { name: "Education Level" }))
+      .toHaveAttribute("aria-expanded", "true");
+    expect(panel().getByRole("button", { name: "Education Theme" }))
+      .toHaveAttribute("aria-expanded", "true");
+    expect(panel().getByRole("button", { name: "Education Topic" }))
+      .toHaveAttribute("aria-expanded", "false");
+    expect(panel().getByRole("button", { name: "Publication year" }))
+      .toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.change(panel().getByLabelText("Columns (x)"), {
+      target: { value: "scheme:topic" },
+    });
+    expect(within(screen.getByRole("table")).getByText("Literacy"))
+      .toBeInTheDocument();
+    expect(within(screen.getByRole("table")).queryByText("Topics"))
+      .not.toBeInTheDocument();
+
+    mockUseUrlParams.mockReturnValue(
+      "?row=scheme%3Alevel&column=scheme%3Atopic",
+    );
+    mockUseCrossFacets.mockReturnValue(nestedResultState({ loading: true }));
+    rerender(<VisualisePage />);
+
+    expect(panel().getByRole("button", { name: "Education Level" }))
+      .toHaveAttribute("aria-expanded", "true");
+    expect(panel().getByRole("button", { name: "Education Theme" }))
+      .toHaveAttribute("aria-expanded", "false");
+    expect(panel().getByRole("button", { name: "Education Topic" }))
+      .toHaveAttribute("aria-expanded", "true");
+    expect(within(screen.getByRole("table")).getByText("Literacy"))
+      .toBeInTheDocument();
+  });
+});
+
 describe("VisualisePage analytics", () => {
   // An empty queue is what `track()` reads as "analytics enabled".
   beforeEach(() => {
@@ -480,6 +987,27 @@ describe("VisualisePage analytics", () => {
     expect(mapEvents("Cell Clicked").map((e) => e[3])).toEqual([
       "Primary × Literacy",
     ]);
+  });
+
+  test("does not count local hierarchy changes as new map views", () => {
+    nestedAxesCommunity();
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(90, PAGE_NESTED_CELLS),
+      resultAxes: CROSS_AXES,
+      resultParams: parseSearchParams(""),
+      loading: false,
+      error: null,
+    });
+    render(<VisualisePage />);
+    expect(mapEvents("Map Viewed")).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand Primary" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand Literacy" }));
+    fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
+
+    expect(mapEvents("Map Viewed")).toHaveLength(1);
+    expect(mapEvents("Axes Changed")).toEqual([]);
+    expect(mapEvents("View Toggled")).toEqual([]);
   });
 
   test("a clicked value carries its branch, the way a filter on it would", () => {
