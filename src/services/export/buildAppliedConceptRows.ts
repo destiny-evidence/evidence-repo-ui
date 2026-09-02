@@ -1,10 +1,10 @@
 /**
- * Row-building logic for the HPV reference-level workbook: one row per
- * reference, a fixed bibliographic block followed by one column per SKOS
- * scheme and an "Other codes" catch-all. Each scheme cell holds the
- * `; `-joined prefLabels of that reference's applied concepts that fall in the
- * scheme; concepts in no listed scheme land in "Other codes". References with
- * no applied concepts still produce a row (with blank concept cells).
+ * Row-building logic for the applied-concept workbook: one row per record, a
+ * fixed bibliographic block followed by one column per SKOS scheme and an
+ * "Other codes" catch-all. Each scheme cell holds the `; `-joined prefLabels of
+ * that record's `hasAppliedConcept` entries that fall in the scheme; concepts
+ * in no listed scheme land in "Other codes". References with no applied
+ * concepts still produce a row (with blank concept cells).
  */
 
 import { orderFilterItems } from "@/components/filters/filterOrder";
@@ -26,7 +26,7 @@ import type { PinnedFilter, Reference } from "@/types/models";
 import { truncateForCell } from "./buildRows.ts";
 import type { CellValue, ConceptResolver } from "./types.ts";
 
-export const HPV_SHEET_NAME = "References";
+export const APPLIED_CONCEPT_SHEET_NAME = "References";
 
 const OTHER_CODES_HEADER = "Other codes";
 
@@ -70,7 +70,7 @@ function buildSchemeColumns(
   });
 }
 
-function buildReferenceRow(
+function buildAppliedConceptRow(
   reference: Reference,
   vocab: ConceptResolver,
   inScheme: Map<string, string>,
@@ -121,7 +121,7 @@ function buildReferenceRow(
  * Stream references into a header list and one row per reference. `pinnedFilters`
  * orders the scheme columns to match the community's filter drawer.
  */
-export async function buildReferenceRows(
+export async function buildAppliedConceptRows(
   references: ReferenceSource,
   vocab: ConceptResolver,
   pinnedFilters?: PinnedFilter[],
@@ -134,7 +134,9 @@ export async function buildReferenceRows(
 
   const rows: SheetRow[] = [];
   for await (const reference of references) {
-    rows.push(buildReferenceRow(reference, vocab, inScheme, schemeHeaderByUri));
+    rows.push(
+      buildAppliedConceptRow(reference, vocab, inScheme, schemeHeaderByUri),
+    );
   }
 
   const headers = [

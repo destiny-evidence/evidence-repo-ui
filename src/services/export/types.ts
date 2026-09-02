@@ -26,9 +26,7 @@ export interface CodedAnnotation {
 export interface ConceptResolver {
   prefixes: Map<string, string>;
   labels: Map<string, string>;
-  // URI → scheme URI and the scheme list, used by the reference-level (HPV)
-  // workbook to group applied concepts into per-scheme columns. The
-  // investigation-hierarchy (esea) workbook doesn't need them.
+  // URI → scheme URI and the scheme list.
   inScheme?: Map<string, string>;
   schemes?: ConceptScheme[];
 }

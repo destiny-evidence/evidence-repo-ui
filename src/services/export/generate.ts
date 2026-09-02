@@ -15,7 +15,10 @@ import {
   buildOutcomeRows,
   ensureArray,
 } from "./buildRows.ts";
-import { buildReferenceRows, HPV_SHEET_NAME } from "./buildHpvRows.ts";
+import {
+  buildAppliedConceptRows,
+  APPLIED_CONCEPT_SHEET_NAME,
+} from "./buildAppliedConceptRows.ts";
 import {
   extractBibliographic,
   extractLinkedDataEnhancement,
@@ -54,8 +57,8 @@ type ReferenceSource =
  * shape SheetJS expects: the first inner array is the header row, and
  * each subsequent row contains the values in the same column order, with
  * missing keys filled in as null. Generic over the row type so it serves
- * both the fixed-interface (esea) rows and the dynamic, scheme-keyed (HPV)
- * rows.
+ * both the fixed-interface (esea) rows and the dynamic, scheme-keyed
+ * applied-concept rows.
  */
 function rowsToAoa<R extends object>(
   headers: ReadonlyArray<keyof R & string>,
@@ -169,23 +172,23 @@ async function buildEducationWorkbook(
 }
 
 /**
- * Build the HPV reference-level workbook: a single sheet with one row per
- * reference, bibliographic columns followed by one column per SKOS scheme
- * holding that reference's applied concepts in that scheme. `pinnedFilters`
- * orders the scheme columns to match the community's filter drawer.
+ * Build the applied-concept workbook: a single sheet with one row per record,
+ * bibliographic columns followed by one column per SKOS scheme holding that
+ * record's applied concepts in that scheme. `pinnedFilters` orders the scheme
+ * columns to match the community's filter drawer.
  */
-async function buildHpvWorkbook(
+async function buildAppliedConceptWorkbook(
   references: ReferenceSource,
   vocab: ConceptResolver,
   pinnedFilters?: PinnedFilter[],
 ): Promise<XLSX.WorkBook> {
-  const { headers, rows } = await buildReferenceRows(
+  const { headers, rows } = await buildAppliedConceptRows(
     references,
     vocab,
     pinnedFilters,
   );
   const wb = XLSX.utils.book_new();
-  appendSheet(wb, HPV_SHEET_NAME, headers, rows);
+  appendSheet(wb, APPLIED_CONCEPT_SHEET_NAME, headers, rows);
   return wb;
 }
 
@@ -204,8 +207,8 @@ export interface WorkbookOptions {
  * iterable (JSONL stream), letting callers either load the whole file or
  * stream it from a signed URL. The `vocab` argument bundles the
  * JSON-LD @context prefix map and the URI-keyed prefLabel map fetched
- * via `vocabularyService` / `contextService`; the reference-level (HPV)
- * variant additionally reads its `inScheme` map and `schemes` list.
+ * via `vocabularyService` / `contextService`; the applied-concept variants
+ * additionally read its `inScheme` map and `schemes` list.
  */
 export async function generateWorkbook(
   references: ReferenceSource,
@@ -216,7 +219,11 @@ export async function generateWorkbook(
     case "esea":
       return buildEducationWorkbook(references, vocab, options.codingInstitution);
     case "hpv":
-      return buildHpvWorkbook(references, vocab, options.pinnedFilters);
+      return buildAppliedConceptWorkbook(
+        references,
+        vocab,
+        options.pinnedFilters,
+      );
   }
 }
 

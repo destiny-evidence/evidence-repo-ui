@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 
-import { buildReferenceRows } from "@/services/export/buildHpvRows.ts";
+import { buildAppliedConceptRows } from "@/services/export/buildAppliedConceptRows.ts";
 import type { ConceptResolver } from "@/services/export/types.ts";
 import type {
   BibliographicMetadataEnhancement,
@@ -133,9 +133,9 @@ const BIB_HEADERS = [
   "Abstract",
 ];
 
-describe("buildReferenceRows", () => {
+describe("buildAppliedConceptRows", () => {
   test("derives one scheme column per scheme, alphabetical, no Other codes when empty", async () => {
-    const { headers } = await buildReferenceRows([], VOCAB);
+    const { headers } = await buildAppliedConceptRows([], VOCAB);
     expect(headers).toEqual([
       ...BIB_HEADERS,
       "Country",
@@ -146,7 +146,7 @@ describe("buildReferenceRows", () => {
   });
 
   test("orders scheme columns by pinnedFilters, then alphabetically", async () => {
-    const { headers } = await buildReferenceRows([], VOCAB, [
+    const { headers } = await buildAppliedConceptRows([], VOCAB, [
       `${NS}TargetPopulation`,
       "year",
     ]);
@@ -159,12 +159,12 @@ describe("buildReferenceRows", () => {
   });
 
   test("includes geo schemes as columns", async () => {
-    const { headers } = await buildReferenceRows([], VOCAB);
+    const { headers } = await buildAppliedConceptRows([], VOCAB);
     expect(headers).toContain("Country");
   });
 
   test("emits one row per reference with bibliographic columns populated", async () => {
-    const { rows } = await buildReferenceRows(
+    const { rows } = await buildAppliedConceptRows(
       [hpvRef("ref-1", [])],
       VOCAB,
     );
@@ -181,7 +181,7 @@ describe("buildReferenceRows", () => {
   });
 
   test("groups applied concepts into their scheme columns, joined with '; '", async () => {
-    const { rows } = await buildReferenceRows(
+    const { rows } = await buildAppliedConceptRows(
       [hpvRef("ref-1", ["hpv:c1", "hpv:c2", "hpv:c3", "hpv:c4"])],
       VOCAB,
     );
@@ -192,7 +192,7 @@ describe("buildReferenceRows", () => {
   });
 
   test("leaves scheme cells blank for a reference with no applied concepts", async () => {
-    const { rows } = await buildReferenceRows([hpvRef("ref-1", [])], VOCAB);
+    const { rows } = await buildAppliedConceptRows([hpvRef("ref-1", [])], VOCAB);
     const row = rows[0]!;
     expect(row["Delivery Actor"]).toBeUndefined();
     expect(row["Target Population"]).toBeUndefined();
@@ -208,7 +208,7 @@ describe("buildReferenceRows", () => {
         }),
       ],
     });
-    const { rows } = await buildReferenceRows([bibOnly], VOCAB);
+    const { rows } = await buildAppliedConceptRows([bibOnly], VOCAB);
     expect(rows).toHaveLength(1);
     expect(rows[0]!["Reference ID"]).toBe("ref-bib-only");
     expect(rows[0]!["Title"]).toBe("Bib only");
@@ -220,7 +220,7 @@ describe("buildReferenceRows", () => {
       yield hpvRef("ref-1", ["hpv:c1"]);
       yield hpvRef("ref-2", ["hpv:c3"]);
     }
-    const { rows } = await buildReferenceRows(gen(), VOCAB);
+    const { rows } = await buildAppliedConceptRows(gen(), VOCAB);
     expect(rows.map((r) => r["Reference ID"])).toEqual(["ref-1", "ref-2"]);
     expect(rows[0]!["Delivery Actor"]).toBe("Nurse");
     expect(rows[1]!["Target Population"]).toBe("Adolescent girls");
@@ -232,7 +232,7 @@ describe("buildReferenceRows", () => {
       ...VOCAB,
       labels: new Map([...LABELS, [`${NS}c9`, "Uncoded concept"]]),
     };
-    const { headers, rows } = await buildReferenceRows(
+    const { headers, rows } = await buildAppliedConceptRows(
       [hpvRef("ref-1", ["hpv:c1", "hpv:c9", "hpv:c8"])],
       vocab,
     );
@@ -247,7 +247,7 @@ describe("buildReferenceRows", () => {
       { uri: `${NS}DeliveryActorA`, label: "Delivery Actor Scheme", topConcepts: [] },
       { uri: `${NS}DeliveryActorB`, label: "Delivery Actor Scheme", topConcepts: [] },
     ];
-    const { headers } = await buildReferenceRows([], {
+    const { headers } = await buildAppliedConceptRows([], {
       ...VOCAB,
       schemes: collidingSchemes,
     });
