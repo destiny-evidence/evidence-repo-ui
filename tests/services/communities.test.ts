@@ -127,6 +127,7 @@ describe("community registry", () => {
       exportExcel: false,
       countryFacetFilter: true,
       referenceSelection: true,
+      nestedEvidenceMapAxes: false,
     });
   });
 
@@ -137,7 +138,8 @@ describe("community registry", () => {
       selfSignup: false,
       findingsAndEstimates: true,
       exportExcel: true,
-      countryFacetFilter: true
+      countryFacetFilter: true,
+      nestedEvidenceMapAxes: false,
     },
     {
       slug: "hpv",
@@ -145,7 +147,8 @@ describe("community registry", () => {
       selfSignup: true,
       findingsAndEstimates: false,
       exportExcel: true,
-      countryFacetFilter: false
+      countryFacetFilter: false,
+      nestedEvidenceMapAxes: false,
     },
     {
       slug: "destiny",
@@ -153,7 +156,8 @@ describe("community registry", () => {
       selfSignup: false,
       findingsAndEstimates: false,
       exportExcel: false,
-      countryFacetFilter: false
+      countryFacetFilter: false,
+      nestedEvidenceMapAxes: true,
     },
   ])("gates features for $slug", ({ slug, ...features }) => {
     expect(mod.findCommunity(slug)?.features).toMatchObject(features);

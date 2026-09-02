@@ -33,6 +33,12 @@ export interface AxisCategory {
   definition?: string;
 }
 
+export interface AxisTreeNode {
+  category: AxisCategory;
+  depth: number;
+  children: AxisTreeNode[];
+}
+
 export interface EvidenceMapModel {
   rows: AxisCategory[];
   columns: AxisCategory[];
@@ -91,6 +97,8 @@ export interface ResolvedAxis {
   // Every value the axis can take (a scheme's concepts), so the grid renders
   // zero-hit rows/columns. Empty for a countries axis ⇒ derived from the cells.
   categories: AxisCategory[];
+  // Present for a resolved scheme; absent for countries and unknown schemes.
+  tree?: AxisTreeNode[];
   labelFor: (value: string) => string;
 }
 
@@ -111,36 +119,53 @@ export function resolveMapAxis(
   }
   // Scheme URIs are full URIs after parsing, so this matches directly.
   const scheme = schemes?.find((s) => s.uri === axis.schemeUri);
+  const tree = scheme ? buildConceptTree(scheme) : undefined;
   return {
     title: scheme
       ? schemeDisplayLabel(scheme.label)
       : localName(axis.schemeUri),
-    categories: scheme ? flattenScheme(scheme) : [],
+    categories: tree ? flattenTree(tree) : [],
+    tree,
     labelFor: (value) => labels?.get(value) ?? value,
   };
 }
 
-// Flatten the scheme to a depth-first preorder list — each concept immediately
-// followed by its descendants — so a parent and its children sit adjacent in the
-// grid. Siblings are already alpha-numerically ordered by the vocabulary build.
-// A concept reachable twice (e.g. a top concept also declared `broader` into
-// another subtree) is emitted once: a repeat key would warn and double the row.
-function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
-  const out: AxisCategory[] = [];
+// Build one ordered tree, skipping concepts already reached through another path.
+export function buildConceptTree(scheme: ConceptScheme): AxisTreeNode[] {
   const seen = new Set<string>();
-  const walk = (concepts: readonly Concept[]) => {
+  const walk = (
+    concepts: readonly Concept[],
+    depth: number,
+  ): AxisTreeNode[] => {
+    const nodes: AxisTreeNode[] = [];
     for (const concept of concepts) {
       if (seen.has(concept.uri)) continue;
       seen.add(concept.uri);
-      out.push({
-        key: concept.uri,
-        label: concept.label,
-        definition: concept.definition,
+      nodes.push({
+        category: {
+          key: concept.uri,
+          label: concept.label,
+          definition: concept.definition,
+        },
+        depth,
+        children: walk(concept.narrower ?? [], depth + 1),
       });
-      if (concept.narrower) walk(concept.narrower);
+    }
+    return nodes;
+  };
+  return walk(scheme.topConcepts, 0);
+}
+
+// Flatten the tree in depth-first order so parents remain beside descendants.
+function flattenTree(tree: readonly AxisTreeNode[]): AxisCategory[] {
+  const out: AxisCategory[] = [];
+  const walk = (nodes: readonly AxisTreeNode[]) => {
+    for (const node of nodes) {
+      out.push(node.category);
+      walk(node.children);
     }
   };
-  walk(scheme.topConcepts);
+  walk(tree);
   return out;
 }
 

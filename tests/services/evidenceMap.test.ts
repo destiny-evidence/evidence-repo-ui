@@ -202,6 +202,45 @@ describe("resolveMapAxis", () => {
     ]);
   });
 
+  test("retains scheme hierarchy, depth, order, and definitions", () => {
+    const axis = resolveMapAxis(
+      {
+        kind: "scheme",
+        schemeUri: "https://vocab.esea.education/OutcomeScheme",
+      },
+      [scheme],
+      labels,
+    );
+    expect(axis.tree).toEqual([
+      {
+        category: {
+          key: "https://vocab.esea.education/OutcomeScheme/C1",
+          label: "Access to Education",
+        },
+        depth: 0,
+        children: [
+          {
+            category: {
+              key: "https://vocab.esea.education/OutcomeScheme/C2",
+              label: "Enrolment",
+              definition: "Children enrolled in school",
+            },
+            depth: 1,
+            children: [],
+          },
+        ],
+      },
+      {
+        category: {
+          key: "https://vocab.esea.education/OutcomeScheme/C3",
+          label: "Learning",
+        },
+        depth: 0,
+        children: [],
+      },
+    ]);
+  });
+
   test("emits each concept once, even when reachable under two parents", () => {
     // The vocabulary build orders siblings; flattenScheme preserves that order
     // but must not double-emit a concept that is both a top concept and a
@@ -235,6 +274,13 @@ describe("resolveMapAxis", () => {
       "u:france",
       "u:spain",
     ]);
+    expect(axis.tree?.map((node) => node.category.key)).toEqual(["u:africa"]);
+    expect(axis.tree?.[0].children.map((node) => node.category.key)).toEqual([
+      "u:europe",
+    ]);
+    expect(
+      axis.tree?.[0].children[0].children.map((node) => node.category.key),
+    ).toEqual(["u:france", "u:spain"]);
   });
 
   test("falls back to the local name and no categories when the scheme is absent", () => {
@@ -248,6 +294,7 @@ describe("resolveMapAxis", () => {
     );
     expect(axis.title).toBe("MysteryScheme");
     expect(axis.categories).toEqual([]);
+    expect(axis.tree).toBeUndefined();
     // Unknown values pass through unchanged.
     expect(axis.labelFor("urn:unknown")).toBe("urn:unknown");
   });
@@ -256,6 +303,7 @@ describe("resolveMapAxis", () => {
     const axis = resolveMapAxis({ kind: "countries" }, null, null);
     expect(axis.title).toBe("Countries");
     expect(axis.categories).toEqual([]);
+    expect(axis.tree).toBeUndefined();
     expect(axis.labelFor("FR")).toBe(countryName("FR"));
     expect(axis.labelFor("FR")).not.toBe("FR");
   });
