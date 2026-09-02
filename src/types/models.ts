@@ -7,8 +7,8 @@ export interface CommunityFeatures {
   selfSignup: boolean;
   // Whether result cards show finding/estimate stat-badges.
   findingsAndEstimates: boolean;
-  // Whether the Excel export button is shown.
-  exportExcel: boolean;
+  // Whether or not exports are available for this community.
+  exportsEnabled: boolean;
   // Whether the facet-backed country filter card is shown; needs a populated `countries` facet.
   countryFacetFilter: boolean;
   // Gates the result-row selection UI (checkboxes + selection controls). Only
@@ -95,7 +95,7 @@ export interface Community {
   copy: CommunityCopy;
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;
-  // Which Excel workbook the export builds when features.exportExcel is on.
+  // Which Excel workbook the export builds when features.exportsEnabled is on.
   exportVariant?: ExportVariant;
   // Identifier columns the "applied-concept" workbook writes for this community.
   exportIdentifiers?: readonly IdentifierColumn[];
@@ -167,7 +167,7 @@ export interface ReferenceCrossFacetResult {
   cells: CrossFacetCell[];
 }
 
-// The identifier types the repository mints. 
+// The identifier types the repository mints.
 export type IdentifierType =
   | "doi"
   | "eric"

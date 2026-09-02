@@ -21,7 +21,7 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   aiSummaries: false,
   selfSignup: false,
   findingsAndEstimates: true,
-  exportExcel: false,
+  exportsEnabled: false,
   countryFacetFilter: true,
   // Selection UI still only shows where a consumer (AI summary / selection
   // export) is enabled — see selectionEnabled.
@@ -79,7 +79,7 @@ const COMMUNITIES: Community[] = [
     ],
     pillExcludedSchemes: [],
     geographicSchemes: [],
-    features: { ...DEFAULT_FEATURES, exportExcel: true },
+    features: { ...DEFAULT_FEATURES, exportsEnabled: true },
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",
@@ -136,7 +136,7 @@ const COMMUNITIES: Community[] = [
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
-      exportExcel: true,
+      exportsEnabled: true,
     },
     defaultEvidenceMapAxes: {
       row: {
@@ -154,7 +154,6 @@ const COMMUNITIES: Community[] = [
       corpusDescriptor: "HPV vaccine delivery research",
     }),
     exportVariant: "applied-concept",
-    // HPV records carry an EPPI ItemId.
     exportIdentifiers: [
       { header: "EPPI ItemId", type: "other", otherName: "EPPI ItemId" },
     ],
@@ -209,8 +208,8 @@ const COMMUNITIES: Community[] = [
       ...DEFAULT_FEATURES,
       findingsAndEstimates: false,
       countryFacetFilter: false,
+      exportsEnabled: true,
       nestedEvidenceMapAxes: true,
-      exportExcel: true,
     },
     exportVariant: "applied-concept",
     exportIdentifiers: [{ header: "OpenAlex ID", type: "open_alex" }],

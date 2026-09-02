@@ -124,7 +124,7 @@ describe("community registry", () => {
       aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: true,
-      exportExcel: false,
+      exportsEnabled: false,
       countryFacetFilter: true,
       referenceSelection: true,
       nestedEvidenceMapAxes: false,
@@ -143,17 +143,18 @@ describe("community registry", () => {
       aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: true,
-      exportExcel: true,
+      exportsEnabled: true,
       countryFacetFilter: true,
       nestedEvidenceMapAxes: false,
+
     },
     {
       slug: "hpv",
       aiSummaries: true,
       selfSignup: true,
       findingsAndEstimates: false,
-      exportExcel: true,
       countryFacetFilter: false,
+      exportsEnabled: true,
       nestedEvidenceMapAxes: false,
     },
     {
@@ -161,8 +162,8 @@ describe("community registry", () => {
       aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: false,
-      exportExcel: true,
       countryFacetFilter: false,
+      exportsEnabled: true,
       nestedEvidenceMapAxes: true,
     },
   ])("gates features for $slug", ({ slug, ...features }) => {
@@ -191,7 +192,7 @@ describe("community registry", () => {
     "%s defines an export variant wherever exports are enabled",
     (slug) => {
       const community = mod.findCommunity(slug)!;
-      if (community.features.exportExcel) {
+      if (community.features.exportsEnabled) {
         expect(community.exportVariant).toBeDefined();
       }
     },

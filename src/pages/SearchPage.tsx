@@ -591,7 +591,7 @@ function SearchPageInner({ community }: { community: Community }) {
               )}
               {selectable
                 && hasResults
-                && (aiEnabled || community.features.exportExcel) && (
+                && (aiEnabled || community.features.exportsEnabled) && (
                   <span class="search-results__meta-div" aria-hidden="true" />
                 )}
               {aiEnabled && hasResults && (
@@ -611,7 +611,7 @@ function SearchPageInner({ community }: { community: Community }) {
                   {exportAnnouncement}
                 </span>
               )}
-              {results.results && community.features.exportExcel && (
+              {results.results && community.features.exportsEnabled && (
                 <ExportMenu
                   disabled={exportDisabled}
                   status={exportJob.status}
