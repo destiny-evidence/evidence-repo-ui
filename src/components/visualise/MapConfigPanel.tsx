@@ -41,6 +41,9 @@ interface MapConfigPanelProps {
   pinnedFilters?: readonly PinnedFilter[];
   // Filter cards that start expanded; absent ⇒ DEFAULT_EXPANDED_FILTERS.
   defaultExpandedFilters?: readonly PinnedFilter[];
+  // Collapse concept-filter children behind their parents; only for
+  // communities with ancestor-closed codings.
+  collapsibleConceptFilters?: boolean;
   onApply: (next: { axes: EvidenceMapAxes; filters: AppliedFilters }) => void;
 }
 
@@ -98,6 +101,7 @@ export function MapConfigPanel({
   showCountryFacetFilter = true,
   pinnedFilters,
   defaultExpandedFilters,
+  collapsibleConceptFilters = false,
   onApply,
 }: MapConfigPanelProps) {
   const [rowDraft, setRowDraft] = useState<EvidenceMapAxis>(appliedAxes.row);
@@ -171,6 +175,7 @@ export function MapConfigPanel({
             showCountryFacetFilter={showCountryFacetFilter}
             pinnedFilters={pinnedFilters}
             defaultExpandedFilters={defaultExpandedFilters}
+            collapsibleConceptFilters={collapsibleConceptFilters}
           />
         </section>
       </div>

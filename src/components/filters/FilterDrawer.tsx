@@ -20,6 +20,9 @@ interface FilterDrawerProps {
   pinnedFilters?: readonly PinnedFilter[];
   // Filter cards that start expanded; absent ⇒ DEFAULT_EXPANDED_FILTERS.
   defaultExpandedFilters?: readonly PinnedFilter[];
+  // Collapse concept-filter children behind their parents; only for
+  // communities with ancestor-closed codings.
+  collapsibleConceptFilters?: boolean;
   schemes: ConceptScheme[];
   appliedConceptFilters: readonly (readonly string[])[];
   appliedCountryCodes: readonly string[];
@@ -46,6 +49,7 @@ function FilterDrawerPanel({
   showCountryFacetFilter = true,
   pinnedFilters,
   defaultExpandedFilters,
+  collapsibleConceptFilters = false,
   schemes,
   appliedConceptFilters,
   appliedCountryCodes,
@@ -109,6 +113,7 @@ function FilterDrawerPanel({
         showCountryFacetFilter={showCountryFacetFilter}
         pinnedFilters={pinnedFilters}
         defaultExpandedFilters={defaultExpandedFilters}
+        collapsibleConceptFilters={collapsibleConceptFilters}
       />
     </Drawer>
   );

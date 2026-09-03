@@ -14,6 +14,7 @@ import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import type { EvidenceMapAxes } from "@/types/models";
 import { makeSearchParams } from "../../fixtures";
 import {
+  DEEP_OUTCOME_SCHEME_FIXTURE,
   DOCUMENT_TYPE_SCHEME,
   OUTCOME_SCHEME_FIXTURE,
   URI_JOURNAL,
@@ -201,5 +202,33 @@ describe("MapConfigPanel", () => {
       kind: "scheme",
       schemeUri: OUTCOME_SCHEME_FIXTURE.uri,
     }));
+  });
+});
+
+describe("collapsible concept filters", () => {
+  test("flag on collapses deep children behind a toggle in the scheme card", () => {
+    renderPanel({
+      schemes: [DEEP_OUTCOME_SCHEME_FIXTURE, DOCUMENT_TYPE_SCHEME],
+      collapsibleConceptFilters: true,
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Outcome/ }));
+    expect(screen.queryByLabelText("School Fees")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Child concepts of Education Finance",
+      }),
+    );
+    expect(screen.getByLabelText("School Fees")).toBeDefined();
+  });
+
+  test("flag off renders the full tree with no toggles", () => {
+    renderPanel({ schemes: [DEEP_OUTCOME_SCHEME_FIXTURE, DOCUMENT_TYPE_SCHEME] });
+    fireEvent.click(screen.getByRole("button", { name: /Outcome/ }));
+    expect(screen.getByLabelText("School Fees")).toBeDefined();
+    expect(
+      screen.queryByRole("button", {
+        name: "Child concepts of Education Finance",
+      }),
+    ).toBeNull();
   });
 });
