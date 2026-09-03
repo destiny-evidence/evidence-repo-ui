@@ -131,6 +131,12 @@ describe("community registry", () => {
     });
   });
 
+  it("uses the backend-compatible evidence-map cell ceiling by default", () => {
+    expect(mod.DEFAULT_EVIDENCE_MAP_RENDER_LIMITS).toEqual({
+      maxCells: 50_000,
+    });
+  });
+
   it.each([
     {
       slug: "esea",

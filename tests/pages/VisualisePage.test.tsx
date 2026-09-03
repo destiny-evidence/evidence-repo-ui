@@ -50,7 +50,9 @@ const TOPIC_CROSS_AXES: CrossFacetAxisPair = {
   column: { kind: "scheme", schemeUri: "scheme:topic" },
 };
 
-function mappedCommunity(overrides = {}) {
+function mappedCommunity(
+  overrides: Parameters<typeof makeCommunity>[0] = {},
+) {
   return makeCommunity({
     features: { evidenceMap: true },
     defaultEvidenceMapAxes: AXES,
@@ -804,6 +806,171 @@ describe("VisualisePage nested-axis state", () => {
       .toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Expand Primary" }))
       .toBeInTheDocument();
+  });
+
+  test("guards an oversized expansion and Collapse all recovers locally", () => {
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({
+        features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+        evidenceMapRenderLimits: { maxCells: 4 },
+      }),
+    );
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    render(<VisualisePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Table" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand Primary" }));
+
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "This expansion is too large to display",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Collapse all");
+    expect(screen.getByRole("button", { name: "Table" }))
+      .toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Bubble" }));
+
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "This expansion is too large to display",
+    );
+    expect(screen.getByRole("button", { name: "Bubble" }))
+      .toHaveAttribute("aria-pressed", "true");
+
+    mockNavigate.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
+
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bubble" }))
+      .toHaveAttribute("aria-pressed", "true");
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  test("filter results cannot change the active oversized layout guard", () => {
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({
+        features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+        evidenceMapRenderLimits: { maxCells: 3 },
+      }),
+    );
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    const { rerender } = render(<VisualisePage />);
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Collapse all");
+    expect(
+      screen.queryByText("Click a cell to view matching investigations"),
+    ).not.toBeInTheDocument();
+
+    const filtered =
+      "?concept=level%3Asecondary&row=scheme%3Alevel&column=scheme%3Atheme";
+    mockUseUrlParams.mockReturnValue(filtered);
+    mockUseCrossFacets.mockReturnValue(
+      nestedResultState({
+        result: crossFacetResult(1, [
+          ["level:secondary", "theme:numeracy", 1],
+        ]),
+        resultParams: parseSearchParams(filtered),
+      }),
+    );
+    rerender(<VisualisePage />);
+
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "This expansion is too large to display",
+    );
+  });
+
+  test("applies dimension limits to a flat fallback for an unknown scheme", () => {
+    mockUseUrlParams.mockReturnValue(
+      "?row=scheme%3Alevel&column=scheme%3Aunknown",
+    );
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({
+        features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+        evidenceMapRenderLimits: { maxCells: 100, maxColumns: 1 },
+      }),
+    );
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(13, [
+        ["level:primary", "unknown:first", 8],
+        ["level:secondary", "unknown:second", 5],
+      ]),
+      resultAxes: {
+        row: CROSS_AXES.row,
+        column: { kind: "scheme", schemeUri: "scheme:unknown" },
+      },
+      resultParams: parseSearchParams(
+        "?row=scheme%3Alevel&column=scheme%3Aunknown",
+      ),
+      loading: false,
+      error: null,
+    });
+    render(<VisualisePage />);
+
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Choose different axes",
+    );
+  });
+
+  test("ignores render limits while nested axes are disabled", () => {
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({ evidenceMapRenderLimits: { maxCells: 1 } }),
+    );
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    render(<VisualisePage />);
+
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.queryByText(/too large to display/i)).not.toBeInTheDocument();
+  });
+
+  test("does not promise collapse recovery when top concepts exceed the limit", () => {
+    const [levels, themes, topics] = PAGE_NESTED_SCHEMES;
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: [
+        {
+          ...levels,
+          topConcepts: [
+            ...levels.topConcepts,
+            { uri: "level:vocational", label: "Vocational" },
+          ],
+        },
+        {
+          ...themes,
+          topConcepts: [
+            ...themes.topConcepts,
+            { uri: "theme:context", label: "Context" },
+          ],
+        },
+        topics,
+      ],
+      loading: false,
+      error: null,
+    });
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({
+        features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+        evidenceMapRenderLimits: { maxCells: 3 },
+      }),
+    );
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    render(<VisualisePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
+
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Collapse all" }))
+      .toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Choose different axes",
+    );
+    expect(screen.getByRole("status")).not.toHaveTextContent(
+      "Use Collapse all",
+    );
   });
 
   test("opens only the applied axis scheme cards, including during an axis request", () => {

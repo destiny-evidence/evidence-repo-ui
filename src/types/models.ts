@@ -29,6 +29,12 @@ export interface EvidenceMapAxes {
   column: EvidenceMapAxis;
 }
 
+export interface EvidenceMapRenderLimits {
+  readonly maxCells: number;
+  readonly maxRows?: number;
+  readonly maxColumns?: number;
+}
+
 // A pinned filter card: the built-in "year"/"country" cards, or any concept
 // scheme by URI. The `string & {}` arm keeps the named tokens auto-completable
 // while still accepting arbitrary scheme URIs.
@@ -85,6 +91,7 @@ export interface Community {
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).
   defaultEvidenceMapAxes?: EvidenceMapAxes;
+  evidenceMapRenderLimits?: EvidenceMapRenderLimits;
   copy: CommunityCopy;
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;

@@ -2,6 +2,7 @@ import type {
   Community,
   CommunityCopy,
   CommunityFeatures,
+  EvidenceMapRenderLimits,
 } from "@/types/models";
 import { rawSourcePatterns } from "@/services/codingInstitution";
 
@@ -26,6 +27,10 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   // export) is enabled — see selectionEnabled.
   referenceSelection: true,
   nestedEvidenceMapAxes: false,
+};
+
+export const DEFAULT_EVIDENCE_MAP_RENDER_LIMITS: EvidenceMapRenderLimits = {
+  maxCells: 50_000,
 };
 
 // The HPV geographic ConceptSchemes (country + regional/classification). Full

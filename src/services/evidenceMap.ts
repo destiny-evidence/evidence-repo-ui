@@ -2,6 +2,7 @@ import type {
   CrossFacetCell,
   EvidenceMapAxes,
   EvidenceMapAxis,
+  EvidenceMapRenderLimits,
 } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
 import {
@@ -45,6 +46,18 @@ export interface EvidenceMapModel {
   // undefined ⇒ empty intersection; the backend omits zero-count cells.
   getCount(rowKey: string, columnKey: string): number | undefined;
   maxCount: number;
+}
+
+export function exceedsEvidenceMapRenderLimits(
+  rowCount: number,
+  columnCount: number,
+  limits: EvidenceMapRenderLimits,
+): boolean {
+  return (
+    (limits.maxRows !== undefined && rowCount > limits.maxRows) ||
+    (limits.maxColumns !== undefined && columnCount > limits.maxColumns) ||
+    rowCount * columnCount > limits.maxCells
+  );
 }
 
 type AxisInput = Pick<ResolvedAxis, "categories" | "labelFor">;

@@ -23,7 +23,9 @@ import {
   axisSearchParams,
   backToVisualiseState,
   type AxisCategory,
+  exceedsEvidenceMapRenderLimits,
 } from "@/services/evidenceMap";
+import { DEFAULT_EVIDENCE_MAP_RENDER_LIMITS } from "@/services/communities";
 import {
   AXIS_COUNTRIES,
   type CrossFacetAxis,
@@ -478,9 +480,35 @@ function EvidenceMapView({
   // render even when no cells come back (the no-coverage state).
   const hasGrid =
     model !== null && model.rows.length > 0 && model.columns.length > 0;
+  const renderLimits =
+    community.evidenceMapRenderLimits ?? DEFAULT_EVIDENCE_MAP_RENDER_LIMITS;
+  const oversized =
+    nestedAxes &&
+    model !== null &&
+    exceedsEvidenceMapRenderLimits(
+      model.rows.length,
+      model.columns.length,
+      renderLimits,
+    );
+  const collapsedRowCount = rowAxis.tree?.length ?? model?.rows.length ?? 0;
+  const collapsedColumnCount =
+    columnAxis.tree?.length ?? model?.columns.length ?? 0;
+  const collapsedStillOversized =
+    model !== null &&
+    exceedsEvidenceMapRenderLimits(
+      collapsedRowCount,
+      collapsedColumnCount,
+      renderLimits,
+    );
+  const canCollapseToFit =
+    oversized &&
+    !collapsedStillOversized &&
+    (model.rows.length !== collapsedRowCount ||
+      model.columns.length !== collapsedColumnCount);
   // Gate the "click a cell" hint on there being a clickable (non-empty) cell, so
   // it doesn't mislead in the over-filtered or no-coverage states.
-  const showHint = result !== null && result.cells.length > 0 && hasGrid;
+  const showHint =
+    result !== null && result.cells.length > 0 && hasGrid && !oversized;
 
   return (
     <div class="evidence-map-view">
@@ -546,7 +574,13 @@ function EvidenceMapView({
                 axes.
               </p>
             ) : null}
-            {model && hasGrid ? (
+            {model && hasGrid && oversized ? (
+              <p class="evidence-map-view__status" role="status">
+                {canCollapseToFit
+                  ? "This expansion is too large to display. Use Collapse all to return to the top-level concepts."
+                  : "This map is too large to display even with both axes collapsed. Choose different axes."}
+              </p>
+            ) : model && hasGrid ? (
               <EvidenceMapGrid
                 rows={model.rows}
                 columns={model.columns}

@@ -14,6 +14,7 @@ import {
   buildAxisBands,
   buildConceptTree,
   defaultExpandedKeys,
+  exceedsEvidenceMapRenderLimits,
   restrictCellsToLeaves,
   visibleTreeCategories,
   type AxisCategory,
@@ -42,6 +43,25 @@ function axisOf(
 ) {
   return { categories, labelFor };
 }
+
+describe("evidence-map render limits", () => {
+  const limits = { maxRows: 4, maxColumns: 5, maxCells: 12 };
+
+  test.each([
+    { rows: 4, columns: 3, expected: false, caseName: "the exact limits" },
+    { rows: 5, columns: 1, expected: true, caseName: "one extra row" },
+    { rows: 1, columns: 6, expected: true, caseName: "one extra column" },
+    { rows: 4, columns: 4, expected: true, caseName: "too many cells" },
+  ])("returns $expected at $caseName", ({ rows, columns, expected }) => {
+    expect(exceedsEvidenceMapRenderLimits(rows, columns, limits)).toBe(expected);
+  });
+
+  test("does not invent row or column limits when only maxCells is configured", () => {
+    expect(
+      exceedsEvidenceMapRenderLimits(20, 2, { maxCells: 50 }),
+    ).toBe(false);
+  });
+});
 
 describe("buildEvidenceMapModel", () => {
   test("derives row/column categories from the cells when the axis has none", () => {
@@ -411,6 +431,18 @@ describe("partially expanded axis layout", () => {
     ]);
   });
 
+  test("collapse and re-expand restores the layout and ignores unknown keys", () => {
+    const tree = buildConceptTree(nestedScheme);
+    const expandedKeys = new Set(["u:a", "u:a1"]);
+    const expanded = buildAxisBands(tree, expandedKeys);
+    const collapsed = buildAxisBands(tree, new Set(["u:a"]));
+
+    expect(collapsed).not.toEqual(expanded);
+    expect(buildAxisBands(tree, new Set(["u:a", "u:a1"]))).toEqual(expanded);
+    expect(buildAxisBands(tree, new Set([...expandedKeys, "u:unknown"])))
+      .toEqual(expanded);
+  });
+
   test("childless and empty axes remain safe terminal layouts", () => {
     const tree = buildConceptTree(nestedScheme);
     const visible = visibleTreeCategories(tree, new Set(["u:zero"]));
@@ -464,13 +496,19 @@ describe("restrictCellsToLeaves", () => {
   ];
 
   test("keeps only visible intersections and restricts each axis independently", () => {
+    const visible = restrictCellsToLeaves(
+      nestedCells,
+      new Set(["u:a", "u:b"]),
+      new Set(["x"]),
+    );
+    expect(visible).toEqual([cell("u:a", "x", 50), cell("u:b", "x", 7)]);
     expect(
       restrictCellsToLeaves(
-        nestedCells,
+        visible,
         new Set(["u:a", "u:b"]),
         new Set(["x"]),
       ),
-    ).toEqual([cell("u:a", "x", 50), cell("u:b", "x", 7)]);
+    ).toEqual(visible);
     expect(restrictCellsToLeaves(nestedCells, null, null)).toBe(nestedCells);
   });
 
