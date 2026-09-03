@@ -57,6 +57,44 @@ export function toggleConcept(
   return brand(next);
 }
 
+// Ancestor URIs (not the URIs themselves) of every given URI found in the
+// scheme. Under polyhierarchy a URI's every occurrence contributes its chain.
+export function ancestorUrisOf(
+  scheme: ConceptScheme,
+  uris: Iterable<string>,
+): Set<string> {
+  const wanted = new Set(uris);
+  const ancestors = new Set<string>();
+  const visit = (concepts: Concept[], chain: string[]) => {
+    for (const concept of concepts) {
+      if (wanted.has(concept.uri)) {
+        for (const uri of chain) ancestors.add(uri);
+      }
+      if (concept.narrower) {
+        visit(concept.narrower, [...chain, concept.uri]);
+      }
+    }
+  };
+  visit(scheme.topConcepts, []);
+  return ancestors;
+}
+
+// Initial expansion for a collapsible filter: top-level parents open (so the
+// card shows top concepts and their immediate children) plus every branch
+// holding a selected concept, so applied filters are visible from the start.
+export function defaultExpandedUris(
+  scheme: ConceptScheme,
+  state: ConceptSchemeFilterState,
+): Set<string> {
+  const expanded = ancestorUrisOf(scheme, state);
+  for (const concept of scheme.topConcepts) {
+    if (concept.narrower && concept.narrower.length > 0) {
+      expanded.add(concept.uri);
+    }
+  }
+  return expanded;
+}
+
 function walkConcepts(concepts: Concept[]): Concept[] {
   const all: Concept[] = [];
   for (const concept of concepts) {
