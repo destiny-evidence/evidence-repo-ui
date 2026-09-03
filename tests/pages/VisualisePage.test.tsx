@@ -646,6 +646,32 @@ describe("VisualisePage nested-axis state", () => {
     expect(acceptedTable.queryByText("Literacy")).not.toBeInTheDocument();
   });
 
+  test("returning to a previous axis starts from its default expansion", () => {
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    const { rerender } = render(<VisualisePage />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand Literacy" }));
+
+    mockUseUrlParams.mockReturnValue(
+      "?row=scheme%3Alevel&column=scheme%3Atopic",
+    );
+    mockUseCrossFacets.mockReturnValue({
+      ...nestedResultState(),
+      resultAxes: TOPIC_CROSS_AXES,
+    });
+    rerender(<VisualisePage />);
+
+    mockUseUrlParams.mockReturnValue(
+      "?row=scheme%3Alevel&column=scheme%3Atheme",
+    );
+    mockUseCrossFacets.mockReturnValue(nestedResultState());
+    rerender(<VisualisePage />);
+
+    expect(screen.getByRole("button", { name: "Expand Literacy" }))
+      .toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Collapse Literacy" }))
+      .not.toBeInTheDocument();
+  });
+
   test("preserves a fully collapsed axis when only the other axis changes", () => {
     mockUseCrossFacets.mockReturnValue(nestedResultState());
     const { rerender } = render(<VisualisePage />);

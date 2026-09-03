@@ -218,6 +218,18 @@ function EvidenceMapView({
 
   const rowAxisIdentity = axisToken(displayAxes.row);
   const columnAxisIdentity = axisToken(displayAxes.column);
+  const previousRowAxisIdentity = useRef(rowAxisIdentity);
+  const previousColumnAxisIdentity = useRef(columnAxisIdentity);
+  useEffect(() => {
+    if (previousRowAxisIdentity.current !== rowAxisIdentity) {
+      previousRowAxisIdentity.current = rowAxisIdentity;
+      setRowExpansion(null);
+    }
+    if (previousColumnAxisIdentity.current !== columnAxisIdentity) {
+      previousColumnAxisIdentity.current = columnAxisIdentity;
+      setColumnExpansion(null);
+    }
+  }, [rowAxisIdentity, columnAxisIdentity]);
   const rowExpandedKeys = useMemo(
     () =>
       rowExpansion?.axis === rowAxisIdentity
