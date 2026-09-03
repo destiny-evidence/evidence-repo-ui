@@ -210,7 +210,7 @@ function EvidenceMapView({
     [displayAxes.column, vocab.schemes, vocab.labels],
   );
 
-  const nestedAxes = community.features.nestedEvidenceMapAxes;
+  const nestedAxes = community.features.ancestorClosedCodings;
   const [rowExpansion, setRowExpansion] = useState<AxisExpansion | null>(null);
   const [columnExpansion, setColumnExpansion] =
     useState<AxisExpansion | null>(null);
