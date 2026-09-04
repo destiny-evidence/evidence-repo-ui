@@ -1,0 +1,27 @@
+.cell-size-select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Composes .lg-label (mono caps), matching the map's other field labels. */
+.cell-size-select__label {
+  cursor: pointer;
+}
+
+/* Matches the config panel's axis <select>, the map's other dropdown. */
+.cell-size-select__select {
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.cell-size-select__select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}

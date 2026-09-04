@@ -1,4 +1,12 @@
 .evidence-map {
+  /* Cell geometry, one step of the toolbar's cell-size control. The grid
+     overrides these inline from CELL_SIZES; the values here are `medium`, so
+     the map renders correctly without them. */
+  --evidence-map-col-min-width: 132px;
+  --evidence-map-col-max-width: 180px;
+  --evidence-map-cell-height: 64px;
+  --evidence-map-rail-width: 160px;
+
   display: flex;
   flex-direction: column;
   /* Left-align so the scroll box hugs the table width instead of stretching to
@@ -66,8 +74,8 @@
   vertical-align: bottom;
   /* Floor keeps short labels from cramping; ceiling lets a long single word
      widen its column rather than break mid-word. */
-  min-width: 132px;
-  max-width: 180px;
+  min-width: var(--evidence-map-col-min-width);
+  max-width: var(--evidence-map-col-max-width);
   border-left: 1px solid var(--color-border);
 }
 
@@ -134,17 +142,16 @@
   outline-offset: 2px;
 }
 
-/* Fixed tier dimensions make sticky offsets deterministic at every depth. */
+/* Tier dimensions come from the cell-size step, so sticky offsets stay
+   deterministic at every depth and every size. */
 .evidence-map__col-head--tiered,
 .evidence-map__row-head--tiered {
-  --evidence-map-tier-height: 64px;
-  --evidence-map-rail-width: 160px;
   box-sizing: border-box;
 }
 
 .evidence-map__col-head--tiered {
-  top: calc(var(--evidence-map-tier-index, 0) * var(--evidence-map-tier-height));
-  height: var(--evidence-map-tier-height);
+  top: calc(var(--evidence-map-tier-index, 0) * var(--evidence-map-cell-height));
+  height: var(--evidence-map-cell-height);
   text-align: left;
   vertical-align: top;
   z-index: 2;
@@ -300,7 +307,7 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  min-height: 64px;
+  min-height: var(--evidence-map-cell-height);
   box-sizing: border-box;
   padding: var(--spacing-xs);
 }
