@@ -180,6 +180,8 @@ export interface AxisBandCell extends VisibleAxisCategory {
   span: number;
   // Header tiers covered across the grid axis.
   tierSpan: number;
+  // Set only while expanded; lets the grid move focus onto the revealed band.
+  firstChildKey?: string;
 }
 
 export interface AxisBands {
@@ -256,6 +258,7 @@ export function buildAxisBands(
         expanded,
         span: 1,
         tierSpan: expanded ? 1 : maxDepth - node.depth + 1,
+        firstChildKey: expanded ? node.children[0].category.key : undefined,
       };
       tiers[node.depth].push(cell);
 

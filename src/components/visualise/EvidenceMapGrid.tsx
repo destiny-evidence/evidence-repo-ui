@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import {
   bubbleRadius,
   formatCompact,
@@ -121,6 +121,57 @@ export function EvidenceMapGrid({
   const columnTierCount = nestedColumns?.tiers.length ?? 1;
   const rowTierCount = rowBands ? rowBands.maxDepth + 1 : 1;
 
+  // Focuses a just-expanded band's first child; without it, Tab keeps moving
+  // across that tier's remaining siblings instead of reaching the new band.
+  const columnFocusTargets = useRef(new Map<string, HTMLButtonElement>());
+  const rowFocusTargets = useRef(new Map<string, HTMLButtonElement>());
+  const pendingColumnFocusKey = useRef<string | null>(null);
+  const pendingRowFocusKey = useRef<string | null>(null);
+
+  function registerColumnFocusTarget(key: string, el: HTMLButtonElement | null) {
+    if (el) columnFocusTargets.current.set(key, el);
+    else columnFocusTargets.current.delete(key);
+  }
+  function registerRowFocusTarget(key: string, el: HTMLButtonElement | null) {
+    if (el) rowFocusTargets.current.set(key, el);
+    else rowFocusTargets.current.delete(key);
+  }
+
+  const handleToggleColumn = onToggleColumn
+    ? (key: string) => {
+        pendingColumnFocusKey.current = key;
+        onToggleColumn(key);
+      }
+    : undefined;
+  const handleToggleRow = onToggleRow
+    ? (key: string) => {
+        pendingRowFocusKey.current = key;
+        onToggleRow(key);
+      }
+    : undefined;
+
+  useEffect(() => {
+    const key = pendingColumnFocusKey.current;
+    pendingColumnFocusKey.current = null;
+    if (!key) return;
+    const target = columnBands?.tiers
+      .flat()
+      .find((cell) => cell.key === key)?.firstChildKey;
+    if (!target) return;
+    columnFocusTargets.current.get(target)?.focus();
+  }, [columnBands]);
+
+  useEffect(() => {
+    const key = pendingRowFocusKey.current;
+    pendingRowFocusKey.current = null;
+    if (!key) return;
+    const target = rowBands?.tiers
+      .flat()
+      .find((cell) => cell.key === key)?.firstChildKey;
+    if (!target) return;
+    rowFocusTargets.current.get(target)?.focus();
+  }, [rowBands]);
+
   const corner = (
     <>
       {total !== undefined && (
@@ -184,8 +235,9 @@ export function EvidenceMapGrid({
                       cell={cell}
                       hoverColumn={hover?.column}
                       countNoun={countNoun}
-                      onToggle={onToggleColumn}
+                      onToggle={handleToggleColumn}
                       onColumnClick={onColumnClick}
+                      registerFocusTarget={registerColumnFocusTarget}
                     />
                   ))}
                 </tr>
@@ -234,8 +286,9 @@ export function EvidenceMapGrid({
                     cells={rowRail[rowIndex]}
                     hoverRow={hover?.row}
                     countNoun={countNoun}
-                    onToggle={onToggleRow}
+                    onToggle={handleToggleRow}
                     onRowClick={onRowClick}
+                    registerFocusTarget={registerRowFocusTarget}
                   />
                 ) : (
                   <th
@@ -312,12 +365,14 @@ function HeaderLabel({
   tooltip,
   ariaLabel,
   onClick,
+  buttonRef,
 }: {
   label: string;
   labelClass?: string;
   tooltip: string | undefined;
   ariaLabel: string;
   onClick?: () => void;
+  buttonRef?: (el: HTMLButtonElement | null) => void;
 }) {
   const labelSpan = <span class={labelClass}>{label}</span>;
   if (!onClick) return <Tooltip text={tooltip}>{labelSpan}</Tooltip>;
@@ -328,6 +383,7 @@ function HeaderLabel({
         class="evidence-map__head-link"
         aria-label={ariaLabel}
         onClick={onClick}
+        ref={buttonRef}
       >
         {labelSpan}
       </button>
@@ -354,10 +410,12 @@ function ExpandToggle({
   expanded,
   label,
   onToggle,
+  buttonRef,
 }: {
   expanded: boolean;
   label: string;
   onToggle: () => void;
+  buttonRef?: (el: HTMLButtonElement | null) => void;
 }) {
   return (
     <button
@@ -366,6 +424,7 @@ function ExpandToggle({
       aria-expanded={expanded}
       aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
       onClick={onToggle}
+      ref={buttonRef}
     >
       <span aria-hidden="true">{expanded ? "−" : "+"}</span>
     </button>
@@ -378,22 +437,28 @@ function TieredHeaderContent({
   countNoun,
   onToggle,
   onClick,
+  registerFocusTarget,
 }: {
   cell: AxisBandCell;
   labelClass: string;
   countNoun: string;
   onToggle: ((key: string) => void) | undefined;
   onClick: (() => void) | undefined;
+  registerFocusTarget: (key: string, el: HTMLButtonElement | null) => void;
 }) {
   const isBand = cell.expanded && cell.hasChildren;
   const clickable = !isBand && onClick !== undefined;
+  // Register only the cell's primary control — its toggle if present, else
+  // its Search label — so a parent's focus handoff has one unambiguous target.
+  const hasToggle = cell.hasChildren && onToggle !== undefined;
   return (
     <div class="evidence-map__tiered-head-content">
-      {cell.hasChildren && onToggle && (
+      {hasToggle && (
         <ExpandToggle
           expanded={cell.expanded}
           label={cell.label}
           onToggle={() => onToggle(cell.key)}
+          buttonRef={(el) => registerFocusTarget(cell.key, el)}
         />
       )}
       <HeaderLabel
@@ -402,6 +467,11 @@ function TieredHeaderContent({
         tooltip={tieredHeaderTooltip(cell, countNoun, clickable)}
         ariaLabel={headerAriaLabel(cell.label, countNoun)}
         onClick={clickable ? onClick : undefined}
+        buttonRef={
+          !hasToggle && clickable
+            ? (el) => registerFocusTarget(cell.key, el)
+            : undefined
+        }
       />
     </div>
   );
@@ -413,12 +483,14 @@ function ColumnHeaderCell({
   countNoun,
   onToggle,
   onColumnClick,
+  registerFocusTarget,
 }: {
   cell: AxisBandCell;
   hoverColumn: string | undefined;
   countNoun: string;
   onToggle: ((key: string) => void) | undefined;
   onColumnClick: ((column: AxisCategory) => void) | undefined;
+  registerFocusTarget: (key: string, el: HTMLButtonElement | null) => void;
 }) {
   const isBand = cell.expanded && cell.hasChildren;
   const clickable = !isBand && onColumnClick !== undefined;
@@ -440,6 +512,7 @@ function ColumnHeaderCell({
         onClick={
           clickable ? () => onColumnClick(axisCategory(cell)) : undefined
         }
+        registerFocusTarget={registerFocusTarget}
       />
     </th>
   );
@@ -451,12 +524,14 @@ function RowRailCells({
   countNoun,
   onToggle,
   onRowClick,
+  registerFocusTarget,
 }: {
   cells: AxisBandCell[];
   hoverRow: string | undefined;
   countNoun: string;
   onToggle: ((key: string) => void) | undefined;
   onRowClick: ((row: AxisCategory) => void) | undefined;
+  registerFocusTarget: (key: string, el: HTMLButtonElement | null) => void;
 }) {
   return (
     <>
@@ -482,6 +557,7 @@ function RowRailCells({
               onClick={
                 clickable ? () => onRowClick(axisCategory(cell)) : undefined
               }
+              registerFocusTarget={registerFocusTarget}
             />
           </th>
         );

@@ -1,4 +1,5 @@
 import { describe, test, expect, vi } from "vitest";
+import { useState } from "preact/hooks";
 import { render, screen, fireEvent } from "@testing-library/preact";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
 import {
@@ -6,6 +7,7 @@ import {
   buildConceptTree,
   type AxisBands,
   type AxisCategory,
+  type AxisTreeNode,
 } from "@/services/evidenceMap";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 
@@ -458,6 +460,106 @@ describe("EvidenceMapGrid nested axis bands", () => {
       label: "Policy",
     });
     expect(onToggleRow).not.toHaveBeenCalled();
+  });
+
+  // EvidenceMapGrid holds no expansion state itself, so a real expand/collapse
+  // round trip needs a wrapper that feeds the toggle back into new bands.
+  function ExpandableGrid({
+    axis,
+    tree,
+  }: {
+    axis: "row" | "column";
+    tree: readonly AxisTreeNode[];
+  }) {
+    const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+    const bands = buildAxisBands(tree, expandedKeys);
+    const toggle = (key: string) =>
+      setExpandedKeys((prev) => {
+        const next = new Set(prev);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+      });
+    const flatOther: AxisCategory[] = [{ key: "other:1", label: "Other axis" }];
+    return (
+      <EvidenceMapGrid
+        rows={axis === "row" ? bands.leaves : flatOther}
+        columns={axis === "column" ? bands.leaves : flatOther}
+        rowBands={axis === "row" ? bands : undefined}
+        columnBands={axis === "column" ? bands : undefined}
+        getCount={() => 1}
+        maxCount={1}
+        view="table"
+        countNoun="investigations"
+        rowAxisLabel="Rows"
+        columnAxisLabel="Columns"
+        onToggleRow={axis === "row" ? toggle : undefined}
+        onToggleColumn={axis === "column" ? toggle : undefined}
+        onRowClick={vi.fn()}
+        onColumnClick={vi.fn()}
+      />
+    );
+  }
+
+  test("expanding a band moves focus onto a childless first child's Search action", () => {
+    render(<ExpandableGrid axis="column" tree={columnTree} />);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Expand Communicable, maternal, neonatal, and nutritional diseases",
+      }),
+    );
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", {
+        name: "Mortality: view matching investigations.",
+      }),
+    );
+  });
+
+  test("expanding a band moves focus onto a first child's own expand toggle when that child is itself a branch", () => {
+    const deepRowScheme: ConceptScheme = {
+      uri: "scheme:deep-rows",
+      label: "Deep Rows Scheme",
+      topConcepts: [
+        {
+          uri: "row:top",
+          label: "Top",
+          narrower: [
+            {
+              uri: "row:branch",
+              label: "Branch",
+              narrower: [{ uri: "row:leaf", label: "Leaf" }],
+            },
+            { uri: "row:sibling", label: "Sibling" },
+          ],
+        },
+      ],
+    };
+    render(
+      <ExpandableGrid axis="row" tree={buildConceptTree(deepRowScheme)} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand Top" }));
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Expand Branch" }),
+    );
+  });
+
+  test("collapsing a band leaves focus on the toggle that was clicked", () => {
+    render(<ExpandableGrid axis="column" tree={columnTree} />);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Expand Communicable, maternal, neonatal, and nutritional diseases",
+      }),
+    );
+    const collapse = screen.getByRole("button", {
+      name: "Collapse Communicable, maternal, neonatal, and nutritional diseases",
+    });
+    collapse.focus();
+    fireEvent.click(collapse);
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", {
+        name: "Expand Communicable, maternal, neonatal, and nutritional diseases",
+      }),
+    );
   });
 
   test("column-band and row-rail labels retain their full text in tooltips", () => {

@@ -420,6 +420,17 @@ describe("partially expanded axis layout", () => {
     ]);
   });
 
+  test("an expanded cell exposes its first child's key for focus handoff", () => {
+    const tree = buildConceptTree(nestedScheme);
+    const bands = buildAxisBands(tree, new Set(["u:a", "u:a1"]));
+    const a = bands.tiers[0].find((cell) => cell.key === "u:a");
+    const a1 = bands.tiers[1].find((cell) => cell.key === "u:a1");
+    const zero = bands.tiers[0].find((cell) => cell.key === "u:zero");
+    expect(a?.firstChildKey).toBe("u:a1");
+    expect(a1?.firstChildKey).toBe("u:a1a");
+    expect(zero?.firstChildKey).toBeUndefined();
+  });
+
   test("a leading terminal sibling does not move a later band's rail", () => {
     const tree = buildConceptTree(nestedScheme);
     const bands = buildAxisBands(tree, new Set(["u:a"]));
