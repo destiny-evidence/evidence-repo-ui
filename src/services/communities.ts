@@ -29,6 +29,8 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   nestedEvidenceMapAxes: false,
 };
 
+// Mirrors destiny-repository's current cross-facet bucket ceiling (the API's
+// own limit on a facet return), so the UI refuses before the API would.
 export const DEFAULT_EVIDENCE_MAP_RENDER_LIMITS: EvidenceMapRenderLimits = {
   maxCells: 50_000,
 };
@@ -88,6 +90,7 @@ const COMMUNITIES: Community[] = [
         schemeUri: "https://vocab.esea.education/EducationThemeScheme",
       },
     },
+    evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
     copy: buildCopy("Education", { }),
     exportVariant: "esea",
     codingInstitution: rawSourcePatterns([
@@ -145,6 +148,7 @@ const COMMUNITIES: Community[] = [
         schemeUri: "https://vocab.aliveevidence.org/hpv/ThematicFocusPrimary",
       },
     },
+    evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
     copy: buildCopy("HPV Vaccine Delivery", {
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
@@ -215,6 +219,7 @@ const COMMUNITIES: Community[] = [
         schemeUri: "https://vocab.destiny-evidence.org/health-outcomes",
       },
     },
+    evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
     copy: buildCopy("DESTINY", {}),
     externalResources: [],
   }

@@ -19,6 +19,7 @@ import type {
 } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
 import type { VocabularyResult } from "@/hooks/useVocabulary";
+import { DEFAULT_EVIDENCE_MAP_RENDER_LIMITS } from "@/services/communities";
 
 /** SearchParams with all-undefined filters and no facets — override per test. */
 export function makeSearchParams(
@@ -58,6 +59,7 @@ export function makeCommunity(
     pillExcludedSchemes: [],
     geographicSchemes: [],
     exportVariant: "esea",
+    evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
     features: {
       evidenceMap: false,
       aiSummaries: false,

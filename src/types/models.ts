@@ -89,7 +89,7 @@ export interface Community {
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).
   defaultEvidenceMapAxes?: EvidenceMapAxes;
-  evidenceMapRenderLimits?: EvidenceMapRenderLimits;
+  evidenceMapRenderLimits: EvidenceMapRenderLimits;
   copy: CommunityCopy;
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;

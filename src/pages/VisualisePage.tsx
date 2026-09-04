@@ -25,7 +25,6 @@ import {
   type AxisCategory,
   exceedsEvidenceMapRenderLimits,
 } from "@/services/evidenceMap";
-import { DEFAULT_EVIDENCE_MAP_RENDER_LIMITS } from "@/services/communities";
 import {
   AXIS_COUNTRIES,
   type CrossFacetAxis,
@@ -492,8 +491,7 @@ function EvidenceMapView({
   // render even when no cells come back (the no-coverage state).
   const hasGrid =
     model !== null && model.rows.length > 0 && model.columns.length > 0;
-  const renderLimits =
-    community.evidenceMapRenderLimits ?? DEFAULT_EVIDENCE_MAP_RENDER_LIMITS;
+  const renderLimits = community.evidenceMapRenderLimits;
   const oversized =
     nestedAxes &&
     model !== null &&
