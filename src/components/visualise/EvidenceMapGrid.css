@@ -134,11 +134,83 @@
   outline-offset: 2px;
 }
 
+/* Fixed tier dimensions make sticky offsets deterministic at every depth. */
+.evidence-map__col-head--tiered,
+.evidence-map__row-head--tiered {
+  --evidence-map-tier-height: 64px;
+  --evidence-map-rail-width: 160px;
+  box-sizing: border-box;
+}
+
+.evidence-map__col-head--tiered {
+  top: calc(var(--evidence-map-tier-index, 0) * var(--evidence-map-tier-height));
+  height: var(--evidence-map-tier-height);
+  text-align: left;
+  vertical-align: top;
+  z-index: 2;
+}
+
+.evidence-map__row-head--tiered {
+  left: calc(var(--evidence-map-tier-index, 0) * var(--evidence-map-rail-width));
+  width: var(--evidence-map-rail-width);
+  min-width: var(--evidence-map-rail-width);
+  max-width: var(--evidence-map-rail-width);
+  white-space: normal;
+  vertical-align: top;
+}
+
+.evidence-map__tiered-head-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.evidence-map__tiered-head-content > .tooltip {
+  min-width: 0;
+}
+
+/* Clamp visible text; the tooltip retains the complete label. */
+.evidence-map__col-head--tiered .evidence-map__col-head-label,
+.evidence-map__row-head--tiered .evidence-map__row-head-label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.evidence-map__expand-toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.evidence-map__expand-toggle:hover {
+  background: var(--color-accent-light);
+}
+
+.evidence-map__expand-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
 /* ── Corner: total + axis key ── */
 .evidence-map__corner {
   top: 0;
   left: 0;
-  z-index: 2;
+  z-index: 3;
   padding: var(--spacing-md);
   vertical-align: bottom;
   text-align: left;
@@ -184,7 +256,7 @@
   font-size: var(--font-size-small);
   font-weight: 500;
   color: var(--color-text-secondary);
-  white-space: nowrap;
+  white-space: normal;
 }
 
 /* ── Cells ── */

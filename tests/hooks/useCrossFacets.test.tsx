@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/preact";
+import { act, renderHook, waitFor } from "@testing-library/preact";
 import type { ComponentChildren } from "preact";
 import { useCrossFacets } from "@/hooks/useCrossFacets";
 import { CommunityProvider } from "@/community/CommunityContext";
@@ -49,6 +49,14 @@ function result(
   };
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((onResolve) => {
+    resolve = onResolve;
+  });
+  return { promise, resolve };
+}
+
 beforeEach(() => {
   mockCrossFacets.mockReset();
   window.history.replaceState(null, "", "/");
@@ -92,6 +100,62 @@ describe("useCrossFacets", () => {
     await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(1));
     rerender({ axes: regionVsCountry });
     await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(2));
+  });
+
+  test("does not refetch when a caller rerenders equivalent query inputs", async () => {
+    mockCrossFacets.mockResolvedValue(result());
+    const { rerender } = renderHook(
+      ({ params, axes }) => useCrossFacets(params, axes),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { params: baseParams, axes: regionVsScheme },
+      },
+    );
+    await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(1));
+
+    await act(async () =>
+      rerender({
+        params: { ...baseParams },
+        axes: {
+          row: { ...regionVsScheme.row },
+          column: { ...regionVsScheme.column },
+        },
+      }),
+    );
+    expect(mockCrossFacets).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not publish an older response after a newer axis request wins", async () => {
+    const first = deferred<ReferenceCrossFacetResult>();
+    const second = deferred<ReferenceCrossFacetResult>();
+    mockCrossFacets
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    const { result: hook, rerender } = renderHook(
+      ({ axes }) => useCrossFacets(baseParams, axes),
+      {
+        wrapper: withCommunityPath("/esea"),
+        initialProps: { axes: regionVsScheme },
+      },
+    );
+    await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(1));
+
+    rerender({ axes: regionVsCountry });
+    await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(2));
+    await act(async () => second.resolve(result(["AFE", "AU", 22])));
+    await waitFor(() => expect(hook.current.loading).toBe(false));
+    expect(hook.current.result?.cells[0]).toEqual({
+      axes: ["AFE", "AU"],
+      count: 22,
+    });
+    expect(hook.current.resultAxes).toEqual(regionVsCountry);
+
+    await act(async () => first.resolve(result(["AFE", SCHEME, 11])));
+    expect(hook.current.result?.cells[0]).toEqual({
+      axes: ["AFE", "AU"],
+      count: 22,
+    });
+    expect(hook.current.resultAxes).toEqual(regionVsCountry);
   });
 
   test("clears result to null on settled error", async () => {

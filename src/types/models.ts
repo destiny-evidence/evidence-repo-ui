@@ -14,6 +14,8 @@ export interface CommunityFeatures {
   // Gates the result-row selection UI (checkboxes + selection controls). Only
   // useful alongside export or AI summaries, which consume the selection.
   referenceSelection: boolean;
+  // Render evidence-map scheme axes as collapsible hierarchies.
+  nestedEvidenceMapAxes: boolean;
 }
 
 // One axis of the evidence map.
@@ -25,6 +27,10 @@ export type EvidenceMapAxis =
 export interface EvidenceMapAxes {
   row: EvidenceMapAxis;
   column: EvidenceMapAxis;
+}
+
+export interface EvidenceMapRenderLimits {
+  readonly maxCells: number;
 }
 
 // A pinned filter card: the built-in "year"/"country" cards, or any concept
@@ -83,6 +89,7 @@ export interface Community {
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).
   defaultEvidenceMapAxes?: EvidenceMapAxes;
+  evidenceMapRenderLimits: EvidenceMapRenderLimits;
   copy: CommunityCopy;
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;

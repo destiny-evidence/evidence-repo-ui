@@ -2,6 +2,7 @@ import type {
   Community,
   CommunityCopy,
   CommunityFeatures,
+  EvidenceMapRenderLimits,
 } from "@/types/models";
 import { rawSourcePatterns } from "@/services/codingInstitution";
 
@@ -25,6 +26,13 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   // Selection UI still only shows where a consumer (AI summary / selection
   // export) is enabled — see selectionEnabled.
   referenceSelection: true,
+  nestedEvidenceMapAxes: false,
+};
+
+// Mirrors destiny-repository's current cross-facet bucket ceiling (the API's
+// own limit on a facet return), so the UI refuses before the API would.
+export const DEFAULT_EVIDENCE_MAP_RENDER_LIMITS: EvidenceMapRenderLimits = {
+  maxCells: 50_000,
 };
 
 // The HPV geographic ConceptSchemes (country + regional/classification). Full
@@ -82,6 +90,7 @@ const COMMUNITIES: Community[] = [
         schemeUri: "https://vocab.esea.education/EducationThemeScheme",
       },
     },
+    evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
     copy: buildCopy("Education", { }),
     exportVariant: "esea",
     codingInstitution: rawSourcePatterns([
@@ -139,6 +148,7 @@ const COMMUNITIES: Community[] = [
         schemeUri: "https://vocab.aliveevidence.org/hpv/ThematicFocusPrimary",
       },
     },
+    evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
     copy: buildCopy("HPV Vaccine Delivery", {
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
@@ -196,6 +206,7 @@ const COMMUNITIES: Community[] = [
       findingsAndEstimates: false,
       countryFacetFilter: false,
       exportExcel: false,
+      nestedEvidenceMapAxes: true,
     },
     defaultExpandedFilters: [],
     defaultEvidenceMapAxes: {
@@ -208,6 +219,7 @@ const COMMUNITIES: Community[] = [
         schemeUri: "https://vocab.destiny-evidence.org/health-outcomes",
       },
     },
+    evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
     copy: buildCopy("DESTINY", {}),
     externalResources: [],
   }

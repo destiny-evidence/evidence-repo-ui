@@ -2,6 +2,7 @@ import type {
   CrossFacetCell,
   EvidenceMapAxes,
   EvidenceMapAxis,
+  EvidenceMapRenderLimits,
 } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
 import {
@@ -33,12 +34,26 @@ export interface AxisCategory {
   definition?: string;
 }
 
+export interface AxisConcept {
+  category: AxisCategory;
+  depth: number;
+  narrower: AxisConcept[];
+}
+
 export interface EvidenceMapModel {
   rows: AxisCategory[];
   columns: AxisCategory[];
   // undefined ⇒ empty intersection; the backend omits zero-count cells.
   getCount(rowKey: string, columnKey: string): number | undefined;
   maxCount: number;
+}
+
+export function exceedsEvidenceMapRenderLimits(
+  rowCount: number,
+  columnCount: number,
+  limits: EvidenceMapRenderLimits,
+): boolean {
+  return rowCount * columnCount > limits.maxCells;
 }
 
 type AxisInput = Pick<ResolvedAxis, "categories" | "labelFor">;
@@ -91,6 +106,8 @@ export interface ResolvedAxis {
   // Every value the axis can take (a scheme's concepts), so the grid renders
   // zero-hit rows/columns. Empty for a countries axis ⇒ derived from the cells.
   categories: AxisCategory[];
+  // Present for a resolved scheme; absent for countries and unknown schemes.
+  tree?: AxisConcept[];
   labelFor: (value: string) => string;
 }
 
@@ -111,36 +128,175 @@ export function resolveMapAxis(
   }
   // Scheme URIs are full URIs after parsing, so this matches directly.
   const scheme = schemes?.find((s) => s.uri === axis.schemeUri);
+  const tree = scheme ? buildConceptTree(scheme) : undefined;
   return {
     title: scheme
       ? schemeDisplayLabel(scheme.label)
       : localName(axis.schemeUri),
-    categories: scheme ? flattenScheme(scheme) : [],
+    categories: tree ? flattenTree(tree) : [],
+    tree,
     labelFor: (value) => labels?.get(value) ?? value,
   };
 }
 
-// Flatten the scheme to a depth-first preorder list — each concept immediately
-// followed by its descendants — so a parent and its children sit adjacent in the
-// grid. Siblings are already alpha-numerically ordered by the vocabulary build.
-// A concept reachable twice (e.g. a top concept also declared `broader` into
-// another subtree) is emitted once: a repeat key would warn and double the row.
-function flattenScheme(scheme: ConceptScheme): AxisCategory[] {
-  const out: AxisCategory[] = [];
+// Build one ordered tree, skipping concepts already reached through another path.
+export function buildConceptTree(scheme: ConceptScheme): AxisConcept[] {
   const seen = new Set<string>();
-  const walk = (concepts: readonly Concept[]) => {
+  const walk = (
+    concepts: readonly Concept[],
+    depth: number,
+  ): AxisConcept[] => {
+    const nodes: AxisConcept[] = [];
     for (const concept of concepts) {
       if (seen.has(concept.uri)) continue;
       seen.add(concept.uri);
-      out.push({
-        key: concept.uri,
-        label: concept.label,
-        definition: concept.definition,
+      nodes.push({
+        category: {
+          key: concept.uri,
+          label: concept.label,
+          definition: concept.definition,
+        },
+        depth,
+        narrower: walk(concept.narrower ?? [], depth + 1),
       });
-      if (concept.narrower) walk(concept.narrower);
+    }
+    return nodes;
+  };
+  return walk(scheme.topConcepts, 0);
+}
+
+export interface VisibleAxisCategory extends AxisCategory {
+  depth: number;
+  hasChildren: boolean;
+  expanded: boolean;
+}
+
+export interface AxisBandCell extends VisibleAxisCategory {
+  // Visible leaves covered along the grid axis.
+  span: number;
+  // Header tiers covered across the grid axis.
+  tierSpan: number;
+  // Set only while expanded; lets the grid move focus onto the revealed band.
+  firstChildKey?: string;
+}
+
+export interface AxisBands {
+  maxDepth: number;
+  // Column-oriented cells grouped from shallowest to deepest tier.
+  tiers: AxisBandCell[][];
+  // Terminal categories used for grid cells and count lookup.
+  leaves: AxisCategory[];
+  // Row-oriented cells grouped by their matching terminal category.
+  rail: AxisBandCell[][];
+}
+
+export function defaultExpandedKeys(
+  tree: readonly AxisConcept[],
+): Set<string> {
+  return new Set(
+    tree
+      .filter((node) => node.narrower.length > 0)
+      .map((node) => node.category.key),
+  );
+}
+
+export function visibleTreeCategories(
+  tree: readonly AxisConcept[],
+  expandedKeys: ReadonlySet<string>,
+): VisibleAxisCategory[] {
+  const categories: VisibleAxisCategory[] = [];
+  const walk = (nodes: readonly AxisConcept[]) => {
+    for (const node of nodes) {
+      const hasChildren = node.narrower.length > 0;
+      const expanded = hasChildren && expandedKeys.has(node.category.key);
+      categories.push({
+        ...node.category,
+        depth: node.depth,
+        hasChildren,
+        expanded,
+      });
+      if (expanded) walk(node.narrower);
     }
   };
-  walk(scheme.topConcepts);
+  walk(tree);
+  return categories;
+}
+
+// Derive column tiers and the row rail together so sibling offsets stay aligned.
+export function buildAxisBands(
+  tree: readonly AxisConcept[],
+  expandedKeys: ReadonlySet<string>,
+): AxisBands {
+  if (tree.length === 0) {
+    return { maxDepth: 0, tiers: [], leaves: [], rail: [] };
+  }
+
+  const visible = visibleTreeCategories(tree, expandedKeys);
+  const maxDepth = visible.reduce(
+    (deepest, category) => Math.max(deepest, category.depth),
+    0,
+  );
+  const tiers: AxisBandCell[][] = Array.from(
+    { length: maxDepth + 1 },
+    () => [],
+  );
+  const leaves: AxisCategory[] = [];
+  const rail: AxisBandCell[][] = [];
+
+  const walk = (nodes: readonly AxisConcept[]) => {
+    for (const node of nodes) {
+      const hasChildren = node.narrower.length > 0;
+      const expanded = hasChildren && expandedKeys.has(node.category.key);
+      const cell: AxisBandCell = {
+        ...node.category,
+        depth: node.depth,
+        hasChildren,
+        expanded,
+        span: 1,
+        tierSpan: expanded ? 1 : maxDepth - node.depth + 1,
+        firstChildKey: expanded ? node.narrower[0].category.key : undefined,
+      };
+      tiers[node.depth].push(cell);
+
+      if (expanded) {
+        const firstLeaf = rail.length;
+        walk(node.narrower);
+        cell.span = rail.length - firstLeaf;
+        rail[firstLeaf].unshift(cell);
+      } else {
+        leaves.push(node.category);
+        rail.push([cell]);
+      }
+    }
+  };
+  walk(tree);
+  return { maxDepth, tiers, leaves, rail };
+}
+
+// Hidden descendants must not return through the model's cell-only fallback.
+export function restrictCellsToLeaves(
+  cells: readonly CrossFacetCell[],
+  rowLeafKeys: ReadonlySet<string> | null,
+  columnLeafKeys: ReadonlySet<string> | null,
+): readonly CrossFacetCell[] {
+  if (!rowLeafKeys && !columnLeafKeys) return cells;
+  return cells.filter(({ axes: [rowKey, columnKey] }) => {
+    if (rowLeafKeys && !rowLeafKeys.has(rowKey)) return false;
+    if (columnLeafKeys && !columnLeafKeys.has(columnKey)) return false;
+    return true;
+  });
+}
+
+// Flatten the tree in depth-first order so parents remain beside descendants.
+function flattenTree(tree: readonly AxisConcept[]): AxisCategory[] {
+  const out: AxisCategory[] = [];
+  const walk = (nodes: readonly AxisConcept[]) => {
+    for (const node of nodes) {
+      out.push(node.category);
+      walk(node.narrower);
+    }
+  };
+  walk(tree);
   return out;
 }
 
