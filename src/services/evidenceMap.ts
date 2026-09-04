@@ -316,6 +316,64 @@ function mergeCategories(
   return [...axis.categories, ...extras];
 }
 
+export type CellSize = "small" | "medium" | "large" | "xlarge";
+
+export interface CellSizeMetrics {
+  // Column width floor and ceiling: the floor keeps short labels from cramping,
+  // the ceiling lets a long word widen its column rather than break mid-word.
+  minColumnWidth: number;
+  maxColumnWidth: number;
+  // Row height, and so the height of one nested column-header tier — the sticky
+  // offsets are multiples of it.
+  cellHeight: number;
+  // Width of one nested row-header tier.
+  railWidth: number;
+  minRadius: number;
+  maxRadius: number;
+}
+
+/**
+ * Grid geometry per cell-size step. The bubble range scales with the row so a
+ * larger cell reads as a larger map rather than as more whitespace; `medium` is
+ * the default and holds the geometry the map had before the control existed.
+ */
+export const CELL_SIZES: Record<CellSize, CellSizeMetrics> = {
+  small: {
+    minColumnWidth: 96,
+    maxColumnWidth: 132,
+    cellHeight: 48,
+    railWidth: 128,
+    minRadius: 6,
+    maxRadius: 15,
+  },
+  medium: {
+    minColumnWidth: 132,
+    maxColumnWidth: 180,
+    cellHeight: 64,
+    railWidth: 160,
+    minRadius: 9,
+    maxRadius: 22,
+  },
+  large: {
+    minColumnWidth: 168,
+    maxColumnWidth: 228,
+    cellHeight: 80,
+    railWidth: 192,
+    minRadius: 12,
+    maxRadius: 29,
+  },
+  xlarge: {
+    minColumnWidth: 204,
+    maxColumnWidth: 276,
+    cellHeight: 96,
+    railWidth: 224,
+    minRadius: 15,
+    maxRadius: 36,
+  },
+};
+
+export const DEFAULT_CELL_SIZE: CellSize = "medium";
+
 /**
  * Radius (px) for a bubble of `count`, on a logarithmic ramp from `minRadius`
  * at the smallest count (1) to `maxRadius` at `maxCount`. Every 10× step in

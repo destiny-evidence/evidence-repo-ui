@@ -382,6 +382,37 @@ describe("VisualisePage map", () => {
     );
   });
 
+  test("the cell size resizes the grid without changing where a cell links to", () => {
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(9, [["level:primary", "theme:literacy", 6]]),
+      loading: false,
+      error: null,
+    });
+    const { container } = render(<VisualisePage />);
+    const geometry = () =>
+      container
+        .querySelector<HTMLElement>(".evidence-map")!
+        .style.getPropertyValue("--evidence-map-cell-height");
+    const clickCell = () =>
+      fireEvent.click(
+        container.querySelector<HTMLButtonElement>(
+          ".evidence-map__cell-button",
+        )!,
+      );
+
+    expect(geometry()).toBe("64px");
+    clickCell();
+    const beforeResize = mockNavigate.mock.calls.at(-1);
+
+    fireEvent.change(screen.getByLabelText("Cell size"), {
+      target: { value: "xlarge" },
+    });
+
+    expect(geometry()).toBe("96px");
+    clickCell();
+    expect(mockNavigate.mock.calls.at(-1)).toEqual(beforeResize);
+  });
+
   test("over-filtered: warns with an inline Reset all and still renders the greyed grid", () => {
     mockUseVocabulary.mockReturnValue({
       labels: LABELS,

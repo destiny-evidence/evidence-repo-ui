@@ -28,6 +28,8 @@ export type AnalyticsEvent =
   | { category: "EvidenceMap"; action: "Filter Category Applied"; name: string }
   // name: bubble | table
   | { category: "EvidenceMap"; action: "View Toggled"; name: string }
+  // name: small | medium | large | xlarge
+  | { category: "EvidenceMap"; action: "Cell Size Changed"; name: string }
   // name: `${rowValue} x ${columnValue}` — the cell's two axis values
   | { category: "EvidenceMap"; action: "Cell Clicked"; name: string }
   // name: axis value clicked in the header

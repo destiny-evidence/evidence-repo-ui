@@ -3,19 +3,28 @@ import {
   bubbleRadius,
   formatCompact,
   legendTicks,
+  CELL_SIZES,
+  DEFAULT_CELL_SIZE,
   type AxisBandCell,
   type AxisBands,
   type AxisCategory,
+  type CellSize,
+  type CellSizeMetrics,
 } from "@/services/evidenceMap";
 import { Tooltip } from "../common/Tooltip";
 import type { MapView } from "./ViewToggle";
 import "./EvidenceMapGrid.css";
 
-// Bubble sizing (px). The floor fits a single-digit label; the max sits within
-// the cell's 64px row. A wide label can't clip: the bubble's CSS floors its
-// width at the rendered text (min-content), so no font math lives here.
-const BUBBLE_MAX_RADIUS = 22;
-const BUBBLE_MIN_RADIUS = 9;
+// The in-bubble count is 10px tabular numerals padded 5px either side. A bubble
+// narrower than its own label is widened by the CSS min-content floor, at which
+// point size stops reading as scale — so below this width the label is dropped
+// and the count is left to the tooltip.
+const LABEL_DIGIT_WIDTH = 6;
+const LABEL_PADDING = 10;
+
+function labelFits(diameter: number, label: string): boolean {
+  return diameter >= label.length * LABEL_DIGIT_WIDTH + LABEL_PADDING;
+}
 
 interface EvidenceMapGridProps {
   rows: AxisCategory[];
@@ -23,6 +32,8 @@ interface EvidenceMapGridProps {
   getCount: (rowKey: string, columnKey: string) => number | undefined;
   maxCount: number;
   view: MapView;
+  // Column width, row height and bubble scale; absent ⇒ DEFAULT_CELL_SIZE.
+  cellSize?: CellSize;
   countNoun: string;
   rowAxisLabel: string;
   columnAxisLabel: string;
@@ -96,6 +107,7 @@ export function EvidenceMapGrid({
   getCount,
   maxCount,
   view,
+  cellSize = DEFAULT_CELL_SIZE,
   countNoun,
   rowAxisLabel,
   columnAxisLabel,
@@ -115,6 +127,7 @@ export function EvidenceMapGrid({
   const [hover, setHover] = useState<{ row: string; column: string } | null>(
     null,
   );
+  const metrics = CELL_SIZES[cellSize];
   const nestedColumns =
     columnBands && columnBands.tiers.length > 0 ? columnBands : undefined;
   const rowRail = rowBands?.rail ?? null;
@@ -208,6 +221,12 @@ export function EvidenceMapGrid({
       class={`evidence-map${updating ? " is-updating" : ""}${
         dimmed ? " is-dimmed" : ""
       }`}
+      style={{
+        "--evidence-map-col-min-width": `${metrics.minColumnWidth}px`,
+        "--evidence-map-col-max-width": `${metrics.maxColumnWidth}px`,
+        "--evidence-map-cell-height": `${metrics.cellHeight}px`,
+        "--evidence-map-rail-width": `${metrics.railWidth}px`,
+      }}
     >
       <div class="evidence-map__scroll">
         <table
@@ -320,6 +339,7 @@ export function EvidenceMapGrid({
                       empty={empty}
                       count={count ?? 0}
                       maxCount={maxCount}
+                      metrics={metrics}
                       view={view}
                       tooltip={cellTooltip(count, countNoun, clickable, view)}
                       ariaLabel={
@@ -349,7 +369,11 @@ export function EvidenceMapGrid({
         </table>
       </div>
       {view === "bubble" && (
-        <MapLegend maxCount={maxCount} countNoun={countNoun} />
+        <MapLegend
+          maxCount={maxCount}
+          metrics={metrics}
+          countNoun={countNoun}
+        />
       )}
     </div>
   );
@@ -570,6 +594,7 @@ interface CellProps {
   empty: boolean;
   count: number;
   maxCount: number;
+  metrics: CellSizeMetrics;
   view: MapView;
   tooltip: string | undefined;
   ariaLabel: string | undefined;
@@ -583,6 +608,7 @@ function Cell({
   empty,
   count,
   maxCount,
+  metrics,
   view,
   tooltip,
   ariaLabel,
@@ -593,7 +619,7 @@ function Cell({
 }: CellProps) {
   const radius =
     view === "bubble" && !empty
-      ? bubbleRadius(count, maxCount, BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS)
+      ? bubbleRadius(count, maxCount, metrics.minRadius, metrics.maxRadius)
       : 0;
 
   const inner =
@@ -646,21 +672,27 @@ function Bubble({
   if (empty) {
     return <span class="evidence-map__bubble evidence-map__bubble--empty" />;
   }
+  const diameter = radius * 2;
+  const label = formatCompact(count);
   return (
     <span
       class="evidence-map__bubble"
-      style={{ "--bubble-diameter": `${radius * 2}px` }}
+      style={{ "--bubble-diameter": `${diameter}px` }}
     >
-      <span class="evidence-map__bubble-count">{formatCompact(count)}</span>
+      {labelFits(diameter, label) && (
+        <span class="evidence-map__bubble-count">{label}</span>
+      )}
     </span>
   );
 }
 
 function MapLegend({
   maxCount,
+  metrics,
   countNoun,
 }: {
   maxCount: number;
+  metrics: CellSizeMetrics;
   countNoun: string;
 }) {
   const ticks = legendTicks(maxCount);
@@ -677,7 +709,7 @@ function MapLegend({
       </span>
       {ticks.map((tick) => {
         const diameter =
-          bubbleRadius(tick, maxCount, BUBBLE_MIN_RADIUS, BUBBLE_MAX_RADIUS) *
+          bubbleRadius(tick, maxCount, metrics.minRadius, metrics.maxRadius) *
           2;
         return (
           <span key={tick} class="evidence-map__legend-item">

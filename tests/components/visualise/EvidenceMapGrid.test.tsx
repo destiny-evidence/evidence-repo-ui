@@ -116,6 +116,82 @@ describe("EvidenceMapGrid", () => {
     expect(container.querySelector(".evidence-map__legend")).not.toBeNull();
   });
 
+  // A single cell at the floor of the ramp, so the bubble is as small as the
+  // step allows — where the in-bubble label stops fitting.
+  function renderFloorBubble(cellSize: CellSize) {
+    return render(
+      <EvidenceMapGrid
+        rows={[rows[0]]}
+        columns={[columns[0]]}
+        getCount={() => 1}
+        maxCount={100_000}
+        view="bubble"
+        cellSize={cellSize}
+        countNoun="investigations"
+        rowAxisLabel="Education level"
+        columnAxisLabel="Education theme"
+      />,
+    );
+  }
+
+  function firstBubble(container: Element): HTMLElement {
+    return container.querySelector<HTMLElement>(
+      ".evidence-map__table .evidence-map__bubble",
+    )!;
+  }
+
+  test("the cell size steps the grid geometry and the bubble scale together", () => {
+    const diameters = (["small", "medium", "large", "xlarge"] as const).map(
+      (cellSize) => {
+        const { container } = render(
+          <EvidenceMapGrid
+            rows={rows}
+            columns={columns}
+            getCount={getCount}
+            maxCount={12}
+            view="bubble"
+            cellSize={cellSize}
+            countNoun="investigations"
+            rowAxisLabel="Education level"
+            columnAxisLabel="Education theme"
+          />,
+        );
+        const map = container.querySelector<HTMLElement>(".evidence-map")!;
+        return {
+          height: map.style.getPropertyValue("--evidence-map-cell-height"),
+          width: map.style.getPropertyValue("--evidence-map-col-min-width"),
+          bubble: firstBubble(container).style.getPropertyValue(
+            "--bubble-diameter",
+          ),
+        };
+      },
+    );
+
+    expect(diameters.map((step) => step.height)).toEqual([
+      "48px",
+      "64px",
+      "80px",
+      "96px",
+    ]);
+    expect(diameters.map((step) => step.width)).toEqual([
+      "96px",
+      "132px",
+      "168px",
+      "204px",
+    ]);
+    const bubbles = diameters.map((step) => parseFloat(step.bubble));
+    expect(bubbles).toEqual([...bubbles].sort((a, b) => a - b));
+  });
+
+  test("a bubble too small for its own count drops the label, keeping the tooltip", () => {
+    const small = renderFloorBubble("small");
+    expect(firstBubble(small.container).textContent).toBe("");
+    expect(firstCellTooltip(small.container)).toBe("1 investigations");
+
+    const large = renderFloorBubble("xlarge");
+    expect(firstBubble(large.container).textContent).toBe("1");
+  });
+
   test("shows the total in the corner when supplied", () => {
     render(
       <EvidenceMapGrid

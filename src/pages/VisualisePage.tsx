@@ -22,7 +22,9 @@ import {
   cellSearchParams,
   axisSearchParams,
   backToVisualiseState,
+  DEFAULT_CELL_SIZE,
   type AxisCategory,
+  type CellSize,
   exceedsEvidenceMapRenderLimits,
 } from "@/services/evidenceMap";
 import {
@@ -41,6 +43,7 @@ import { indexConceptPaths } from "@/components/filters/conceptSchemeFilterState
 import { formatTotal } from "@/utils/searchTotal";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
 import { ViewToggle, type MapView } from "@/components/visualise/ViewToggle";
+import { CellSizeSelect } from "@/components/visualise/CellSizeSelect";
 import { MapConfigPanel } from "@/components/visualise/MapConfigPanel";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import { DEFAULT_EXPANDED_FILTERS } from "@/components/filters/filterOrder";
@@ -177,10 +180,18 @@ function EvidenceMapView({
     axisPair,
   );
   const [view, setView] = useState<MapView>("bubble");
+  // Presentation only, so it stays out of the URL (like `view`): the canonical
+  // query feeds the shareable link, the panel's key and the cell deep-links.
+  const [cellSize, setCellSize] = useState<CellSize>(DEFAULT_CELL_SIZE);
 
   function handleViewChange(next: MapView) {
     track({ category: "EvidenceMap", action: "View Toggled", name: next });
     setView(next);
+  }
+
+  function handleCellSizeChange(next: CellSize) {
+    track({ category: "EvidenceMap", action: "Cell Size Changed", name: next });
+    setCellSize(next);
   }
 
   // Resolve labels against the axes `result` was fetched for, not the URL's:
@@ -538,6 +549,7 @@ function EvidenceMapView({
               Collapse all
             </button>
           )}
+          <CellSizeSelect value={cellSize} onChange={handleCellSizeChange} />
           {showHint && (
             <p class="evidence-map-view__hint">
               Click a cell to view matching {noun}
@@ -597,6 +609,7 @@ function EvidenceMapView({
                 getCount={model.getCount}
                 maxCount={model.maxCount}
                 view={view}
+                cellSize={cellSize}
                 countNoun={noun}
                 rowAxisLabel={rowAxis.title}
                 columnAxisLabel={columnAxis.title}
