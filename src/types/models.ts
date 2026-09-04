@@ -31,8 +31,6 @@ export interface EvidenceMapAxes {
 
 export interface EvidenceMapRenderLimits {
   readonly maxCells: number;
-  readonly maxRows?: number;
-  readonly maxColumns?: number;
 }
 
 // A pinned filter card: the built-in "year"/"country" cards, or any concept

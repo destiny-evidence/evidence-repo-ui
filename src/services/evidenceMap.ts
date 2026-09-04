@@ -34,10 +34,10 @@ export interface AxisCategory {
   definition?: string;
 }
 
-export interface AxisTreeNode {
+export interface AxisConcept {
   category: AxisCategory;
   depth: number;
-  children: AxisTreeNode[];
+  narrower: AxisConcept[];
 }
 
 export interface EvidenceMapModel {
@@ -53,11 +53,7 @@ export function exceedsEvidenceMapRenderLimits(
   columnCount: number,
   limits: EvidenceMapRenderLimits,
 ): boolean {
-  return (
-    (limits.maxRows !== undefined && rowCount > limits.maxRows) ||
-    (limits.maxColumns !== undefined && columnCount > limits.maxColumns) ||
-    rowCount * columnCount > limits.maxCells
-  );
+  return rowCount * columnCount > limits.maxCells;
 }
 
 type AxisInput = Pick<ResolvedAxis, "categories" | "labelFor">;
@@ -111,7 +107,7 @@ export interface ResolvedAxis {
   // zero-hit rows/columns. Empty for a countries axis ⇒ derived from the cells.
   categories: AxisCategory[];
   // Present for a resolved scheme; absent for countries and unknown schemes.
-  tree?: AxisTreeNode[];
+  tree?: AxisConcept[];
   labelFor: (value: string) => string;
 }
 
@@ -144,13 +140,13 @@ export function resolveMapAxis(
 }
 
 // Build one ordered tree, skipping concepts already reached through another path.
-export function buildConceptTree(scheme: ConceptScheme): AxisTreeNode[] {
+export function buildConceptTree(scheme: ConceptScheme): AxisConcept[] {
   const seen = new Set<string>();
   const walk = (
     concepts: readonly Concept[],
     depth: number,
-  ): AxisTreeNode[] => {
-    const nodes: AxisTreeNode[] = [];
+  ): AxisConcept[] => {
+    const nodes: AxisConcept[] = [];
     for (const concept of concepts) {
       if (seen.has(concept.uri)) continue;
       seen.add(concept.uri);
@@ -161,7 +157,7 @@ export function buildConceptTree(scheme: ConceptScheme): AxisTreeNode[] {
           definition: concept.definition,
         },
         depth,
-        children: walk(concept.narrower ?? [], depth + 1),
+        narrower: walk(concept.narrower ?? [], depth + 1),
       });
     }
     return nodes;
@@ -195,23 +191,23 @@ export interface AxisBands {
 }
 
 export function defaultExpandedKeys(
-  tree: readonly AxisTreeNode[],
+  tree: readonly AxisConcept[],
 ): Set<string> {
   return new Set(
     tree
-      .filter((node) => node.children.length > 0)
+      .filter((node) => node.narrower.length > 0)
       .map((node) => node.category.key),
   );
 }
 
 export function visibleTreeCategories(
-  tree: readonly AxisTreeNode[],
+  tree: readonly AxisConcept[],
   expandedKeys: ReadonlySet<string>,
 ): VisibleAxisCategory[] {
   const categories: VisibleAxisCategory[] = [];
-  const walk = (nodes: readonly AxisTreeNode[]) => {
+  const walk = (nodes: readonly AxisConcept[]) => {
     for (const node of nodes) {
-      const hasChildren = node.children.length > 0;
+      const hasChildren = node.narrower.length > 0;
       const expanded = hasChildren && expandedKeys.has(node.category.key);
       categories.push({
         ...node.category,
@@ -219,7 +215,7 @@ export function visibleTreeCategories(
         hasChildren,
         expanded,
       });
-      if (expanded) walk(node.children);
+      if (expanded) walk(node.narrower);
     }
   };
   walk(tree);
@@ -228,7 +224,7 @@ export function visibleTreeCategories(
 
 // Derive column tiers and the row rail together so sibling offsets stay aligned.
 export function buildAxisBands(
-  tree: readonly AxisTreeNode[],
+  tree: readonly AxisConcept[],
   expandedKeys: ReadonlySet<string>,
 ): AxisBands {
   if (tree.length === 0) {
@@ -247,9 +243,9 @@ export function buildAxisBands(
   const leaves: AxisCategory[] = [];
   const rail: AxisBandCell[][] = [];
 
-  const walk = (nodes: readonly AxisTreeNode[]) => {
+  const walk = (nodes: readonly AxisConcept[]) => {
     for (const node of nodes) {
-      const hasChildren = node.children.length > 0;
+      const hasChildren = node.narrower.length > 0;
       const expanded = hasChildren && expandedKeys.has(node.category.key);
       const cell: AxisBandCell = {
         ...node.category,
@@ -258,13 +254,13 @@ export function buildAxisBands(
         expanded,
         span: 1,
         tierSpan: expanded ? 1 : maxDepth - node.depth + 1,
-        firstChildKey: expanded ? node.children[0].category.key : undefined,
+        firstChildKey: expanded ? node.narrower[0].category.key : undefined,
       };
       tiers[node.depth].push(cell);
 
       if (expanded) {
         const firstLeaf = rail.length;
-        walk(node.children);
+        walk(node.narrower);
         cell.span = rail.length - firstLeaf;
         rail[firstLeaf].unshift(cell);
       } else {
@@ -292,12 +288,12 @@ export function restrictCellsToLeaves(
 }
 
 // Flatten the tree in depth-first order so parents remain beside descendants.
-function flattenTree(tree: readonly AxisTreeNode[]): AxisCategory[] {
+function flattenTree(tree: readonly AxisConcept[]): AxisCategory[] {
   const out: AxisCategory[] = [];
-  const walk = (nodes: readonly AxisTreeNode[]) => {
+  const walk = (nodes: readonly AxisConcept[]) => {
     for (const node of nodes) {
       out.push(node.category);
-      walk(node.children);
+      walk(node.narrower);
     }
   };
   walk(tree);

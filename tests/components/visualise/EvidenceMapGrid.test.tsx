@@ -7,7 +7,7 @@ import {
   buildConceptTree,
   type AxisBands,
   type AxisCategory,
-  type AxisTreeNode,
+  type AxisConcept,
 } from "@/services/evidenceMap";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 
@@ -469,7 +469,7 @@ describe("EvidenceMapGrid nested axis bands", () => {
     tree,
   }: {
     axis: "row" | "column";
-    tree: readonly AxisTreeNode[];
+    tree: readonly AxisConcept[];
   }) {
     const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
     const bands = buildAxisBands(tree, expandedKeys);

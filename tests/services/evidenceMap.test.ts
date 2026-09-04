@@ -45,21 +45,13 @@ function axisOf(
 }
 
 describe("evidence-map render limits", () => {
-  const limits = { maxRows: 4, maxColumns: 5, maxCells: 12 };
+  const limits = { maxCells: 12 };
 
   test.each([
-    { rows: 4, columns: 3, expected: false, caseName: "the exact limits" },
-    { rows: 5, columns: 1, expected: true, caseName: "one extra row" },
-    { rows: 1, columns: 6, expected: true, caseName: "one extra column" },
-    { rows: 4, columns: 4, expected: true, caseName: "too many cells" },
-  ])("returns $expected at $caseName", ({ rows, columns, expected }) => {
+    { rows: 4, columns: 3, expected: false, caseName: "at the limit" },
+    { rows: 4, columns: 4, expected: true, caseName: "one cell over the limit" },
+  ])("returns $expected $caseName", ({ rows, columns, expected }) => {
     expect(exceedsEvidenceMapRenderLimits(rows, columns, limits)).toBe(expected);
-  });
-
-  test("does not invent row or column limits when only maxCells is configured", () => {
-    expect(
-      exceedsEvidenceMapRenderLimits(20, 2, { maxCells: 50 }),
-    ).toBe(false);
   });
 });
 
@@ -243,7 +235,7 @@ describe("resolveMapAxis", () => {
           label: "Access to Education",
         },
         depth: 0,
-        children: [
+        narrower: [
           {
             category: {
               key: "https://vocab.esea.education/OutcomeScheme/C2",
@@ -251,7 +243,7 @@ describe("resolveMapAxis", () => {
               definition: "Children enrolled in school",
             },
             depth: 1,
-            children: [],
+            narrower: [],
           },
         ],
       },
@@ -261,7 +253,7 @@ describe("resolveMapAxis", () => {
           label: "Learning",
         },
         depth: 0,
-        children: [],
+        narrower: [],
       },
     ]);
   });
@@ -300,11 +292,11 @@ describe("resolveMapAxis", () => {
       "u:spain",
     ]);
     expect(axis.tree?.map((node) => node.category.key)).toEqual(["u:africa"]);
-    expect(axis.tree?.[0].children.map((node) => node.category.key)).toEqual([
+    expect(axis.tree?.[0].narrower.map((node) => node.category.key)).toEqual([
       "u:europe",
     ]);
     expect(
-      axis.tree?.[0].children[0].children.map((node) => node.category.key),
+      axis.tree?.[0].narrower[0].narrower.map((node) => node.category.key),
     ).toEqual(["u:france", "u:spain"]);
   });
 

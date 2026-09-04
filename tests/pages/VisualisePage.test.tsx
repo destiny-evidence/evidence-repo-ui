@@ -914,7 +914,7 @@ describe("VisualisePage nested-axis state", () => {
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
         features: { evidenceMap: true, nestedEvidenceMapAxes: true },
-        evidenceMapRenderLimits: { maxCells: 100, maxColumns: 1 },
+        evidenceMapRenderLimits: { maxCells: 1 },
       }),
     );
     mockUseCrossFacets.mockReturnValue({
