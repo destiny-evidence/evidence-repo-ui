@@ -317,11 +317,13 @@ function mergeCategories(
 }
 
 /**
- * Radius (px) for a bubble of `count`, on a square-root ramp from `minRadius`
- * at the smallest count (1) to `maxRadius` at `maxCount`, interpolating on
- * √count. Anchoring the floor at 1 keeps differences across the lower half visible
- * while staying close to area-proportional. The in-bubble number carries the
- * exact value.
+ * Radius (px) for a bubble of `count`, on a logarithmic ramp from `minRadius`
+ * at the smallest count (1) to `maxRadius` at `maxCount`. Every 10× step in
+ * count claims an equal slice of the radius range, so "ten times as many" reads
+ * the same anywhere on the scale. Counts here span 1 to hundreds of thousands,
+ * where an area-proportional ramp leaves everything below ~10³ within a pixel
+ * of the floor. Size therefore ranks rather than measures; the in-bubble number
+ * carries the exact value.
  */
 export function bubbleRadius(
   count: number,
@@ -332,8 +334,9 @@ export function bubbleRadius(
   if (count <= 0 || maxCount <= 0) return 0;
   // One distinct count in play ⇒ no range to map; show it at full size.
   if (maxCount <= 1) return maxRadius;
-  // count ≥ 1 ⇒ fraction ≥ 0, so this never falls below minRadius.
-  const fraction = (Math.sqrt(count) - 1) / (Math.sqrt(maxCount) - 1);
+  // count ≥ 1 ⇒ fraction ≥ 0, so this never falls below minRadius; the clamp
+  // guards a count passed above the maximum.
+  const fraction = Math.min(1, Math.log(count) / Math.log(maxCount));
   return minRadius + (maxRadius - minRadius) * fraction;
 }
 
@@ -351,17 +354,22 @@ export function formatCompact(count: number): string {
   return compactFormatter.format(count);
 }
 
+const MAX_LEGEND_TICKS = 5;
+
 /**
- * Legend ticks for the square-root ramp: the floor (1), the maximum, and the
- * count whose bubble sits visually halfway between them (where √count is the
- * midpoint of √1..√maxCount). Lists every value for tiny maxima; [] when
- * maxCount ≤ 0.
+ * Legend ticks for the logarithmic ramp: the floor (1), the powers of ten below
+ * the maximum, and the maximum — the ramp's own breakpoints, each an equal step
+ * up the radius range. Lists every value for tiny maxima; [] when maxCount ≤ 0.
  */
 export function legendTicks(maxCount: number): number[] {
   if (maxCount <= 0) return [];
   if (maxCount <= 3) return Array.from({ length: maxCount }, (_, i) => i + 1);
-  const mid = Math.round(((1 + Math.sqrt(maxCount)) / 2) ** 2);
-  return [1, mid, maxCount];
+  // A power within 2× of the maximum is dropped: its bubble is all but the same
+  // size, so the two swatches would read as one. Where more powers remain than
+  // fit the row, keep those nearest the maximum — the low end is anchored by 1.
+  const powers: number[] = [];
+  for (let power = 10; power * 2 <= maxCount; power *= 10) powers.push(power);
+  return [1, ...powers.slice(-(MAX_LEGEND_TICKS - 2)), maxCount];
 }
 
 /**
