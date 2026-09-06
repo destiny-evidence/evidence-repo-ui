@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 
-import { buildAppliedConceptRows } from "@/services/export/buildAppliedConceptRows.ts";
+import { buildReferenceConceptRows } from "@/services/export/buildReferenceConceptRows.ts";
 import type { ConceptResolver } from "@/services/export/types.ts";
 import type {
   BibliographicMetadataEnhancement,
@@ -150,9 +150,9 @@ const OPEN_ALEX_COLUMN: IdentifierColumn = {
   type: "open_alex",
 };
 
-describe("buildAppliedConceptRows", () => {
+describe("buildReferenceConceptRows", () => {
   test("derives one scheme column per scheme, alphabetical, no Other codes when empty", async () => {
-    const { headers } = await buildAppliedConceptRows([], VOCAB);
+    const { headers } = await buildReferenceConceptRows([], VOCAB);
     expect(headers).toEqual([
       ...BIB_HEADERS,
       "Country",
@@ -163,7 +163,7 @@ describe("buildAppliedConceptRows", () => {
   });
 
   test("orders scheme columns by pinnedFilters, then alphabetically", async () => {
-    const { headers } = await buildAppliedConceptRows([], VOCAB, {
+    const { headers } = await buildReferenceConceptRows([], VOCAB, {
       pinnedFilters: [`${NS}TargetPopulation`, "year"],
     });
     expect(headers).toEqual([
@@ -175,12 +175,12 @@ describe("buildAppliedConceptRows", () => {
   });
 
   test("includes geo schemes as columns", async () => {
-    const { headers } = await buildAppliedConceptRows([], VOCAB);
+    const { headers } = await buildReferenceConceptRows([], VOCAB);
     expect(headers).toContain("Country");
   });
 
   test("emits one row per reference with bibliographic columns populated", async () => {
-    const { headers, rows } = await buildAppliedConceptRows(
+    const { headers, rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", [])],
       VOCAB,
       { identifierColumns: [EPPI_COLUMN] },
@@ -206,7 +206,7 @@ describe("buildAppliedConceptRows", () => {
         { identifier: "W123", identifier_type: "open_alex" },
       ],
     });
-    const { headers, rows } = await buildAppliedConceptRows(
+    const { headers, rows } = await buildReferenceConceptRows(
       [withOpenAlex, hpvRef("ref-2", [])],
       VOCAB,
       { identifierColumns: [OPEN_ALEX_COLUMN] },
@@ -217,7 +217,7 @@ describe("buildAppliedConceptRows", () => {
   });
 
   test("omits the identifier slot entirely when no columns are configured", async () => {
-    const { headers, rows } = await buildAppliedConceptRows(
+    const { headers, rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", [])],
       VOCAB,
     );
@@ -227,7 +227,7 @@ describe("buildAppliedConceptRows", () => {
   });
 
   test("writes identifier columns between DOI and Abstract, in configured order", async () => {
-    const { headers } = await buildAppliedConceptRows([], VOCAB, {
+    const { headers } = await buildReferenceConceptRows([], VOCAB, {
       identifierColumns: [OPEN_ALEX_COLUMN, EPPI_COLUMN],
     });
     expect(headers.slice(0, 9)).toEqual(
@@ -236,7 +236,7 @@ describe("buildAppliedConceptRows", () => {
   });
 
   test("groups applied concepts into their scheme columns, joined with '; '", async () => {
-    const { rows } = await buildAppliedConceptRows(
+    const { rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", ["hpv:c1", "hpv:c2", "hpv:c3", "hpv:c4"])],
       VOCAB,
     );
@@ -247,7 +247,7 @@ describe("buildAppliedConceptRows", () => {
   });
 
   test("leaves scheme cells blank for a reference with no applied concepts", async () => {
-    const { rows } = await buildAppliedConceptRows([hpvRef("ref-1", [])], VOCAB);
+    const { rows } = await buildReferenceConceptRows([hpvRef("ref-1", [])], VOCAB);
     const row = rows[0]!;
     expect(row["Delivery Actor"]).toBeUndefined();
     expect(row["Target Population"]).toBeUndefined();
@@ -263,7 +263,7 @@ describe("buildAppliedConceptRows", () => {
         }),
       ],
     });
-    const { rows } = await buildAppliedConceptRows([bibOnly], VOCAB);
+    const { rows } = await buildReferenceConceptRows([bibOnly], VOCAB);
     expect(rows).toHaveLength(1);
     expect(rows[0]!["Reference ID"]).toBe("ref-bib-only");
     expect(rows[0]!["Title"]).toBe("Bib only");
@@ -275,7 +275,7 @@ describe("buildAppliedConceptRows", () => {
       yield hpvRef("ref-1", ["hpv:c1"]);
       yield hpvRef("ref-2", ["hpv:c3"]);
     }
-    const { rows } = await buildAppliedConceptRows(gen(), VOCAB);
+    const { rows } = await buildReferenceConceptRows(gen(), VOCAB);
     expect(rows.map((r) => r["Reference ID"])).toEqual(["ref-1", "ref-2"]);
     expect(rows[0]!["Delivery Actor"]).toBe("Nurse");
     expect(rows[1]!["Target Population"]).toBe("Adolescent girls");
@@ -287,7 +287,7 @@ describe("buildAppliedConceptRows", () => {
       ...VOCAB,
       labels: new Map([...LABELS, [`${NS}c9`, "Uncoded concept"]]),
     };
-    const { headers, rows } = await buildAppliedConceptRows(
+    const { headers, rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", ["hpv:c1", "hpv:c9", "hpv:c8"])],
       vocab,
     );
@@ -302,7 +302,7 @@ describe("buildAppliedConceptRows", () => {
       { uri: `${NS}DeliveryActorA`, label: "Delivery Actor Scheme", topConcepts: [] },
       { uri: `${NS}DeliveryActorB`, label: "Delivery Actor Scheme", topConcepts: [] },
     ];
-    const { headers } = await buildAppliedConceptRows([], {
+    const { headers } = await buildReferenceConceptRows([], {
       ...VOCAB,
       schemes: collidingSchemes,
     });
@@ -314,7 +314,7 @@ describe("buildAppliedConceptRows", () => {
   });
 
   test("URI-suffixes a scheme header that collides with an identifier column", async () => {
-    const { headers } = await buildAppliedConceptRows(
+    const { headers } = await buildReferenceConceptRows(
       [],
       {
         ...VOCAB,
@@ -341,7 +341,7 @@ describe("buildAppliedConceptRows", () => {
       inScheme.set(uri, `${NS}DeliveryActor`);
       curies.push(`hpv:long${i}`);
     }
-    const { rows } = await buildAppliedConceptRows(
+    const { rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", curies)],
       { ...VOCAB, labels, inScheme },
     );

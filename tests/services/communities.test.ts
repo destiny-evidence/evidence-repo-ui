@@ -172,8 +172,8 @@ describe("community registry", () => {
 
   it("selects the per-community export workbook variant", () => {
     expect(mod.findCommunity("esea")?.exportVariant).toBe("esea");
-    expect(mod.findCommunity("hpv")?.exportVariant).toBe("applied-concept");
-    expect(mod.findCommunity("destiny")?.exportVariant).toBe("applied-concept");
+    expect(mod.findCommunity("hpv")?.exportVariant).toBe("reference-concepts");
+    expect(mod.findCommunity("destiny")?.exportVariant).toBe("reference-concepts");
   });
 
   it("gives HPV exports the EPPI ItemId identifier column", () => {

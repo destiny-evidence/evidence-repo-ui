@@ -1,5 +1,5 @@
 /**
- * Row-building logic for the applied-concept workbook: one row per record, a
+ * Row-building logic for the reference-concepts workbook: one row per record, a
  * fixed bibliographic block followed by one column per SKOS scheme and an
  * "Other codes" catch-all. Each scheme cell holds the `; `-joined prefLabels of
  * that record's `hasAppliedConcept` entries that fall in the scheme; concepts
@@ -30,7 +30,7 @@ import type {
 import { truncateForCell } from "./buildRows.ts";
 import type { CellValue, ConceptResolver } from "./types.ts";
 
-export const APPLIED_CONCEPT_SHEET_NAME = "References";
+export const REFERENCE_CONCEPT_SHEET_NAME = "References";
 
 const OTHER_CODES_HEADER = "Other codes";
 
@@ -51,7 +51,7 @@ const HEADERS_BEFORE_IDENTIFIERS = [
 ] as const;
 const HEADERS_AFTER_IDENTIFIERS = ["Abstract"] as const;
 
-export interface AppliedConceptRowOptions {
+export interface ReferenceConceptRowOptions {
   // Orders the scheme columns to match the community's filter drawer.
   pinnedFilters?: PinnedFilter[];
   identifierColumns?: readonly IdentifierColumn[];
@@ -91,7 +91,7 @@ function buildSchemeColumns(
   });
 }
 
-function buildAppliedConceptRow(
+function buildReferenceConceptRow(
   reference: Reference,
   vocab: ConceptResolver,
   inScheme: Map<string, string>,
@@ -146,10 +146,10 @@ function buildAppliedConceptRow(
 /**
  * Stream references into a header list and one row per reference.
  */
-export async function buildAppliedConceptRows(
+export async function buildReferenceConceptRows(
   references: ReferenceSource,
   vocab: ConceptResolver,
-  { pinnedFilters, identifierColumns = [] }: AppliedConceptRowOptions = {},
+  { pinnedFilters, identifierColumns = [] }: ReferenceConceptRowOptions = {},
 ): Promise<{ headers: string[]; rows: SheetRow[] }> {
   const bibHeaders = bibliographicHeaders(identifierColumns);
   const schemeColumns = buildSchemeColumns(
@@ -165,7 +165,7 @@ export async function buildAppliedConceptRows(
   const rows: SheetRow[] = [];
   for await (const reference of references) {
     rows.push(
-      buildAppliedConceptRow(
+      buildReferenceConceptRow(
         reference,
         vocab,
         inScheme,

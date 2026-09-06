@@ -165,11 +165,11 @@ describe("generateWorkbook", () => {
     expect(rows.map((r) => r.reference_id)).toEqual(["ref-1", "ref-2"]);
   });
 
-  test("the applied-concept variant produces a single record-level sheet", async () => {
+  test("the reference-concepts variant produces a single record-level sheet", async () => {
     const wb = await generateWorkbook(
       [syntheticReference("ref-1")],
       MINIMAL_VOCAB,
-      { variant: "applied-concept" },
+      { variant: "reference-concepts" },
     );
     expect(wb.SheetNames).toEqual(["References"]);
     const sheet = wb.Sheets["References"]!;

@@ -63,9 +63,9 @@ export interface ExternalResource {
 }
 
 // Selects which client-side Excel workbook a community's export builds:
-// the esea investigation hierarchy, or the applied-concept sheet (one row per
-// record, one column per concept scheme).
-export type ExportVariant = "esea" | "applied-concept";
+// the esea investigation hierarchy, or the reference-concepts sheet (one row
+// per record, one column per concept scheme).
+export type ExportVariant = "esea" | "reference-concepts";
 
 export interface Community {
   slug: string;
@@ -97,7 +97,7 @@ export interface Community {
   codingInstitution?: CodingInstitutionConfig;
   // Which Excel workbook the export builds when features.exportsEnabled is on.
   exportVariant?: ExportVariant;
-  // Identifier columns the "applied-concept" workbook writes for this community.
+  // Identifier columns the "reference-concepts" workbook writes for this community.
   exportIdentifiers?: readonly IdentifierColumn[];
   externalResources?: ExternalResource[];
 }

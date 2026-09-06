@@ -44,7 +44,7 @@ function startArgs(
     filename: string;
     vocabularyUrl: string;
     contextUrl: string;
-    variant: "esea" | "applied-concept";
+    variant: "esea" | "reference-concepts";
     resolveReferenceIds: (signal: AbortSignal) => Promise<string[]>;
     resultCount: number;
     formatLabel: string;

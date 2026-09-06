@@ -16,10 +16,10 @@ import {
   ensureArray,
 } from "./buildRows.ts";
 import {
-  buildAppliedConceptRows,
-  APPLIED_CONCEPT_SHEET_NAME,
-  type AppliedConceptRowOptions,
-} from "./buildAppliedConceptRows.ts";
+  buildReferenceConceptRows,
+  REFERENCE_CONCEPT_SHEET_NAME,
+  type ReferenceConceptRowOptions,
+} from "./buildReferenceConceptRows.ts";
 import {
   extractBibliographic,
   extractLinkedDataEnhancement,
@@ -60,7 +60,7 @@ type ReferenceSource =
  * each subsequent row contains the values in the same column order, with
  * missing keys filled in as null. Generic over the row type so it serves
  * both the fixed-interface (esea) rows and the dynamic, scheme-keyed
- * applied-concept rows.
+ * reference-concepts rows.
  */
 function rowsToAoa<R extends object>(
   headers: ReadonlyArray<keyof R & string>,
@@ -174,23 +174,23 @@ async function buildEducationWorkbook(
 }
 
 /**
- * Build the applied-concept workbook: a single sheet with one row per record,
- * bibliographic columns followed by one column per SKOS scheme holding that
- * record's applied concepts in that scheme. `pinnedFilters` orders the scheme
- * columns to match the community's filter drawer.
+ * Build the reference-concepts workbook: a single sheet with one row per
+ * record, bibliographic columns followed by one column per SKOS scheme
+ * holding that record's applied concepts in that scheme. `pinnedFilters`
+ * orders the scheme columns to match the community's filter drawer.
  */
-async function buildAppliedConceptWorkbook(
+async function buildReferenceConceptWorkbook(
   references: ReferenceSource,
   vocab: ConceptResolver,
-  options: AppliedConceptRowOptions,
+  options: ReferenceConceptRowOptions,
 ): Promise<XLSX.WorkBook> {
-  const { headers, rows } = await buildAppliedConceptRows(
+  const { headers, rows } = await buildReferenceConceptRows(
     references,
     vocab,
     options,
   );
   const wb = XLSX.utils.book_new();
-  appendSheet(wb, APPLIED_CONCEPT_SHEET_NAME, headers, rows);
+  appendSheet(wb, REFERENCE_CONCEPT_SHEET_NAME, headers, rows);
   return wb;
 }
 
@@ -210,8 +210,8 @@ export interface WorkbookOptions {
  * iterable (JSONL stream), letting callers either load the whole file or
  * stream it from a signed URL. The `vocab` argument bundles the
  * JSON-LD @context prefix map and the URI-keyed prefLabel map fetched
- * via `vocabularyService` / `contextService`; the applied-concept variants
- * additionally read its `inScheme` map and `schemes` list.
+ * via `vocabularyService` / `contextService`; the reference-concepts variant
+ * additionally reads its `inScheme` map and `schemes` list.
  */
 export async function generateWorkbook(
   references: ReferenceSource,
@@ -221,8 +221,8 @@ export async function generateWorkbook(
   switch (options.variant) {
     case "esea":
       return buildEducationWorkbook(references, vocab, options.codingInstitution);
-    case "applied-concept":
-      return buildAppliedConceptWorkbook(references, vocab, {
+    case "reference-concepts":
+      return buildReferenceConceptWorkbook(references, vocab, {
         pinnedFilters: options.pinnedFilters,
         identifierColumns: options.identifierColumns,
       });

@@ -153,7 +153,7 @@ const COMMUNITIES: Community[] = [
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
     }),
-    exportVariant: "applied-concept",
+    exportVariant: "reference-concepts",
     exportIdentifiers: [
       { header: "EPPI ItemId", type: "other", otherName: "EPPI ItemId" },
     ],
@@ -211,7 +211,7 @@ const COMMUNITIES: Community[] = [
       exportsEnabled: true,
       nestedEvidenceMapAxes: true,
     },
-    exportVariant: "applied-concept",
+    exportVariant: "reference-concepts",
     exportIdentifiers: [{ header: "OpenAlex ID", type: "open_alex" }],
     defaultExpandedFilters: [],
     defaultEvidenceMapAxes: {
