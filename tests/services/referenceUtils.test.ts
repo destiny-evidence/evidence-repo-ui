@@ -233,12 +233,12 @@ describe("extractIdentifier", () => {
     ).toBe("482931");
   });
 
-  test("reads a non-string identifier as absent", () => {
+  test("stringifies a numeric identifier", () => {
     expect(
       extractIdentifier([{ identifier: 12345, identifier_type: "pm_id" }], {
         type: "pm_id",
       }),
-    ).toBeNull();
+    ).toBe("12345");
   });
 
   test("returns null when nothing matches", () => {

@@ -154,8 +154,7 @@ export function extractFindingsAndEstimatesCount(
   return { findings: findings.length, estimates };
 }
 
-// Return the first identifier matching `ref`, or null. The repository mints
-// identifiers as strings, so a non-string value reads as absent.
+// Return the first identifier matching `ref`, or null. Stringify numbers.
 export function extractIdentifier(
   identifiers: ExternalIdentifier[] | null,
   ref: IdentifierRef,
@@ -166,19 +165,30 @@ export function extractIdentifier(
       i.identifier_type === ref.type &&
       (ref.type !== "other" || i.other_identifier_name === ref.otherName),
   );
-  return typeof match?.identifier === "string" ? match.identifier : null;
+  const value = match?.identifier;
+  return typeof value === "string" || typeof value === "number"
+    ? String(value)
+    : null;
 }
 
 export function extractDoi(
   identifiers: ExternalIdentifier[] | null,
 ): string | null {
-  return extractIdentifier(identifiers, { type: "doi" });
+  if (!identifiers) return null;
+  const doi = identifiers.find(
+    (i) => i.identifier_type === "doi",
+  );
+  return typeof doi?.identifier === "string" ? doi.identifier : null;
 }
 
 export function extractOpenAlexId(
   identifiers: ExternalIdentifier[] | null,
 ): string | null {
-  return extractIdentifier(identifiers, { type: "open_alex" });
+  if (!identifiers) return null;
+  const openAlex = identifiers.find(
+    (i) => i.identifier_type === "open_alex",
+  );
+  return typeof openAlex?.identifier === "string" ? openAlex.identifier : null;
 }
 
 // Editorial citation format: `volume(issue), first_page–last_page`.
