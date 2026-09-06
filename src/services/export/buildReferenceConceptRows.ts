@@ -11,7 +11,6 @@ import { orderFilterItems } from "@/components/filters/filterOrder";
 import {
   extractAbstract,
   extractBibliographic,
-  extractDoi,
   extractIdentifier,
   extractLinkedDataEnhancement,
   getInvestigation,
@@ -40,14 +39,13 @@ type ReferenceSource = Iterable<Reference> | AsyncIterable<Reference>;
 
 // Human-readable to sit alongside the vocabulary-derived scheme columns; the
 // esea workbook instead uses technical keys. The community's identifier
-// columns are spliced between "DOI" and "Abstract".
+// columns are spliced between "Journal" and "Abstract".
 const HEADERS_BEFORE_IDENTIFIERS = [
   "Reference ID",
   "Title",
   "Authors",
   "Publication year",
   "Journal",
-  "DOI",
 ] as const;
 const HEADERS_AFTER_IDENTIFIERS = ["Abstract"] as const;
 
@@ -109,7 +107,6 @@ function buildReferenceConceptRow(
     Authors: authors || null,
     "Publication year": bib?.publication_year ?? null,
     Journal: bib?.publication_venue?.display_name ?? null,
-    DOI: extractDoi(reference.identifiers),
     Abstract: abstract ? truncateForCell(abstract) : null,
   };
   for (const column of identifierColumns) {

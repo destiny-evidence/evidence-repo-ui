@@ -129,7 +129,6 @@ const BIB_HEADERS_BEFORE_IDENTIFIERS = [
   "Authors",
   "Publication year",
   "Journal",
-  "DOI",
 ];
 
 // The bibliographic block with `identifiers` spliced in ahead of "Abstract".
@@ -138,6 +137,8 @@ function bibHeaders(...identifiers: string[]): string[] {
 }
 
 const BIB_HEADERS = bibHeaders();
+
+const DOI_COLUMN: IdentifierColumn = { header: "DOI", type: "doi" };
 
 const EPPI_COLUMN: IdentifierColumn = {
   header: "EPPI ItemId",
@@ -183,9 +184,9 @@ describe("buildReferenceConceptRows", () => {
     const { headers, rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", [])],
       VOCAB,
-      { identifierColumns: [EPPI_COLUMN] },
+      { identifierColumns: [DOI_COLUMN, EPPI_COLUMN] },
     );
-    expect(headers.slice(0, 8)).toEqual(bibHeaders("EPPI ItemId"));
+    expect(headers.slice(0, 8)).toEqual(bibHeaders("DOI", "EPPI ItemId"));
     expect(rows).toHaveLength(1);
     const row = rows[0]!;
     expect(row["Reference ID"]).toBe("ref-1");
@@ -211,7 +212,7 @@ describe("buildReferenceConceptRows", () => {
       VOCAB,
       { identifierColumns: [OPEN_ALEX_COLUMN] },
     );
-    expect(headers.slice(0, 8)).toEqual(bibHeaders("OpenAlex ID"));
+    expect(headers.slice(0, 7)).toEqual(bibHeaders("OpenAlex ID"));
     expect(rows[0]!["OpenAlex ID"]).toBe("W123");
     expect(rows[1]!["OpenAlex ID"]).toBeNull();
   });
@@ -221,18 +222,28 @@ describe("buildReferenceConceptRows", () => {
       [hpvRef("ref-1", [])],
       VOCAB,
     );
-    expect(headers.slice(0, 7)).toEqual(BIB_HEADERS);
-    // The reference carries an EPPI ItemId; without a column it is not written.
+    expect(headers.slice(0, 6)).toEqual(BIB_HEADERS);
+    expect(rows[0]!["DOI"]).toBeUndefined();
     expect(rows[0]!["EPPI ItemId"]).toBeUndefined();
   });
 
-  test("writes identifier columns between DOI and Abstract, in configured order", async () => {
+  test("writes identifier columns between Journal and Abstract, in configured order", async () => {
     const { headers } = await buildReferenceConceptRows([], VOCAB, {
       identifierColumns: [OPEN_ALEX_COLUMN, EPPI_COLUMN],
     });
-    expect(headers.slice(0, 9)).toEqual(
+    expect(headers.slice(0, 8)).toEqual(
       bibHeaders("OpenAlex ID", "EPPI ItemId"),
     );
+  });
+
+  test("writes a single DOI column, from the configured identifier", async () => {
+    const { headers, rows } = await buildReferenceConceptRows(
+      [hpvRef("ref-1", [])],
+      VOCAB,
+      { identifierColumns: [DOI_COLUMN] },
+    );
+    expect(headers.filter((h) => h === "DOI")).toHaveLength(1);
+    expect(rows[0]!["DOI"]).toBe("10.1/ref-1");
   });
 
   test("groups applied concepts into their scheme columns, joined with '; '", async () => {

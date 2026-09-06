@@ -97,7 +97,8 @@ export interface Community {
   codingInstitution?: CodingInstitutionConfig;
   // Which Excel workbook the export builds when features.exportsEnabled is on.
   exportVariant?: ExportVariant;
-  // Identifier columns the "reference-concepts" workbook writes for this community.
+  // Identifier columns the "reference-concepts" workbook writes for this
+  // community, in order.
   exportIdentifiers?: readonly IdentifierColumn[];
   externalResources?: ExternalResource[];
 }

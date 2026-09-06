@@ -176,14 +176,16 @@ describe("community registry", () => {
     expect(mod.findCommunity("destiny")?.exportVariant).toBe("reference-concepts");
   });
 
-  it("gives HPV exports the EPPI ItemId identifier column", () => {
+  it("gives HPV exports the DOI and EPPI ItemId identifier columns", () => {
     expect(mod.findCommunity("hpv")?.exportIdentifiers).toEqual([
+      { header: "DOI", type: "doi" },
       { header: "EPPI ItemId", type: "other", otherName: "EPPI ItemId" },
     ]);
   });
 
-  it("gives Destiny exports the OpenAlex identifier column", () => {
+  it("gives Destiny exports the DOI and OpenAlex identifier columns", () => {
     expect(mod.findCommunity("destiny")?.exportIdentifiers).toEqual([
+      { header: "DOI", type: "doi" },
       { header: "OpenAlex ID", type: "open_alex" },
     ]);
   });
