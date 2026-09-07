@@ -44,7 +44,7 @@ function startArgs(
     filename: string;
     vocabularyUrl: string;
     contextUrl: string;
-    variant: "esea" | "hpv";
+    variant: "esea" | "reference-concepts";
     resolveReferenceIds: (signal: AbortSignal) => Promise<string[]>;
     resultCount: number;
     formatLabel: string;
@@ -136,9 +136,12 @@ describe("useSearchExport", () => {
       VOCAB_URL,
       CONTEXT_URL,
       "file.xlsx",
-      "esea",
-      undefined,
-      undefined,
+      {
+        variant: "esea",
+        codingInstitution: undefined,
+        pinnedFilters: undefined,
+        identifierColumns: undefined,
+      },
     );
     expect(mockRequest).toHaveBeenCalledWith(
       "phonics",

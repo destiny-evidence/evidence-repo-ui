@@ -12,13 +12,11 @@ import {
   getCachedContext,
   getCachedVocabulary,
 } from "@/services/vocabulary";
-import type {
-  CodingInstitutionConfig,
-  ExportVariant,
-  PinnedFilter,
-} from "@/types/models";
-
-import { generateWorkbook, workbookToArrayBuffer } from "./generate.ts";
+import {
+  generateWorkbook,
+  workbookToArrayBuffer,
+  type WorkbookOptions,
+} from "./generate.ts";
 import { streamJsonlFromUrl } from "./jsonlStream.ts";
 
 const XLSX_MIME =
@@ -44,17 +42,16 @@ function triggerDownload(data: ArrayBuffer, filename: string): void {
 /**
  * Stream the JSONL at `jsonlUrl`, resolve concepts against the JSON-LD
  * vocabulary at `vocabularyUrl` (URI-keyed prefLabels) and the JSON-LD
- * @context at `contextUrl` (prefix → namespace map), build the workbook for
- * the community's `variant`, and prompt the user to download it as `filename`.
+ * @context at `contextUrl` (prefix → namespace map), build the workbook the
+ * community's `options` describe, and prompt the user to download it as
+ * `filename`.
  */
 export async function exportReferencesToExcel(
   jsonlUrl: string,
   vocabularyUrl: string,
   contextUrl: string,
   filename: string,
-  variant: ExportVariant,
-  codingInstitution?: CodingInstitutionConfig,
-  pinnedFilters?: PinnedFilter[],
+  options: WorkbookOptions,
 ): Promise<void> {
   const references = streamJsonlFromUrl(proxyBlobUrl(jsonlUrl));
   const [vocab, context] = await Promise.all([
@@ -69,7 +66,7 @@ export async function exportReferencesToExcel(
       inScheme: vocab.inScheme,
       schemes: vocab.schemes,
     },
-    { variant, codingInstitution, pinnedFilters },
+    options,
   );
   triggerDownload(workbookToArrayBuffer(wb), filename);
 }

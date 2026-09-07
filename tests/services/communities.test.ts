@@ -124,7 +124,7 @@ describe("community registry", () => {
       aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: true,
-      exportExcel: false,
+      exportsEnabled: false,
       countryFacetFilter: true,
       referenceSelection: true,
       nestedEvidenceMapAxes: false,
@@ -143,17 +143,18 @@ describe("community registry", () => {
       aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: true,
-      exportExcel: true,
+      exportsEnabled: true,
       countryFacetFilter: true,
       nestedEvidenceMapAxes: false,
+
     },
     {
       slug: "hpv",
       aiSummaries: true,
       selfSignup: true,
       findingsAndEstimates: false,
-      exportExcel: true,
       countryFacetFilter: false,
+      exportsEnabled: true,
       nestedEvidenceMapAxes: false,
     },
     {
@@ -161,8 +162,8 @@ describe("community registry", () => {
       aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: false,
-      exportExcel: false,
       countryFacetFilter: false,
+      exportsEnabled: true,
       nestedEvidenceMapAxes: true,
     },
   ])("gates features for $slug", ({ slug, ...features }) => {
@@ -171,8 +172,33 @@ describe("community registry", () => {
 
   it("selects the per-community export workbook variant", () => {
     expect(mod.findCommunity("esea")?.exportVariant).toBe("esea");
-    expect(mod.findCommunity("hpv")?.exportVariant).toBe("hpv");
+    expect(mod.findCommunity("hpv")?.exportVariant).toBe("reference-concepts");
+    expect(mod.findCommunity("destiny")?.exportVariant).toBe("reference-concepts");
   });
+
+  it("gives HPV exports the DOI and EPPI ItemId identifier columns", () => {
+    expect(mod.findCommunity("hpv")?.exportIdentifiers).toEqual([
+      { header: "DOI", type: "doi" },
+      { header: "EPPI ItemId", type: "other", otherName: "EPPI ItemId" },
+    ]);
+  });
+
+  it("gives Destiny exports the DOI and OpenAlex identifier columns", () => {
+    expect(mod.findCommunity("destiny")?.exportIdentifiers).toEqual([
+      { header: "DOI", type: "doi" },
+      { header: "OpenAlex ID", type: "open_alex" },
+    ]);
+  });
+
+  it.each(["esea", "hpv", "destiny"])(
+    "%s defines an export variant wherever exports are enabled",
+    (slug) => {
+      const community = mod.findCommunity(slug)!;
+      if (community.features.exportsEnabled) {
+        expect(community.exportVariant).toBeDefined();
+      }
+    },
+  );
 
   it("defaults HPV's evidence map to WHO Region rows x Thematic Focus — Primary columns", () => {
     expect(mod.findCommunity("hpv")?.defaultEvidenceMapAxes).toEqual({

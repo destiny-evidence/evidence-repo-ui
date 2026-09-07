@@ -7,8 +7,8 @@ export interface CommunityFeatures {
   selfSignup: boolean;
   // Whether result cards show finding/estimate stat-badges.
   findingsAndEstimates: boolean;
-  // Whether the Excel export button is shown.
-  exportExcel: boolean;
+  // Whether or not exports are available for this community.
+  exportsEnabled: boolean;
   // Whether the facet-backed country filter card is shown; needs a populated `countries` facet.
   countryFacetFilter: boolean;
   // Gates the result-row selection UI (checkboxes + selection controls). Only
@@ -62,8 +62,10 @@ export interface ExternalResource {
   href: string;
 }
 
-// Selects which client-side Excel workbook a community's export builds.
-export type ExportVariant = "esea" | "hpv";
+// Selects which client-side Excel workbook a community's export builds:
+// the esea investigation hierarchy, or the reference-concepts sheet (one row
+// per record, one column per concept scheme).
+export type ExportVariant = "esea" | "reference-concepts";
 
 export interface Community {
   slug: string;
@@ -93,8 +95,11 @@ export interface Community {
   copy: CommunityCopy;
   // Absent ⇒ no coder concept; the "Coded by" pill and export source are hidden.
   codingInstitution?: CodingInstitutionConfig;
-  // Which Excel workbook the export builds when features.exportExcel is on.
+  // Which Excel workbook the export builds when features.exportsEnabled is on.
   exportVariant?: ExportVariant;
+  // Identifier columns the "reference-concepts" workbook writes for this
+  // community, in order.
+  exportIdentifiers?: readonly IdentifierColumn[];
   externalResources?: ExternalResource[];
 }
 
@@ -162,6 +167,24 @@ export interface ReferenceCrossFacetResult {
   totals: CrossFacetTotals;
   cells: CrossFacetCell[];
 }
+
+// The identifier types the repository mints.
+export type IdentifierType =
+  | "doi"
+  | "eric"
+  | "pm_id"
+  | "pro_quest"
+  | "open_alex"
+  | "other";
+
+// Selects one identifier off a reference. `other`-typed identifiers are further
+// distinguished by `other_identifier_name` (e.g. "EPPI ItemId").
+export type IdentifierRef =
+  | { type: "other"; otherName: string }
+  | { type: Exclude<IdentifierType, "other"> };
+
+// An identifier plus the export column header to write it under.
+export type IdentifierColumn = IdentifierRef & { header: string };
 
 export interface ExternalIdentifier {
   identifier: string | number;

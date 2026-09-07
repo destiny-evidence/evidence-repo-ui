@@ -65,7 +65,7 @@ export function makeCommunity(
       aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: true,
-      exportExcel: true,
+      exportsEnabled: true,
       countryFacetFilter: true,
       referenceSelection: false,
       nestedEvidenceMapAxes: false,

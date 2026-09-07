@@ -16,6 +16,7 @@ import type { ReferenceListMeta } from "@/services/export/referenceListPdf";
 import type {
   CodingInstitutionConfig,
   ExportVariant,
+  IdentifierColumn,
   PinnedFilter,
 } from "@/types/models";
 
@@ -46,6 +47,7 @@ export interface StartExportOptions {
   variant?: ExportVariant;
   codingInstitution?: CodingInstitutionConfig;
   pinnedFilters?: PinnedFilter[];
+  identifierColumns?: readonly IdentifierColumn[];
   // Reference-list PDF only:
   referenceListMeta?: ReferenceListMeta;
 }
@@ -76,9 +78,12 @@ async function downloadForFormat(
         options.vocabularyUrl!,
         options.contextUrl!,
         options.filename,
-        options.variant,
-        options.codingInstitution,
-        options.pinnedFilters,
+        {
+          variant: options.variant,
+          codingInstitution: options.codingInstitution,
+          pinnedFilters: options.pinnedFilters,
+          identifierColumns: options.identifierColumns,
+        },
       );
       return;
     }

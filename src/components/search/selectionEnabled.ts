@@ -10,7 +10,7 @@ export function selectionEnabled(
   // Without a consumer, selecting references is a dead end,
   // so the whole layer stays hidden.
   return (
-    community.features.exportExcel ||
+    community.features.exportsEnabled ||
     aiSummariesEnabled(community, aiSummaryWriter)
   );
 }

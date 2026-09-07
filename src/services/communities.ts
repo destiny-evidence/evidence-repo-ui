@@ -3,6 +3,7 @@ import type {
   CommunityCopy,
   CommunityFeatures,
   EvidenceMapRenderLimits,
+  IdentifierColumn,
 } from "@/types/models";
 import { rawSourcePatterns } from "@/services/codingInstitution";
 
@@ -21,7 +22,7 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   aiSummaries: false,
   selfSignup: false,
   findingsAndEstimates: true,
-  exportExcel: false,
+  exportsEnabled: false,
   countryFacetFilter: true,
   // Selection UI still only shows where a consumer (AI summary / selection
   // export) is enabled — see selectionEnabled.
@@ -34,6 +35,9 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
 export const DEFAULT_EVIDENCE_MAP_RENDER_LIMITS: EvidenceMapRenderLimits = {
   maxCells: 50_000,
 };
+
+// Every community's reference-concepts export leads with the DOI.
+const DOI_IDENTIFIER: IdentifierColumn = { header: "DOI", type: "doi" };
 
 // The HPV geographic ConceptSchemes (country + regional/classification). Full
 // scheme URIs to match inScheme. Ordered specific → broad: the country, then its
@@ -79,7 +83,7 @@ const COMMUNITIES: Community[] = [
     ],
     pillExcludedSchemes: [],
     geographicSchemes: [],
-    features: { ...DEFAULT_FEATURES, exportExcel: true },
+    features: { ...DEFAULT_FEATURES, exportsEnabled: true },
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",
@@ -136,7 +140,7 @@ const COMMUNITIES: Community[] = [
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
-      exportExcel: true,
+      exportsEnabled: true,
     },
     defaultEvidenceMapAxes: {
       row: {
@@ -153,7 +157,11 @@ const COMMUNITIES: Community[] = [
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
     }),
-    exportVariant: "hpv",
+    exportVariant: "reference-concepts",
+    exportIdentifiers: [
+      DOI_IDENTIFIER,
+      { header: "EPPI ItemId", type: "other", otherName: "EPPI ItemId" },
+    ],
     externalResources: [
       {
         title: "Report v3 June 2026",
@@ -205,9 +213,14 @@ const COMMUNITIES: Community[] = [
       ...DEFAULT_FEATURES,
       findingsAndEstimates: false,
       countryFacetFilter: false,
-      exportExcel: false,
+      exportsEnabled: true,
       nestedEvidenceMapAxes: true,
     },
+    exportVariant: "reference-concepts",
+    exportIdentifiers: [
+      DOI_IDENTIFIER,
+      { header: "OpenAlex ID", type: "open_alex" },
+    ],
     defaultExpandedFilters: [],
     defaultEvidenceMapAxes: {
       row: {
