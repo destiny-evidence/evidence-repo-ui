@@ -565,12 +565,27 @@ describe("CELL_SIZES", () => {
   );
 
   test.each(Object.entries(CELL_SIZES))(
-    "%s: the smallest bubble holds a three-character count",
+    "%s: the smallest bubble holds a two-character count",
     (_step, dimensions) => {
-      const label = 3 * dimensions.labelFontSize * DIGIT_RATIO;
+      const label = 2 * dimensions.labelFontSize * DIGIT_RATIO;
       expect(dimensions.minRadius * 2).toBeGreaterThanOrEqual(
         label + dimensions.labelPadding * 2,
       );
+    },
+  );
+
+  // Longer labels are left to the ramp: a three-character count is at least 100,
+  // so it reaches the radius its own label needs long before the widest maps run
+  // out of range. Below that the CSS min-content floor would inflate the bubble
+  // off the ramp.
+  test.each(Object.entries(CELL_SIZES))(
+    "%s: a three-character count outgrows its label on the ramp",
+    (_step, dimensions) => {
+      const needed = (3 * dimensions.labelFontSize * DIGIT_RATIO) / 2 +
+        dimensions.labelPadding;
+      expect(
+        bubbleRadius(100, 500_000, dimensions.minRadius, dimensions.maxRadius),
+      ).toBeGreaterThanOrEqual(needed);
     },
   );
 });

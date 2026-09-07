@@ -328,7 +328,10 @@ export interface CellSizeDimensions {
   railWidth: number;
   // Gutter between the largest bubble and the cell's edges.
   cellPadding: number;
-  // minRadius is set so a three-character count clears the smallest bubble:
+  // minRadius is set so a two-character count clears the smallest bubble:
+  // 2·minRadius ≥ 2·labelFontSize·0.6 + 2·labelPadding. Three characters means a
+  // count of at least 100, which the log ramp already lifts well clear of the
+  // floor; sizing the floor for it instead cost most of the range.
   minRadius: number;
   maxRadius: number;
   // In-bubble count typography, one size per step.
@@ -346,7 +349,7 @@ export const CELL_SIZES: Record<CellSize, CellSizeDimensions> = {
     cellHeight: 48,
     railWidth: 128,
     cellPadding: 3,
-    minRadius: 12,
+    minRadius: 9,
     maxRadius: 21,
     labelFontSize: 10,
     labelPadding: 3,
@@ -357,7 +360,7 @@ export const CELL_SIZES: Record<CellSize, CellSizeDimensions> = {
     cellHeight: 54,
     railWidth: 148,
     cellPadding: 3,
-    minRadius: 13,
+    minRadius: 9,
     maxRadius: 24,
     labelFontSize: 10,
     labelPadding: 3,
@@ -368,7 +371,7 @@ export const CELL_SIZES: Record<CellSize, CellSizeDimensions> = {
     cellHeight: 62,
     railWidth: 172,
     cellPadding: 4,
-    minRadius: 14,
+    minRadius: 11,
     maxRadius: 27,
     labelFontSize: 11,
     labelPadding: 4,
@@ -379,7 +382,7 @@ export const CELL_SIZES: Record<CellSize, CellSizeDimensions> = {
     cellHeight: 72,
     railWidth: 200,
     cellPadding: 4,
-    minRadius: 16,
+    minRadius: 12,
     maxRadius: 32,
     labelFontSize: 12,
     labelPadding: 4,
