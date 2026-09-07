@@ -557,19 +557,19 @@ describe("CELL_SIZES", () => {
 
   test.each(Object.entries(CELL_SIZES))(
     "%s: the largest bubble fills the row without growing it",
-    (_step, metrics) => {
-      expect(metrics.maxRadius * 2 + metrics.cellPadding * 2).toBe(
-        metrics.cellHeight,
+    (_step, dimensions) => {
+      expect(dimensions.maxRadius * 2 + dimensions.cellPadding * 2).toBe(
+        dimensions.cellHeight,
       );
     },
   );
 
   test.each(Object.entries(CELL_SIZES))(
     "%s: the smallest bubble holds a three-character count",
-    (_step, metrics) => {
-      const label = 3 * metrics.labelFontSize * DIGIT_RATIO;
-      expect(metrics.minRadius * 2).toBeGreaterThanOrEqual(
-        label + metrics.labelPadding * 2,
+    (_step, dimensions) => {
+      const label = 3 * dimensions.labelFontSize * DIGIT_RATIO;
+      expect(dimensions.minRadius * 2).toBeGreaterThanOrEqual(
+        label + dimensions.labelPadding * 2,
       );
     },
   );

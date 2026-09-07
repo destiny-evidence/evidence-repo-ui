@@ -318,7 +318,7 @@ function mergeCategories(
 
 export type CellSize = "small" | "medium" | "large" | "xlarge";
 
-export interface CellSizeMetrics {
+export interface CellSizeDimensions {
   // Column width floor and ceiling: the floor keeps short labels from cramping,
   // the ceiling lets a long word widen its column rather than break mid-word.
   minColumnWidth: number;
@@ -351,7 +351,7 @@ export interface CellSizeMetrics {
  * comparing — growing both together spent two-thirds of the visible rows at the
  * top step to buy bubble size nobody asked for. `medium` is the default.
  */
-export const CELL_SIZES: Record<CellSize, CellSizeMetrics> = {
+export const CELL_SIZES: Record<CellSize, CellSizeDimensions> = {
   small: {
     minColumnWidth: 96,
     maxColumnWidth: 132,

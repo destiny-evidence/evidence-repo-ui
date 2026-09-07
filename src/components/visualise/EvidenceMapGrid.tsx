@@ -9,7 +9,7 @@ import {
   type AxisBands,
   type AxisCategory,
   type CellSize,
-  type CellSizeMetrics,
+  type CellSizeDimensions,
 } from "@/services/evidenceMap";
 import { Tooltip } from "../common/Tooltip";
 import type { MapView } from "./ViewToggle";
@@ -116,7 +116,7 @@ export function EvidenceMapGrid({
   const [hover, setHover] = useState<{ row: string; column: string } | null>(
     null,
   );
-  const metrics = CELL_SIZES[cellSize];
+  const dimensions = CELL_SIZES[cellSize];
   const nestedColumns =
     columnBands && columnBands.tiers.length > 0 ? columnBands : undefined;
   const rowRail = rowBands?.rail ?? null;
@@ -211,13 +211,13 @@ export function EvidenceMapGrid({
         dimmed ? " is-dimmed" : ""
       }`}
       style={{
-        "--evidence-map-col-min-width": `${metrics.minColumnWidth}px`,
-        "--evidence-map-col-max-width": `${metrics.maxColumnWidth}px`,
-        "--evidence-map-cell-height": `${metrics.cellHeight}px`,
-        "--evidence-map-rail-width": `${metrics.railWidth}px`,
-        "--evidence-map-cell-padding": `${metrics.cellPadding}px`,
-        "--evidence-map-label-font-size": `${metrics.labelFontSize}px`,
-        "--evidence-map-label-padding": `${metrics.labelPadding}px`,
+        "--evidence-map-col-min-width": `${dimensions.minColumnWidth}px`,
+        "--evidence-map-col-max-width": `${dimensions.maxColumnWidth}px`,
+        "--evidence-map-cell-height": `${dimensions.cellHeight}px`,
+        "--evidence-map-rail-width": `${dimensions.railWidth}px`,
+        "--evidence-map-cell-padding": `${dimensions.cellPadding}px`,
+        "--evidence-map-label-font-size": `${dimensions.labelFontSize}px`,
+        "--evidence-map-label-padding": `${dimensions.labelPadding}px`,
       }}
     >
       <div class="evidence-map__scroll">
@@ -331,7 +331,7 @@ export function EvidenceMapGrid({
                       empty={empty}
                       count={count ?? 0}
                       maxCount={maxCount}
-                      metrics={metrics}
+                      dimensions={dimensions}
                       view={view}
                       tooltip={cellTooltip(count, countNoun, clickable, view)}
                       ariaLabel={
@@ -363,7 +363,7 @@ export function EvidenceMapGrid({
       {view === "bubble" && (
         <MapLegend
           maxCount={maxCount}
-          metrics={metrics}
+          dimensions={dimensions}
           countNoun={countNoun}
         />
       )}
@@ -586,7 +586,7 @@ interface CellProps {
   empty: boolean;
   count: number;
   maxCount: number;
-  metrics: CellSizeMetrics;
+  dimensions: CellSizeDimensions;
   view: MapView;
   tooltip: string | undefined;
   ariaLabel: string | undefined;
@@ -600,7 +600,7 @@ function Cell({
   empty,
   count,
   maxCount,
-  metrics,
+  dimensions,
   view,
   tooltip,
   ariaLabel,
@@ -611,7 +611,7 @@ function Cell({
 }: CellProps) {
   const radius =
     view === "bubble" && !empty
-      ? bubbleRadius(count, maxCount, metrics.minRadius, metrics.maxRadius)
+      ? bubbleRadius(count, maxCount, dimensions.minRadius, dimensions.maxRadius)
       : 0;
 
   const inner =
@@ -676,11 +676,11 @@ function Bubble({
 
 function MapLegend({
   maxCount,
-  metrics,
+  dimensions,
   countNoun,
 }: {
   maxCount: number;
-  metrics: CellSizeMetrics;
+  dimensions: CellSizeDimensions;
   countNoun: string;
 }) {
   const ticks = legendTicks(maxCount);
@@ -697,7 +697,7 @@ function MapLegend({
       </span>
       {ticks.map((tick) => {
         const diameter =
-          bubbleRadius(tick, maxCount, metrics.minRadius, metrics.maxRadius) *
+          bubbleRadius(tick, maxCount, dimensions.minRadius, dimensions.maxRadius) *
           2;
         return (
           <span key={tick} class="evidence-map__legend-item">
