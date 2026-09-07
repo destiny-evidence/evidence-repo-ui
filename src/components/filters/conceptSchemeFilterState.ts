@@ -57,8 +57,8 @@ export function toggleConcept(
   return brand(next);
 }
 
-// Ancestor URIs (not the URIs themselves) of every given URI found in the
-// scheme. Under polyhierarchy a URI's every occurrence contributes its chain.
+// Every URI on the path from a top concept down to (but not including) each
+// given URI. URIs not found in the scheme contribute nothing.
 export function ancestorUrisOf(
   scheme: ConceptScheme,
   uris: Iterable<string>,
