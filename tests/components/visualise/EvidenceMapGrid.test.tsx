@@ -149,17 +149,18 @@ describe("EvidenceMapGrid", () => {
       },
     );
 
+    // Width steps roughly twice as hard as height across the range.
     expect(diameters.map((step) => step.height)).toEqual([
       "48px",
-      "64px",
-      "80px",
-      "96px",
+      "54px",
+      "62px",
+      "72px",
     ]);
     expect(diameters.map((step) => step.width)).toEqual([
       "96px",
-      "132px",
-      "168px",
-      "204px",
+      "120px",
+      "150px",
+      "186px",
     ]);
     const bubbles = diameters.map((step) => parseFloat(step.bubble));
     expect(bubbles).toEqual([...bubbles].sort((a, b) => a - b));

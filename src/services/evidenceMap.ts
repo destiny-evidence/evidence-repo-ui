@@ -345,9 +345,11 @@ export interface CellSizeMetrics {
 }
 
 /**
- * Grid geometry per cell-size step. The bubble range scales with the row so a
- * larger cell reads as a larger map rather than as more whitespace; `medium` is
- * the default and holds the geometry the map had before the control existed.
+ * Grid geometry per cell-size step. Width and height step at different rates:
+ * 96→186 across the range against 48→72. What a larger cell mostly buys is
+ * column headers that wrap over fewer lines, and rows are what the reader is
+ * comparing — growing both together spent two-thirds of the visible rows at the
+ * top step to buy bubble size nobody asked for. `medium` is the default.
  */
 export const CELL_SIZES: Record<CellSize, CellSizeMetrics> = {
   small: {
@@ -362,37 +364,37 @@ export const CELL_SIZES: Record<CellSize, CellSizeMetrics> = {
     labelPadding: 3,
   },
   medium: {
-    minColumnWidth: 132,
-    maxColumnWidth: 180,
-    cellHeight: 64,
-    railWidth: 160,
+    minColumnWidth: 120,
+    maxColumnWidth: 162,
+    cellHeight: 54,
+    railWidth: 148,
+    cellPadding: 3,
+    minRadius: 13,
+    maxRadius: 24,
+    labelFontSize: 10,
+    labelPadding: 3,
+  },
+  large: {
+    minColumnWidth: 150,
+    maxColumnWidth: 202,
+    cellHeight: 62,
+    railWidth: 172,
     cellPadding: 4,
     minRadius: 14,
-    maxRadius: 28,
+    maxRadius: 27,
     labelFontSize: 11,
     labelPadding: 4,
   },
-  large: {
-    minColumnWidth: 168,
-    maxColumnWidth: 228,
-    cellHeight: 80,
-    railWidth: 192,
-    cellPadding: 5,
-    minRadius: 17,
-    maxRadius: 35,
-    labelFontSize: 13,
-    labelPadding: 5,
-  },
   xlarge: {
-    minColumnWidth: 204,
-    maxColumnWidth: 276,
-    cellHeight: 96,
-    railWidth: 224,
-    cellPadding: 6,
-    minRadius: 20,
-    maxRadius: 42,
-    labelFontSize: 15,
-    labelPadding: 6,
+    minColumnWidth: 186,
+    maxColumnWidth: 250,
+    cellHeight: 72,
+    railWidth: 200,
+    cellPadding: 4,
+    minRadius: 16,
+    maxRadius: 32,
+    labelFontSize: 12,
+    labelPadding: 4,
   },
 };
 

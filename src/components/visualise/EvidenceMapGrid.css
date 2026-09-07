@@ -2,13 +2,13 @@
   /* Cell geometry, one step of the toolbar's cell-size control. The grid
      overrides these inline from CELL_SIZES; the values here are `medium`, so
      the map renders correctly without them. */
-  --evidence-map-col-min-width: 132px;
-  --evidence-map-col-max-width: 180px;
-  --evidence-map-cell-height: 64px;
-  --evidence-map-rail-width: 160px;
-  --evidence-map-cell-padding: 4px;
-  --evidence-map-label-font-size: 11px;
-  --evidence-map-label-padding: 4px;
+  --evidence-map-col-min-width: 120px;
+  --evidence-map-col-max-width: 162px;
+  --evidence-map-cell-height: 54px;
+  --evidence-map-rail-width: 148px;
+  --evidence-map-cell-padding: 3px;
+  --evidence-map-label-font-size: 10px;
+  --evidence-map-label-padding: 3px;
 
   display: flex;
   flex-direction: column;
@@ -97,6 +97,10 @@
   text-align: left;
   white-space: nowrap;
   border-right: 1px solid var(--color-border);
+  /* A label clamped to two lines has to fit the step's row height, or every
+     wrapped row silently grows past it. */
+  padding-block: var(--spacing-xs);
+  line-height: 1.3;
 }
 
 /* Clickable header: the whole cell shades on hover, the affordance spanning the
@@ -222,7 +226,10 @@
   left: 0;
   z-index: 3;
   padding: var(--spacing-md);
-  vertical-align: bottom;
+  /* Top, not bottom: the corner spans the column-header tiers, so it grows with
+     the cell-size step while its content does not, and a bottom-aligned block
+     sinks further from the total the larger the step gets. */
+  vertical-align: top;
   text-align: left;
   border-bottom: 1px solid var(--color-border);
   border-right: 1px solid var(--color-border);

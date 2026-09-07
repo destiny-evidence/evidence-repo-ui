@@ -400,7 +400,7 @@ describe("VisualisePage map", () => {
         )!,
       );
 
-    expect(geometry()).toBe("64px");
+    expect(geometry()).toBe("54px");
     clickCell();
     const beforeResize = mockNavigate.mock.calls.at(-1);
 
@@ -408,7 +408,7 @@ describe("VisualisePage map", () => {
       target: { value: "xlarge" },
     });
 
-    expect(geometry()).toBe("96px");
+    expect(geometry()).toBe("72px");
     clickCell();
     expect(mockNavigate.mock.calls.at(-1)).toEqual(beforeResize);
   });
