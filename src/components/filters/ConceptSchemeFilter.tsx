@@ -104,6 +104,8 @@ function ConceptItem({
     </span>
   );
   const isExpanded = expanded.has(concept.uri);
+  // Collapsed subtrees unmount rather than hide: checked state lives in
+  // `state`, not the DOM, and Destiny-size schemes render hundreds of rows.
   const showChildren = hasChildren && (!collapsible || isExpanded);
   // A collapsed branch can hide a checked descendant; mark the parent so the
   // active filter stays visible. Checked wins over mixed when both apply.
@@ -198,6 +200,8 @@ export function ConceptSchemeFilter({
   collapsible = false,
   onChange,
 }: ConceptSchemeFilterProps) {
+  // Seeded once: every surface remounts this component when applied filters
+  // change, so expansion never needs to follow `state` after mount.
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() =>
     collapsible ? defaultExpandedUris(scheme, state) : NONE_EXPANDED,
   );

@@ -683,6 +683,27 @@ describe("ConceptSchemeFilter (collapsible)", () => {
     expect(parent.indeterminate).toBe(false);
   });
 
+  test("expansion is seeded at mount only; later selection changes don't expand", () => {
+    const { rerender } = render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText("School Fees")).toBeNull();
+    rerender(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={conceptSchemeStateFromUris([URI_SCHOOL_FEES])}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText("School Fees")).toBeNull();
+  });
+
   test("checkbox labels stay unambiguous alongside toggle buttons", () => {
     render(
       <ConceptSchemeFilter
