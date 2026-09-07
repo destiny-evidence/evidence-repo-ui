@@ -127,7 +127,7 @@ describe("community registry", () => {
       exportsEnabled: false,
       countryFacetFilter: true,
       referenceSelection: true,
-      nestedEvidenceMapAxes: false,
+      ancestorClosedCodings: false,
     });
   });
 
@@ -145,8 +145,7 @@ describe("community registry", () => {
       findingsAndEstimates: true,
       exportsEnabled: true,
       countryFacetFilter: true,
-      nestedEvidenceMapAxes: false,
-
+      ancestorClosedCodings: false,
     },
     {
       slug: "hpv",
@@ -155,7 +154,7 @@ describe("community registry", () => {
       findingsAndEstimates: false,
       countryFacetFilter: false,
       exportsEnabled: true,
-      nestedEvidenceMapAxes: false,
+      ancestorClosedCodings: false,
     },
     {
       slug: "destiny",
@@ -164,7 +163,7 @@ describe("community registry", () => {
       findingsAndEstimates: false,
       countryFacetFilter: false,
       exportsEnabled: true,
-      nestedEvidenceMapAxes: true,
+      ancestorClosedCodings: true,
     },
   ])("gates features for $slug", ({ slug, ...features }) => {
     expect(mod.findCommunity(slug)?.features).toMatchObject(features);

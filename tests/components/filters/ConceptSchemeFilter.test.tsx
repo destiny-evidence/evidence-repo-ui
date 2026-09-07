@@ -8,10 +8,12 @@ import {
 } from "@/components/filters/conceptSchemeFilterState";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import {
+  DEEP_OUTCOME_SCHEME_FIXTURE,
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,
   URI_EDUCATION_FINANCE,
   URI_ENROLMENT,
+  URI_SCHOOL_FEES,
 } from "./fixtures";
 
 const URI_JOURNAL_ARTICLE =
@@ -499,5 +501,220 @@ describe("ConceptSchemeFilter 0-count rendering", () => {
       /^Education Finance/,
     );
     expect(financeInput.disabled).toBe(false);
+  });
+});
+
+describe("ConceptSchemeFilter (collapsible)", () => {
+  test("flag off renders no toggle buttons", () => {
+    render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    expect(screen.getByLabelText("School Fees")).toBeDefined();
+  });
+
+  test("opens showing top concepts and immediate children; deeper collapsed", () => {
+    render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByLabelText("Access to Education")).toBeDefined();
+    expect(screen.getByLabelText("Education Finance")).toBeDefined();
+    expect(screen.queryByLabelText("School Fees")).toBeNull();
+  });
+
+  test("expand and collapse toggle a branch's visibility and aria-expanded", () => {
+    render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    const toggle = screen.getByRole("button", {
+      name: "Child concepts of Education Finance",
+    });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByLabelText("School Fees")).toBeDefined();
+    expect(toggle.getAttribute("aria-controls")).toBe(
+      screen.getByLabelText("School Fees").closest("ul")!.id,
+    );
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByLabelText("School Fees")).toBeNull();
+  });
+
+  test("a branch holding a checked concept starts expanded", () => {
+    render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={conceptSchemeStateFromUris([URI_SCHOOL_FEES])}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByLabelText<HTMLInputElement>("School Fees").checked,
+    ).toBe(true);
+  });
+
+  test("collapsing leaves checked descendants applied", () => {
+    const onChange = vi.fn();
+    render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={conceptSchemeStateFromUris([URI_SCHOOL_FEES])}
+        collapsible
+        onChange={onChange}
+      />,
+    );
+    const toggle = screen.getByRole("button", {
+      name: "Child concepts of Education Finance",
+    });
+    fireEvent.click(toggle);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText("School Fees")).toBeNull();
+    fireEvent.click(toggle);
+    expect(
+      screen.getByLabelText<HTMLInputElement>("School Fees").checked,
+    ).toBe(true);
+  });
+
+  test("expand/collapse leaves visible count badges untouched", () => {
+    const counts = new Map([
+      [URI_ACCESS, 10],
+      [URI_EDUCATION_FINANCE, 4],
+    ]);
+    render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    const badge = () => screen.getByLabelText("4 results");
+    expect(badge().textContent).toBe("4");
+    const toggle = screen.getByRole("button", {
+      name: "Child concepts of Education Finance",
+    });
+    fireEvent.click(toggle);
+    expect(badge().textContent).toBe("4");
+    fireEvent.click(toggle);
+    expect(badge().textContent).toBe("4");
+  });
+
+  test("parent counts carry no tooltip when collapsible", () => {
+    const counts = new Map([
+      [URI_ACCESS, 10],
+      [URI_EDUCATION_FINANCE, 4],
+    ]);
+    const { container } = render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        counts={counts}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    const parentCount = screen.getByLabelText("10 results");
+    expect(parentCount.closest("[data-tooltip]")).toBeNull();
+    expect(
+      container.querySelector(".concept-scheme-filter__count--parent"),
+    ).toBeNull();
+  });
+
+  test("a collapsed parent hiding a checked descendant shows a mixed state", () => {
+    render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={conceptSchemeStateFromUris([URI_SCHOOL_FEES])}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    const parent = screen.getByLabelText<HTMLInputElement>("Education Finance");
+    expect(parent.indeterminate).toBe(false);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Child concepts of Education Finance",
+      }),
+    );
+    expect(parent.indeterminate).toBe(true);
+    // The grandparent's branch is still open, so it shows nothing.
+    expect(
+      screen.getByLabelText<HTMLInputElement>("Access to Education")
+        .indeterminate,
+    ).toBe(false);
+  });
+
+  test("a checked collapsed parent stays checked, not mixed", () => {
+    render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={conceptSchemeStateFromUris([
+          URI_EDUCATION_FINANCE,
+          URI_SCHOOL_FEES,
+        ])}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Child concepts of Education Finance",
+      }),
+    );
+    const parent = screen.getByLabelText<HTMLInputElement>("Education Finance");
+    expect(parent.checked).toBe(true);
+    expect(parent.indeterminate).toBe(false);
+  });
+
+  test("expansion is seeded at mount only; later selection changes don't expand", () => {
+    const { rerender } = render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText("School Fees")).toBeNull();
+    rerender(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={conceptSchemeStateFromUris([URI_SCHOOL_FEES])}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText("School Fees")).toBeNull();
+  });
+
+  test("checkbox labels stay unambiguous alongside toggle buttons", () => {
+    render(
+      <ConceptSchemeFilter
+        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
+        state={emptyConceptSchemeState()}
+        collapsible
+        onChange={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByLabelText<HTMLInputElement>("Education Finance").type,
+    ).toBe("checkbox");
   });
 });

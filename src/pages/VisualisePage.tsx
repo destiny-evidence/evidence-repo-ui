@@ -210,7 +210,7 @@ function EvidenceMapView({
     [displayAxes.column, vocab.schemes, vocab.labels],
   );
 
-  const nestedAxes = community.features.nestedEvidenceMapAxes;
+  const nestedAxes = community.features.ancestorClosedCodings;
   const [rowExpansion, setRowExpansion] = useState<AxisExpansion | null>(null);
   const [columnExpansion, setColumnExpansion] =
     useState<AxisExpansion | null>(null);
@@ -646,6 +646,7 @@ function EvidenceMapView({
         showCountryFacetFilter={community.features.countryFacetFilter}
         pinnedFilters={community.pinnedFilters}
         defaultExpandedFilters={panelExpandedFilters}
+        collapsibleConceptFilters={community.features.ancestorClosedCodings}
         appliedAxes={axes}
         defaultAxes={defaults}
         appliedConceptFilters={params.conceptFilters}
