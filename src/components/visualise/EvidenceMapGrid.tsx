@@ -15,17 +15,6 @@ import { Tooltip } from "../common/Tooltip";
 import type { MapView } from "./ViewToggle";
 import "./EvidenceMapGrid.css";
 
-// The in-bubble count is 10px tabular numerals padded 5px either side. A bubble
-// narrower than its own label is widened by the CSS min-content floor, at which
-// point size stops reading as scale — so below this width the label is dropped
-// and the count is left to the tooltip.
-const LABEL_DIGIT_WIDTH = 6;
-const LABEL_PADDING = 10;
-
-function labelFits(diameter: number, label: string): boolean {
-  return diameter >= label.length * LABEL_DIGIT_WIDTH + LABEL_PADDING;
-}
-
 interface EvidenceMapGridProps {
   rows: AxisCategory[];
   columns: AxisCategory[];
@@ -226,6 +215,9 @@ export function EvidenceMapGrid({
         "--evidence-map-col-max-width": `${metrics.maxColumnWidth}px`,
         "--evidence-map-cell-height": `${metrics.cellHeight}px`,
         "--evidence-map-rail-width": `${metrics.railWidth}px`,
+        "--evidence-map-cell-padding": `${metrics.cellPadding}px`,
+        "--evidence-map-label-font-size": `${metrics.labelFontSize}px`,
+        "--evidence-map-label-padding": `${metrics.labelPadding}px`,
       }}
     >
       <div class="evidence-map__scroll">
@@ -672,16 +664,12 @@ function Bubble({
   if (empty) {
     return <span class="evidence-map__bubble evidence-map__bubble--empty" />;
   }
-  const diameter = radius * 2;
-  const label = formatCompact(count);
   return (
     <span
       class="evidence-map__bubble"
-      style={{ "--bubble-diameter": `${diameter}px` }}
+      style={{ "--bubble-diameter": `${radius * 2}px` }}
     >
-      {labelFits(diameter, label) && (
-        <span class="evidence-map__bubble-count">{label}</span>
-      )}
+      <span class="evidence-map__bubble-count">{formatCompact(count)}</span>
     </span>
   );
 }

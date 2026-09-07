@@ -328,8 +328,20 @@ export interface CellSizeMetrics {
   cellHeight: number;
   // Width of one nested row-header tier.
   railWidth: number;
+  // Gutter between the largest bubble and the cell's edges. Kept tight at the
+  // smaller steps, where the pixels buy legibility rather than whitespace.
+  cellPadding: number;
+  // minRadius is set so a three-character count clears the smallest bubble:
+  // 2·minRadius ≥ 3·labelFontSize·0.6 + 2·labelPadding. maxRadius fills the row:
+  // 2·maxRadius + 2·cellPadding = cellHeight. Both invariants are pinned in
+  // tests/services/evidenceMap.test.ts.
   minRadius: number;
   maxRadius: number;
+  // In-bubble count typography, one size per step — a bubble's own count never
+  // changes it.
+  labelFontSize: number;
+  // Applied either side of the label, keeping the text off the circle's curve.
+  labelPadding: number;
 }
 
 /**
@@ -343,32 +355,44 @@ export const CELL_SIZES: Record<CellSize, CellSizeMetrics> = {
     maxColumnWidth: 132,
     cellHeight: 48,
     railWidth: 128,
-    minRadius: 6,
-    maxRadius: 15,
+    cellPadding: 3,
+    minRadius: 12,
+    maxRadius: 21,
+    labelFontSize: 10,
+    labelPadding: 3,
   },
   medium: {
     minColumnWidth: 132,
     maxColumnWidth: 180,
     cellHeight: 64,
     railWidth: 160,
-    minRadius: 9,
-    maxRadius: 22,
+    cellPadding: 4,
+    minRadius: 14,
+    maxRadius: 28,
+    labelFontSize: 11,
+    labelPadding: 4,
   },
   large: {
     minColumnWidth: 168,
     maxColumnWidth: 228,
     cellHeight: 80,
     railWidth: 192,
-    minRadius: 12,
-    maxRadius: 29,
+    cellPadding: 5,
+    minRadius: 17,
+    maxRadius: 35,
+    labelFontSize: 13,
+    labelPadding: 5,
   },
   xlarge: {
     minColumnWidth: 204,
     maxColumnWidth: 276,
     cellHeight: 96,
     railWidth: 224,
-    minRadius: 15,
-    maxRadius: 36,
+    cellPadding: 6,
+    minRadius: 20,
+    maxRadius: 42,
+    labelFontSize: 15,
+    labelPadding: 6,
   },
 };
 

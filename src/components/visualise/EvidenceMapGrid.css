@@ -6,6 +6,9 @@
   --evidence-map-col-max-width: 180px;
   --evidence-map-cell-height: 64px;
   --evidence-map-rail-width: 160px;
+  --evidence-map-cell-padding: 4px;
+  --evidence-map-label-font-size: 11px;
+  --evidence-map-label-padding: 4px;
 
   display: flex;
   flex-direction: column;
@@ -309,7 +312,9 @@
   height: 100%;
   min-height: var(--evidence-map-cell-height);
   box-sizing: border-box;
-  padding: var(--spacing-xs);
+  /* The only gap between the largest bubble and the row rules: the bubble range
+     is sized to fill what this leaves (see CELL_SIZES). */
+  padding: var(--evidence-map-cell-padding);
 }
 
 .evidence-map__cell-button {
@@ -343,22 +348,24 @@
   border-radius: 50%;
   background: var(--color-accent);
   box-sizing: border-box;
-  /* Square, sized to --bubble-diameter but never narrower than the label needs:
-     min-width: min-content lets a wide count grow its own bubble rather than
-     clip — no font metrics duplicated in JS. Keep min-content on its own
-     declaration: an intrinsic keyword inside max() is invalid CSS, so the whole
-     width is dropped and bubbles collapse to their text width (the diameter is
-     then ignored entirely). */
+  /* Square, sized to --bubble-diameter but never narrower than the label needs.
+     minRadius is set so a three-character count always fits (see CELL_SIZES);
+     min-width: min-content is the guarantee that anything wider grows its own
+     bubble rather than clipping, with no font metrics duplicated in JS. Keep
+     min-content on its own declaration: an intrinsic keyword inside max() is
+     invalid CSS, so the whole width is dropped and bubbles collapse to their
+     text width (the diameter is then ignored entirely). */
   aspect-ratio: 1;
   width: var(--bubble-diameter, 0px);
   min-width: min-content;
 }
 
 .evidence-map__bubble-count {
-  /* Keep the text clear of the circle's curve so corners aren't cramped. */
-  padding-inline: 5px;
+  /* Keep the text clear of the circle's curve so corners aren't cramped. Both
+     step with the cell size, and minRadius is derived from them. */
+  padding-inline: var(--evidence-map-label-padding);
   color: #fff;
-  font-size: 10px;
+  font-size: var(--evidence-map-label-font-size);
   font-weight: 400;
   line-height: 1;
   font-variant-numeric: tabular-nums;

@@ -5,6 +5,7 @@ import {
   parseAxis,
   resolveMapAxis,
   bubbleRadius,
+  CELL_SIZES,
   formatCompact,
   legendTicks,
   cellSearchParams,
@@ -547,6 +548,31 @@ describe("restrictCellsToLeaves", () => {
     expect(expanded.rows.map((row) => row.key)).not.toContain("u:a");
     expect(expanded.maxCount).toBe(30);
   });
+});
+
+describe("CELL_SIZES", () => {
+  // A tabular numeral's advance in the body font, as a fraction of its font
+  // size. Only an approximation, so the floor below carries a little slack.
+  const DIGIT_RATIO = 0.6;
+
+  test.each(Object.entries(CELL_SIZES))(
+    "%s: the largest bubble fills the row without growing it",
+    (_step, metrics) => {
+      expect(metrics.maxRadius * 2 + metrics.cellPadding * 2).toBe(
+        metrics.cellHeight,
+      );
+    },
+  );
+
+  test.each(Object.entries(CELL_SIZES))(
+    "%s: the smallest bubble holds a three-character count",
+    (_step, metrics) => {
+      const label = 3 * metrics.labelFontSize * DIGIT_RATIO;
+      expect(metrics.minRadius * 2).toBeGreaterThanOrEqual(
+        label + metrics.labelPadding * 2,
+      );
+    },
+  );
 });
 
 describe("bubbleRadius", () => {

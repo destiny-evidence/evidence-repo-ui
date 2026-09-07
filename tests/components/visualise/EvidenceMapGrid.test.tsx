@@ -116,24 +116,6 @@ describe("EvidenceMapGrid", () => {
     expect(container.querySelector(".evidence-map__legend")).not.toBeNull();
   });
 
-  // A single cell at the floor of the ramp, so the bubble is as small as the
-  // step allows — where the in-bubble label stops fitting.
-  function renderFloorBubble(cellSize: CellSize) {
-    return render(
-      <EvidenceMapGrid
-        rows={[rows[0]]}
-        columns={[columns[0]]}
-        getCount={() => 1}
-        maxCount={100_000}
-        view="bubble"
-        cellSize={cellSize}
-        countNoun="investigations"
-        rowAxisLabel="Education level"
-        columnAxisLabel="Education theme"
-      />,
-    );
-  }
-
   function firstBubble(container: Element): HTMLElement {
     return container.querySelector<HTMLElement>(
       ".evidence-map__table .evidence-map__bubble",
@@ -183,13 +165,36 @@ describe("EvidenceMapGrid", () => {
     expect(bubbles).toEqual([...bubbles].sort((a, b) => a - b));
   });
 
-  test("a bubble too small for its own count drops the label, keeping the tooltip", () => {
-    const small = renderFloorBubble("small");
-    expect(firstBubble(small.container).textContent).toBe("");
-    expect(firstCellTooltip(small.container)).toBe("1 investigations");
+  test("every filled bubble carries its count, at every step", () => {
+    // A realistic spread — three powers of ten, one to four label characters.
+    const spread = new Map([
+      ["lvl:primary|thm:literacy", 7],
+      ["lvl:primary|thm:numeracy", 93],
+      ["lvl:secondary|thm:literacy", 458],
+      ["lvl:secondary|thm:numeracy", 1474],
+    ]);
 
-    const large = renderFloorBubble("xlarge");
-    expect(firstBubble(large.container).textContent).toBe("1");
+    for (const cellSize of ["small", "medium", "large", "xlarge"] as const) {
+      const { container } = render(
+        <EvidenceMapGrid
+          rows={rows}
+          columns={columns}
+          getCount={(row, column) => spread.get(`${row}|${column}`)}
+          maxCount={1474}
+          view="bubble"
+          cellSize={cellSize}
+          countNoun="investigations"
+          rowAxisLabel="Education level"
+          columnAxisLabel="Education theme"
+        />,
+      );
+      const labels = [
+        ...container.querySelectorAll(
+          ".evidence-map__table .evidence-map__bubble-count",
+        ),
+      ].map((label) => label.textContent);
+      expect(labels).toEqual(["7", "93", "458", "1.5K"]);
+    }
   });
 
   test("shows the total in the corner when supplied", () => {
