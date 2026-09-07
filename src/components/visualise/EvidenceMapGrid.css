@@ -1,15 +1,5 @@
+/* Cell sizes are controlled dynamically by the map itself. */
 .evidence-map {
-  /* Cell geometry, one step of the toolbar's cell-size control. The grid
-     overrides these inline from CELL_SIZES; the values here are `medium`, so
-     the map renders correctly without them. */
-  --evidence-map-col-min-width: 120px;
-  --evidence-map-col-max-width: 162px;
-  --evidence-map-cell-height: 54px;
-  --evidence-map-rail-width: 148px;
-  --evidence-map-cell-padding: 3px;
-  --evidence-map-label-font-size: 10px;
-  --evidence-map-label-padding: 3px;
-
   display: flex;
   flex-direction: column;
   /* Left-align so the scroll box hugs the table width instead of stretching to

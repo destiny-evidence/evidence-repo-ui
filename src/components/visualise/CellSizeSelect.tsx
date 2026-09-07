@@ -7,7 +7,6 @@ interface CellSizeSelectProps {
   onChange: (size: CellSize) => void;
 }
 
-// Ordered smallest to largest: the <select> reads as a scale, not a menu.
 const OPTIONS: { value: CellSize; label: string }[] = [
   { value: "small", label: "Small" },
   { value: "medium", label: "Medium" },

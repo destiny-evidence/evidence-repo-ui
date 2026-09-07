@@ -319,37 +319,25 @@ function mergeCategories(
 export type CellSize = "small" | "medium" | "large" | "xlarge";
 
 export interface CellSizeDimensions {
-  // Column width floor and ceiling: the floor keeps short labels from cramping,
-  // the ceiling lets a long word widen its column rather than break mid-word.
+  // Column width floor and ceiling.
   minColumnWidth: number;
   maxColumnWidth: number;
-  // Row height, and so the height of one nested column-header tier — the sticky
-  // offsets are multiples of it.
+  // Row height
   cellHeight: number;
   // Width of one nested row-header tier.
   railWidth: number;
-  // Gutter between the largest bubble and the cell's edges. Kept tight at the
-  // smaller steps, where the pixels buy legibility rather than whitespace.
+  // Gutter between the largest bubble and the cell's edges.
   cellPadding: number;
   // minRadius is set so a three-character count clears the smallest bubble:
-  // 2·minRadius ≥ 3·labelFontSize·0.6 + 2·labelPadding. maxRadius fills the row:
-  // 2·maxRadius + 2·cellPadding = cellHeight. Both invariants are pinned in
-  // tests/services/evidenceMap.test.ts.
   minRadius: number;
   maxRadius: number;
-  // In-bubble count typography, one size per step — a bubble's own count never
-  // changes it.
+  // In-bubble count typography, one size per step.
   labelFontSize: number;
-  // Applied either side of the label, keeping the text off the circle's curve.
   labelPadding: number;
 }
 
 /**
- * Grid geometry per cell-size step. Width and height step at different rates:
- * 96→186 across the range against 48→72. What a larger cell mostly buys is
- * column headers that wrap over fewer lines, and rows are what the reader is
- * comparing — growing both together spent two-thirds of the visible rows at the
- * top step to buy bubble size nobody asked for. `medium` is the default.
+ * Grid geometry per cell-size step.
  */
 export const CELL_SIZES: Record<CellSize, CellSizeDimensions> = {
   small: {
@@ -442,8 +430,7 @@ const MAX_LEGEND_TICKS = 5;
 
 /**
  * Legend ticks for the logarithmic ramp: the floor (1), the powers of ten below
- * the maximum, and the maximum — the ramp's own breakpoints, each an equal step
- * up the radius range. Lists every value for tiny maxima; [] when maxCount ≤ 0.
+ * the maximum, and the maximum. Each an equal step up the radius range.
  */
 export function legendTicks(maxCount: number): number[] {
   if (maxCount <= 0) return [];
