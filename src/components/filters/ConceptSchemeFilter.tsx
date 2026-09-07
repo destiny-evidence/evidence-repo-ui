@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { useId, useMemo, useState } from "preact/hooks";
 import { Tooltip } from "../common/Tooltip";
 import { ChevronDownIcon, ChevronRightIcon } from "@/components/common/icons";
 import {
@@ -35,6 +35,7 @@ interface ConceptItemProps {
   countNoun: string;
   collapsible: boolean;
   expanded: ReadonlySet<string>;
+  checkedAncestors: ReadonlySet<string>;
   onToggleExpand: (uri: string) => void;
   onChange: (next: ConceptSchemeFilterState) => void;
 }
@@ -53,6 +54,7 @@ function ConceptItem({
   countNoun,
   collapsible,
   expanded,
+  checkedAncestors,
   onToggleExpand,
   onChange,
 }: ConceptItemProps) {
@@ -81,31 +83,39 @@ function ConceptItem({
   const rowClass = `concept-scheme-filter__row${
     isEmpty ? " concept-scheme-filter__row--empty" : ""
   }`;
+  // Parent counts are a toggle preview for that concept alone — they don't
+  // roll up children — which is non-obvious enough to spell out on hover.
+  // Except on ancestor-closed communities (the collapsible case), where the
+  // parent's count does cover its subtree and the caveat doesn't apply.
+  const countTooltip =
+    hasChildren && !collapsible
+      ? "Results you'd see if you toggled this concept."
+      : undefined;
   const countClass = `concept-scheme-filter__count${
     countsLoading ? " is-updating" : ""
-  }${hasChildren ? " concept-scheme-filter__count--parent" : ""}`;
-  // Parent counts are a toggle preview for that concept alone — they don't roll
-  // up children — which is non-obvious enough to spell out on hover.
-  const countTooltip = hasChildren
-    ? "Results you'd see if you toggled this concept."
-    : undefined;
+  }${countTooltip ? " concept-scheme-filter__count--parent" : ""}`;
   const countNode = showCountBadge && (
     <span
       class={countClass}
       aria-label={`${formatCount(count)} ${countNoun}`}
-      tabIndex={hasChildren ? 0 : undefined}
+      tabIndex={countTooltip ? 0 : undefined}
     >
       {formatCount(count)}
     </span>
   );
   const isExpanded = expanded.has(concept.uri);
   const showChildren = hasChildren && (!collapsible || isExpanded);
+  // A collapsed branch can hide a checked descendant; mark the parent so the
+  // active filter stays visible. Checked wins over mixed when both apply.
+  const hidesCheckedDescendant =
+    collapsible && !isExpanded && checkedAncestors.has(concept.uri);
   const rowNode = (
     <label class={rowClass}>
       <input
         class="concept-scheme-filter__checkbox"
         type="checkbox"
         checked={selected}
+        indeterminate={hidesCheckedDescendant && !selected}
         disabled={isEmpty}
         onChange={() => onChange(toggleConcept(state, concept))}
       />
@@ -114,12 +124,15 @@ function ConceptItem({
       ) : (
         labelNode
       )}
-      {countNode &&
-        (countTooltip ? (
-          <Tooltip text={countTooltip}>{countNode}</Tooltip>
-        ) : (
-          countNode
-        ))}
+      {countNode && (
+        <span class="concept-scheme-filter__count-slot">
+          {countTooltip ? (
+            <Tooltip text={countTooltip}>{countNode}</Tooltip>
+          ) : (
+            countNode
+          )}
+        </span>
+      )}
     </label>
   );
   return (
@@ -163,6 +176,7 @@ function ConceptItem({
               countNoun={countNoun}
               collapsible={collapsible}
               expanded={expanded}
+              checkedAncestors={checkedAncestors}
               onToggleExpand={onToggleExpand}
               onChange={onChange}
             />
@@ -188,28 +202,10 @@ export function ConceptSchemeFilter({
     collapsible ? defaultExpandedUris(scheme, state) : NONE_EXPANDED,
   );
 
-  // Selections can arrive after mount (URL parsing, back/forward). Expand the
-  // branches of newly selected concepts so an applied filter is never
-  // invisible — but only ever expand, so a deliberate collapse isn't fought.
-  const prevStateRef = useRef(state);
-  useEffect(() => {
-    const prev = prevStateRef.current;
-    prevStateRef.current = state;
-    if (!collapsible || state === prev) return;
-    const added = Array.from(state).filter((uri) => !prev.has(uri));
-    if (added.length === 0) return;
-    const ancestors = ancestorUrisOf(scheme, added);
-    setExpanded((current) => {
-      let next: Set<string> | null = null;
-      for (const uri of ancestors) {
-        if (!current.has(uri)) {
-          next ??= new Set(current);
-          next.add(uri);
-        }
-      }
-      return next ?? current;
-    });
-  }, [collapsible, scheme, state]);
+  const checkedAncestors = useMemo(
+    () => (collapsible ? ancestorUrisOf(scheme, state) : NONE_EXPANDED),
+    [collapsible, scheme, state],
+  );
 
   const toggleExpand = (uri: string) => {
     setExpanded((current) => {
@@ -231,6 +227,7 @@ export function ConceptSchemeFilter({
           countNoun={countNoun}
           collapsible={collapsible}
           expanded={expanded}
+          checkedAncestors={checkedAncestors}
           onToggleExpand={toggleExpand}
           onChange={onChange}
         />

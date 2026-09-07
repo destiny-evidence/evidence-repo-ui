@@ -41,8 +41,13 @@
   outline: none;
 }
 
-.concept-scheme-filter__count {
+/* The count may sit inside a tooltip trigger, so right-alignment lives on
+   this slot rather than the count itself. */
+.concept-scheme-filter__count-slot {
   margin-left: auto;
+}
+
+.concept-scheme-filter__count {
   padding-left: var(--spacing-sm);
   color: var(--color-text-tertiary);
   font-variant-numeric: tabular-nums;

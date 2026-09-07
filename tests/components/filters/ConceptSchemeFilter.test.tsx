@@ -616,17 +616,29 @@ describe("ConceptSchemeFilter (collapsible)", () => {
     expect(badge().textContent).toBe("4");
   });
 
-  test("a concept selected after mount expands its collapsed branch", () => {
-    const { rerender } = render(
+  test("parent counts carry no tooltip when collapsible", () => {
+    const counts = new Map([
+      [URI_ACCESS, 10],
+      [URI_EDUCATION_FINANCE, 4],
+    ]);
+    const { container } = render(
       <ConceptSchemeFilter
         scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
         state={emptyConceptSchemeState()}
+        counts={counts}
         collapsible
         onChange={vi.fn()}
       />,
     );
-    expect(screen.queryByLabelText("School Fees")).toBeNull();
-    rerender(
+    const parentCount = screen.getByLabelText("10 results");
+    expect(parentCount.closest("[data-tooltip]")).toBeNull();
+    expect(
+      container.querySelector(".concept-scheme-filter__count--parent"),
+    ).toBeNull();
+  });
+
+  test("a collapsed parent hiding a checked descendant shows a mixed state", () => {
+    render(
       <ConceptSchemeFilter
         scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
         state={conceptSchemeStateFromUris([URI_SCHOOL_FEES])}
@@ -634,15 +646,29 @@ describe("ConceptSchemeFilter (collapsible)", () => {
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByLabelText("School Fees")).toBeDefined();
+    const parent = screen.getByLabelText<HTMLInputElement>("Education Finance");
+    expect(parent.indeterminate).toBe(false);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Child concepts of Education Finance",
+      }),
+    );
+    expect(parent.indeterminate).toBe(true);
+    // The grandparent's branch is still open, so it shows nothing.
+    expect(
+      screen.getByLabelText<HTMLInputElement>("Access to Education")
+        .indeterminate,
+    ).toBe(false);
   });
 
-  test("a user collapse is not fought while the selection is unchanged", () => {
-    const state = conceptSchemeStateFromUris([URI_SCHOOL_FEES]);
-    const { rerender } = render(
+  test("a checked collapsed parent stays checked, not mixed", () => {
+    render(
       <ConceptSchemeFilter
         scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
-        state={state}
+        state={conceptSchemeStateFromUris([
+          URI_EDUCATION_FINANCE,
+          URI_SCHOOL_FEES,
+        ])}
         collapsible
         onChange={vi.fn()}
       />,
@@ -652,16 +678,9 @@ describe("ConceptSchemeFilter (collapsible)", () => {
         name: "Child concepts of Education Finance",
       }),
     );
-    expect(screen.queryByLabelText("School Fees")).toBeNull();
-    rerender(
-      <ConceptSchemeFilter
-        scheme={DEEP_OUTCOME_SCHEME_FIXTURE}
-        state={state}
-        collapsible
-        onChange={vi.fn()}
-      />,
-    );
-    expect(screen.queryByLabelText("School Fees")).toBeNull();
+    const parent = screen.getByLabelText<HTMLInputElement>("Education Finance");
+    expect(parent.checked).toBe(true);
+    expect(parent.indeterminate).toBe(false);
   });
 
   test("checkbox labels stay unambiguous alongside toggle buttons", () => {
