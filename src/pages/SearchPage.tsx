@@ -57,12 +57,9 @@ interface SearchPageProps {
   path?: string;
 }
 
-// 10k is destiny-repository's max_result_window; deep pagination + exports
-// past that are explicitly out of scope. Mirrors the search backend cap.
+// The export limit, deliberately separate from the retrieval window the API
+// publishes: both are 10,000 today but they are different rules.
 const EXPORT_MAX_RESULTS = 10000;
-
-// `page.count` is hits on the current page, not the page size; rank math uses
-// RESULTS_PER_PAGE.
 
 // The summariser accepts at most 50 references per request (1–50).
 const MAX_SUMMARY_REFERENCES = 50;
@@ -350,8 +347,8 @@ function SearchPageInner({ community }: { community: Community }) {
     }
   }
 
-  // The backend counts past the export window exactly, so a >10k search no
-  // longer carries the flag; the flag now only marks an unknown true total.
+  // The flag is what still blocks an oversized search on a repository that
+  // caps at 10,000, where count is exactly 10,000 and the first test misses.
   const overCap =
     results.results !== null
     && (results.results.total.count > EXPORT_MAX_RESULTS
@@ -638,7 +635,7 @@ function SearchPageInner({ community }: { community: Community }) {
                 && exportJob.status === "done"
                 && exportJob.truncated && (
                 <span class="search-results__export-status" role="alert">
-                  {`Only the first ${EXPORT_MAX_RESULTS.toLocaleString()} references were exported.`}
+                  {`Only the first ${resultWindow(results.results).toLocaleString()} references were exported.`}
                 </span>
               )}
               {results.results && (

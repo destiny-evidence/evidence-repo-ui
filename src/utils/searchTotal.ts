@@ -1,7 +1,7 @@
 import type { SearchResultTotal } from "@/types/models";
 
-// The backend counts matches exactly; is_lower_bound marks the cases where it
-// couldn't (a search timeout), so render "N+" rather than understating N.
+// Renders "N+" for a count the backend reports as a floor rather than exact.
+// A repository that counts exactly never sets that, so the suffix disappears.
 export function formatTotal(total: SearchResultTotal): string {
   return `${total.count.toLocaleString()}${total.is_lower_bound ? "+" : ""}`;
 }

@@ -878,8 +878,37 @@ describe("SearchPage", () => {
       ).not.toHaveAttribute("aria-disabled", "true");
     });
 
+    test("the truncation notice names the window the backend actually capped at", async () => {
+      history.replaceState(null, "", "/esea?q=education");
+      // The backend truncates at its published retrieval window, not at our
+      // export constant. They are both 10,000 today, so a different window is
+      // the only way to tell which number the notice is reading.
+      const narrow = makeResult(9_000, ["r1"]);
+      narrow.page.max_result_window = 2000;
+      mockBoth({ results: narrow });
+      const job = {
+        id: "job",
+        status: "completed" as const,
+        result_url: "https://blob/result.jsonl",
+        truncated: true,
+      };
+      mockRequestExport.mockResolvedValue(job);
+      mockGetExport.mockResolvedValue(job);
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      openAndExport();
+
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(/first 2,000 references/i),
+      );
+    });
+
     test("a truncated export says so instead of handing over a short file", async () => {
       history.replaceState(null, "", "/esea?q=education");
+      // Synthetic pairing: the export gate blocks above 10,000 and the backend
+      // only truncates above it, so a 9,000 total with truncated=true cannot
+      // arise outside a corpus change mid-export. It covers the plumbing.
       mockBoth({ results: makeResult(9_000, ["r1"]) });
       const job = {
         id: "job",
