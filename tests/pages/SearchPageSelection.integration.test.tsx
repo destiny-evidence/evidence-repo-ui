@@ -189,10 +189,80 @@ describe("exporting the selection", () => {
     expect(within(panel).getByRole("radio", { name: /all results/i })).toBeChecked();
   });
 
+  test("select-all over an exact total past the cap leaves export disabled", async () => {
+    // An exact count over the cap: neither "all results" nor the selection
+    // fits the export limit, so the trigger stays disabled.
+    mockSearch.mockResolvedValue({
+      total: { count: 25000, is_lower_bound: false },
+      page: { count: 3, number: 1 },
+      references: ["a", "b", "c"].map((id) =>
+        makeReference({ id, bibliographic: { title: id } }),
+      ),
+    });
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: "Select a" })).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select all references" }));
+
+    const trigger = screen.getByRole("button", { name: /^export$/i });
+    expect(trigger).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(trigger);
+    expect(screen.queryByRole("group", { name: /export options/i })).toBeNull();
+  });
+
+  test("select-all minus a few leaves export disabled when the total is past the window", async () => {
+    // Exclusions come off the total, so a set one past the window yields a
+    // count that fits the export limit but cannot be enumerated to export.
+    mockSearch.mockResolvedValue({
+      total: { count: 10001, is_lower_bound: false },
+      page: { count: 3, number: 1, max_result_window: 10000 },
+      references: ["a", "b", "c"].map((id) =>
+        makeReference({ id, bibliographic: { title: id } }),
+      ),
+    });
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: "Select a" })).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select all references" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Deselect a" }));
+
+    expect(screen.getByText("10,000 selected")).toBeInTheDocument();
+    const trigger = screen.getByRole("button", { name: /^export$/i });
+    expect(trigger).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(trigger);
+    expect(screen.queryByRole("group", { name: /export options/i })).toBeNull();
+  });
+
+  test("the blocked selection scope cites reach, not the export limit", async () => {
+    // Reachable only where the window is tighter than the export limit, which
+    // is why the two rules stay separate.
+    mockSearch.mockResolvedValue({
+      total: { count: 5000, is_lower_bound: false },
+      page: { count: 3, number: 1, max_result_window: 2000 },
+      references: ["a", "b", "c"].map((id) =>
+        makeReference({ id, bibliographic: { title: id } }),
+      ),
+    });
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: "Select a" })).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select all references" }));
+    fireEvent.click(screen.getByRole("button", { name: /^export$/i }));
+
+    const panel = screen.getByRole("group", { name: /export options/i });
+    expect(within(panel).getByText(/2,000 or fewer matches/i)).toBeInTheDocument();
+    expect(within(panel).queryByText(/export limit/i)).toBeNull();
+  });
+
   test("select-all over a lower-bound total leaves export disabled (neither scope is enumerable)", async () => {
-    // The API caps the count and flags is_lower_bound: the full set isn't
-    // enumerable, so neither "selected" nor "all results" can export it, and
-    // the trigger stays disabled rather than exporting a truncated set.
+    // A lower-bound total (a search timeout): the full set isn't enumerable,
+    // so the trigger stays disabled rather than exporting a truncated set.
     mockSearch.mockResolvedValue({
       total: { count: 10000, is_lower_bound: true },
       page: { count: 3, number: 1 },

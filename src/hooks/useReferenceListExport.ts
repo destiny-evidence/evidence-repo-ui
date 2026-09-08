@@ -50,7 +50,7 @@ export function useReferenceListExport(
     setState({ status: "loading", inputs: [], error: null });
     (async () => {
       try {
-        const resultUrl =
+        const run =
           source.kind === "ids"
             ? await runReferenceExportToCompletion(source.referenceIds, "ris", {
                 signal: controller.signal,
@@ -62,7 +62,7 @@ export function useReferenceListExport(
                 "ris",
                 { signal: controller.signal },
               );
-        const inputs = await fetchRisAsApaInputs(resultUrl);
+        const inputs = await fetchRisAsApaInputs(run.resultUrl);
         if (!controller.signal.aborted) {
           setState({ status: "ready", inputs, error: null });
         }

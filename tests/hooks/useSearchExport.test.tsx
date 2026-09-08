@@ -253,6 +253,65 @@ describe("useSearchExport", () => {
     },
   );
 
+  test("a job that completed truncated reports it", async () => {
+    mockRequest.mockResolvedValue({ ...completed(), truncated: true });
+
+    const { result } = renderHook(() => useSearchExport());
+    act(() => {
+      result.current.start(startArgs());
+    });
+
+    await vi.waitFor(() => expect(result.current.status).toBe("done"));
+    expect(result.current.truncated).toBe(true);
+  });
+
+  test("an untruncated job leaves truncated false", async () => {
+    mockRequest.mockResolvedValue(completed());
+
+    const { result } = renderHook(() => useSearchExport());
+    act(() => {
+      result.current.start(startArgs());
+    });
+
+    await vi.waitFor(() => expect(result.current.status).toBe("done"));
+    expect(result.current.truncated).toBe(false);
+  });
+
+  test("a fresh run clears a previous run's truncation", async () => {
+    mockRequest.mockResolvedValue({ ...completed(), truncated: true });
+
+    const { result } = renderHook(() => useSearchExport());
+    act(() => {
+      result.current.start(startArgs());
+    });
+    await vi.waitFor(() => expect(result.current.truncated).toBe(true));
+
+    mockRequest.mockResolvedValue(completed("job-2"));
+    act(() => {
+      result.current.start(startArgs());
+    });
+    await vi.waitFor(() => expect(result.current.status).toBe("done"));
+    expect(result.current.truncated).toBe(false);
+  });
+
+  test("an id-list export, which carries no truncated flag, reports false", async () => {
+    mockRefRequest.mockResolvedValue({
+      id: "job-1",
+      status: "completed",
+      result_url: "https://blob/result.jsonl",
+    });
+
+    const { result } = renderHook(() => useSearchExport());
+    act(() => {
+      result.current.start(
+        startArgs({ resolveReferenceIds: () => Promise.resolve(["a", "b"]) }),
+      );
+    });
+
+    await vi.waitFor(() => expect(result.current.status).toBe("done"));
+    expect(result.current.truncated).toBe(false);
+  });
+
   test("missing result_url on completed surfaces an error", async () => {
     mockRequest.mockResolvedValue({
       id: "job-1",

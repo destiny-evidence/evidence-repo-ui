@@ -55,6 +55,8 @@ export interface StartExportOptions {
 export interface UseSearchExportResult {
   status: ExportStatus;
   errorMessage: string | null;
+  /** The completed export was capped at the backend's result window. */
+  truncated: boolean;
   start: (options: StartExportOptions) => void;
   reset: () => void;
 }
@@ -110,6 +112,7 @@ async function downloadForFormat(
 export function useSearchExport(): UseSearchExportResult {
   const [status, setStatus] = useState<ExportStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [truncated, setTruncated] = useState(false);
 
   const runIdRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -120,6 +123,7 @@ export function useSearchExport(): UseSearchExportResult {
     abortRef.current = null;
     setStatus("idle");
     setErrorMessage(null);
+    setTruncated(false);
   }, []);
 
   // Cancel any in-flight run on unmount.
@@ -132,6 +136,7 @@ export function useSearchExport(): UseSearchExportResult {
     const controller = new AbortController();
     abortRef.current = controller;
     setErrorMessage(null);
+    setTruncated(false);
     setStatus("requesting");
 
     const isCurrentRun = () => runIdRef.current === runId;
@@ -151,7 +156,7 @@ export function useSearchExport(): UseSearchExportResult {
     };
 
     (async () => {
-      const resultUrl = options.resolveReferenceIds
+      const run = options.resolveReferenceIds
         ? await runReferenceExportToCompletion(
             await options.resolveReferenceIds(controller.signal),
             serverFormat,
@@ -165,8 +170,9 @@ export function useSearchExport(): UseSearchExportResult {
           );
       if (!isCurrentRun()) return;
       setStatus("downloading");
-      await downloadForFormat(resultUrl, options);
+      await downloadForFormat(run.resultUrl, options);
       if (!isCurrentRun()) return;
+      setTruncated(run.truncated);
       setStatus("done");
       track({ category: "Export", action: "Completed", ...analytics });
     })().catch((err: unknown) => {
@@ -179,5 +185,5 @@ export function useSearchExport(): UseSearchExportResult {
     });
   }, []);
 
-  return { status, errorMessage, start, reset };
+  return { status, errorMessage, truncated, start, reset };
 }
