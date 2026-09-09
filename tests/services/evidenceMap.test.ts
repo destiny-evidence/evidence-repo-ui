@@ -5,6 +5,8 @@ import {
   parseAxis,
   resolveMapAxis,
   bubbleRadius,
+  CELL_SIZES,
+  DIGIT_RATIO,
   formatCompact,
   legendTicks,
   cellSearchParams,
@@ -549,12 +551,52 @@ describe("restrictCellsToLeaves", () => {
   });
 });
 
+describe("CELL_SIZES", () => {
+  // Only the smallest step is authored; medium is one 1.15× stride above it,
+  // rounded to whole pixels, with the radii derived from the result.
+  test("medium is a stride above small", () => {
+    expect(CELL_SIZES.medium).toEqual({
+      minColumnWidth: 110,
+      maxColumnWidth: 152,
+      cellHeight: 55,
+      railWidth: 147,
+      cellPadding: 3,
+      labelFontSize: 12,
+      labelPadding: 3,
+      minRadius: 11,
+      maxRadius: 24.5,
+    });
+  });
+
+  // Longer labels are left to the ramp: a three-character count is at least 100,
+  // so it reaches the radius its own label needs long before the widest maps run
+  // out of range. Below that the CSS min-content floor would inflate the bubble
+  // off the ramp.
+  test.each(Object.entries(CELL_SIZES))(
+    "%s: a three-character count outgrows its label on the ramp",
+    (_step, dimensions) => {
+      const needed = (3 * dimensions.labelFontSize * DIGIT_RATIO) / 2 +
+        dimensions.labelPadding;
+      expect(
+        bubbleRadius(100, 500_000, dimensions.minRadius, dimensions.maxRadius),
+      ).toBeGreaterThanOrEqual(needed);
+    },
+  );
+});
+
 describe("bubbleRadius", () => {
-  test("square-root ramp: count 1 at the floor, max at the ceiling", () => {
+  test("logarithmic ramp: count 1 at the floor, max at the ceiling", () => {
     expect(bubbleRadius(1, 100, 4, 22)).toBeCloseTo(4);
     expect(bubbleRadius(100, 100, 4, 22)).toBe(22);
-    // (√25 − 1)/(√100 − 1) = 4/9 of the way up the 4→22 range.
-    expect(bubbleRadius(25, 100, 4, 22)).toBeCloseTo(12);
+    // log(10)/log(100) = half way up the 4→22 range.
+    expect(bubbleRadius(10, 100, 4, 22)).toBeCloseTo(13);
+  });
+
+  test("a 10× step is the same radius step anywhere on the scale", () => {
+    const radius = (count: number) => bubbleRadius(count, 100_000, 9, 22);
+    const step = radius(10) - radius(1);
+    expect(radius(100) - radius(10)).toBeCloseTo(step);
+    expect(radius(10_000) - radius(1_000)).toBeCloseTo(step);
   });
 
   test("returns 0 for non-positive counts or empty data", () => {
@@ -604,9 +646,17 @@ describe("legendTicks", () => {
     expect(new Set(ticks).size).toBe(ticks.length);
   });
 
-  test("brackets the range: floor, the visual midpoint, and the maximum", () => {
-    expect(legendTicks(355)).toEqual([1, 98, 355]);
-    expect(legendTicks(462)).toEqual([1, 126, 462]);
+  test("brackets the range with the ramp's powers of ten", () => {
+    expect(legendTicks(355)).toEqual([1, 10, 100, 355]);
+    expect(legendTicks(462)).toEqual([1, 10, 100, 462]);
+  });
+
+  test("drops a power within 2× of the maximum", () => {
+    expect(legendTicks(12)).toEqual([1, 12]);
+  });
+
+  test("keeps the ticks nearest the maximum when the row would overflow", () => {
+    expect(legendTicks(100_000)).toEqual([1, 100, 1_000, 10_000, 100_000]);
   });
 });
 

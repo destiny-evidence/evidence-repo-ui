@@ -5,6 +5,7 @@ import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
 import {
   buildAxisBands,
   buildConceptTree,
+  CELL_SIZES,
   type AxisBands,
   type AxisCategory,
   type AxisConcept,
@@ -114,6 +115,83 @@ describe("EvidenceMapGrid", () => {
     expect(filled.length).toBe(3); // 4 cells, 1 empty
     expect(empties.length).toBe(1);
     expect(container.querySelector(".evidence-map__legend")).not.toBeNull();
+  });
+
+  function firstBubble(container: Element): HTMLElement {
+    return container.querySelector<HTMLElement>(
+      ".evidence-map__table .evidence-map__bubble",
+    )!;
+  }
+
+  test("the cell size steps the grid geometry and the bubble scale together", () => {
+    const steps = ["small", "medium", "large", "xlarge"] as const;
+    const diameters = steps.map(
+      (cellSize) => {
+        const { container } = render(
+          <EvidenceMapGrid
+            rows={rows}
+            columns={columns}
+            getCount={getCount}
+            maxCount={12}
+            view="bubble"
+            cellSize={cellSize}
+            countNoun="investigations"
+            rowAxisLabel="Education level"
+            columnAxisLabel="Education theme"
+          />,
+        );
+        const map = container.querySelector<HTMLElement>(".evidence-map")!;
+        return {
+          height: map.style.getPropertyValue("--evidence-map-cell-height"),
+          width: map.style.getPropertyValue("--evidence-map-col-min-width"),
+          bubble: firstBubble(container).style.getPropertyValue(
+            "--bubble-diameter",
+          ),
+        };
+      },
+    );
+
+    // The step's geometry reaches the grid; CELL_SIZES owns the numbers.
+    expect(diameters.map((step) => step.height)).toEqual(
+      steps.map((step) => `${CELL_SIZES[step].cellHeight}px`),
+    );
+    expect(diameters.map((step) => step.width)).toEqual(
+      steps.map((step) => `${CELL_SIZES[step].minColumnWidth}px`),
+    );
+    const bubbles = diameters.map((step) => parseFloat(step.bubble));
+    expect(bubbles).toEqual([...bubbles].sort((a, b) => a - b));
+  });
+
+  test("every filled bubble carries its count, at every step", () => {
+    // A realistic spread — three powers of ten, one to four label characters.
+    const spread = new Map([
+      ["lvl:primary|thm:literacy", 7],
+      ["lvl:primary|thm:numeracy", 93],
+      ["lvl:secondary|thm:literacy", 458],
+      ["lvl:secondary|thm:numeracy", 1474],
+    ]);
+
+    for (const cellSize of ["small", "medium", "large", "xlarge"] as const) {
+      const { container } = render(
+        <EvidenceMapGrid
+          rows={rows}
+          columns={columns}
+          getCount={(row, column) => spread.get(`${row}|${column}`)}
+          maxCount={1474}
+          view="bubble"
+          cellSize={cellSize}
+          countNoun="investigations"
+          rowAxisLabel="Education level"
+          columnAxisLabel="Education theme"
+        />,
+      );
+      const labels = [
+        ...container.querySelectorAll(
+          ".evidence-map__table .evidence-map__bubble-count",
+        ),
+      ].map((label) => label.textContent);
+      expect(labels).toEqual(["7", "93", "458", "1.5K"]);
+    }
   });
 
   test("shows the total in the corner when supplied", () => {

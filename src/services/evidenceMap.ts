@@ -316,12 +316,101 @@ function mergeCategories(
   return [...axis.categories, ...extras];
 }
 
+export type CellSize = "small" | "medium" | "large" | "xlarge";
+
+export interface CellSizeStep {
+  // Column width floor and ceiling.
+  minColumnWidth: number;
+  maxColumnWidth: number;
+  // Row height
+  cellHeight: number;
+  // Width of one nested row-header tier.
+  railWidth: number;
+  // Gutter between the largest bubble and the cell's edges.
+  cellPadding: number;
+  // In-bubble count typography, one size per step.
+  labelFontSize: number;
+  labelPadding: number;
+}
+
+export interface CellSizeDimensions extends CellSizeStep {
+  minRadius: number;
+  maxRadius: number;
+}
+
 /**
- * Radius (px) for a bubble of `count`, on a square-root ramp from `minRadius`
- * at the smallest count (1) to `maxRadius` at `maxCount`, interpolating on
- * √count. Anchoring the floor at 1 keeps differences across the lower half visible
- * while staying close to area-proportional. The in-bubble number carries the
- * exact value.
+ * A tabular numeral's advance in the body font, as a fraction of its font size.
+ * Only an approximation, so the radius floor it feeds carries a little slack.
+ */
+export const DIGIT_RATIO = 0.6;
+
+/**
+ * The bubble range a step's geometry leaves: the largest bubble fills the row
+ * bar the cell's own gutter, and the smallest is the floor a two-character
+ * count needs. Three characters means a count of at least 100, which the log
+ * ramp already lifts well clear of the floor; sizing the floor for it instead
+ * cost most of the range.
+ */
+export function withRadii(step: CellSizeStep): CellSizeDimensions {
+  return {
+    ...step,
+    minRadius: Math.ceil(step.labelFontSize * DIGIT_RATIO + step.labelPadding),
+    maxRadius: (step.cellHeight - 2 * step.cellPadding) / 2,
+  };
+}
+
+/** The smallest step. Every larger one is this, scaled. */
+const SMALLEST_STEP: CellSizeStep = {
+  minColumnWidth: 96,
+  maxColumnWidth: 132,
+  cellHeight: 48,
+  railWidth: 128,
+  cellPadding: 3,
+  labelFontSize: 10,
+  labelPadding: 3,
+};
+
+/**
+ * One step up. Every dimension takes the same stride, so the steps stay
+ * proportional to each other and only the smallest is authored.
+ */
+const CELL_SIZE_RATIO = 1.15;
+
+// Rounded to whole pixels: a nested row header's sticky offset is a multiple of
+// the rail width, so a fractional one accumulates down the depth.
+function scaleStep(base: CellSizeStep, factor: number): CellSizeStep {
+  const scaled = { ...base };
+  for (const key of Object.keys(scaled) as (keyof CellSizeStep)[]) {
+    scaled[key] = Math.round(base[key] * factor);
+  }
+  return scaled;
+}
+
+/** Grid geometry `steps` strides above the smallest. */
+function cellSize(steps: number): CellSizeDimensions {
+  return withRadii(scaleStep(SMALLEST_STEP, CELL_SIZE_RATIO ** steps));
+}
+
+/**
+ * Grid geometry per cell-size step.
+ */
+export const CELL_SIZES: Record<CellSize, CellSizeDimensions> = {
+  small: cellSize(0),
+  medium: cellSize(1),
+  large: cellSize(2),
+  xlarge: cellSize(3),
+};
+
+export const DEFAULT_CELL_SIZE: CellSize = "medium";
+
+/**
+ * Radius (px) for a bubble of `count`, on a logarithmic ramp from `minRadius`
+ * at the smallest count (1) to `maxRadius` at `maxCount`. Every 10× step in
+ * count claims an equal slice of the radius range, so "ten times as many" reads
+ * the same anywhere on the scale. Counts here span 1 to hundreds of thousands,
+ * where an area-proportional ramp leaves everything below ~10³ within a pixel
+ * of the floor. Size therefore ranks rather than measures; the in-bubble number
+ * carries the exact value.
  */
 export function bubbleRadius(
   count: number,
@@ -332,8 +421,9 @@ export function bubbleRadius(
   if (count <= 0 || maxCount <= 0) return 0;
   // One distinct count in play ⇒ no range to map; show it at full size.
   if (maxCount <= 1) return maxRadius;
-  // count ≥ 1 ⇒ fraction ≥ 0, so this never falls below minRadius.
-  const fraction = (Math.sqrt(count) - 1) / (Math.sqrt(maxCount) - 1);
+  // count ≥ 1 ⇒ fraction ≥ 0, so this never falls below minRadius; the clamp
+  // guards a count passed above the maximum.
+  const fraction = Math.min(1, Math.log(count) / Math.log(maxCount));
   return minRadius + (maxRadius - minRadius) * fraction;
 }
 
@@ -351,17 +441,21 @@ export function formatCompact(count: number): string {
   return compactFormatter.format(count);
 }
 
+const MAX_LEGEND_TICKS = 5;
+
 /**
- * Legend ticks for the square-root ramp: the floor (1), the maximum, and the
- * count whose bubble sits visually halfway between them (where √count is the
- * midpoint of √1..√maxCount). Lists every value for tiny maxima; [] when
- * maxCount ≤ 0.
+ * Legend ticks for the logarithmic ramp: the floor (1), the powers of ten below
+ * the maximum, and the maximum. Each an equal step up the radius range.
  */
 export function legendTicks(maxCount: number): number[] {
   if (maxCount <= 0) return [];
   if (maxCount <= 3) return Array.from({ length: maxCount }, (_, i) => i + 1);
-  const mid = Math.round(((1 + Math.sqrt(maxCount)) / 2) ** 2);
-  return [1, mid, maxCount];
+  // A power within 2× of the maximum is dropped: its bubble is all but the same
+  // size, so the two swatches would read as one. Where more powers remain than
+  // fit the row, keep those nearest the maximum — the low end is anchored by 1.
+  const powers: number[] = [];
+  for (let power = 10; power * 2 <= maxCount; power *= 10) powers.push(power);
+  return [1, ...powers.slice(-(MAX_LEGEND_TICKS - 2)), maxCount];
 }
 
 /**

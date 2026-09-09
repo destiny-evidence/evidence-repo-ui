@@ -1,4 +1,5 @@
-import { useId, useMemo, useState } from "preact/hooks";
+import { useMemo, useState } from "preact/hooks";
+import { Select } from "@/components/common/Select";
 import { FilterCardList } from "@/components/filters/FilterCardList";
 import { FilterActions } from "@/components/filters/FilterActions";
 import {
@@ -208,33 +209,17 @@ function AxisSelect({
   disabledValue,
   onChange,
 }: AxisSelectProps) {
-  const id = useId();
   return (
-    <div class="map-config-panel__axis">
-      {/* Icon sits outside the <label> so it stays out of the field's
-          accessible name (it's decorative). */}
-      <span class="map-config-panel__axis-label lg-label">
-        <span class="map-config-panel__axis-icon" aria-hidden="true">
-          {icon}
-        </span>
-        <label for={id}>{label}</label>
-      </span>
-      <select
-        id={id}
-        class="map-config-panel__axis-select"
-        value={value}
-        onChange={(e) => onChange((e.target as HTMLSelectElement).value)}
-      >
-        {options.map((option) => (
-          <option
-            key={option.value}
-            value={option.value}
-            disabled={option.value === disabledValue && option.value !== value}
-          >
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <Select
+      label={label}
+      labelIcon={icon}
+      layout="stacked"
+      value={value}
+      options={options.map((option) => ({
+        ...option,
+        disabled: option.value === disabledValue && option.value !== value,
+      }))}
+      onChange={onChange}
+    />
   );
 }

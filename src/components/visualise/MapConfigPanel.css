@@ -56,12 +56,6 @@
   padding: var(--spacing-md) var(--spacing-lg);
 }
 
-.map-config-panel__axis {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
 .map-config-panel__section {
   border-top: 1px solid var(--color-border);
 }
@@ -70,34 +64,6 @@
   padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-inset);
-}
-
-/* Composes .lg-label (mono caps), like the map's corner axis key; this rule
-   only adds the icon + label row layout. */
-.map-config-panel__axis-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.map-config-panel__axis-icon {
-  font-weight: 700;
-}
-
-.map-config-panel__axis-select {
-  font-family: var(--font-body);
-  font-size: var(--font-size-small);
-  color: var(--color-text-primary);
-  background: var(--color-bg-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-sm) 10px;
-  cursor: pointer;
-}
-
-.map-config-panel__axis-select:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
 }
 
 /* Footer (Reset all / Show results) is the shared FilterActions component. */
