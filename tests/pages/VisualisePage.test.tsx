@@ -1020,10 +1020,10 @@ describe("VisualisePage nested-axis state", () => {
     expect(panel().getByRole("button", { name: "Publication year" }))
       .toHaveAttribute("aria-expanded", "true");
 
-      // The flag reaches the panel's concept filters, not just the axis cards.
-      expect(panel().getByRole("button", { name: "Child concepts of Primary" }))
-        .toBeTruthy();
-      expect(panel().queryByLabelText("Lower primary")).toBeNull();
+    // The flag reaches the panel's concept filters, not just the axis cards.
+    expect(panel().getByRole("button", { name: "Child concepts of Primary" }))
+      .toBeTruthy();
+    expect(panel().queryByLabelText("Lower primary")).toBeNull();
     fireEvent.change(panel().getByLabelText("Columns (x)"), {
       target: { value: "scheme:topic" },
     });
