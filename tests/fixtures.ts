@@ -68,7 +68,7 @@ export function makeCommunity(
       exportsEnabled: true,
       countryFacetFilter: true,
       referenceSelection: false,
-      nestedEvidenceMapAxes: false,
+      ancestorClosedCodings: false,
       ...features,
     },
     copy: {

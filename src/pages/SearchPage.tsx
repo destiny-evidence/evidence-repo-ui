@@ -706,6 +706,7 @@ function SearchPageInner({ community }: { community: Community }) {
           showCountryFacetFilter={community.features.countryFacetFilter}
           pinnedFilters={community.pinnedFilters}
           defaultExpandedFilters={community.defaultExpandedFilters}
+          collapsibleConceptFilters={community.features.ancestorClosedCodings}
           schemes={filterableSchemes}
           appliedConceptFilters={params.conceptFilters}
           appliedCountryCodes={params.countryCodes}

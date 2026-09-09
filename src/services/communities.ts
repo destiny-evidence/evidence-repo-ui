@@ -27,7 +27,7 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   // Selection UI still only shows where a consumer (AI summary / selection
   // export) is enabled — see selectionEnabled.
   referenceSelection: true,
-  nestedEvidenceMapAxes: false,
+  ancestorClosedCodings: false,
 };
 
 // Mirrors destiny-repository's current cross-facet bucket ceiling (the API's
@@ -214,7 +214,7 @@ const COMMUNITIES: Community[] = [
       findingsAndEstimates: false,
       countryFacetFilter: false,
       exportsEnabled: true,
-      nestedEvidenceMapAxes: true,
+      ancestorClosedCodings: true,
     },
     exportVariant: "reference-concepts",
     exportIdentifiers: [

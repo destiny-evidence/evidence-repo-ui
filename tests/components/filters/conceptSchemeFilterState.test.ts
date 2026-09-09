@@ -1,6 +1,8 @@
 import { describe, test, expect } from "vitest";
 import {
+  ancestorUrisOf,
   conceptSchemeStateFromUris,
+  defaultExpandedUris,
   emptyConceptSchemeState,
   isEmpty,
   isSelected,
@@ -17,12 +19,14 @@ import type {
   ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 import {
+  DEEP_OUTCOME_SCHEME_FIXTURE,
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,
   URI_EDUCATION_FINANCE,
   URI_ENROLMENT,
   URI_LEARNING,
   URI_RETURNS,
+  URI_SCHOOL_FEES,
 } from "./fixtures";
 
 // Real concept URIs from the ESEA DocumentTypeScheme vocabulary
@@ -372,5 +376,48 @@ describe("totalSelectedCount", () => {
       OUTCOME_SCHEME_FIXTURE,
     );
     expect(totalSelectedCount(groups, [OUTCOME_SCHEME_FIXTURE])).toBe(3);
+  });
+});
+
+describe("defaultExpandedUris", () => {
+  test("empty state expands exactly the top-level parents", () => {
+    const expanded = defaultExpandedUris(
+      DEEP_OUTCOME_SCHEME_FIXTURE,
+      emptyConceptSchemeState(),
+    );
+    expect(expanded).toEqual(new Set([URI_ACCESS]));
+  });
+
+  test("a deep selection adds its whole ancestor chain", () => {
+    const expanded = defaultExpandedUris(
+      DEEP_OUTCOME_SCHEME_FIXTURE,
+      conceptSchemeStateFromUris([URI_SCHOOL_FEES]),
+    );
+    expect(expanded).toEqual(new Set([URI_ACCESS, URI_EDUCATION_FINANCE]));
+  });
+
+  test("a selected top concept adds no ancestors", () => {
+    const expanded = defaultExpandedUris(
+      DEEP_OUTCOME_SCHEME_FIXTURE,
+      conceptSchemeStateFromUris([URI_LEARNING]),
+    );
+    expect(expanded).toEqual(new Set([URI_ACCESS]));
+  });
+
+  test("URIs not in the scheme are ignored", () => {
+    const expanded = defaultExpandedUris(
+      DEEP_OUTCOME_SCHEME_FIXTURE,
+      conceptSchemeStateFromUris(["https://vocab.example/unknown"]),
+    );
+    expect(expanded).toEqual(new Set([URI_ACCESS]));
+  });
+});
+
+describe("ancestorUrisOf", () => {
+  test("collects ancestors, not the URIs themselves", () => {
+    const ancestors = ancestorUrisOf(DEEP_OUTCOME_SCHEME_FIXTURE, [
+      URI_EDUCATION_FINANCE,
+    ]);
+    expect(ancestors).toEqual(new Set([URI_ACCESS]));
   });
 });

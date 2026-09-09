@@ -196,7 +196,7 @@ function nestedVocabulary() {
 function nestedAxesCommunity() {
   mockUseCommunity.mockReturnValue(
     mappedCommunity({
-      features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+      features: { evidenceMap: true, ancestorClosedCodings: true },
     }),
   );
   nestedVocabulary();
@@ -837,7 +837,7 @@ describe("VisualisePage nested-axis state", () => {
   test("guards an oversized expansion and Collapse all recovers locally", () => {
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+        features: { evidenceMap: true, ancestorClosedCodings: true },
         evidenceMapRenderLimits: { maxCells: 4 },
       }),
     );
@@ -876,7 +876,7 @@ describe("VisualisePage nested-axis state", () => {
   test("filter results cannot change the active oversized layout guard", () => {
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+        features: { evidenceMap: true, ancestorClosedCodings: true },
         evidenceMapRenderLimits: { maxCells: 3 },
       }),
     );
@@ -913,7 +913,7 @@ describe("VisualisePage nested-axis state", () => {
     );
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+        features: { evidenceMap: true, ancestorClosedCodings: true },
         evidenceMapRenderLimits: { maxCells: 1 },
       }),
     );
@@ -979,7 +979,7 @@ describe("VisualisePage nested-axis state", () => {
     });
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+        features: { evidenceMap: true, ancestorClosedCodings: true },
         evidenceMapRenderLimits: { maxCells: 3 },
       }),
     );
@@ -1002,7 +1002,7 @@ describe("VisualisePage nested-axis state", () => {
   test("opens only the applied axis scheme cards, including during an axis request", () => {
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, nestedEvidenceMapAxes: true },
+        features: { evidenceMap: true, ancestorClosedCodings: true },
         defaultExpandedFilters: ["year", "scheme:topic"],
       }),
     );
@@ -1020,6 +1020,10 @@ describe("VisualisePage nested-axis state", () => {
     expect(panel().getByRole("button", { name: "Publication year" }))
       .toHaveAttribute("aria-expanded", "true");
 
+    // The flag reaches the panel's concept filters, not just the axis cards.
+    expect(panel().getByRole("button", { name: "Child concepts of Primary" }))
+      .toBeTruthy();
+    expect(panel().queryByLabelText("Lower primary")).toBeNull();
     fireEvent.change(panel().getByLabelText("Columns (x)"), {
       target: { value: "scheme:topic" },
     });

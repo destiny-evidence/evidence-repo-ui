@@ -45,6 +45,31 @@ export const OUTCOME_SCHEME_FIXTURE: ConceptScheme = {
   ],
 };
 
+export const URI_SCHOOL_FEES =
+  "https://vocab.esea.education/OutcomeScheme/C00099";
+
+// OUTCOME_SCHEME_FIXTURE deepened to three levels: a grandchild under
+// Education Finance. Separate fixture — existing tests assert the exact
+// two-level shape of the original.
+export const DEEP_OUTCOME_SCHEME_FIXTURE: ConceptScheme = {
+  ...OUTCOME_SCHEME_FIXTURE,
+  topConcepts: OUTCOME_SCHEME_FIXTURE.topConcepts.map((concept) =>
+    concept.uri === URI_ACCESS
+      ? {
+          ...concept,
+          narrower: concept.narrower!.map((child) =>
+            child.uri === URI_EDUCATION_FINANCE
+              ? {
+                  ...child,
+                  narrower: [{ uri: URI_SCHOOL_FEES, label: "School Fees" }],
+                }
+              : child,
+          ),
+        }
+      : concept,
+  ),
+};
+
 export const URI_JOURNAL =
   "https://vocab.esea.education/DocumentTypeScheme/C00008";
 

@@ -17,6 +17,7 @@ import type { ComponentProps } from "preact";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { makeSearchParams } from "../../fixtures";
 import {
+  DEEP_OUTCOME_SCHEME_FIXTURE,
   DOCUMENT_TYPE_SCHEME,
   OUTCOME_SCHEME_FIXTURE,
   URI_ACCESS,
@@ -651,5 +652,33 @@ describe("FilterDrawer", () => {
     const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(after?.countryCodes).toEqual(["DE"]);
     expect(after?.q).toBe("phonics");
+  });
+});
+
+describe("collapsible concept filters", () => {
+  test("flag on collapses deep children behind a toggle in the scheme card", () => {
+    renderDrawer({
+      schemes: [DEEP_OUTCOME_SCHEME_FIXTURE],
+      collapsibleConceptFilters: true,
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Outcome/ }));
+    expect(screen.queryByLabelText("School Fees")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Child concepts of Education Finance",
+      }),
+    );
+    expect(screen.getByLabelText("School Fees")).toBeDefined();
+  });
+
+  test("flag off renders the full tree with no toggles", () => {
+    renderDrawer({ schemes: [DEEP_OUTCOME_SCHEME_FIXTURE] });
+    fireEvent.click(screen.getByRole("button", { name: /Outcome/ }));
+    expect(screen.getByLabelText("School Fees")).toBeDefined();
+    expect(
+      screen.queryByRole("button", {
+        name: "Child concepts of Education Finance",
+      }),
+    ).toBeNull();
   });
 });

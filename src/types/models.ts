@@ -14,8 +14,10 @@ export interface CommunityFeatures {
   // Gates the result-row selection UI (checkboxes + selection controls). Only
   // useful alongside export or AI summaries, which consume the selection.
   referenceSelection: boolean;
-  // Render evidence-map scheme axes as collapsible hierarchies.
-  nestedEvidenceMapAxes: boolean;
+  // Codings are ancestor-closed (a coded child implies its parents are coded),
+  // so a parent concept stands for its whole subtree. Enables nested
+  // evidence-map axes and collapsible concept filters.
+  ancestorClosedCodings: boolean;
 }
 
 // One axis of the evidence map.

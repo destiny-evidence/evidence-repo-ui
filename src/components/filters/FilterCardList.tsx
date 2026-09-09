@@ -27,6 +27,9 @@ interface FilterCardListProps {
   pinnedFilters?: readonly PinnedFilter[];
   // Filter cards that start expanded; absent ⇒ DEFAULT_EXPANDED_FILTERS.
   defaultExpandedFilters?: readonly PinnedFilter[];
+  // Collapse concept-filter children behind their parents; only for
+  // communities with ancestor-closed codings.
+  collapsibleConceptFilters?: boolean;
 }
 
 /**
@@ -41,6 +44,7 @@ export function FilterCardList({
   showCountryFacetFilter = true,
   pinnedFilters,
   defaultExpandedFilters = DEFAULT_EXPANDED_FILTERS,
+  collapsibleConceptFilters = false,
 }: FilterCardListProps) {
   const items = orderFilterItems(draft.schemes, {
     pinned: pinnedFilters,
@@ -55,7 +59,9 @@ export function FilterCardList({
           Filter counts unavailable.
         </div>
       )}
-      {items.map((item) => renderItem(item, draft, countNoun, expanded))}
+      {items.map((item) =>
+        renderItem(item, draft, countNoun, expanded, collapsibleConceptFilters),
+      )}
     </>
   );
 }
@@ -65,6 +71,7 @@ function renderItem(
   draft: FilterDraft,
   countNoun: string,
   expanded: ReadonlySet<string>,
+  collapsibleConceptFilters: boolean,
 ) {
   switch (item.kind) {
     case "year":
@@ -106,6 +113,7 @@ function renderItem(
           draft={draft}
           countNoun={countNoun}
           defaultExpanded={expanded.has(item.scheme.uri)}
+          collapsible={collapsibleConceptFilters}
         />
       );
   }
@@ -116,11 +124,13 @@ function SchemeCard({
   draft,
   countNoun,
   defaultExpanded,
+  collapsible,
 }: {
   scheme: ConceptScheme;
   draft: FilterDraft;
   countNoun: string;
   defaultExpanded: boolean;
+  collapsible: boolean;
 }) {
   const state = draft.conceptStateFor(scheme);
   return (
@@ -135,6 +145,7 @@ function SchemeCard({
         counts={draft.facetCounts?.concepts ?? null}
         countsLoading={draft.facetCountsLoading}
         countNoun={countNoun}
+        collapsible={collapsible}
         onChange={(next) => draft.onSchemeChange(scheme, next)}
       />
     </FilterCard>
