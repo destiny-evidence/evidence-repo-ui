@@ -518,7 +518,6 @@ function ColumnHeaderCell({
         clickable ? " evidence-map__col-head--clickable" : ""
       }${!isBand && hoverColumn === cell.key ? " is-active" : ""}`}
       scope={isBand ? "colgroup" : "col"}
-      style={{ "--evidence-map-tier-index": cell.depth }}
     >
       <TieredHeaderContent
         cell={cell}

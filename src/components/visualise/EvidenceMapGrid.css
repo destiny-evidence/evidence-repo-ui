@@ -54,6 +54,12 @@
 .evidence-map__col-head,
 .evidence-map__row-head {
   background: var(--color-bg-inset);
+}
+
+/* Only the horizontal pin is per-cell: the column headers ride the sticky
+   thead above, so they need no offset of their own. */
+.evidence-map__corner,
+.evidence-map__row-head {
   position: sticky;
   z-index: 1;
 }
@@ -68,7 +74,6 @@
 }
 
 .evidence-map__col-head {
-  top: 0;
   text-align: center;
   vertical-align: bottom;
   /* Floor keeps short labels from cramping; ceiling lets a long single word
@@ -141,10 +146,9 @@
   outline-offset: 2px;
 }
 
-/* Tier dimensions come from the cell-size step, so sticky offsets stay
-   deterministic at every depth and every size. Two clamped lines plus the
-   padding have to fit that height: a header that outgrows its tier pushes every
-   deeper tier past the offset it is stuck to. */
+/* Tier dimensions come from the cell-size step. Two clamped lines plus the
+   padding fit that height, so a wrapped header sits level with its neighbours
+   instead of growing its tier. */
 .evidence-map__col-head--tiered,
 .evidence-map__row-head--tiered {
   box-sizing: border-box;
@@ -153,11 +157,9 @@
 }
 
 .evidence-map__col-head--tiered {
-  top: calc(var(--evidence-map-tier-index, 0) * var(--evidence-map-cell-height));
   height: var(--evidence-map-cell-height);
   text-align: left;
   vertical-align: top;
-  z-index: 2;
 }
 
 .evidence-map__row-head--tiered {
@@ -218,8 +220,8 @@
 
 /* ── Corner: total + axis key ── */
 .evidence-map__corner {
-  top: 0;
   left: 0;
+  /* Above the column headers it covers on a horizontal scroll. */
   z-index: 3;
   padding: var(--spacing-md);
   /* Top, not bottom: the corner spans the column-header tiers, so it grows with

@@ -376,8 +376,8 @@ const SMALLEST_STEP: CellSizeStep = {
  */
 const CELL_SIZE_RATIO = 1.15;
 
-// Rounded to whole pixels: the tiers' sticky offsets are multiples of the row
-// height and the rail width, so a fractional one accumulates down the depth.
+// Rounded to whole pixels: a nested row header's sticky offset is a multiple of
+// the rail width, so a fractional one accumulates down the depth.
 function scaleStep(base: CellSizeStep, factor: number): CellSizeStep {
   const scaled = { ...base };
   for (const key of Object.keys(scaled) as (keyof CellSizeStep)[]) {
