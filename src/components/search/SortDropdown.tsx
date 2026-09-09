@@ -1,5 +1,5 @@
+import { Select, type SelectOption } from "@/components/common/Select";
 import { parseSort, type SortOption } from "@/services/searchParams";
-import "./SortDropdown.css";
 
 interface SortDropdownProps {
   value: SortOption | undefined;
@@ -7,24 +7,22 @@ interface SortDropdownProps {
   disabled?: boolean;
 }
 
-export function SortDropdown({ value, onChange, disabled = false }: SortDropdownProps) {
-  function handleChange(e: Event) {
-    onChange(parseSort((e.target as HTMLSelectElement).value));
-  }
+// Relevance is the absent sort, so it carries the empty value.
+const OPTIONS: SelectOption<string>[] = [
+  { value: "", label: "Sort: Relevance" },
+  { value: "newest", label: "Sort: Publication year (newest)" },
+  { value: "oldest", label: "Sort: Publication year (oldest)" },
+];
 
+export function SortDropdown({ value, onChange, disabled = false }: SortDropdownProps) {
   return (
-    <span class="sort-dropdown">
-      <select
-        class="sort-dropdown__select"
-        aria-label="Sort results"
-        value={value ?? ""}
-        onChange={handleChange}
-        disabled={disabled}
-      >
-        <option value="">Sort: Relevance</option>
-        <option value="newest">Sort: Publication year (newest)</option>
-        <option value="oldest">Sort: Publication year (oldest)</option>
-      </select>
-    </span>
+    <Select
+      label="Sort results"
+      labelHidden
+      options={OPTIONS}
+      value={value ?? ""}
+      onChange={(next) => onChange(parseSort(next))}
+      disabled={disabled}
+    />
   );
 }
