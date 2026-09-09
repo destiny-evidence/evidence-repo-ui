@@ -9,6 +9,7 @@ import {
   AXIS_COUNTRIES,
   type CrossFacetAxisPair,
 } from "@/services/crossFacets";
+import { CELL_SIZES, DEFAULT_CELL_SIZE } from "@/services/evidenceMap";
 
 const { mockUseCommunity, mockUseCrossFacets, mockUseVocabulary, mockUseUrlParams, mockNavigate } =
   vi.hoisted(() => ({
@@ -400,7 +401,7 @@ describe("VisualisePage map", () => {
         )!,
       );
 
-    expect(geometry()).toBe("54px");
+    expect(geometry()).toBe(`${CELL_SIZES[DEFAULT_CELL_SIZE].cellHeight}px`);
     clickCell();
     const beforeResize = mockNavigate.mock.calls.at(-1);
 
@@ -408,7 +409,7 @@ describe("VisualisePage map", () => {
       target: { value: "xlarge" },
     });
 
-    expect(geometry()).toBe("72px");
+    expect(geometry()).toBe(`${CELL_SIZES.xlarge.cellHeight}px`);
     clickCell();
     expect(mockNavigate.mock.calls.at(-1)).toEqual(beforeResize);
   });

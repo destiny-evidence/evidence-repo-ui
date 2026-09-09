@@ -5,6 +5,7 @@ import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
 import {
   buildAxisBands,
   buildConceptTree,
+  CELL_SIZES,
   type AxisBands,
   type AxisCategory,
   type AxisConcept,
@@ -123,7 +124,8 @@ describe("EvidenceMapGrid", () => {
   }
 
   test("the cell size steps the grid geometry and the bubble scale together", () => {
-    const diameters = (["small", "medium", "large", "xlarge"] as const).map(
+    const steps = ["small", "medium", "large", "xlarge"] as const;
+    const diameters = steps.map(
       (cellSize) => {
         const { container } = render(
           <EvidenceMapGrid
@@ -149,19 +151,13 @@ describe("EvidenceMapGrid", () => {
       },
     );
 
-    // Width steps roughly twice as hard as height across the range.
-    expect(diameters.map((step) => step.height)).toEqual([
-      "48px",
-      "54px",
-      "62px",
-      "72px",
-    ]);
-    expect(diameters.map((step) => step.width)).toEqual([
-      "96px",
-      "120px",
-      "150px",
-      "186px",
-    ]);
+    // The step's geometry reaches the grid; CELL_SIZES owns the numbers.
+    expect(diameters.map((step) => step.height)).toEqual(
+      steps.map((step) => `${CELL_SIZES[step].cellHeight}px`),
+    );
+    expect(diameters.map((step) => step.width)).toEqual(
+      steps.map((step) => `${CELL_SIZES[step].minColumnWidth}px`),
+    );
     const bubbles = diameters.map((step) => parseFloat(step.bubble));
     expect(bubbles).toEqual([...bubbles].sort((a, b) => a - b));
   });

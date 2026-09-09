@@ -6,6 +6,7 @@ import {
   resolveMapAxis,
   bubbleRadius,
   CELL_SIZES,
+  DIGIT_RATIO,
   formatCompact,
   legendTicks,
   cellSearchParams,
@@ -551,28 +552,21 @@ describe("restrictCellsToLeaves", () => {
 });
 
 describe("CELL_SIZES", () => {
-  // A tabular numeral's advance in the body font, as a fraction of its font
-  // size. Only an approximation, so the floor below carries a little slack.
-  const DIGIT_RATIO = 0.6;
-
-  test.each(Object.entries(CELL_SIZES))(
-    "%s: the largest bubble fills the row without growing it",
-    (_step, dimensions) => {
-      expect(dimensions.maxRadius * 2 + dimensions.cellPadding * 2).toBe(
-        dimensions.cellHeight,
-      );
-    },
-  );
-
-  test.each(Object.entries(CELL_SIZES))(
-    "%s: the smallest bubble holds a two-character count",
-    (_step, dimensions) => {
-      const label = 2 * dimensions.labelFontSize * DIGIT_RATIO;
-      expect(dimensions.minRadius * 2).toBeGreaterThanOrEqual(
-        label + dimensions.labelPadding * 2,
-      );
-    },
-  );
+  // Only the smallest step is authored; medium is one 1.15× stride above it,
+  // rounded to whole pixels, with the radii derived from the result.
+  test("medium is a stride above small", () => {
+    expect(CELL_SIZES.medium).toEqual({
+      minColumnWidth: 110,
+      maxColumnWidth: 152,
+      cellHeight: 55,
+      railWidth: 147,
+      cellPadding: 3,
+      labelFontSize: 12,
+      labelPadding: 3,
+      minRadius: 11,
+      maxRadius: 24.5,
+    });
+  });
 
   // Longer labels are left to the ramp: a three-character count is at least 100,
   // so it reaches the radius its own label needs long before the widest maps run

@@ -318,7 +318,7 @@ function mergeCategories(
 
 export type CellSize = "small" | "medium" | "large" | "xlarge";
 
-export interface CellSizeDimensions {
+export interface CellSizeStep {
   // Column width floor and ceiling.
   minColumnWidth: number;
   maxColumnWidth: number;
@@ -328,65 +328,77 @@ export interface CellSizeDimensions {
   railWidth: number;
   // Gutter between the largest bubble and the cell's edges.
   cellPadding: number;
-  // minRadius is set so a two-character count clears the smallest bubble:
-  // 2·minRadius ≥ 2·labelFontSize·0.6 + 2·labelPadding. Three characters means a
-  // count of at least 100, which the log ramp already lifts well clear of the
-  // floor; sizing the floor for it instead cost most of the range.
-  minRadius: number;
-  maxRadius: number;
   // In-bubble count typography, one size per step.
   labelFontSize: number;
   labelPadding: number;
+}
+
+export interface CellSizeDimensions extends CellSizeStep {
+  minRadius: number;
+  maxRadius: number;
+}
+
+/**
+ * A tabular numeral's advance in the body font, as a fraction of its font size.
+ * Only an approximation, so the radius floor it feeds carries a little slack.
+ */
+export const DIGIT_RATIO = 0.6;
+
+/**
+ * The bubble range a step's geometry leaves: the largest bubble fills the row
+ * bar the cell's own gutter, and the smallest is the floor a two-character
+ * count needs. Three characters means a count of at least 100, which the log
+ * ramp already lifts well clear of the floor; sizing the floor for it instead
+ * cost most of the range.
+ */
+export function withRadii(step: CellSizeStep): CellSizeDimensions {
+  return {
+    ...step,
+    minRadius: Math.ceil(step.labelFontSize * DIGIT_RATIO + step.labelPadding),
+    maxRadius: (step.cellHeight - 2 * step.cellPadding) / 2,
+  };
+}
+
+/** The smallest step. Every larger one is this, scaled. */
+const SMALLEST_STEP: CellSizeStep = {
+  minColumnWidth: 96,
+  maxColumnWidth: 132,
+  cellHeight: 48,
+  railWidth: 128,
+  cellPadding: 3,
+  labelFontSize: 10,
+  labelPadding: 3,
+};
+
+/**
+ * One step up. Every dimension takes the same stride, so the steps stay
+ * proportional to each other and only the smallest is authored.
+ */
+const CELL_SIZE_RATIO = 1.15;
+
+// Rounded to whole pixels: the tiers' sticky offsets are multiples of the row
+// height and the rail width, so a fractional one accumulates down the depth.
+function scaleStep(base: CellSizeStep, factor: number): CellSizeStep {
+  const scaled = { ...base };
+  for (const key of Object.keys(scaled) as (keyof CellSizeStep)[]) {
+    scaled[key] = Math.round(base[key] * factor);
+  }
+  return scaled;
+}
+
+/** Grid geometry `steps` strides above the smallest. */
+function cellSize(steps: number): CellSizeDimensions {
+  return withRadii(scaleStep(SMALLEST_STEP, CELL_SIZE_RATIO ** steps));
 }
 
 /**
  * Grid geometry per cell-size step.
  */
 export const CELL_SIZES: Record<CellSize, CellSizeDimensions> = {
-  small: {
-    minColumnWidth: 96,
-    maxColumnWidth: 132,
-    cellHeight: 48,
-    railWidth: 128,
-    cellPadding: 3,
-    minRadius: 9,
-    maxRadius: 21,
-    labelFontSize: 10,
-    labelPadding: 3,
-  },
-  medium: {
-    minColumnWidth: 120,
-    maxColumnWidth: 162,
-    cellHeight: 54,
-    railWidth: 148,
-    cellPadding: 3,
-    minRadius: 9,
-    maxRadius: 24,
-    labelFontSize: 10,
-    labelPadding: 3,
-  },
-  large: {
-    minColumnWidth: 150,
-    maxColumnWidth: 202,
-    cellHeight: 62,
-    railWidth: 172,
-    cellPadding: 4,
-    minRadius: 11,
-    maxRadius: 27,
-    labelFontSize: 11,
-    labelPadding: 4,
-  },
-  xlarge: {
-    minColumnWidth: 186,
-    maxColumnWidth: 250,
-    cellHeight: 72,
-    railWidth: 200,
-    cellPadding: 4,
-    minRadius: 12,
-    maxRadius: 32,
-    labelFontSize: 12,
-    labelPadding: 4,
-  },
+  small: cellSize(0),
+  medium: cellSize(1),
+  large: cellSize(2),
+  xlarge: cellSize(3),
 };
 
 export const DEFAULT_CELL_SIZE: CellSize = "medium";
