@@ -43,6 +43,12 @@
   border-spacing: 0;
 }
 
+.evidence-map__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
 /* ── Headers ── */
 .evidence-map__corner,
 .evidence-map__col-head,
