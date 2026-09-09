@@ -87,10 +87,6 @@
   text-align: left;
   white-space: nowrap;
   border-right: 1px solid var(--color-border);
-  /* A label clamped to two lines has to fit the step's row height, or every
-     wrapped row silently grows past it. */
-  padding-block: var(--spacing-xs);
-  line-height: 1.3;
 }
 
 /* Clickable header: the whole cell shades on hover, the affordance spanning the
@@ -140,10 +136,14 @@
 }
 
 /* Tier dimensions come from the cell-size step, so sticky offsets stay
-   deterministic at every depth and every size. */
+   deterministic at every depth and every size. Two clamped lines plus the
+   padding have to fit that height: a header that outgrows its tier pushes every
+   deeper tier past the offset it is stuck to. */
 .evidence-map__col-head--tiered,
 .evidence-map__row-head--tiered {
   box-sizing: border-box;
+  padding-block: var(--spacing-xs);
+  line-height: 1.3;
 }
 
 .evidence-map__col-head--tiered {
@@ -345,13 +345,11 @@
   border-radius: 50%;
   background: var(--color-accent);
   box-sizing: border-box;
-  /* Square, sized to --bubble-diameter but never narrower than the label needs.
-     minRadius is set so a three-character count always fits (see CELL_SIZES);
-     min-width: min-content is the guarantee that anything wider grows its own
-     bubble rather than clipping, with no font metrics duplicated in JS. Keep
-     min-content on its own declaration: an intrinsic keyword inside max() is
-     invalid CSS, so the whole width is dropped and bubbles collapse to their
-     text width (the diameter is then ignored entirely). */
+  /* Square, sized to --bubble-diameter but never narrower than its label:
+     minRadius fits a two-character count, and min-content grows
+     the bubble for anything wider. Keep min-content on its own declaration — an
+     intrinsic keyword inside max() is invalid CSS, dropping the width entirely
+     and collapsing bubbles to their text. */
   aspect-ratio: 1;
   width: var(--bubble-diameter, 0px);
   min-width: min-content;
