@@ -155,8 +155,7 @@ function SearchPageInner({ community }: { community: Community }) {
   // The branches that were open on the map we came from, to hand back to it.
   const backExpansion = mapExpansionFromState(historyState);
 
-  // The href alone lands on the default layout: the router routes an anchor with
-  // a null state, and would route it again if the click reached its own listener.
+  // Primary clicks must carry history.state through router anchor handling.
   function handleBackClick(event: MouseEvent) {
     if (!visualiseBackUrl || !backExpansion) return;
     if (event.button !== 0) return;

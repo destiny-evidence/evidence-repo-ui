@@ -580,8 +580,7 @@ describe("VisualisePage nested-axis state", () => {
           name: "Secondary, Numeracy: 20 results. View matching results.",
         }),
       );
-      // Remount on the entry as the stamp left it, rather than on a payload
-      // written by hand, so a drift in the shape cannot pass both sides.
+      // Remount using the stamped state produced by the click.
       unmount();
       render(<VisualisePage />);
 

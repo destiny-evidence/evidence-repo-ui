@@ -482,13 +482,11 @@ function EvidenceMapView({
     return conceptPathName(conceptPaths, category.key, category.label);
   }
 
-  // Navigate into Search, stashing the map's own URL and open branches in
-  // history.state so its "Back to Visualise" link returns to exactly this view.
+  // Store the map URL and open branches for Search and browser Back.
   function deepLinkToSearch(next: SearchParams) {
     const mapUrl = `/${community.slug}/visualise?${canonical}`;
     const branches = openBranches();
-    // Stamp the entry we are leaving as well, so the browser's own Back button
-    // restores the same view the in-page link does.
+    // Browser Back lands on this entry, so it needs the same branches.
     if (branches) stampHistoryState(mapExpansionState(branches));
     navigate(buildSearchUrl(community.slug, next), {
       state: backToVisualiseState(mapUrl, branches),
