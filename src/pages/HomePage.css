@@ -1,5 +1,3 @@
-/* Centres standalone at the slug-less root, and still sits sensibly inside the
-   app shell when the router lands on "/" mid-session. */
 .home-page {
   display: flex;
   flex-direction: column;

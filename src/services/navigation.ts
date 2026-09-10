@@ -2,7 +2,7 @@ export const URL_CHANGE_EVENT = "urlchange";
 
 /**
  * First path segment — the community slug on every app route, and undefined at
- * the slug-less root, which belongs to no community.
+ * the slug-less root.
  */
 export function pathSlug(
   pathname: string = window.location.pathname,

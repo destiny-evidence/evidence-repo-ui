@@ -2,10 +2,7 @@ import { listedCommunities } from "@/services/communities";
 import "./CommunityLinks.css";
 
 /**
- * Signpost to the communities a visitor can enter, for the slug-less pages.
- * Off the root these are plain full-page loads, which is what we want: each
- * community picks its own Keycloak entry mode (landing vs forced login) at
- * boot, so it has to be a fresh load rather than a client-side route change.
+ * Signpost to the communities a visitor can enter.
  */
 export function CommunityLinks() {
   return (

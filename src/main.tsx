@@ -21,8 +21,7 @@ initSpaPageviews();
 
 if (pathSlug() === undefined) {
   // The slug-less root belongs to no community, so it has no sign-in mode to
-  // pick: render the signpost without touching Keycloak, rather than bouncing
-  // a lost visitor into a login they may not have an account for.
+  // pick: render the signpost without touching Keycloak.
   render(<HomePage />, root);
   trackSpaPageView();
 } else {
