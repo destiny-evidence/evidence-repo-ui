@@ -195,7 +195,7 @@ const COMMUNITIES: Community[] = [
   {
     slug: "destiny",
     name: "DESTINY",
-    defaultAnnotations: ["domain-inclusion/destiny-prototype"],
+    defaultAnnotations: ["domain-inclusion/destiny-high-recall"],
     vocabularyUrl: requireEnv(
       "VITE_DESTINY_VOCABULARY_URL",
       import.meta.env.VITE_DESTINY_VOCABULARY_URL,
