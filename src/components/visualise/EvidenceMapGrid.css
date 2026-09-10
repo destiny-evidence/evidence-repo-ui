@@ -192,6 +192,14 @@
   white-space: normal;
 }
 
+/* A tier is a fixed-width rail, so a word too wide for it hyphenates (or,
+   failing <html lang>, breaks) rather than running into the cells. */
+.evidence-map__row-head--tiered .evidence-map__row-head-label {
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+
 .evidence-map__expand-toggle {
   display: inline-flex;
   flex: none;
