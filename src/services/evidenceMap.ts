@@ -512,8 +512,57 @@ function applyAxisFilter(
 // search link — where the recipient never came from a map — shows no back link.
 const BACK_TO_VISUALISE = "backToVisualise";
 
-export function backToVisualiseState(mapUrl: string): Record<string, string> {
-  return { [BACK_TO_VISUALISE]: mapUrl };
+// The open branches on each axis, carried between the map and Search. The axis
+// token travels with the keys so a payload for other axes can be told apart.
+export interface AxisExpansionState {
+  axis: string;
+  keys: string[];
+}
+
+export interface MapExpansion {
+  row: AxisExpansionState;
+  column: AxisExpansionState;
+}
+
+const MAP_EXPANSION = "mapExpansion";
+
+export function backToVisualiseState(
+  mapUrl: string,
+  expansion: MapExpansion | null = null,
+): Record<string, unknown> {
+  return {
+    [BACK_TO_VISUALISE]: mapUrl,
+    ...(expansion ? mapExpansionState(expansion) : {}),
+  };
+}
+
+export function mapExpansionState(
+  expansion: MapExpansion,
+): Record<string, unknown> {
+  return { [MAP_EXPANSION]: expansion };
+}
+
+// Reads the open branches out of an opaque history.state. A partial or
+// mistyped payload reads as null rather than half-restoring one axis.
+export function mapExpansionFromState(state: unknown): MapExpansion | null {
+  if (!state || typeof state !== "object" || !(MAP_EXPANSION in state)) {
+    return null;
+  }
+  const expansion = (state as Record<string, unknown>)[MAP_EXPANSION];
+  if (!expansion || typeof expansion !== "object") return null;
+  const { row, column } = expansion as Record<string, unknown>;
+  const parsedRow = axisExpansionFrom(row);
+  const parsedColumn = axisExpansionFrom(column);
+  if (!parsedRow || !parsedColumn) return null;
+  return { row: parsedRow, column: parsedColumn };
+}
+
+function axisExpansionFrom(value: unknown): AxisExpansionState | null {
+  if (!value || typeof value !== "object") return null;
+  const { axis, keys } = value as Record<string, unknown>;
+  if (typeof axis !== "string" || !Array.isArray(keys)) return null;
+  if (keys.some((key) => typeof key !== "string")) return null;
+  return { axis, keys: keys as string[] };
 }
 
 // Reads the return URL out of an opaque history.state, or null if absent.

@@ -4,6 +4,11 @@ export const URL_CHANGE_EVENT = "urlchange";
 export const recordDetailPath = (communitySlug: string, referenceId: string) =>
   `/${communitySlug}/references/${referenceId}`;
 
+/** Restamps the current entry's state, leaving the URL and the router untouched. */
+export function stampHistoryState(state: unknown): void {
+  history.replaceState(state, "", window.location.href);
+}
+
 export function navigate(
   url: string,
   options: { mode?: "push" | "replace"; state?: unknown } = {},

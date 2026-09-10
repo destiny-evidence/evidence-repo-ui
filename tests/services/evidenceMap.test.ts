@@ -13,6 +13,8 @@ import {
   axisSearchParams,
   backToVisualiseState,
   backToVisualiseUrl,
+  mapExpansionState,
+  mapExpansionFromState,
   buildAxisBands,
   buildConceptTree,
   defaultExpandedKeys,
@@ -834,5 +836,69 @@ describe("back-to-visualise history state", () => {
     expect(backToVisualiseUrl({})).toBeNull();
     expect(backToVisualiseUrl({ backToVisualise: 42 })).toBeNull();
     expect(backToVisualiseUrl("just a string")).toBeNull();
+  });
+});
+
+describe("map expansion history state", () => {
+  const expansion = {
+    row: { axis: "scheme:level", keys: ["level:education", "level:primary"] },
+    column: { axis: "scheme:theme", keys: ["theme:themes"] },
+  };
+
+  test("round-trips through the back-to-visualise payload", () => {
+    const url = "/edu/visualise?row=scheme%3Alevel&column=scheme%3Atheme";
+    const state = backToVisualiseState(url, expansion);
+    expect(backToVisualiseUrl(state)).toBe(url);
+    expect(mapExpansionFromState(state)).toEqual(expansion);
+  });
+
+  test("round-trips through its own payload", () => {
+    expect(mapExpansionFromState(mapExpansionState(expansion))).toEqual(
+      expansion,
+    );
+  });
+
+  test("omits the expansion when there is none to carry", () => {
+    const state = backToVisualiseState("/edu/visualise?row=a&column=b");
+    expect(state).toEqual({
+      backToVisualise: "/edu/visualise?row=a&column=b",
+    });
+    expect(mapExpansionFromState(state)).toBeNull();
+  });
+
+  test("reads back as null for absent or malformed payloads", () => {
+    expect(mapExpansionFromState(null)).toBeNull();
+    expect(mapExpansionFromState(undefined)).toBeNull();
+    expect(mapExpansionFromState("just a string")).toBeNull();
+    expect(mapExpansionFromState({})).toBeNull();
+    expect(mapExpansionFromState({ mapExpansion: 42 })).toBeNull();
+    // One axis missing.
+    expect(
+      mapExpansionFromState({ mapExpansion: { row: expansion.row } }),
+    ).toBeNull();
+    // Axis token missing.
+    expect(
+      mapExpansionFromState({
+        mapExpansion: { row: { keys: [] }, column: expansion.column },
+      }),
+    ).toBeNull();
+    // Keys not an array.
+    expect(
+      mapExpansionFromState({
+        mapExpansion: {
+          row: { axis: "scheme:level", keys: "level:primary" },
+          column: expansion.column,
+        },
+      }),
+    ).toBeNull();
+    // A non-string among the keys.
+    expect(
+      mapExpansionFromState({
+        mapExpansion: {
+          row: { axis: "scheme:level", keys: ["level:primary", 7] },
+          column: expansion.column,
+        },
+      }),
+    ).toBeNull();
   });
 });
