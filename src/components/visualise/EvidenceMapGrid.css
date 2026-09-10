@@ -192,8 +192,8 @@
   white-space: normal;
 }
 
-/* A tier is a fixed-width rail, so a word too wide for it hyphenates (or,
-   failing <html lang>, breaks) rather than running into the cells. */
+/* Rails are fixed-width, so a word too wide for one hyphenates instead of
+   running into the cells; overflow-wrap catches words the hyphenator can't split. */
 .evidence-map__row-head--tiered .evidence-map__row-head-label {
   -webkit-hyphens: auto;
   hyphens: auto;
