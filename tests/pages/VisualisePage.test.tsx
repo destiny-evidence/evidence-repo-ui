@@ -9,7 +9,12 @@ import {
   AXIS_COUNTRIES,
   type CrossFacetAxisPair,
 } from "@/services/crossFacets";
-import { CELL_SIZES, DEFAULT_CELL_SIZE } from "@/services/evidenceMap";
+import {
+  CELL_SIZES,
+  DEFAULT_CELL_SIZE,
+  mapExpansionFromState,
+  mapExpansionState,
+} from "@/services/evidenceMap";
 
 const { mockUseCommunity, mockUseCrossFacets, mockUseVocabulary, mockUseUrlParams, mockNavigate } =
   vi.hoisted(() => ({
@@ -220,6 +225,9 @@ function crossFacetResult(
 }
 
 beforeEach(() => {
+  // The map restores from the current entry's state, so a payload left by an
+  // earlier test would leak into the next one.
+  history.replaceState(null, "", "/");
   mockUseCommunity.mockReset();
   mockUseCrossFacets.mockReset();
   mockUseVocabulary.mockReset();
@@ -364,6 +372,8 @@ describe("VisualisePage map", () => {
         },
       },
     );
+    // Nothing to restore, so the entry we left is not stamped either.
+    expect(history.state).toBeNull();
   });
 
   test("toggling to the table view shows counts as text", () => {
@@ -507,6 +517,178 @@ describe("VisualisePage nested-axis state", () => {
     };
   }
 
+  // Both axes open one branch below their default, and the map holds a cell
+  // whose row and column are both leaves of that layout.
+  function expandBothAxes() {
+    fireEvent.click(screen.getByRole("button", { name: "Expand Primary" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand Literacy" }));
+  }
+
+  const BOTH_AXES_EXPANSION = {
+    row: { axis: "scheme:level", keys: ["level:education", "level:primary"] },
+    column: { axis: "scheme:theme", keys: ["theme:themes", "theme:literacy"] },
+  };
+
+  describe("expansion carried through Search and back", () => {
+    afterEach(() => history.replaceState(null, "", "/"));
+
+    test("a deep-linked cell carries the open branches on both axes", () => {
+      mockUseCrossFacets.mockReturnValue(nestedResultState());
+      render(<VisualisePage />);
+      expandBothAxes();
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Secondary, Numeracy: 20 results. View matching results.",
+        }),
+      );
+
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/test?concept=level%3Asecondary&concept=theme%3Anumeracy",
+        {
+          state: {
+            backToVisualise:
+              "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
+            ...mapExpansionState(BOTH_AXES_EXPANSION),
+          },
+        },
+      );
+    });
+
+    test("stamps the entry it leaves, so browser Back restores it too", () => {
+      mockUseCrossFacets.mockReturnValue(nestedResultState());
+      render(<VisualisePage />);
+      expandBothAxes();
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Secondary, Numeracy: 20 results. View matching results.",
+        }),
+      );
+
+      // Popping back to this entry finds the branches that were open on it.
+      expect(mapExpansionFromState(history.state)).toEqual(BOTH_AXES_EXPANSION);
+    });
+
+    test("browser Back onto the stamped entry re-renders the open branches", () => {
+      mockUseCrossFacets.mockReturnValue(nestedResultState());
+      const { unmount } = render(<VisualisePage />);
+      expandBothAxes();
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Secondary, Numeracy: 20 results. View matching results.",
+        }),
+      );
+      // Remount on the entry as the stamp left it, rather than on a payload
+      // written by hand, so a drift in the shape cannot pass both sides.
+      unmount();
+      render(<VisualisePage />);
+
+      const table = within(screen.getByRole("table"));
+      expect(
+        table.getByRole("button", { name: "Collapse Primary" }),
+      ).toHaveAttribute("aria-expanded", "true");
+      expect(
+        table.getByRole("button", { name: "Collapse Literacy" }),
+      ).toHaveAttribute("aria-expanded", "true");
+      expect(table.getByRole("rowheader", { name: "Lower primary" }))
+        .toBeInTheDocument();
+      expect(table.getByRole("columnheader", { name: "Reading" }))
+        .toBeInTheDocument();
+    });
+
+    test("a deep-linked heading carries them too", () => {
+      mockUseCrossFacets.mockReturnValue(nestedResultState());
+      render(<VisualisePage />);
+      expandBothAxes();
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Lower primary: view matching results.",
+        }),
+      );
+
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/test?concept=level%3Alower-primary",
+        expect.objectContaining({
+          state: expect.objectContaining(mapExpansionState(BOTH_AXES_EXPANSION)),
+        }),
+      );
+    });
+
+    test("mounting on a returned-to entry reopens those branches", () => {
+      history.replaceState(mapExpansionState(BOTH_AXES_EXPANSION), "", "/");
+      mockUseCrossFacets.mockReturnValue(nestedResultState());
+      render(<VisualisePage />);
+      const table = within(screen.getByRole("table"));
+
+      expect(
+        table.getByRole("button", { name: "Collapse Primary" }),
+      ).toHaveAttribute("aria-expanded", "true");
+      expect(
+        table.getByRole("button", { name: "Collapse Literacy" }),
+      ).toHaveAttribute("aria-expanded", "true");
+      expect(table.getByRole("rowheader", { name: "Lower primary" }))
+        .toBeInTheDocument();
+      expect(table.getByRole("columnheader", { name: "Reading" }))
+        .toBeInTheDocument();
+    });
+
+    test("a fully collapsed axis survives the round trip", () => {
+      history.replaceState(
+        mapExpansionState({
+          row: { axis: "scheme:level", keys: [] },
+          column: { axis: "scheme:theme", keys: ["theme:themes"] },
+        }),
+        "",
+        "/",
+      );
+      mockUseCrossFacets.mockReturnValue(nestedResultState());
+      render(<VisualisePage />);
+
+      // Restored as empty, not treated as "nothing stored, use the defaults".
+      expect(
+        screen.getByRole("button", { name: "Expand Education" }),
+      ).toHaveAttribute("aria-expanded", "false");
+      expect(
+        screen.getByRole("button", { name: "Collapse Themes" }),
+      ).toHaveAttribute("aria-expanded", "true");
+    });
+
+    test("a payload for other axes leaves the defaults alone", () => {
+      history.replaceState(
+        mapExpansionState({
+          row: { axis: "scheme:other", keys: ["level:education"] },
+          column: { axis: "scheme:other", keys: ["theme:themes"] },
+        }),
+        "",
+        "/",
+      );
+      mockUseCrossFacets.mockReturnValue(nestedResultState());
+      render(<VisualisePage />);
+
+      expect(
+        screen.getByRole("button", { name: "Collapse Education" }),
+      ).toHaveAttribute("aria-expanded", "true");
+      expect(
+        screen.getByRole("button", { name: "Expand Primary" }),
+      ).toHaveAttribute("aria-expanded", "false");
+    });
+
+    test("a fresh entry with no payload starts from the default view", () => {
+      mockUseCrossFacets.mockReturnValue(nestedResultState());
+      render(<VisualisePage />);
+
+      expect(
+        screen.getByRole("button", { name: "Collapse Education" }),
+      ).toHaveAttribute("aria-expanded", "true");
+      expect(
+        screen.getByRole("button", { name: "Expand Primary" }),
+      ).toHaveAttribute("aria-expanded", "false");
+    });
+  });
+
   test("opens hierarchical axes one level while a flag-off map stays flat", () => {
     mockUseCrossFacets.mockReturnValue(nestedResultState());
     const first = render(<VisualisePage />);
@@ -577,6 +759,10 @@ describe("VisualisePage nested-axis state", () => {
         state: {
           backToVisualise:
             "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
+          ...mapExpansionState({
+            row: { axis: "scheme:level", keys: [] },
+            column: { axis: "scheme:theme", keys: [] },
+          }),
         },
       },
     );

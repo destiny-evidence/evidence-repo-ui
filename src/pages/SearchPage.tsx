@@ -13,7 +13,11 @@ import {
 import { navigate } from "@/services/navigation";
 import { track } from "@/analytics/matomo";
 import { activeFilters, hasActiveSearch } from "@/analytics/searchEvents";
-import { backToVisualiseUrl } from "@/services/evidenceMap";
+import {
+  backToVisualiseUrl,
+  mapExpansionFromState,
+  mapExpansionState,
+} from "@/services/evidenceMap";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useHistoryState } from "@/hooks/useHistoryState";
 import { useCorpusTotal } from "@/hooks/useCorpusTotal";
@@ -139,7 +143,8 @@ function SearchPageInner({ community }: { community: Community }) {
 
   // Set when a map cell deep-linked here (see VisualisePage). Confined to this
   // community's visualise route so a stale state entry can't render a bad link.
-  const backUrl = backToVisualiseUrl(useHistoryState());
+  const historyState = useHistoryState();
+  const backUrl = backToVisualiseUrl(historyState);
   // Match the route exactly, then the query string — not a `startsWith` prefix,
   // which would also accept sibling routes like `/{slug}/visualise-elsewhere`.
   const visualisePath = `/${community.slug}/visualise`;
@@ -147,6 +152,19 @@ function SearchPageInner({ community }: { community: Community }) {
     backUrl === visualisePath || backUrl?.startsWith(`${visualisePath}?`)
       ? backUrl
       : null;
+  // The branches that were open on the map we came from, to hand back to it.
+  const backExpansion = mapExpansionFromState(historyState);
+
+  // The href alone lands on the default layout: the router routes an anchor with
+  // a null state, and would route it again if the click reached its own listener.
+  function handleBackClick(event: MouseEvent) {
+    if (!visualiseBackUrl || !backExpansion) return;
+    if (event.button !== 0) return;
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    event.stopPropagation();
+    navigate(visualiseBackUrl, { state: mapExpansionState(backExpansion) });
+  }
 
   // Canonicalize once: if URL query string doesn't match the canonical form,
   // silently rewrite via replaceState. Keyed on canonicalQs so it runs per divergence.
@@ -522,7 +540,11 @@ function SearchPageInner({ community }: { community: Community }) {
   return (
     <div class="search-page">
       {visualiseBackUrl && (
-        <a class="search-page__back" href={visualiseBackUrl}>
+        <a
+          class="search-page__back"
+          href={visualiseBackUrl}
+          onClick={handleBackClick}
+        >
           <span class="search-page__back-arrow" aria-hidden="true">
             ←
           </span>

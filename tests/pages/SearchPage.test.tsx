@@ -1,6 +1,11 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/preact";
+import Router from "preact-router";
 import { SearchPage } from "@/pages/SearchPage";
+import {
+  mapExpansionFromState,
+  mapExpansionState,
+} from "@/services/evidenceMap";
 import { CommunityProvider } from "@/community/CommunityContext";
 import { AuthProvider } from "@/auth/AuthContext";
 import { AiSummaryProvider } from "@/components/ai-summary/AiSummaryProvider";
@@ -837,6 +842,75 @@ describe("SearchPage", () => {
     test("ignores a state URL pointing at a different community", async () => {
       await renderWithState({ backToVisualise: "/other/visualise?row=a" });
       expect(screen.queryByRole("link", linkQuery)).not.toBeInTheDocument();
+    });
+
+    describe("carrying the map's expansion back", () => {
+      const mapUrl = "/esea/visualise?row=scheme%3Alevel&column=scheme%3Atheme";
+      const expansion = {
+        row: { axis: "scheme:level", keys: ["level:education"] },
+        column: { axis: "scheme:theme", keys: [] },
+      };
+      const storedState = {
+        backToVisualise: mapUrl,
+        ...mapExpansionState(expansion),
+      };
+
+      test("hands the expansion to the map it returns to", async () => {
+        await renderWithState(storedState);
+        const pushState = vi.spyOn(history, "pushState");
+
+        fireEvent.click(screen.getByRole("link", linkQuery));
+
+        expect(pushState).toHaveBeenCalledWith(
+          mapExpansionState(expansion),
+          "",
+          mapUrl,
+        );
+        pushState.mockRestore();
+      });
+
+      test.each([
+        ["a modified click", { metaKey: true }],
+        ["a non-primary button", { button: 1 }],
+      ])("leaves %s to the browser", async (_label, init) => {
+        await renderWithState(storedState);
+        const pushState = vi.spyOn(history, "pushState");
+
+        fireEvent.click(screen.getByRole("link", linkQuery), init);
+
+        expect(pushState).not.toHaveBeenCalled();
+        pushState.mockRestore();
+      });
+
+      // preact-router routes any anchor from a listener on the window, and does
+      // not check defaultPrevented, so a plain click would null this entry.
+      test("keeps the expansion through preact-router's anchor handling", async () => {
+        await renderWithState(storedState);
+        // Mounting any Router registers that global listener.
+        render(
+          <Router>
+            <div path="/esea">search</div>
+            <div path="/esea/visualise">map</div>
+          </Router>,
+        );
+
+        fireEvent.click(screen.getByRole("link", linkQuery));
+
+        await waitFor(() =>
+          expect(`${location.pathname}${location.search}`).toBe(mapUrl),
+        );
+        expect(mapExpansionFromState(history.state)).toEqual(expansion);
+      });
+
+      test("stays an ordinary link when there is no expansion to carry", async () => {
+        await renderWithState({ backToVisualise: mapUrl });
+        const pushState = vi.spyOn(history, "pushState");
+
+        fireEvent.click(screen.getByRole("link", linkQuery));
+
+        expect(pushState).not.toHaveBeenCalled();
+        pushState.mockRestore();
+      });
     });
   });
 });
