@@ -240,13 +240,16 @@ function EvidenceMapView({
   const previousRowAxisIdentity = useRef(rowAxisIdentity);
   const previousColumnAxisIdentity = useRef(columnAxisIdentity);
   useEffect(() => {
+    // A same-route Back keeps this mounted, so the mount-time read can't see the
+    // new entry. Must stay above the canonicalizing effect, which nulls state.
+    const carried = mapExpansionFromState(window.history.state);
     if (previousRowAxisIdentity.current !== rowAxisIdentity) {
       previousRowAxisIdentity.current = rowAxisIdentity;
-      setRowExpansion(null);
+      setRowExpansion(toAxisExpansion(carried?.row));
     }
     if (previousColumnAxisIdentity.current !== columnAxisIdentity) {
       previousColumnAxisIdentity.current = columnAxisIdentity;
-      setColumnExpansion(null);
+      setColumnExpansion(toAxisExpansion(carried?.column));
     }
   }, [rowAxisIdentity, columnAxisIdentity]);
   const rowExpandedKeys = useMemo(

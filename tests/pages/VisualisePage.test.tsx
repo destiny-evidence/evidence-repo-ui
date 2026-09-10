@@ -597,6 +597,62 @@ describe("VisualisePage nested-axis state", () => {
         .toBeInTheDocument();
     });
 
+    test("Back onto a stamped entry restores it without a remount", () => {
+      // Two map entries in a row keep this component mounted, so the mount-time
+      // read never runs again. jsdom cannot pop, so each step below sets what
+      // the entry being landed on carries.
+      mockUseCrossFacets.mockReturnValue(nestedResultState());
+      const { rerender } = render(<VisualisePage />);
+      expandBothAxes();
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Secondary, Numeracy: 20 results. View matching results.",
+        }),
+      );
+      // The panel swaps both axes: a push, so that entry carries no payload.
+      history.replaceState(null, "", "/");
+      mockUseUrlParams.mockReturnValue(
+        "?row=scheme%3Atheme&column=scheme%3Alevel",
+      );
+      mockUseCrossFacets.mockReturnValue({
+        ...nestedResultState(),
+        result: crossFacetResult(30, [
+          ["theme:literacy", "level:primary", 20],
+          ["theme:numeracy", "level:secondary", 10],
+        ]),
+        resultAxes: { row: CROSS_AXES.column, column: CROSS_AXES.row },
+      });
+      rerender(<VisualisePage />);
+
+      // Back onto an entry whose branches differ from both the defaults and
+      // what was last open here, so only its own payload can produce them.
+      history.replaceState(
+        mapExpansionState({
+          row: { axis: "scheme:level", keys: ["level:education"] },
+          column: {
+            axis: "scheme:theme",
+            keys: ["theme:themes", "theme:literacy"],
+          },
+        }),
+        "",
+        "/",
+      );
+      mockUseUrlParams.mockReturnValue("");
+      mockUseCrossFacets.mockReturnValue(nestedResultState());
+      rerender(<VisualisePage />);
+
+      const table = within(screen.getByRole("table"));
+      // Closed, though it was open before the swap: the entry outranks it.
+      expect(
+        table.getByRole("button", { name: "Expand Primary" }),
+      ).toHaveAttribute("aria-expanded", "false");
+      // Open, which the defaults never are: the entry was read, not ignored.
+      expect(
+        table.getByRole("button", { name: "Collapse Literacy" }),
+      ).toHaveAttribute("aria-expanded", "true");
+    });
+
     test("a deep-linked heading carries them too", () => {
       mockUseCrossFacets.mockReturnValue(nestedResultState());
       render(<VisualisePage />);
