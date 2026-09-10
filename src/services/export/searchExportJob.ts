@@ -1,6 +1,7 @@
 /**
  * Promise-based driver for the search-export job lifecycle: request → poll until
- * the job terminates → return the `result_url`. Shared by every export path —
+ * the job terminates → return the `result_url` and its truncation flag. Shared
+ * by every export path —
  * the download hook (Excel / RIS / reference-list PDF) and the AI-summary
  * references loader — so the request/poll state machine lives in exactly one
  * place. Abortable via an AbortSignal; `onPolling` lets a caller surface a
@@ -50,15 +51,22 @@ interface ExportJob {
   id: string;
   status: SearchExportStatus;
   result_url?: string | null;
+  truncated?: boolean;
   error?: string | null;
 }
 
-// Shared request → poll → result-url loop for both export flavours.
+export interface ExportRunResult {
+  resultUrl: string;
+  /** The backend capped the export at its result window. */
+  truncated: boolean;
+}
+
+// Shared request → poll → result loop for both export flavours.
 async function runToCompletion(
   request: () => Promise<ExportJob>,
   poll: (id: string) => Promise<ExportJob>,
   options: RunExportOptions,
-): Promise<string> {
+): Promise<ExportRunResult> {
   const { signal, onPolling } = options;
   let job = await request();
 
@@ -82,20 +90,22 @@ async function runToCompletion(
   if (!job.result_url) {
     throw new Error("Export finished but no download URL was returned.");
   }
-  return job.result_url;
+  // An explicit id list carries no truncated flag; it can't be truncated.
+  return { resultUrl: job.result_url, truncated: job.truncated ?? false };
 }
 
 /**
  * Queue an export of `query`/`filters` in `exportFormat`, poll until it
- * completes, and resolve with the result blob URL. Rejects with an AbortError
- * if `signal` aborts, or an Error carrying the backend message on failure.
+ * completes, and resolve with the result blob URL and whether the backend
+ * capped it. Rejects with an AbortError if `signal` aborts, or an Error
+ * carrying the backend message on failure.
  */
 export function runSearchExportToCompletion(
   query: string,
   filters: Omit<SearchFilters, "page">,
   exportFormat: ServerExportFormat,
   options: RunExportOptions = {},
-): Promise<string> {
+): Promise<ExportRunResult> {
   return runToCompletion(
     () => requestSearchExport(query, filters, exportFormat),
     getSearchExport,
@@ -108,7 +118,7 @@ export function runReferenceExportToCompletion(
   referenceIds: string[],
   exportFormat: ServerExportFormat,
   options: RunExportOptions = {},
-): Promise<string> {
+): Promise<ExportRunResult> {
   return runToCompletion(
     () => requestReferenceExport(referenceIds, exportFormat),
     getReferenceExport,

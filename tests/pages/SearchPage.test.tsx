@@ -135,6 +135,98 @@ describe("SearchPage", () => {
     expect(screen.getByLabelText(/sort results/i)).toBeInTheDocument();
   });
 
+  test("pager offers only the pages the backend can serve, not the total's worth", async () => {
+    // 20,000 results imply 1,000 pages; the backend's window serves 500.
+    const clamped = makeResult(20000, ["r1"]);
+    clamped.page.max_result_window = 10000;
+    mockBoth({ results: clamped });
+    renderSearchPage();
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    // Top and bottom pagers both render, hence the All queries.
+    expect(screen.getAllByRole("button", { name: "Page 500" })).not.toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: "Page 1000" })).toHaveLength(0);
+  });
+
+  test("explains the ceiling on the last servable page of an oversized search", async () => {
+    history.replaceState(null, "", "/esea?q=education&page=500");
+    // 20,000 matches imply 1,000 pages; only 500 can be served, so page 500 is
+    // a ceiling with matches behind it, not the end of the results.
+    const clamped = makeResult(20000, ["r1"]);
+    clamped.page.max_result_window = 10000;
+    mockBoth({ results: clamped });
+    renderSearchPage();
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    const next = screen.getAllByRole("button", { name: "Next page" })[0];
+    expect(next).toBeDisabled();
+    expect(next.closest("[data-tooltip]")?.getAttribute("data-tooltip")).toMatch(
+      /first 500 pages/i,
+    );
+  });
+
+  test("keeps the announcement region mounted before results arrive", async () => {
+    // A live region inserted with its text already inside is not reliably
+    // announced, so the region has to exist before the first result lands.
+    mockSearch.mockImplementation(() => new Promise(() => {})); // never resolves
+    const { container } = renderSearchPage();
+
+    await waitFor(() =>
+      expect(container.querySelector('[role="status"]')).toBeInTheDocument(),
+    );
+    // Empty while loading: present, but asserting nothing yet.
+    expect(container.querySelector('[role="status"]')?.textContent).toBe("");
+  });
+
+  test("announces the ceiling to assistive tech, on any page, without showing it", async () => {
+    // The tooltip is hover-only and its bubble is aria-hidden, so the fact also
+    // goes in the already-announced count region as screen-reader-only text.
+    history.replaceState(null, "", "/esea?q=education");
+    const clamped = makeResult(20000, ["r1"]);
+    clamped.page.max_result_window = 10000;
+    mockBoth({ results: clamped });
+    renderSearchPage();
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    const note = screen.getByText(/only the first 500 pages of results/i);
+    expect(note).toHaveClass("visually-hidden");
+    // Page 1, so the tooltip is not in play: this is the only carrier here.
+    expect(
+      screen.getAllByRole("button", { name: "Next page" })[0],
+    ).toBeEnabled();
+  });
+
+  test("announces the ceiling in browse mode too, where no count is shown", async () => {
+    mockBoth({ results: makeResult(120152, ["r1"]) });
+    renderSearchPage();
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    expect(screen.getByText(/only the first 500 pages of results/i)).toHaveClass(
+      "visually-hidden",
+    );
+    expect(screen.queryByText(/120,152 results/i)).not.toBeInTheDocument();
+  });
+
+  test("says nothing to assistive tech when every match is reachable", async () => {
+    history.replaceState(null, "", "/esea?q=phonics");
+    mockBoth({ results: makeResult(47, ["r1"]) });
+    renderSearchPage();
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    expect(screen.queryByText(/only the first/i)).not.toBeInTheDocument();
+  });
+
+  test("stays quiet on the genuine last page of a reachable search", async () => {
+    history.replaceState(null, "", "/esea?q=phonics&page=3");
+    mockBoth({ results: makeResult(47, ["r1"]) });
+    renderSearchPage();
+
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    const next = screen.getAllByRole("button", { name: "Next page" })[0];
+    expect(next).toBeDisabled();
+    expect(next.closest("[data-tooltip]")).toBeNull();
+  });
+
   test("sort change navigates to URL with new alias and resets page to 1", async () => {
     history.replaceState(null, "", "/esea?q=phonics&page=3");
     mockBoth({ results: makeResult(47, ["r1"]) });
@@ -596,6 +688,19 @@ describe("SearchPage", () => {
       mockGetExport.mockResolvedValue(job);
     }
 
+    // Job that completes on the first poll; `truncated` is the backend saying
+    // it capped the export at its result window.
+    function stubCompletedExport(truncated: boolean) {
+      const job = {
+        id: "job",
+        status: "completed" as const,
+        result_url: "https://blob/result.jsonl",
+        truncated,
+      };
+      mockRequestExport.mockResolvedValue(job);
+      mockGetExport.mockResolvedValue(job);
+    }
+
     test("enabled in browse mode; export POSTs with q=* and the community annotation", async () => {
       mockBoth({ results: makeResult(5721, ["r1"]) });
       stubPendingExport();
@@ -750,6 +855,123 @@ describe("SearchPage", () => {
         "data-tooltip",
         expect.stringMatching(/limited to 10,000 references/i),
       );
+    });
+
+    test("disabled past the 10k cap on an exact total", async () => {
+      // An exact count over the cap carries no is_lower_bound flag, so the gate
+      // has to read the count itself or it opens and exports a short file.
+      history.replaceState(null, "", "/esea?q=education");
+      mockBoth({ results: makeResult(25_000, ["r1"], false) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      const btn = screen.getByRole("button", { name: /^export$/i });
+      expect(btn).toHaveAttribute("aria-disabled", "true");
+      expect(btn.parentElement).toHaveAttribute(
+        "data-tooltip",
+        expect.stringMatching(/limited to 10,000 references/i),
+      );
+    });
+
+    test("an exact total at the cap still exports", async () => {
+      history.replaceState(null, "", "/esea?q=education");
+      mockBoth({ results: makeResult(10_000, ["r1"], false) });
+      stubPendingExport();
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      expect(
+        screen.getByRole("button", { name: /^export$/i }),
+      ).not.toHaveAttribute("aria-disabled", "true");
+    });
+
+    test("the truncation notice names the window the backend actually capped at", async () => {
+      history.replaceState(null, "", "/esea?q=education");
+      // The backend truncates at its published retrieval window, not at our
+      // export constant. They are both 10,000 today, so a different window is
+      // the only way to tell which number the notice is reading.
+      const narrow = makeResult(9_000, ["r1"]);
+      narrow.page.max_result_window = 2000;
+      mockBoth({ results: narrow });
+      stubCompletedExport(true);
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      openAndExport();
+
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(/first 2,000 references/i),
+      );
+    });
+
+    test("a truncated export says so instead of handing over a short file", async () => {
+      history.replaceState(null, "", "/esea?q=education");
+      // Synthetic pairing: the export gate blocks above 10,000 and the backend
+      // only truncates above it, so a 9,000 total with truncated=true cannot
+      // arise outside a corpus change mid-export. It covers the plumbing.
+      mockBoth({ results: makeResult(9_000, ["r1"]) });
+      stubCompletedExport(true);
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      openAndExport();
+
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          /first 10,000 references/i,
+        ),
+      );
+    });
+
+    test("an untruncated export shows no truncation notice", async () => {
+      history.replaceState(null, "", "/esea?q=education");
+      mockBoth({ results: makeResult(9_000, ["r1"]) });
+      stubCompletedExport(false);
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      openAndExport();
+
+      await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
+      expect(screen.queryByRole("alert")).toBeNull();
+    });
+
+    test("a new query clears the finished export's notice", async () => {
+      // The notice names the window of whichever search is on screen, so left
+      // standing it would describe an old export with a new search's number.
+      history.replaceState(null, "", "/esea?q=education");
+      mockBoth({ results: makeResult(9_000, ["r1"]) });
+      stubCompletedExport(true);
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      openAndExport();
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(/first 10,000/i),
+      );
+
+      fireEvent.input(screen.getByRole("searchbox"), { target: { value: "phonics" } });
+      fireEvent.click(screen.getByRole("button", { name: /search/i }));
+
+      await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    });
+
+    test("paging keeps the notice, which still describes the same search", async () => {
+      history.replaceState(null, "", "/esea?q=education");
+      mockBoth({ results: makeResult(9_000, ["r1"]) });
+      stubCompletedExport(true);
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      openAndExport();
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(/first 10,000/i),
+      );
+
+      fireEvent.click(screen.getAllByRole("button", { name: "Page 2" })[0]);
+
+      await waitFor(() => expect(window.location.search).toContain("page=2"));
+      expect(screen.getByRole("alert")).toHaveTextContent(/first 10,000/i);
     });
 
     test("export POSTs with current filters and shows preparing status", async () => {

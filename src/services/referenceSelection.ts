@@ -10,7 +10,15 @@ export async function resolveSelectedReferenceIds(
   signal?: AbortSignal,
 ): Promise<string[]> {
   if (request.mode === "include") return request.ids;
-  const { reference_ids } = await searchReferenceIds(query, filters, signal);
+  const { reference_ids, total } = await searchReferenceIds(query, filters, signal);
+  // Exclusions over a capped list resolve the wrong set, not a short one. A
+  // lower-bound count is how a server predating exact totals reports the cap.
+  if (total.is_lower_bound || reference_ids.length < total.count) {
+    throw new Error(
+      "More references match than can be listed, so this selection can't be "
+      + "resolved. Refine the search, or select references individually.",
+    );
+  }
   const excluded = new Set(request.excludedIds);
   return reference_ids.filter((id) => !excluded.has(id));
 }

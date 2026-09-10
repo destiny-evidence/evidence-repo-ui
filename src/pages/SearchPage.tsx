@@ -41,6 +41,12 @@ import { useSelectionContext } from "@/components/search/SelectionProvider";
 import { resolveSelectedReferenceIds } from "@/services/referenceSelection";
 import { deriveSummaryTerms } from "@/components/ai-summary/summaryTerms";
 import { formatTotal } from "@/utils/searchTotal";
+import {
+  browsablePageCount,
+  exceedsResultWindow,
+  resultWindow,
+  RESULTS_PER_PAGE,
+} from "@/utils/searchPages";
 import { totalSelectedCount } from "@/components/filters/conceptSchemeFilterState";
 import { totalSelectedCount as totalSelectedCountryCount } from "@/components/filters/countryFilterState";
 import { totalSelectedCount as totalSelectedYearCount } from "@/components/filters/yearRangeFilterState";
@@ -51,15 +57,9 @@ interface SearchPageProps {
   path?: string;
 }
 
-// 10k is destiny-repository's max_result_window; deep pagination + exports
-// past that are explicitly out of scope. Mirrors the search backend cap.
+// The export limit, deliberately separate from the retrieval window the API
+// publishes: both are 10,000 today but they are different rules.
 const EXPORT_MAX_RESULTS = 10000;
-
-// The backend serves a fixed 20 results per page and exposes no page-size
-// field. `page.count` is the number of hits on the current page (fewer on the
-// last page), not the page size, so rank and page-count math use this
-// constant rather than that value.
-const RESULTS_PER_PAGE = 20;
 
 // The summariser accepts at most 50 references per request (1–50).
 const MAX_SUMMARY_REFERENCES = 50;
@@ -177,6 +177,13 @@ function SearchPageInner({ community }: { community: Community }) {
   useEffect(() => {
     syncSearchIdentity(selectionIdentity);
   }, [syncSearchIdentity, selectionIdentity]);
+
+  // An export belongs to the search it was started from: its status and its
+  // truncation notice read the window of whatever search is on screen.
+  const { reset: resetExport } = exportJob;
+  useEffect(() => {
+    resetExport();
+  }, [resetExport, selectionIdentity]);
 
   // One "Search Performed" per distinct search (query + filters), not per fetch.
   // Key off resultsParams (the search the current results were fetched for), not
@@ -347,20 +354,31 @@ function SearchPageInner({ community }: { community: Community }) {
     }
   }
 
+  // The flag is what still blocks an oversized search on a repository that
+  // caps at 10,000, where count is exactly 10,000 and the first test misses.
   const overCap =
     results.results !== null
-    && results.results.total.is_lower_bound
-    && results.results.total.count >= EXPORT_MAX_RESULTS;
+    && (results.results.total.count > EXPORT_MAX_RESULTS
+      || results.results.total.is_lower_bound);
   const exportBusy =
     exportJob.status === "requesting"
     || exportJob.status === "polling"
     || exportJob.status === "downloading";
   const allExportAvailable = hasResults && !overCap;
+  // Exclude mode resolves by enumerating every matching id, and that endpoint
+  // stops at the result window, so a larger match set would export short.
   const selectionEnumerable =
-    selection.mode === "include" || !selectionTotal.is_lower_bound;
+    selection.mode === "include"
+    || (!selectionTotal.is_lower_bound
+      && selectionTotal.count <= resultWindow(results.results));
   const selectedExportAvailable =
     selectionCount > 0 && selectionCount <= EXPORT_MAX_RESULTS && selectionEnumerable;
   const capReason = `Over the ${EXPORT_MAX_RESULTS.toLocaleString()} export limit.`;
+  // Distinct from the export limit: the selection is small enough to export but
+  // the match set is too large to enumerate, so naming the limit would mislead.
+  const unreachableReason =
+    `Select references individually, or refine to `
+    + `${resultWindow(results.results).toLocaleString()} or fewer matches.`;
   // Only offer the scope chooser where selection is available; otherwise the
   // menu exports the whole result set, as before.
   const exportScopes = selectable && hasResults
@@ -371,7 +389,9 @@ function SearchPageInner({ community }: { community: Community }) {
           available: selectedExportAvailable,
           reason: selectionCount === 0
             ? "Select references to export just those."
-            : capReason,
+            : selectionEnumerable
+              ? capReason
+              : unreachableReason,
         },
         {
           value: "all" as const,
@@ -501,13 +521,17 @@ function SearchPageInner({ community }: { community: Community }) {
     });
   }
 
-  const totalPages = results.results
-    ? Math.max(1, Math.ceil(results.results.total.count / RESULTS_PER_PAGE))
-    : 1;
+  const totalPages = browsablePageCount(results.results);
 
   // Rank rows against the page the visible results were fetched for, not the
   // live URL page, which can run ahead while a refetch is in flight.
   const resultsPage = results.resultsParams?.page ?? params.page;
+
+  // An oversized search ends at a ceiling rather than at its last match, so the
+  // disabled Next needs to say why; a reachable search needs no explanation.
+  const pageCeilingReason = exceedsResultWindow(results.results)
+    ? `Limited to the first ${totalPages.toLocaleString()} pages`
+    : undefined;
 
   // Null on a single page so the grid cell / bottom wrapper don't render empty.
   const paginationEl = results.results && totalPages > 1 ? (
@@ -516,11 +540,19 @@ function SearchPageInner({ community }: { community: Community }) {
       totalPages={totalPages}
       onPageChange={handlePageChange}
       disabled={results.loading}
+      nextDisabledReason={pageCeilingReason}
     />
   ) : null;
 
   return (
     <div class="search-page">
+      {/* Mounted unconditionally: a live region that appears with its text
+          already inside is not reliably announced. */}
+      <span class="visually-hidden" role="status" aria-live="polite">
+        {!results.loading && exceedsResultWindow(results.results)
+          ? `Only the first ${totalPages.toLocaleString()} pages of results can be viewed.`
+          : ""}
+      </span>
       {visualiseBackUrl && (
         <a class="search-page__back" href={visualiseBackUrl}>
           <span class="search-page__back-arrow" aria-hidden="true">
@@ -604,6 +636,13 @@ function SearchPageInner({ community }: { community: Community }) {
               {results.results && exportJob.status === "error" && (
                 <span class="search-results__export-status" role="alert">
                   {exportJob.errorMessage ?? "Export failed."}
+                </span>
+              )}
+              {results.results
+                && exportJob.status === "done"
+                && exportJob.truncated && (
+                <span class="search-results__export-status" role="alert">
+                  {`Only the first ${resultWindow(results.results).toLocaleString()} references were exported.`}
                 </span>
               )}
               {results.results && (
