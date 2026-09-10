@@ -216,7 +216,7 @@ describe("community registry", () => {
     expect(mod.findCommunity("destiny")?.defaultEvidenceMapAxes).toEqual({
       row: {
         kind: "scheme",
-        schemeUri: "https://vocab.destiny-evidence.org/interventions-responses-solutions",
+        schemeUri: "https://vocab.destiny-evidence.org/climate-factors-extreme-weather-events",
       },
       column: {
         kind: "scheme",
