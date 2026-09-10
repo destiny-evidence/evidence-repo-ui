@@ -1,4 +1,4 @@
-import { DEFAULT_COMMUNITY_SLUG } from "@/services/communities";
+import { CommunityLinks } from "@/components/common/CommunityLinks";
 import "./NotFoundPage.css";
 
 interface NotFoundPageProps {
@@ -10,10 +10,8 @@ export function NotFoundPage(_props: NotFoundPageProps) {
   return (
     <div class="not-found-page">
       <h1>Page not found</h1>
-      <p>
-        The page you're looking for doesn't exist.{" "}
-        <a href={`/${DEFAULT_COMMUNITY_SLUG}`}>Go to HPV Vaccine community</a>.
-      </p>
+      <p>The page you're looking for doesn't exist. Try a community:</p>
+      <CommunityLinks />
     </div>
   );
 }

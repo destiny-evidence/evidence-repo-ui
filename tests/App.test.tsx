@@ -28,6 +28,14 @@ test("renders not found for invalid community", () => {
   expect(screen.getByText("Page not found")).toBeInTheDocument();
 });
 
+test("renders the home page for the slug-less root", () => {
+  history.pushState({}, "", "/");
+  render(<App />);
+  expect(
+    screen.getByRole("heading", { name: "Welcome to the Evidence Repository" }),
+  ).toBeInTheDocument();
+});
+
 test("shows the Visualise tab and routes to the visualise page when enabled", () => {
   history.pushState({}, "", "/hpv");
   const { unmount } = render(<App />);
@@ -53,7 +61,7 @@ test("clicking the not-found link from /banana shows the search page", () => {
   render(<App />);
   expect(screen.getByText("Page not found")).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole("link", { name: /go to hpv vaccine community/i }));
+  fireEvent.click(screen.getByRole("link", { name: "HPV Vaccine Delivery" }));
 
   expect(
     screen.getByRole("heading", { name: /search the evidence/i }),

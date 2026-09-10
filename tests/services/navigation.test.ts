@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
 import {
   navigate,
+  pathSlug,
   recordDetailPath,
   URL_CHANGE_EVENT,
 } from "@/services/navigation";
@@ -10,6 +11,20 @@ describe("recordDetailPath", () => {
     expect(recordDetailPath("esea", "019a4c8f")).toBe(
       "/esea/references/019a4c8f",
     );
+  });
+});
+
+describe("pathSlug", () => {
+  test.each([
+    ["/hpv", "hpv"],
+    ["/hpv/references/019a4c8f", "hpv"],
+    ["/hpv/", "hpv"],
+  ])("reads the community slug from %s", (pathname, slug) => {
+    expect(pathSlug(pathname)).toBe(slug);
+  });
+
+  test.each(["/", ""])("is undefined for the slug-less root (%s)", (pathname) => {
+    expect(pathSlug(pathname)).toBeUndefined();
   });
 });
 

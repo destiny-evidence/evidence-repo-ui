@@ -7,6 +7,7 @@ import { AppShell } from "./components/layout/AppShell";
 import { SearchPage } from "./pages/SearchPage";
 import { VisualisePage } from "./pages/VisualisePage";
 import { RecordDetailPage } from "./pages/RecordDetailPage";
+import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { URL_CHANGE_EVENT } from "./services/navigation";
 
@@ -29,6 +30,7 @@ export function App() {
                 <RecordDetailPage path="/:community/references/:id" />
                 <VisualisePage path="/:community/visualise" />
                 <SearchPage path="/:community" />
+                <HomePage path="/" />
                 <NotFoundPage default />
               </Router>
             </AppShell>

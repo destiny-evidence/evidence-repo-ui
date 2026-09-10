@@ -1,6 +1,7 @@
 import Keycloak from "keycloak-js";
 import { KEYCLOAK_CLIENT_ID, KEYCLOAK_REALM, KEYCLOAK_URL } from "@/config";
 import { findCommunity } from "@/services/communities";
+import { pathSlug } from "@/services/navigation";
 
 function requireEnv(name: string, value: string | undefined): string {
   if (!value) {
@@ -20,7 +21,7 @@ keycloak.onTokenExpired = () => {
 };
 
 function allowsSelfSignup(): boolean {
-  const slug = window.location.pathname.split("/").filter(Boolean)[0];
+  const slug = pathSlug();
   return slug !== undefined && !!findCommunity(slug)?.features.selfSignup;
 }
 

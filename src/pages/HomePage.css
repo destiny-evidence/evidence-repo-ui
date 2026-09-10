@@ -1,0 +1,20 @@
+/* Centres standalone at the slug-less root, and still sits sensibly inside the
+   app shell when the router lands on "/" mid-session. */
+.home-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: var(--spacing-xl);
+  text-align: center;
+}
+
+.home-page__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-hero);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm);
+}

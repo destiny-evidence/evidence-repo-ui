@@ -69,6 +69,7 @@ const COMMUNITIES: Community[] = [
   {
     slug: "esea",
     name: "Education",
+    listed: false,
     defaultAnnotations: ["domain-inclusion/jacobs-education"],
     vocabularyUrl: requireEnv(
       "VITE_ESEA_VOCABULARY_URL",
@@ -115,6 +116,7 @@ const COMMUNITIES: Community[] = [
   {
     slug: "hpv",
     name: "HPV Vaccine Delivery",
+    listed: true,
     defaultAnnotations: ["domain-inclusion/hpv"],
     vocabularyUrl: requireEnv(
       "VITE_HPV_VOCABULARY_URL",
@@ -195,6 +197,7 @@ const COMMUNITIES: Community[] = [
   {
     slug: "destiny",
     name: "DESTINY",
+    listed: true,
     defaultAnnotations: ["domain-inclusion/destiny-prototype"],
     vocabularyUrl: requireEnv(
       "VITE_DESTINY_VOCABULARY_URL",
@@ -211,6 +214,7 @@ const COMMUNITIES: Community[] = [
     ],
     features: {
       ...DEFAULT_FEATURES,
+      selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
       exportsEnabled: true,
@@ -255,15 +259,8 @@ export function findCommunity(slug: string): Community | undefined {
   return COMMUNITIES.find((c) => c.slug === slug.toLowerCase());
 }
 
-// Brand link / not-found fallback target while there's no true "/" landing
-// page — the router only matches /:community/*.
-export const DEFAULT_COMMUNITY = (() => {
-  const slug = "hpv";
-  const community = findCommunity(slug);
-  if (!community) {
-    throw new Error(`Default community "${slug}" is not registered.`);
-  }
-  return community;
-})();
-
-export const DEFAULT_COMMUNITY_SLUG = DEFAULT_COMMUNITY.slug;
+// The communities the slug-less pages (home, not-found) point a lost visitor
+// at, in registry order.
+export function listedCommunities(): Community[] {
+  return COMMUNITIES.filter((c) => c.listed);
+}

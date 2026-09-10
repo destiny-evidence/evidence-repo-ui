@@ -72,6 +72,10 @@ export type ExportVariant = "esea" | "reference-concepts";
 export interface Community {
   slug: string;
   name: string;
+  // Whether the slug-less pages (home, not-found) advertise this community. A
+  // community stays unlisted while it's reachable by direct link but not ready
+  // to be found.
+  listed: boolean;
   defaultAnnotations: string[];
   vocabularyUrl: string;
   contextUrl: string;
