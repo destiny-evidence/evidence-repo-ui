@@ -178,6 +178,13 @@ function SearchPageInner({ community }: { community: Community }) {
     syncSearchIdentity(selectionIdentity);
   }, [syncSearchIdentity, selectionIdentity]);
 
+  // An export belongs to the search it was started from: its status and its
+  // truncation notice read the window of whatever search is on screen.
+  const { reset: resetExport } = exportJob;
+  useEffect(() => {
+    resetExport();
+  }, [resetExport, selectionIdentity]);
+
   // One "Search Performed" per distinct search (query + filters), not per fetch.
   // Key off resultsParams (the search the current results were fetched for), not
   // the live params: useSearch keeps prior results on screen while a new query

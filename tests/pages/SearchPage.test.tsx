@@ -148,12 +148,6 @@ describe("SearchPage", () => {
     expect(screen.queryAllByRole("button", { name: "Page 1000" })).toHaveLength(0);
   });
 
-
-
-
-
-
-
   test("explains the ceiling on the last servable page of an oversized search", async () => {
     history.replaceState(null, "", "/esea?q=education&page=500");
     // 20,000 matches imply 1,000 pages; only 500 can be served, so page 500 is
@@ -694,6 +688,19 @@ describe("SearchPage", () => {
       mockGetExport.mockResolvedValue(job);
     }
 
+    // Job that completes on the first poll; `truncated` is the backend saying
+    // it capped the export at its result window.
+    function stubCompletedExport(truncated: boolean) {
+      const job = {
+        id: "job",
+        status: "completed" as const,
+        result_url: "https://blob/result.jsonl",
+        truncated,
+      };
+      mockRequestExport.mockResolvedValue(job);
+      mockGetExport.mockResolvedValue(job);
+    }
+
     test("enabled in browse mode; export POSTs with q=* and the community annotation", async () => {
       mockBoth({ results: makeResult(5721, ["r1"]) });
       stubPendingExport();
@@ -886,14 +893,7 @@ describe("SearchPage", () => {
       const narrow = makeResult(9_000, ["r1"]);
       narrow.page.max_result_window = 2000;
       mockBoth({ results: narrow });
-      const job = {
-        id: "job",
-        status: "completed" as const,
-        result_url: "https://blob/result.jsonl",
-        truncated: true,
-      };
-      mockRequestExport.mockResolvedValue(job);
-      mockGetExport.mockResolvedValue(job);
+      stubCompletedExport(true);
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
@@ -910,14 +910,7 @@ describe("SearchPage", () => {
       // only truncates above it, so a 9,000 total with truncated=true cannot
       // arise outside a corpus change mid-export. It covers the plumbing.
       mockBoth({ results: makeResult(9_000, ["r1"]) });
-      const job = {
-        id: "job",
-        status: "completed" as const,
-        result_url: "https://blob/result.jsonl",
-        truncated: true,
-      };
-      mockRequestExport.mockResolvedValue(job);
-      mockGetExport.mockResolvedValue(job);
+      stubCompletedExport(true);
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
@@ -933,14 +926,7 @@ describe("SearchPage", () => {
     test("an untruncated export shows no truncation notice", async () => {
       history.replaceState(null, "", "/esea?q=education");
       mockBoth({ results: makeResult(9_000, ["r1"]) });
-      const job = {
-        id: "job",
-        status: "completed" as const,
-        result_url: "https://blob/result.jsonl",
-        truncated: false,
-      };
-      mockRequestExport.mockResolvedValue(job);
-      mockGetExport.mockResolvedValue(job);
+      stubCompletedExport(false);
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
@@ -948,6 +934,44 @@ describe("SearchPage", () => {
 
       await waitFor(() => expect(mockRequestExport).toHaveBeenCalledTimes(1));
       expect(screen.queryByRole("alert")).toBeNull();
+    });
+
+    test("a new query clears the finished export's notice", async () => {
+      // The notice names the window of whichever search is on screen, so left
+      // standing it would describe an old export with a new search's number.
+      history.replaceState(null, "", "/esea?q=education");
+      mockBoth({ results: makeResult(9_000, ["r1"]) });
+      stubCompletedExport(true);
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      openAndExport();
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(/first 10,000/i),
+      );
+
+      fireEvent.input(screen.getByRole("searchbox"), { target: { value: "phonics" } });
+      fireEvent.click(screen.getByRole("button", { name: /search/i }));
+
+      await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    });
+
+    test("paging keeps the notice, which still describes the same search", async () => {
+      history.replaceState(null, "", "/esea?q=education");
+      mockBoth({ results: makeResult(9_000, ["r1"]) });
+      stubCompletedExport(true);
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      openAndExport();
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(/first 10,000/i),
+      );
+
+      fireEvent.click(screen.getAllByRole("button", { name: "Page 2" })[0]);
+
+      await waitFor(() => expect(window.location.search).toContain("page=2"));
+      expect(screen.getByRole("alert")).toHaveTextContent(/first 10,000/i);
     });
 
     test("export POSTs with current filters and shows preparing status", async () => {
