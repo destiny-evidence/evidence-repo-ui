@@ -327,6 +327,22 @@ describe("VisualisePage map", () => {
     );
   });
 
+  test("explains the shortfall when the map plots fewer than matched", () => {
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(
+        1332,
+        [["level:primary", "theme:literacy", 5]],
+        1961,
+      ),
+      loading: false,
+      error: null,
+    });
+    render(<VisualisePage />);
+    expect(
+      screen.getByText(/only results that have been coded/i),
+    ).toBeInTheDocument();
+  });
+
   test("renders zero-hit rows and columns from the vocabulary", () => {
     mockUseVocabulary.mockReturnValue({
       labels: LABELS,
@@ -497,6 +513,10 @@ describe("VisualisePage map", () => {
     // ...but with no clickable cells, so no hint.
     expect(
       screen.queryByText(/click a cell to view matching/i),
+    ).not.toBeInTheDocument();
+    // ...and no general coverage note, which would only repeat the above.
+    expect(
+      screen.queryByText(/only results that have been coded/i),
     ).not.toBeInTheDocument();
   });
 });

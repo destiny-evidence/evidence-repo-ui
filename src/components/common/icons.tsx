@@ -149,3 +149,22 @@ export function ExternalLinkIcon({ size = 12 }: { size?: number }) {
     </svg>
   );
 }
+
+/** Circled "i" — used to mark an explanatory note. */
+export function InfoIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      width={size}
+      height={size}
+      aria-hidden="true"
+    >
+      <path
+        fill-rule="evenodd"
+        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 9a1 1 0 011-1h.01a1 1 0 01.99 1.14l-.42 2.95.12-.09a.75.75 0 01.9 1.2l-.38.28A1.5 1.5 0 018.8 12.1l.42-2.95H10a1 1 0 01-1-.15V9zm1-3.25a1 1 0 110 2 1 1 0 010-2z"
+        clip-rule="evenodd"
+      />
+    </svg>
+  );
+}

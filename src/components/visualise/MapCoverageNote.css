@@ -1,0 +1,44 @@
+.map-coverage-note {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-inset);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.map-coverage-note > svg {
+  flex: none;
+  color: var(--color-text-tertiary);
+}
+
+.map-coverage-note__text {
+  flex: 1;
+}
+
+/* Sized past the glyph for a comfortable hit target, with the extra height
+   pulled back out so it does not deepen the note. */
+.map-coverage-note__dismiss {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: -3px -6px -3px 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  line-height: 1;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+}
+
+.map-coverage-note__dismiss:hover {
+  color: var(--color-text-primary);
+}

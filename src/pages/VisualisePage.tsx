@@ -51,6 +51,7 @@ import { MapConfigPanel } from "@/components/visualise/MapConfigPanel";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import { DEFAULT_EXPANDED_FILTERS } from "@/components/filters/filterOrder";
 import { WarningIcon } from "@/components/common/icons";
+import { MapCoverageNote } from "@/components/visualise/MapCoverageNote";
 import { NotFoundPage } from "./NotFoundPage";
 import "./VisualisePage.css";
 
@@ -619,7 +620,11 @@ function EvidenceMapView({
                 {rowAxis.title} and {columnAxis.title} — nothing to plot on these
                 axes.
               </p>
-            ) : null}
+            ) : (
+              // Neither of the states above applies, so the map is showing: warn
+              // that its plotted set is narrower than the counts around it.
+              <MapCoverageNote totals={result.totals} countNoun={noun} />
+            )}
             {model && hasGrid && oversized ? (
               <p class="evidence-map-view__status" role="status">
                 {canCollapseToFit
