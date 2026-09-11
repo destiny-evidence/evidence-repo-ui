@@ -30,6 +30,9 @@ export function App() {
                 <RecordDetailPage path="/:community/references/:id" />
                 <VisualisePage path="/:community/visualise" />
                 <SearchPage path="/:community" />
+                {/* Reached in-app only from the header brand, which points at
+                    "/" off a community (an unknown slug). A cold load of "/"
+                    never gets here — main.tsx renders the page without auth. */}
                 <HomePage path="/" />
                 <NotFoundPage default />
               </Router>
