@@ -3,13 +3,15 @@ import type { CrossFacetTotals } from "@/types/models";
 import { InfoIcon } from "../common/icons";
 import "./MapCoverageNote.css";
 
+// Per browser tab, not per browser: this explains a recurring surprise rather
+// than recording an acknowledgement, so it should return on a later visit.
 const DISMISSED_KEY = "evidence-map-coverage-note-dismissed";
 
 // Blocked storage (private windows, blocked site data) must not suppress the
 // note, so an unreadable dismissal counts as no dismissal.
 function readDismissed(): boolean {
   try {
-    return localStorage.getItem(DISMISSED_KEY) === "true";
+    return sessionStorage.getItem(DISMISSED_KEY) === "true";
   } catch {
     return false;
   }
@@ -17,7 +19,7 @@ function readDismissed(): boolean {
 
 function writeDismissed(): void {
   try {
-    localStorage.setItem(DISMISSED_KEY, "true");
+    sessionStorage.setItem(DISMISSED_KEY, "true");
   } catch {
     // Dismissal then lasts only for this page view.
   }

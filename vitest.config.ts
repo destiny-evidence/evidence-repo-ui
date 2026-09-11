@@ -15,8 +15,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    // Node 22+ ships its own Web Storage and from 25 enables it by default,
-    // where its methodless `localStorage` shadows jsdom's. Turn it off.
+    // Node 22+ ships its own Web Storage (default-on from 25) which shadows
+    // jsdom's and silently works, so tests would pass against the wrong storage.
     poolOptions: { forks: { execArgv: ["--no-experimental-webstorage"] } },
     globals: true,
     setupFiles: ["./tests/setup.ts"],
