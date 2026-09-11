@@ -79,6 +79,7 @@ describe("community registry", () => {
       name: "DESTINY",
       vocabularyUrl: ENV.VITE_DESTINY_VOCABULARY_URL,
       contextUrl: ENV.VITE_DESTINY_CONTEXT_URL,
+      countNoun: "investigations",
       corpusDescriptor: "climate and health research",
     },
   ])(
