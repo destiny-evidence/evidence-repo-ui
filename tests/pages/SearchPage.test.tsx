@@ -518,6 +518,77 @@ describe("SearchPage", () => {
     expect(screen.getByText(/searching/i)).toBeInTheDocument();
   });
 
+  // DESTINY seeds a publication-year cap; ESEA seeds nothing.
+  describe("community search defaults", () => {
+    const cap = String(new Date().getFullYear() + 1);
+
+    test("a bare visit is redirected to the community's default filters, and fetches once", async () => {
+      history.replaceState(null, "", "/destiny");
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+      expect(new URLSearchParams(window.location.search).get("end_year")).toBe(
+        cap,
+      );
+      // The redirect happens before the first fetch, so no request goes out
+      // uncapped: every search call carries the cap.
+      for (const [, opts] of mockSearch.mock.calls) {
+        if (opts?.page !== undefined) expect(opts.endYear).toBe(Number(cap));
+      }
+    });
+
+    test("a community without defaults is left on its bare URL", async () => {
+      history.replaceState(null, "", "/esea");
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+      expect(window.location.search).toBe("");
+    });
+
+    // A URL that already says something is a search in its own right — a map
+    // cell deep-link, a shared link, a reload after the cap was cleared — and
+    // must not acquire a year bound nobody asked for.
+    test.each([
+      { label: "a map cell deep-link", search: `?concept=${encodeURIComponent(URI_LEARNING)}` },
+      { label: "a shared query", search: "?q=heat" },
+      { label: "a start year alone", search: "?start_year=1990" },
+    ])("$label is not seeded", async ({ search }) => {
+      history.replaceState(null, "", `/destiny${search}`);
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+      expect(new URLSearchParams(window.location.search).get("end_year")).toBeNull();
+    });
+
+    test("clearing the seeded cap sticks — it is not written back on the next navigation", async () => {
+      history.replaceState(null, "", "/destiny");
+      mockVocab.mockReturnValue(vocabWith([OUTCOME_SCHEME_FIXTURE]));
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+
+      await waitFor(() =>
+        expect(new URLSearchParams(window.location.search).get("end_year")).toBe(
+          cap,
+        ),
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
+      const end = screen.getByLabelText("End year") as HTMLInputElement;
+      expect(end.value).toBe(cap);
+      fireEvent.input(end, { target: { value: "" } });
+      fireEvent.click(screen.getByRole("button", { name: "Show results" }));
+
+      await waitFor(() => expect(window.location.search).toBe(""));
+      // Settled: nothing puts the cap back on the bare URL it left behind.
+      await new Promise((r) => setTimeout(r, 0));
+      expect(window.location.search).toBe("");
+    });
+  });
+
   describe("filter drawer", () => {
     beforeEach(() => {
       mockVocab.mockReturnValue(vocabWith([OUTCOME_SCHEME_FIXTURE]));
