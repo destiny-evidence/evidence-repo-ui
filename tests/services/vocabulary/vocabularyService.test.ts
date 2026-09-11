@@ -223,6 +223,98 @@ describe("buildVocabularyData", () => {
     ]);
   });
 
+  it('strips the "Z_" sort prefix from labels but keeps it sorting last', () => {
+    // The published vocabulary prefixes catch-all concepts with "Z_" purely to
+    // pin them below their siblings. Stripping must not resurface them mid-list.
+    const designs = [
+      "Z_Other study design",
+      "Qualitative designs",
+      "Mixed-methods",
+    ];
+    const { schemes, labels } = buildVocabularyData({
+      "@graph": [
+        {
+          "@id": "u:methods",
+          "@type": "skos:ConceptScheme",
+          "dct:title": "Methods",
+          "skos:hasTopConcept": { "@id": "u:primary" },
+        },
+        {
+          "@id": "u:primary",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "1. Primary research",
+        },
+        ...designs.map((label, i) => ({
+          "@id": `u:design${i}`,
+          "@type": "skos:Concept",
+          "skos:prefLabel": label,
+          "skos:broader": "u:primary",
+        })),
+      ],
+    });
+
+    expect(
+      schemes[0]?.topConcepts[0]?.narrower?.map((c) => c.label),
+    ).toEqual(["Mixed-methods", "Qualitative designs", "Other study design"]);
+    expect(labels.get("u:design0")).toBe("Other study design");
+  });
+
+  it('strips the "Z_" sort prefix from top concepts too', () => {
+    const { schemes, labels } = buildVocabularyData({
+      "@graph": [
+        {
+          "@id": "u:weather",
+          "@type": "skos:ConceptScheme",
+          "dct:title": "Extreme Weather",
+          "skos:hasTopConcept": [{ "@id": "u:unspec" }, { "@id": "u:flood" }],
+        },
+        {
+          "@id": "u:unspec",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Z_(Unspecified) extreme weather events",
+        },
+        {
+          "@id": "u:flood",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Flooding",
+        },
+      ],
+    });
+
+    expect(schemes[0]?.topConcepts.map((c) => c.label)).toEqual([
+      "Flooding",
+      "(Unspecified) extreme weather events",
+    ]);
+    expect(labels.get("u:unspec")).toBe(
+      "(Unspecified) extreme weather events",
+    );
+  });
+
+  it("leaves labels that merely contain Z_ or start with Z alone", () => {
+    const { labels } = buildVocabularyData({
+      "@graph": [
+        {
+          "@id": "u:cobenefits",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Co-Benefits",
+        },
+        {
+          "@id": "u:zoonoses",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Zoonotic diseases",
+        },
+        {
+          "@id": "u:inner",
+          "@type": "skos:Concept",
+          "skos:prefLabel": "Study Z_design",
+        },
+      ],
+    });
+    expect(labels.get("u:cobenefits")).toBe("Co-Benefits");
+    expect(labels.get("u:zoonoses")).toBe("Zoonotic diseases");
+    expect(labels.get("u:inner")).toBe("Study Z_design");
+  });
+
   it("attaches skos:definition to concepts that have one", () => {
     const { schemes } = buildVocabularyData({
       "@graph": [
