@@ -43,6 +43,22 @@ export function schemeDisplayLabel(label: string): string {
   return label.replace(/\s+Scheme$/i, "");
 }
 
+/**
+ * The published vocabulary encodes sort order inside `skos:prefLabel`: a "Z_"
+ * prefix pins catch-all concepts.
+ * Strip it for display only, and only after sorting, so the intended order survives.
+ */
+function displayLabel(label: string): string {
+  return label.replace(/^Z_/, "");
+}
+
+function stripSortPrefixes(concepts: Concept[]): void {
+  for (const concept of concepts) {
+    concept.label = displayLabel(concept.label);
+    if (concept.narrower) stripSortPrefixes(concept.narrower);
+  }
+}
+
 // Alpha-numeral collation for labels: `numeric` so "9–14 years" precedes
 // "15–20 years" rather than sorting "15" before "9". Ties break on URI for a
 // stable order. Used wherever concepts/schemes are ordered for display.
@@ -209,6 +225,9 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
       .filter((c): c is Concept => c !== null)
       .sort(compareLabels),
   }));
+
+  for (const scheme of schemes) stripSortPrefixes(scheme.topConcepts);
+  for (const [uri, label] of labels) labels.set(uri, displayLabel(label));
 
   return { labels, broader, definitions, inScheme, schemes };
 }
