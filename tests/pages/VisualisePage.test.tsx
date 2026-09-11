@@ -327,6 +327,22 @@ describe("VisualisePage map", () => {
     );
   });
 
+  test("explains the shortfall when the map plots fewer than matched", () => {
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(
+        1332,
+        [["level:primary", "theme:literacy", 5]],
+        1961,
+      ),
+      loading: false,
+      error: null,
+    });
+    render(<VisualisePage />);
+    expect(
+      screen.getByText(/some results aren’t on the map/i),
+    ).toBeInTheDocument();
+  });
+
   test("renders zero-hit rows and columns from the vocabulary", () => {
     mockUseVocabulary.mockReturnValue({
       labels: LABELS,
@@ -498,6 +514,8 @@ describe("VisualisePage map", () => {
     expect(
       screen.queryByText(/click a cell to view matching/i),
     ).not.toBeInTheDocument();
+    // ...and no general coverage note, which would only repeat the above.
+    expect(container.querySelector(".map-coverage-note")).toBeNull();
   });
 });
 
@@ -1144,6 +1162,31 @@ describe("VisualisePage nested-axis state", () => {
     expect(screen.getByRole("button", { name: "Bubble" }))
       .toHaveAttribute("aria-pressed", "true");
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  test("the coverage note gives way to the oversized-map error", () => {
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({
+        features: { evidenceMap: true, ancestorClosedCodings: true },
+        evidenceMapRenderLimits: { maxCells: 4 },
+      }),
+    );
+    // Fewer plotted than matched, so the note has a shortfall to explain.
+    mockUseCrossFacets.mockReturnValue(
+      nestedResultState({
+        result: crossFacetResult(90, PAGE_NESTED_CELLS, 150),
+      }),
+    );
+    const { container } = render(<VisualisePage />);
+    expect(container.querySelector(".map-coverage-note")).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand Primary" }));
+
+    // The grid is no longer drawn, so a note about what sits on it would lie.
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "This expansion is too large to display",
+    );
+    expect(container.querySelector(".map-coverage-note")).toBeNull();
   });
 
   test("filter results cannot change the active oversized layout guard", () => {

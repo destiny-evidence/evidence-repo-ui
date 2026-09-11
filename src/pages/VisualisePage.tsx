@@ -51,8 +51,11 @@ import { MapConfigPanel } from "@/components/visualise/MapConfigPanel";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import { DEFAULT_EXPANDED_FILTERS } from "@/components/filters/filterOrder";
 import { WarningIcon } from "@/components/common/icons";
+import { MapCoverageNote } from "@/components/visualise/MapCoverageNote";
 import { NotFoundPage } from "./NotFoundPage";
 import "./VisualisePage.css";
+
+const MAP_TITLE_ID = "evidence-map-title";
 
 interface VisualisePageProps {
   path?: string;
@@ -558,7 +561,13 @@ function EvidenceMapView({
   return (
     <div class="evidence-map-view">
       <div class="evidence-map-view__main">
-        <h1 class="visualise-page__title">Evidence map</h1>
+        <h1
+          class="visualise-page__title"
+          id={MAP_TITLE_ID}
+          tabIndex={-1}
+        >
+          Evidence map
+        </h1>
         <div class="evidence-map-view__toolbar">
           <ViewToggle value={view} onChange={handleViewChange} />
           {nestedAxes && (
@@ -619,6 +628,14 @@ function EvidenceMapView({
                 {rowAxis.title} and {columnAxis.title} — nothing to plot on these
                 axes.
               </p>
+            ) : hasGrid && !oversized ? (
+              // Only beside a drawn grid: with none, or one too large to show,
+              // a note about what sits on the map has nothing to describe.
+              <MapCoverageNote
+                totals={result.totals}
+                countNoun={noun}
+                returnFocusTo={MAP_TITLE_ID}
+              />
             ) : null}
             {model && hasGrid && oversized ? (
               <p class="evidence-map-view__status" role="status">

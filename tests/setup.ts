@@ -44,6 +44,7 @@ vi.mock("@/auth/keycloak", () => {
 });
 
 beforeEach(async () => {
+  sessionStorage.clear();
   const { keycloak } = await import("@/auth/keycloak");
   keycloak.authenticated = true;
   keycloak.token = "test-token";
