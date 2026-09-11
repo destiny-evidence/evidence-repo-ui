@@ -42,3 +42,8 @@
 .map-coverage-note__dismiss:hover {
   color: var(--color-text-primary);
 }
+
+.map-coverage-note__dismiss:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

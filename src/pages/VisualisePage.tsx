@@ -55,6 +55,8 @@ import { MapCoverageNote } from "@/components/visualise/MapCoverageNote";
 import { NotFoundPage } from "./NotFoundPage";
 import "./VisualisePage.css";
 
+const MAP_TITLE_ID = "evidence-map-title";
+
 interface VisualisePageProps {
   path?: string;
 }
@@ -559,7 +561,13 @@ function EvidenceMapView({
   return (
     <div class="evidence-map-view">
       <div class="evidence-map-view__main">
-        <h1 class="visualise-page__title">Evidence map</h1>
+        <h1
+          class="visualise-page__title"
+          id={MAP_TITLE_ID}
+          tabIndex={-1}
+        >
+          Evidence map
+        </h1>
         <div class="evidence-map-view__toolbar">
           <ViewToggle value={view} onChange={handleViewChange} />
           {nestedAxes && (
@@ -623,7 +631,11 @@ function EvidenceMapView({
             ) : (
               // Neither of the states above applies, so the map is showing: warn
               // that its plotted set is narrower than the counts around it.
-              <MapCoverageNote totals={result.totals} countNoun={noun} />
+              <MapCoverageNote
+                totals={result.totals}
+                countNoun={noun}
+                returnFocusTo={MAP_TITLE_ID}
+              />
             )}
             {model && hasGrid && oversized ? (
               <p class="evidence-map-view__status" role="status">

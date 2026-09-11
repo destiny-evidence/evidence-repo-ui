@@ -26,13 +26,19 @@ function writeDismissed(): void {
 interface MapCoverageNoteProps {
   totals: CrossFacetTotals;
   countNoun: string;
+  /** Element id focus lands on after closing, so the tab order is not lost. */
+  returnFocusTo: string;
 }
 
 /**
  * Explains why the map plots fewer references than the search and filter counts
  * report, shown only while that shortfall exists and until the reader closes it.
  */
-export function MapCoverageNote({ totals, countNoun }: MapCoverageNoteProps) {
+export function MapCoverageNote({
+  totals,
+  countNoun,
+  returnFocusTo,
+}: MapCoverageNoteProps) {
   const [dismissed, setDismissed] = useState(readDismissed);
 
   // Equal totals mean everything matching is plotted, so nothing needs
@@ -44,6 +50,7 @@ export function MapCoverageNote({ totals, countNoun }: MapCoverageNoteProps) {
   function handleDismiss() {
     setDismissed(true);
     writeDismissed();
+    document.getElementById(returnFocusTo)?.focus();
   }
 
   return (
