@@ -238,7 +238,9 @@ const COMMUNITIES: Community[] = [
       },
     },
     evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
-    copy: buildCopy("DESTINY", {}),
+    copy: buildCopy("DESTINY", {
+      corpusDescriptor: "climate and health research",
+    }),
     externalResources: [],
   },
 ];
