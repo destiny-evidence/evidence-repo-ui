@@ -212,7 +212,7 @@ const COMMUNITIES: Community[] = [
     geographicSchemes: [
       "https://vocab.destiny-evidence.org/geographic-location",
     ],
-    searchDefaults: { endYear: new Date().getFullYear() },
+    searchDefaults: { endYear: new Date().getFullYear() + 1 },
     features: {
       ...DEFAULT_FEATURES,
       selfSignup: true,

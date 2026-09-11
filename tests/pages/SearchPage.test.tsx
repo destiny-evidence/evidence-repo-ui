@@ -520,7 +520,7 @@ describe("SearchPage", () => {
 
   // DESTINY seeds a publication-year cap; ESEA seeds nothing.
   describe("community search defaults", () => {
-    const thisYear = String(new Date().getFullYear());
+    const cap = String(new Date().getFullYear() + 1);
 
     test("a bare visit is redirected to the community's default filters, and fetches once", async () => {
       history.replaceState(null, "", "/destiny");
@@ -529,12 +529,12 @@ describe("SearchPage", () => {
 
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
       expect(new URLSearchParams(window.location.search).get("end_year")).toBe(
-        thisYear,
+        cap,
       );
       // The redirect happens before the first fetch, so no request goes out
       // uncapped: every search call carries the cap.
       for (const [, opts] of mockSearch.mock.calls) {
-        if (opts?.page !== undefined) expect(opts.endYear).toBe(Number(thisYear));
+        if (opts?.page !== undefined) expect(opts.endYear).toBe(Number(cap));
       }
     });
 
@@ -571,14 +571,14 @@ describe("SearchPage", () => {
 
       await waitFor(() =>
         expect(new URLSearchParams(window.location.search).get("end_year")).toBe(
-          thisYear,
+          cap,
         ),
       );
 
       fireEvent.click(screen.getByRole("button", { name: /Refine/ }));
       fireEvent.click(screen.getByRole("button", { name: /Publication year/ }));
       const end = screen.getByLabelText("End year") as HTMLInputElement;
-      expect(end.value).toBe(thisYear);
+      expect(end.value).toBe(cap);
       fireEvent.input(end, { target: { value: "" } });
       fireEvent.click(screen.getByRole("button", { name: "Show results" }));
 

@@ -96,9 +96,9 @@ describe("community registry", () => {
     },
   );
 
-  it("caps DESTINY's landing search at the current publication year", () => {
+  it("caps DESTINY's landing search a year past the current one", () => {
     expect(mod.findCommunity("destiny")?.searchDefaults).toEqual({
-      endYear: new Date().getFullYear(),
+      endYear: new Date().getFullYear() + 1,
     });
   });
 
