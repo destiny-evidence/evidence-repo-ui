@@ -3,7 +3,6 @@ import { useEffect, useState } from "preact/hooks";
 import { track } from "@/analytics/matomo";
 import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
-import { DEFAULT_COMMUNITY_SLUG } from "@/services/communities";
 import { FeedbackFAB } from "@/components/feedback/FeedbackFAB";
 import { ResourcesMenu } from "./ResourcesMenu";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
@@ -37,9 +36,9 @@ export function AppShell({ children }: AppShellProps) {
       pathname.startsWith(`/${community.slug}/references/`));
   const visualiseActive =
     community != null && pathname === `/${community.slug}/visualise`;
-  // No "/" landing page yet (router only matches /:community/*), so point at
-  // the current community root, falling back to the default off a community route.
-  const brandHref = `/${community?.slug ?? DEFAULT_COMMUNITY_SLUG}`;
+  // Within a community the brand goes to its root; off one (an unknown slug)
+  // it goes to the home page, which lists the communities.
+  const brandHref = community ? `/${community.slug}` : "/";
   const trackTab = (name: string) => () =>
     track({ category: "Navigation", action: "Tab Clicked", name });
   return (

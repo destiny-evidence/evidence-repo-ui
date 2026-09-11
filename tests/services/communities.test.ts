@@ -113,9 +113,11 @@ describe("community registry", () => {
     ).toThrow(/lowercase/);
   });
 
-  it("defaults to the HPV community", () => {
-    expect(mod.DEFAULT_COMMUNITY_SLUG).toBe("hpv");
-    expect(mod.DEFAULT_COMMUNITY.name).toBe("HPV Vaccine Delivery");
+  it("advertises only the listed communities, in registry order", () => {
+    expect(mod.listedCommunities().map((c) => c.slug)).toEqual([
+      "hpv",
+      "destiny",
+    ]);
   });
 
   it("defaults features to evidence maps, findings/estimates, the country facet and reference selection", () => {
@@ -159,7 +161,7 @@ describe("community registry", () => {
     {
       slug: "destiny",
       aiSummaries: false,
-      selfSignup: false,
+      selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
       exportsEnabled: true,

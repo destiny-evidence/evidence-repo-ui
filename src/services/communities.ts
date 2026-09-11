@@ -69,6 +69,7 @@ const COMMUNITIES: Community[] = [
   {
     slug: "esea",
     name: "Education",
+    listed: false,
     defaultAnnotations: ["domain-inclusion/jacobs-education"],
     vocabularyUrl: requireEnv(
       "VITE_ESEA_VOCABULARY_URL",
@@ -95,7 +96,7 @@ const COMMUNITIES: Community[] = [
       },
     },
     evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
-    copy: buildCopy("Education", { }),
+    copy: buildCopy("Education", {}),
     exportVariant: "esea",
     codingInstitution: rawSourcePatterns([
       [/(^|[^a-z])eef([^a-z]|$)/, "EEF"],
@@ -115,6 +116,7 @@ const COMMUNITIES: Community[] = [
   {
     slug: "hpv",
     name: "HPV Vaccine Delivery",
+    listed: true,
     defaultAnnotations: ["domain-inclusion/hpv"],
     vocabularyUrl: requireEnv(
       "VITE_HPV_VOCABULARY_URL",
@@ -195,6 +197,7 @@ const COMMUNITIES: Community[] = [
   {
     slug: "destiny",
     name: "DESTINY",
+    listed: true,
     defaultAnnotations: ["domain-inclusion/destiny-high-recall"],
     vocabularyUrl: requireEnv(
       "VITE_DESTINY_VOCABULARY_URL",
@@ -207,10 +210,11 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: [],
     pillExcludedSchemes: [],
     geographicSchemes: [
-      "https://vocab.destiny-evidence.org/geographic-location"
+      "https://vocab.destiny-evidence.org/geographic-location",
     ],
     features: {
       ...DEFAULT_FEATURES,
+      selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
       exportsEnabled: true,
@@ -225,7 +229,8 @@ const COMMUNITIES: Community[] = [
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",
-        schemeUri: "https://vocab.destiny-evidence.org/climate-factors-extreme-weather-events",
+        schemeUri:
+          "https://vocab.destiny-evidence.org/climate-factors-extreme-weather-events",
       },
       column: {
         kind: "scheme",
@@ -235,7 +240,7 @@ const COMMUNITIES: Community[] = [
     evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
     copy: buildCopy("DESTINY", {}),
     externalResources: [],
-  }
+  },
 ];
 
 // findCommunity normalises lookups to lowercase, so an uppercase registered slug would be unreachable.
@@ -255,15 +260,8 @@ export function findCommunity(slug: string): Community | undefined {
   return COMMUNITIES.find((c) => c.slug === slug.toLowerCase());
 }
 
-// Brand link / not-found fallback target while there's no true "/" landing
-// page — the router only matches /:community/*.
-export const DEFAULT_COMMUNITY = (() => {
-  const slug = "hpv";
-  const community = findCommunity(slug);
-  if (!community) {
-    throw new Error(`Default community "${slug}" is not registered.`);
-  }
-  return community;
-})();
-
-export const DEFAULT_COMMUNITY_SLUG = DEFAULT_COMMUNITY.slug;
+// The communities the slug-less pages (home, not-found) point a lost visitor
+// at, in registry order.
+export function listedCommunities(): Community[] {
+  return COMMUNITIES.filter((c) => c.listed);
+}

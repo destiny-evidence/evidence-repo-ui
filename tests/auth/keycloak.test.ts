@@ -33,6 +33,14 @@ describe("initKeycloak onLoad selection", () => {
     expect(opts.silentCheckSsoFallback).toBe(false);
   });
 
+  test("destiny is self-signup too, so its landing offers Create account before any redirect", async () => {
+    setPathname("/destiny");
+    await (await realInitKeycloak())();
+    const opts = initSpy.mock.calls[0][0];
+    expect(opts.onLoad).toBe("check-sso");
+    expect(opts.silentCheckSsoFallback).toBe(false);
+  });
+
   test("non-self-signup community (esea) stays gated behind login-required with no silent check", async () => {
     setPathname("/esea");
     await (await realInitKeycloak())();
@@ -41,8 +49,10 @@ describe("initKeycloak onLoad selection", () => {
     expect(opts.silentCheckSsoRedirectUri).toBeUndefined();
   });
 
-  test("root / unknown path falls back to login-required", async () => {
-    setPathname("/");
+  // The slug-less root never reaches initKeycloak at all — main.tsx renders the
+  // home page without it — so an unknown slug is the only communityless case here.
+  test("unknown community falls back to login-required", async () => {
+    setPathname("/banana");
     await (await realInitKeycloak())();
     expect(initSpy.mock.calls[0][0].onLoad).toBe("login-required");
   });

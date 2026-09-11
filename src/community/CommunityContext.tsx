@@ -1,7 +1,7 @@
 import { createContext, type ComponentChildren } from "preact";
 import { useContext, useEffect, useState } from "preact/hooks";
 import { findCommunity } from "@/services/communities";
-import { URL_CHANGE_EVENT } from "@/services/navigation";
+import { pathSlug, URL_CHANGE_EVENT } from "@/services/navigation";
 import type { Community } from "@/types/models";
 
 // undefined default lets useCommunity() distinguish "outside provider"
@@ -9,15 +9,11 @@ import type { Community } from "@/types/models";
 // (legitimate null result).
 const CommunityContext = createContext<Community | null | undefined>(undefined);
 
-function getSlug(): string | undefined {
-  return window.location.pathname.split("/").filter(Boolean)[0];
-}
-
 export function CommunityProvider({ children }: { children: ComponentChildren }) {
-  const [slug, setSlug] = useState<string | undefined>(getSlug);
+  const [slug, setSlug] = useState<string | undefined>(pathSlug);
 
   useEffect(() => {
-    const onChange = () => setSlug(getSlug());
+    const onChange = () => setSlug(pathSlug());
     window.addEventListener("popstate", onChange);
     window.addEventListener(URL_CHANGE_EVENT, onChange);
     return () => {

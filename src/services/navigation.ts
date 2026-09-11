@@ -1,5 +1,15 @@
 export const URL_CHANGE_EVENT = "urlchange";
 
+/**
+ * First path segment — the community slug on every app route, and undefined at
+ * the slug-less root.
+ */
+export function pathSlug(
+  pathname: string = window.location.pathname,
+): string | undefined {
+  return pathname.split("/").filter(Boolean)[0];
+}
+
 /** Must stay in step with the RecordDetailPage route declared in App.tsx. */
 export const recordDetailPath = (communitySlug: string, referenceId: string) =>
   `/${communitySlug}/references/${referenceId}`;

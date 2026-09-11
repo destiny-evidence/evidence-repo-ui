@@ -28,6 +28,22 @@ test("renders not found for invalid community", () => {
   expect(screen.getByText("Page not found")).toBeInTheDocument();
 });
 
+// The in-router "/" route exists for exactly one journey: off a community the
+// header brand points at "/", and preact-router intercepts the click rather
+// than reloading. A cold load of "/" never reaches the router — see
+// tests/main.test.tsx for that path.
+test("the brand link off an unknown community lands on the home page", () => {
+  history.pushState({}, "", "/banana");
+  render(<App />);
+  expect(screen.getByText("Page not found")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("link", { name: "Evidence Repository" }));
+
+  expect(
+    screen.getByRole("heading", { name: "Welcome to the Evidence Repository" }),
+  ).toBeInTheDocument();
+});
+
 test("shows the Visualise tab and routes to the visualise page when enabled", () => {
   history.pushState({}, "", "/hpv");
   const { unmount } = render(<App />);
@@ -53,7 +69,7 @@ test("clicking the not-found link from /banana shows the search page", () => {
   render(<App />);
   expect(screen.getByText("Page not found")).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole("link", { name: /go to hpv vaccine community/i }));
+  fireEvent.click(screen.getByRole("link", { name: "HPV Vaccine Delivery" }));
 
   expect(
     screen.getByRole("heading", { name: /search the evidence/i }),

@@ -40,6 +40,6 @@ Stack: Vite + Preact + TypeScript
 
 ## Authentication
 
-The app requires Keycloak authentication on all routes (`onLoad: 'login-required'`). On load, it redirects unauthenticated users to Keycloak and attaches a Bearer token to every destiny-repository API request. You need a Keycloak account in the `destiny` realm to run the app locally.
+The app requires Keycloak authentication on all community routes (`onLoad: 'login-required'`). On load, it redirects unauthenticated users to Keycloak and attaches a Bearer token to every destiny-repository API request. You need a Keycloak account in the `destiny` realm to run the app locally.
 
-Copy `.env.example` to `.env`, fill in the `VITE_KEYCLOAK_*` vars pointing at the dev Keycloak (and a client ID you have access to), then `npm run dev`. Navigate to a real route (e.g. `/esea`, not `/`) — you'll be redirected to Keycloak to sign in, and returned to the app with your display name in the header.
+Copy `.env.example` to `.env`, fill in the `VITE_KEYCLOAK_*` vars pointing at the dev Keycloak (and a client ID you have access to), then `npm run dev`. Navigate to a community route (e.g. `/esea`) — you'll be redirected to Keycloak to sign in, and returned to the app with your display name in the header.

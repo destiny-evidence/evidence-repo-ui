@@ -52,6 +52,7 @@ export function makeCommunity(
   return {
     slug: "test",
     name: "Test Community",
+    listed: false,
     defaultAnnotations: [],
     vocabularyUrl: "https://vocab.example/v1",
     contextUrl: "https://vocab.example/ctx",
