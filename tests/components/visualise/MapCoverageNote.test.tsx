@@ -26,14 +26,14 @@ function renderNote(totals: CrossFacetTotals, countNoun = "investigations") {
   );
 }
 
-const explanation = /only investigations that have been coded/i;
+const explanation = /only those coded against both axes/i;
 
 describe("MapCoverageNote", () => {
   test("explains the shortfall when fewer references are plotted than match", () => {
     renderNote(makeTotals(199, 120152));
 
     expect(screen.getByText(explanation).textContent).toContain(
-      "search results and filter counts may be larger",
+      "the rest are in your search results",
     );
   });
 
@@ -41,7 +41,7 @@ describe("MapCoverageNote", () => {
     renderNote(makeTotals(3, 40), "references");
 
     expect(
-      screen.getByText(/only references that have been coded/i),
+      screen.getByText(/some references aren’t on the map/i),
     ).toBeInTheDocument();
   });
 

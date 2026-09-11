@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks";
 import type { CrossFacetTotals } from "@/types/models";
-import { InfoIcon } from "../common/icons";
+import { WarningIcon } from "../common/icons";
 import "./MapCoverageNote.css";
 
 // Per browser tab, not per browser: this explains a recurring surprise rather
@@ -57,10 +57,13 @@ export function MapCoverageNote({
 
   return (
     <p class="map-coverage-note">
-      <InfoIcon size={14} />
+      <WarningIcon />
       <span class="map-coverage-note__text">
-        Only {countNoun} that have been coded, and are on both axes, are
-        plotted, so search results and filter counts may be larger.
+        <strong class="map-coverage-note__lead">
+          Some {countNoun} aren’t on the map.
+        </strong>{" "}
+        Only those coded against both axes can be placed - the rest are in your
+        search results.
       </span>
       <button
         type="button"

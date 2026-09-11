@@ -1,11 +1,13 @@
+/* Same slot and palette as the over-filtered banner, so the map's messages read
+   as one surface rather than two unrelated treatments. */
 .map-coverage-note {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   margin: 0;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-inset);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-warning);
+  background: var(--color-warning-light);
   border-radius: var(--radius-md);
   font-size: var(--font-size-small);
   color: var(--color-text-secondary);
@@ -13,11 +15,15 @@
 
 .map-coverage-note > svg {
   flex: none;
-  color: var(--color-text-tertiary);
 }
 
 .map-coverage-note__text {
   flex: 1;
+}
+
+.map-coverage-note__lead {
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 /* Sized past the glyph for a comfortable hit target, with the extra height
@@ -35,7 +41,7 @@
   background: none;
   font: inherit;
   line-height: 1;
-  color: var(--color-text-tertiary);
+  color: inherit;
   cursor: pointer;
 }
 

@@ -339,7 +339,7 @@ describe("VisualisePage map", () => {
     });
     render(<VisualisePage />);
     expect(
-      screen.getByText(/only results that have been coded/i),
+      screen.getByText(/some results aren’t on the map/i),
     ).toBeInTheDocument();
   });
 
