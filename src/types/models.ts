@@ -40,6 +40,12 @@ export interface EvidenceMapRenderLimits {
 // while still accepting arbitrary scheme URIs.
 export type PinnedFilter = "year" | "country" | (string & {});
 
+// The filters a visitor arriving with no search of their own lands on.
+export interface SearchDefaults {
+  // Newest publication year to include.
+  endYear?: number;
+}
+
 // See buildCopy() in services/communities.ts for the shared fallbacks.
 export interface CommunityCopy {
   searchPlaceholder: string;
@@ -93,6 +99,8 @@ export interface Community {
   // Filter cards that start expanded, by slot ("year"/"country") or scheme URI;
   // absent ⇒ DEFAULT_EXPANDED_FILTERS (year, country).
   defaultExpandedFilters?: readonly PinnedFilter[];
+  // Filters a bare visit to /{slug} lands on; absent ⇒ the unfiltered corpus.
+  searchDefaults?: SearchDefaults;
   features: CommunityFeatures;
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
   // even where features.evidenceMap is on (e.g. before a vocabulary is published).

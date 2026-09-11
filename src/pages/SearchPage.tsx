@@ -130,9 +130,36 @@ function formatResultsSummary(total: { count: number; is_lower_bound: boolean })
   );
 }
 
+// The URL a visitor with no search of their own lands on
+function landingUrl(community: Community): string | null {
+  if (!community.searchDefaults) return null;
+  const url = buildSearchUrl(community.slug, {
+    ...parseSearchParams(""),
+    ...community.searchDefaults,
+  });
+  return url === `/${community.slug}` ? null : url;
+}
+
 export function SearchPage(_props: SearchPageProps) {
   const community = useCommunity();
   if (!community) return <NotFoundPage />;
+  return <SearchPageEntry community={community} />;
+}
+
+// Writes the community's default filters into the URL once, on arrival at a
+// bare /{slug}.
+function SearchPageEntry({ community }: { community: Community }) {
+  const [seedTo, setSeedTo] = useState(() =>
+    window.location.search === "" ? landingUrl(community) : null,
+  );
+
+  useEffect(() => {
+    if (seedTo === null) return;
+    navigate(seedTo, { mode: "replace" });
+    setSeedTo(null);
+  }, [seedTo]);
+
+  if (seedTo !== null) return null;
   return <SearchPageInner community={community} />;
 }
 

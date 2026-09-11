@@ -96,6 +96,17 @@ describe("community registry", () => {
     },
   );
 
+  it("caps DESTINY's landing search at the current publication year", () => {
+    expect(mod.findCommunity("destiny")?.searchDefaults).toEqual({
+      endYear: new Date().getFullYear(),
+    });
+  });
+
+  it("seeds no search defaults for the other communities", () => {
+    expect(mod.findCommunity("esea")?.searchDefaults).toBeUndefined();
+    expect(mod.findCommunity("hpv")?.searchDefaults).toBeUndefined();
+  });
+
   it("resolves a coding institution for ESEA only", () => {
     expect(mod.findCommunity("esea")?.codingInstitution).toBeDefined();
     expect(mod.findCommunity("hpv")?.codingInstitution).toBeUndefined();
