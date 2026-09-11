@@ -628,15 +628,15 @@ function EvidenceMapView({
                 {rowAxis.title} and {columnAxis.title} — nothing to plot on these
                 axes.
               </p>
-            ) : (
-              // Neither of the states above applies, so the map is showing: warn
-              // that its plotted set is narrower than the counts around it.
+            ) : hasGrid && !oversized ? (
+              // Only beside a drawn grid: with none, or one too large to show,
+              // a note about what sits on the map has nothing to describe.
               <MapCoverageNote
                 totals={result.totals}
                 countNoun={noun}
                 returnFocusTo={MAP_TITLE_ID}
               />
-            )}
+            ) : null}
             {model && hasGrid && oversized ? (
               <p class="evidence-map-view__status" role="status">
                 {canCollapseToFit
