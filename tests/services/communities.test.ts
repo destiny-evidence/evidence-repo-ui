@@ -80,7 +80,7 @@ describe("community registry", () => {
       vocabularyUrl: ENV.VITE_DESTINY_VOCABULARY_URL,
       contextUrl: ENV.VITE_DESTINY_CONTEXT_URL,
       countNoun: "investigations",
-      corpusDescriptor: "destiny research",
+      corpusDescriptor: "climate and health research",
     },
   ])(
     "resolves $slug with its URLs and copy",
