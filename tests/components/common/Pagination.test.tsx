@@ -84,6 +84,62 @@ describe("Pagination", () => {
     buttons.forEach((b) => expect(b).toBeDisabled());
   });
 
+  // The last page can be a real end (it holds the final match) or an artificial
+  // one (the backend stops serving here while more matches exist). Only the
+  // artificial end gets an explanation.
+  test("explains an artificial end on the last page when given a reason", () => {
+    render(
+      <Pagination
+        currentPage={500}
+        totalPages={500}
+        onPageChange={() => {}}
+        nextDisabledReason="Limited to the first 500 pages"
+      />,
+    );
+    const next = screen.getByRole("button", { name: "Next page" });
+    expect(next).toBeDisabled();
+    expect(next.closest("[data-tooltip]")).toHaveAttribute(
+      "data-tooltip",
+      "Limited to the first 500 pages",
+    );
+  });
+
+  test("says nothing at a real end, where no reason is given", () => {
+    render(<Pagination currentPage={109} totalPages={109} onPageChange={() => {}} />);
+    const next = screen.getByRole("button", { name: "Next page" });
+    expect(next).toBeDisabled();
+    expect(next.closest("[data-tooltip]")).toBeNull();
+  });
+
+  test("says nothing before the last page, where next still works", () => {
+    render(
+      <Pagination
+        currentPage={1}
+        totalPages={500}
+        onPageChange={() => {}}
+        nextDisabledReason="Limited to the first 500 pages"
+      />,
+    );
+    const next = screen.getByRole("button", { name: "Next page" });
+    expect(next).toBeEnabled();
+    expect(next.closest("[data-tooltip]")).toBeNull();
+  });
+
+  test("says nothing while the whole pager is disabled by a refetch", () => {
+    render(
+      <Pagination
+        currentPage={500}
+        totalPages={500}
+        onPageChange={() => {}}
+        disabled
+        nextDisabledReason="Limited to the first 500 pages"
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Next page" }).closest("[data-tooltip]"),
+    ).toBeNull();
+  });
+
   test("renders nothing when totalPages <= 1", () => {
     const { container } = render(
       <Pagination currentPage={1} totalPages={1} onPageChange={() => {}} />,

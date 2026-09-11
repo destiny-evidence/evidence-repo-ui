@@ -192,6 +192,14 @@
   white-space: normal;
 }
 
+/* Rails are fixed-width, so a word too wide for one hyphenates instead of
+   running into the cells; overflow-wrap catches words the hyphenator can't split. */
+.evidence-map__row-head--tiered .evidence-map__row-head-label {
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+
 .evidence-map__expand-toggle {
   display: inline-flex;
   flex: none;

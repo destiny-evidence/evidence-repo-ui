@@ -96,7 +96,7 @@ const COMMUNITIES: Community[] = [
       },
     },
     evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
-    copy: buildCopy("Education", { }),
+    copy: buildCopy("Education", {}),
     exportVariant: "esea",
     codingInstitution: rawSourcePatterns([
       [/(^|[^a-z])eef([^a-z]|$)/, "EEF"],
@@ -198,7 +198,7 @@ const COMMUNITIES: Community[] = [
     slug: "destiny",
     name: "DESTINY",
     listed: true,
-    defaultAnnotations: ["domain-inclusion/destiny-prototype"],
+    defaultAnnotations: ["domain-inclusion/destiny-high-recall"],
     vocabularyUrl: requireEnv(
       "VITE_DESTINY_VOCABULARY_URL",
       import.meta.env.VITE_DESTINY_VOCABULARY_URL,
@@ -210,7 +210,7 @@ const COMMUNITIES: Community[] = [
     filterExcludedSchemes: [],
     pillExcludedSchemes: [],
     geographicSchemes: [
-      "https://vocab.destiny-evidence.org/geographic-location"
+      "https://vocab.destiny-evidence.org/geographic-location",
     ],
     features: {
       ...DEFAULT_FEATURES,
@@ -229,7 +229,8 @@ const COMMUNITIES: Community[] = [
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",
-        schemeUri: "https://vocab.destiny-evidence.org/interventions-responses-solutions",
+        schemeUri:
+          "https://vocab.destiny-evidence.org/climate-factors-extreme-weather-events",
       },
       column: {
         kind: "scheme",
@@ -239,7 +240,7 @@ const COMMUNITIES: Community[] = [
     evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
     copy: buildCopy("DESTINY", {}),
     externalResources: [],
-  }
+  },
 ];
 
 // findCommunity normalises lookups to lowercase, so an uppercase registered slug would be unreachable.

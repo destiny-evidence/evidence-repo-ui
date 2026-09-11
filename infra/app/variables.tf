@@ -157,13 +157,13 @@ variable "hpv_context_url" {
 variable "destiny_vocabulary_url" {
   description = "URL of the DESTINY community's published SKOS vocabulary (.jsonld)"
   type        = string
-  default     = "https://vocab.staging.evidence-repository.org/published/01a0321e-8b92-71bc-832f-f7bb9194869f/0.0.1/vocabulary.jsonld"
+  default     = "https://vocab.evidence-repository.org/published/01a0899b-90a8-714e-87c0-7b00fff5a29f/1.0/vocabulary.jsonld"
 }
 
 variable "destiny_context_url" {
   description = "URL of the DESTINY community's JSON-LD @context (.jsonld)"
   type        = string
-  default     = "https://vocab.staging.evidence-repository.org/published/01a0321e-8b92-71bc-832f-f7bb9194869f/0.0.1/context.jsonld"
+  default     = "https://vocab.evidence-repository.org/published/01a0899b-90a8-714e-87c0-7b00fff5a29f/1.0/context.jsonld"
 }
 
 

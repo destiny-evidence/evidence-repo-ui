@@ -1,3 +1,4 @@
+import { Tooltip } from "@/components/common/Tooltip";
 import "./Pagination.css";
 
 interface PaginationProps {
@@ -5,6 +6,11 @@ interface PaginationProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   disabled?: boolean;
+  /**
+   * Why nothing follows the last page, when the last page is a ceiling rather
+   * than the end of the matches. Omit for a real end, which needs no excuse.
+   */
+  nextDisabledReason?: string;
 }
 
 type Item = { kind: "page"; page: number } | { kind: "ellipsis"; id: string };
@@ -53,6 +59,7 @@ export function Pagination({
   totalPages,
   onPageChange,
   disabled = false,
+  nextDisabledReason,
 }: PaginationProps) {
   // Guard against pathological inputs (NaN, Infinity, fractional, negative).
   // Without this, the ellipsis branch's for-loop can hang on Infinity, and
@@ -60,6 +67,22 @@ export function Pagination({
   if (!Number.isSafeInteger(totalPages) || totalPages <= 1) return null;
 
   const items = computeItems(currentPage, totalPages);
+  // Only when the pager itself stops us, not when a refetch disabled everything.
+  // Tooltip renders bare children when the reason is absent, so a real end
+  // needs no check here.
+  const atLastPage = !disabled && currentPage === totalPages;
+
+  const nextButton = (
+    <button
+      type="button"
+      class="pagination__ctrl"
+      aria-label="Next page"
+      disabled={disabled || currentPage === totalPages}
+      onClick={() => onPageChange(currentPage + 1)}
+    >
+      →
+    </button>
+  );
 
   return (
     <nav class="pagination" aria-label="Pagination">
@@ -89,15 +112,13 @@ export function Pagination({
           </button>
         ),
       )}
-      <button
-        type="button"
-        class="pagination__ctrl"
-        aria-label="Next page"
-        disabled={disabled || currentPage === totalPages}
-        onClick={() => onPageChange(currentPage + 1)}
-      >
-        →
-      </button>
+      {atLastPage ? (
+        // Wrapper sits outside the disabled button: disabled buttons receive no
+        // pointer events, so the bubble has to hang off an enabled ancestor.
+        <Tooltip text={nextDisabledReason}>{nextButton}</Tooltip>
+      ) : (
+        nextButton
+      )}
     </nav>
   );
 }

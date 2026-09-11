@@ -80,7 +80,8 @@ export async function searchReferences(
 
 // All matching reference ids for a query, without pagination or reference data.
 // Accepts the same filters as searchReferences (minus page); the backend caps
-// the result at its result window and flags truncation via total.is_lower_bound.
+// the result at its window, so reference_ids.length < total.count is what
+// flags truncation — is_lower_bound means an inexact count, not truncation.
 export async function searchReferenceIds(
   query: string | undefined,
   filters: Omit<SearchFilters, "page"> = {},

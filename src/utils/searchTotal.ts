@@ -1,8 +1,7 @@
 import type { SearchResultTotal } from "@/types/models";
 
-// ES caps deep pagination at 10k; when the true count exceeds that, the backend
-// returns is_lower_bound=true and count=10000. Render "10,000+" so the UI
-// doesn't understate the size.
+// Renders "N+" for a count the backend reports as a floor rather than exact.
+// A repository that counts exactly never sets that, so the suffix disappears.
 export function formatTotal(total: SearchResultTotal): string {
   return `${total.count.toLocaleString()}${total.is_lower_bound ? "+" : ""}`;
 }

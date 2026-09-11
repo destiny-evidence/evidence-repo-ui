@@ -28,7 +28,7 @@ beforeEach(() => {
 
 describe("useReferenceListExport", () => {
   test("loads a search's references as RIS, then APA inputs", async () => {
-    mockRun.mockResolvedValue("https://blob/result.ris");
+    mockRun.mockResolvedValue({ resultUrl: "https://blob/result.ris", truncated: false });
     const inputs = [{ authors: ["Jane Smith"], year: 2021, title: "X" }];
     mockFetch.mockResolvedValue(inputs);
 
@@ -47,7 +47,7 @@ describe("useReferenceListExport", () => {
   });
 
   test("loads an id list via the reference export", async () => {
-    mockRunIds.mockResolvedValue("https://blob/result.ris");
+    mockRunIds.mockResolvedValue({ resultUrl: "https://blob/result.ris", truncated: false });
     mockFetch.mockResolvedValue([]);
 
     renderHook(() =>
@@ -64,7 +64,7 @@ describe("useReferenceListExport", () => {
   });
 
   test("applies the browse shim for an empty query", async () => {
-    mockRun.mockResolvedValue("u");
+    mockRun.mockResolvedValue({ resultUrl: "u", truncated: false });
     mockFetch.mockResolvedValue([]);
     renderHook(() =>
       useReferenceListExport({ kind: "search", query: undefined, filters: {} }, true),

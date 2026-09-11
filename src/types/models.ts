@@ -113,12 +113,16 @@ export type Visibility = "public" | "restricted" | "hidden";
 
 export interface SearchResultTotal {
   count: number;
+  /** The count is a floor, not exact: the search timed out or terminated early. */
   is_lower_bound: boolean;
 }
 
 export interface SearchResultPage {
   count: number;
   number: number;
+  // Results the backend will page through, however many match. Optional until
+  // every repository response carries it.
+  max_result_window?: number;
 }
 
 export interface SearchResult {
@@ -128,7 +132,7 @@ export interface SearchResult {
 }
 
 // Matching reference ids for a search, in result order, capped at the backend's
-// result window (`total.is_lower_bound` flags truncation).
+// result window (`reference_ids.length < total.count` flags truncation).
 export interface ReferenceIdSearchResult {
   total: SearchResultTotal;
   reference_ids: string[];

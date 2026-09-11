@@ -9,7 +9,7 @@ import {
   buildSearchUrl,
   type SearchParams,
 } from "@/services/searchParams";
-import { navigate } from "@/services/navigation";
+import { navigate, stampHistoryState } from "@/services/navigation";
 import {
   axisToken,
   buildAxisBands,
@@ -23,6 +23,9 @@ import {
   axisSearchParams,
   backToVisualiseState,
   DEFAULT_CELL_SIZE,
+  mapExpansionFromState,
+  mapExpansionState,
+  type MapExpansion,
   type AxisCategory,
   type CellSize,
   exceedsEvidenceMapRenderLimits,
@@ -222,22 +225,31 @@ function EvidenceMapView({
   );
 
   const nestedAxes = community.features.ancestorClosedCodings;
-  const [rowExpansion, setRowExpansion] = useState<AxisExpansion | null>(null);
-  const [columnExpansion, setColumnExpansion] =
-    useState<AxisExpansion | null>(null);
+  // Read once at mount, not reactively: the canonicalizing replaceState below
+  // can null this entry's state, and a restored view must survive that.
+  const [restored] = useState(() => mapExpansionFromState(window.history.state));
+  const [rowExpansion, setRowExpansion] = useState<AxisExpansion | null>(
+    () => toAxisExpansion(restored?.row),
+  );
+  const [columnExpansion, setColumnExpansion] = useState<AxisExpansion | null>(
+    () => toAxisExpansion(restored?.column),
+  );
 
   const rowAxisIdentity = axisToken(displayAxes.row);
   const columnAxisIdentity = axisToken(displayAxes.column);
   const previousRowAxisIdentity = useRef(rowAxisIdentity);
   const previousColumnAxisIdentity = useRef(columnAxisIdentity);
   useEffect(() => {
+    // A same-route Back keeps this mounted, so the mount-time read can't see the
+    // new entry. Must stay above the canonicalizing effect, which nulls state.
+    const carried = mapExpansionFromState(window.history.state);
     if (previousRowAxisIdentity.current !== rowAxisIdentity) {
       previousRowAxisIdentity.current = rowAxisIdentity;
-      setRowExpansion(null);
+      setRowExpansion(toAxisExpansion(carried?.row));
     }
     if (previousColumnAxisIdentity.current !== columnAxisIdentity) {
       previousColumnAxisIdentity.current = columnAxisIdentity;
-      setColumnExpansion(null);
+      setColumnExpansion(toAxisExpansion(carried?.column));
     }
   }, [rowAxisIdentity, columnAxisIdentity]);
   const rowExpandedKeys = useMemo(
@@ -473,13 +485,25 @@ function EvidenceMapView({
     return conceptPathName(conceptPaths, category.key, category.label);
   }
 
-  // Navigate into Search with the given params, stashing the map's own URL in
-  // history.state so the search page can offer a "Back to Visualise" link.
+  // Store the map URL and open branches for Search and browser Back.
   function deepLinkToSearch(next: SearchParams) {
     const mapUrl = `/${community.slug}/visualise?${canonical}`;
+    const branches = openBranches();
+    // Browser Back lands on this entry, so it needs the same branches.
+    if (branches) stampHistoryState(mapExpansionState(branches));
     navigate(buildSearchUrl(community.slug, next), {
-      state: backToVisualiseState(mapUrl),
+      state: backToVisualiseState(mapUrl, branches),
     });
+  }
+
+  // The branches open right now, whether the user opened them or they are the
+  // axis defaults. A flat map has no branches to restore.
+  function openBranches(): MapExpansion | null {
+    if (!nestedAxes) return null;
+    return {
+      row: { axis: rowAxisIdentity, keys: [...rowExpandedKeys] },
+      column: { axis: columnAxisIdentity, keys: [...columnExpandedKeys] },
+    };
   }
 
   // The over-filtered banner's inline shortcut — the panel's "Reset all" applied
@@ -672,6 +696,12 @@ function EvidenceMapView({
       />
     </div>
   );
+}
+
+function toAxisExpansion(
+  restored: { axis: string; keys: string[] } | undefined,
+): AxisExpansion | null {
+  return restored ? { axis: restored.axis, keys: new Set(restored.keys) } : null;
 }
 
 function toggledKeys(keys: ReadonlySet<string>, key: string): Set<string> {
