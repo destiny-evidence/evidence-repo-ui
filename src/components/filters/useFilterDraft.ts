@@ -35,7 +35,7 @@ export interface AppliedFilters {
 type ConceptDraft = Map<string, ConceptSchemeFilterState>;
 
 export interface FilterDraft {
-  schemes: ConceptScheme[];
+  schemes: ConceptScheme[] | null;
   countryDraft: CountryFilterState;
   yearDraft: YearRangeFilterState;
   onSchemeChange: (scheme: ConceptScheme, next: ConceptSchemeFilterState) => void;
@@ -57,8 +57,10 @@ export interface FilterDraft {
 
 // What a filter surface needs to seed its draft.
 export interface FilterDraftInputs {
-  // Filterable concept schemes — one filter card each.
-  schemes: ConceptScheme[];
+  // Filterable concept schemes — one filter card each. Null when the
+  // vocabulary is unavailable: the applied concept filters then pass through
+  // untouched, since nothing can display or edit them.
+  schemes: ConceptScheme[] | null;
   appliedConceptFilters: readonly (readonly string[])[];
   appliedCountryCodes: readonly string[];
   appliedStartYear: number | undefined;
@@ -122,8 +124,13 @@ export function useFilterDraft({
   params,
 }: FilterDraftInputs): FilterDraft {
   const [conceptDraft, setConceptDraft] = useState<ConceptDraft>(() =>
-    parseConceptFilters(appliedConceptFilters, schemes),
+    parseConceptFilters(appliedConceptFilters, schemes ?? []),
   );
+  // Stands in for the concept draft while the vocabulary is unavailable: the
+  // applied filters still scope the facet preview and survive an axis or year
+  // change, and only "Reset all" clears them.
+  const [opaqueConceptFilters, setOpaqueConceptFilters] =
+    useState(appliedConceptFilters);
   const [countryDraft, setCountryDraft] = useState<CountryFilterState>(() =>
     countryStateFromCodes(appliedCountryCodes),
   );
@@ -132,8 +139,11 @@ export function useFilterDraft({
   );
 
   const draftConceptFilters = useMemo(
-    () => draftToConceptFilters(conceptDraft, schemes),
-    [conceptDraft, schemes],
+    () =>
+      schemes === null
+        ? opaqueConceptFilters
+        : draftToConceptFilters(conceptDraft, schemes),
+    [conceptDraft, schemes, opaqueConceptFilters],
   );
   const draftCountryCodes = useMemo(
     () => selectedCodes(countryDraft),
@@ -179,6 +189,7 @@ export function useFilterDraft({
 
   function reset() {
     setConceptDraft(new Map());
+    setOpaqueConceptFilters([]);
     setCountryDraft(emptyCountryState());
     setYearDraft(emptyYearRangeState());
   }

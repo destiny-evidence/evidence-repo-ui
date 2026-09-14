@@ -244,10 +244,38 @@ describe("vocabulary not yet available", () => {
     expect(screen.queryByLabelText("Rows (y)")).toBeNull();
   });
 
-  test("a vocabulary failure says so instead of offering an empty draft", () => {
-    renderPanel({ schemes: null, schemesError: new Error("boom") });
-    expect(screen.getByRole("alert")).toHaveTextContent("Filters unavailable.");
-    expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
+  test("a vocabulary failure keeps axes, year and country usable and carries applied concept filters through", () => {
+    const onApply = vi.fn();
+    renderPanel({
+      schemes: null,
+      schemesError: new Error("boom"),
+      appliedConceptFilters: [[URI_JOURNAL]],
+      onApply,
+    });
+    expect(screen.getByText(/Concept filters couldn't be loaded/)).toBeInTheDocument();
+    expect(screen.getByText("Publication year")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Journal Article")).toBeNull();
+    // Clean on arrival: the applied filter can't be shown, but it isn't
+    // counted as dropped either.
+    expect(showResults().disabled).toBe(true);
+
+    fireEvent.change(rowSelect(), { target: { value: AXIS_COUNTRIES } });
+    fireEvent.click(showResults());
+    expect(onApply.mock.calls[0][0].filters.conceptFilters).toEqual([[URI_JOURNAL]]);
+  });
+
+  test("Reset all clears concept filters the panel can't display", () => {
+    const onApply = vi.fn();
+    renderPanel({
+      schemes: null,
+      schemesError: new Error("boom"),
+      appliedConceptFilters: [[URI_JOURNAL]],
+      onApply,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
+    expect(showResults().disabled).toBe(false);
+    fireEvent.click(showResults());
+    expect(onApply.mock.calls[0][0].filters.conceptFilters).toEqual([]);
   });
 
   test("a vocabulary with nothing filterable still counts as loaded", () => {

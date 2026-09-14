@@ -808,6 +808,41 @@ describe("SearchPage", () => {
       expect(screen.queryByRole("button", { name: /Refine/ })).toBeNull();
     });
 
+    test("a failed vocabulary still offers Refine with the year and country cards", async () => {
+      mockVocab.mockReturnValue(makeVocabResult({ error: new Error("boom") }));
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("button", { name: "Refine" }));
+      expect(screen.getByText(/Concept filters couldn't be loaded/)).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Publication year/ }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Country/ })).toBeInTheDocument();
+    });
+
+    test("Back with the drawer open re-seeds the draft from the new URL", async () => {
+      history.replaceState(null, "", `/esea?concept=${encodeURIComponent(URI_LEARNING)}`);
+      mockBoth({ results: makeResult(7, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+      fireEvent.click(screen.getByRole("button", { name: /Refine\s*1/ }));
+      const learning = () =>
+        screen.getByLabelText("Educational Outcomes and Learning") as HTMLInputElement;
+      expect(learning().checked).toBe(true);
+
+      // The previous history entry carried no concept filter.
+      history.replaceState(null, "", "/esea");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+
+      await waitFor(() => expect(learning().checked).toBe(false));
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+
     test("Refine is disabled before the vocabulary fetch has started", async () => {
       // The hook reports loading false until its effect runs; that render is
       // still loading, not a vocabulary with nothing to offer.

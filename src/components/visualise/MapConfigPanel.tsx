@@ -20,9 +20,8 @@ import {
 import type { EvidenceMapAxis, EvidenceMapAxes } from "@/types/models";
 import "./MapConfigPanel.css";
 
-interface MapConfigPanelProps extends Omit<MapConfigPanelInnerProps, "schemes"> {
-  // Filterable concept schemes, or null while the vocabulary is still loading.
-  schemes: ConceptScheme[] | null;
+interface MapConfigPanelProps extends MapConfigPanelInnerProps {
+  // Null `schemes` with no error means the vocabulary is still loading.
   schemesError: Error | null;
 }
 
@@ -75,21 +74,15 @@ function axesEqual(a: EvidenceMapAxes, b: EvidenceMapAxes): boolean {
  * no "Show results": the draft can only recognise the URL's concept filters
  * once the schemes naming them are here, so an early commit would wipe them.
  */
-function MapConfigPanelFrame({
-  status,
-  alert,
-}: {
-  status: string;
-  alert?: boolean;
-}) {
+function MapConfigPanelLoading() {
   return (
     <aside class="map-config-panel" aria-label="Configure the evidence map">
       <header class="map-config-panel__header">
         <h2 class="map-config-panel__heading">Configure map</h2>
       </header>
       <div class="map-config-panel__body">
-        <p class="map-config-panel__status" role={alert ? "alert" : "status"}>
-          {status}
+        <p class="map-config-panel__status" role="status">
+          Loading filters…
         </p>
       </div>
     </aside>
@@ -103,18 +96,13 @@ function MapConfigPanelFrame({
  * axes to the community defaults and clears the filters.
  *
  * A vocabulary that loads with no filterable schemes still counts as loaded —
- * the country and year cards stand on their own.
+ * the country and year cards stand on their own. One that fails to load
+ * leaves the axes and those cards usable too; only the concept filters go
+ * missing, and any already applied ride along unchanged.
  */
-export function MapConfigPanel({
-  schemes,
-  schemesError,
-  ...rest
-}: MapConfigPanelProps) {
-  if (schemesError) {
-    return <MapConfigPanelFrame status="Filters unavailable." alert />;
-  }
-  if (!schemes) return <MapConfigPanelFrame status="Loading filters…" />;
-  return <MapConfigPanelInner schemes={schemes} {...rest} />;
+export function MapConfigPanel({ schemesError, ...rest }: MapConfigPanelProps) {
+  if (rest.schemes === null && !schemesError) return <MapConfigPanelLoading />;
+  return <MapConfigPanelInner {...rest} />;
 }
 
 function MapConfigPanelInner({
@@ -145,7 +133,8 @@ function MapConfigPanelInner({
   });
 
   const options = useMemo(
-    () => buildAxisOptions(schemes, [rowDraft, columnDraft], showCountryFacetFilter),
+    () =>
+      buildAxisOptions(schemes ?? [], [rowDraft, columnDraft], showCountryFacetFilter),
     [schemes, rowDraft, columnDraft, showCountryFacetFilter],
   );
 

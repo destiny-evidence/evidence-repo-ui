@@ -50,7 +50,7 @@ export function FilterCardList({
   defaultExpandedFilters = DEFAULT_EXPANDED_FILTERS,
   collapsibleConceptFilters = false,
 }: FilterCardListProps) {
-  const items = orderFilterItems(draft.schemes, {
+  const items = orderFilterItems(draft.schemes ?? [], {
     pinned: pinnedFilters,
     showCountryFacetFilter,
   });
@@ -58,6 +58,12 @@ export function FilterCardList({
 
   return (
     <>
+      {draft.schemes === null && (
+        <div class="filter-card-list__notice" role="alert">
+          Concept filters couldn't be loaded. Those already applied stay in
+          place.
+        </div>
+      )}
       {draft.facetError && (
         <div class="filter-card-list__notice" role="status">
           Filter counts unavailable.

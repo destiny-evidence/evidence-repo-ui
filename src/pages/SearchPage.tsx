@@ -76,24 +76,21 @@ interface RefineConfig {
   onClick: () => void;
 }
 
-// Maps the useVocabulary() result to the SearchBar `refine` prop. Loaded means
-// the schemes are present — the hook reports loading false before its fetch
-// starts. Once loaded, the trigger is offered whenever the community has a
-// filter card to show, so the year and country cards count even with no
-// filterable schemes; with none at all it isn't rendered.
+// Maps the useVocabulary() result to the SearchBar `refine` prop. Loading is
+// judged by the schemes being absent with no error — the hook reports loading
+// false before its fetch starts. Once settled, loaded or failed, the trigger
+// is offered whenever the community has a filter card to show: the year and
+// country cards count even with no schemes. With none at all it isn't rendered.
 function buildRefineConfig(
   vocab: ReturnType<typeof useVocabulary>,
   hasFilterCards: boolean,
   count: number,
   open: () => void,
 ): RefineConfig | undefined {
-  if (vocab.schemes) {
-    return hasFilterCards ? { count, disabled: false, onClick: open } : undefined;
+  if (vocab.schemes === null && !vocab.error) {
+    return { count: 0, disabled: true, disabledReason: "Loading filters…", onClick: () => {} };
   }
-  if (vocab.error) {
-    return { count: 0, disabled: true, disabledReason: "Filters unavailable", onClick: () => {} };
-  }
-  return { count: 0, disabled: true, disabledReason: "Loading filters…", onClick: () => {} };
+  return hasFilterCards ? { count, disabled: false, onClick: open } : undefined;
 }
 
 // `evidence-repository-<stem>-<slug>-YYYYMMDD.<ext>`. UTC so the same
@@ -813,8 +810,12 @@ function SearchPageInner({ community }: { community: Community }) {
         <div class="search-results__pager">{paginationEl}</div>
       )}
 
-      {vocab.schemes && (
+      {(vocab.schemes || vocab.error) && (
+        // Keyed on the committed query so Back with the drawer open re-seeds
+        // the draft; a failed vocabulary hands over null so applied concept
+        // filters ride along untouched.
         <FilterDrawer
+          key={canonicalQs}
           open={drawerOpen}
           title={community.copy.drawerTitle}
           countNoun={community.copy.countNoun}
@@ -822,7 +823,7 @@ function SearchPageInner({ community }: { community: Community }) {
           pinnedFilters={community.pinnedFilters}
           defaultExpandedFilters={community.defaultExpandedFilters}
           collapsibleConceptFilters={community.features.ancestorClosedCodings}
-          schemes={filterableSchemes}
+          schemes={vocab.error ? null : filterableSchemes}
           appliedConceptFilters={params.conceptFilters}
           appliedCountryCodes={params.countryCodes}
           appliedStartYear={params.startYear}

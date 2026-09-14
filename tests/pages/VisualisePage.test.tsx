@@ -1690,11 +1690,15 @@ describe("VisualisePage config panel hydration", () => {
     ).toBe(true);
   });
 
-  test("reports a vocabulary failure instead of offering an empty draft", () => {
+  test("a vocabulary failure keeps the panel usable and carries the URL's concept filter through", () => {
     vocabWith(null, new Error("boom"));
     render(<VisualisePage />);
 
-    expect(screen.getByText("Filters unavailable.")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
+    expect(screen.getByText(/Concept filters couldn't be loaded/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Rows (y)")).toBeInTheDocument();
+    expect(
+      (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
   });
 });
