@@ -66,11 +66,19 @@
   cursor: not-allowed;
 }
 
+/* Hidden rather than removed, so the results below don't jump on focus. */
 .search-bar-hint {
+  visibility: hidden;
   margin-top: var(--spacing-sm);
   text-align: left;
   font-size: var(--font-size-small);
   color: var(--color-text-secondary);
+}
+
+/* On the wrapper, not the bar: clicking the hint's own link moves focus out of
+   the bar, and a hint that hides on mousedown never receives the click. */
+.search-bar-wrapper:focus-within .search-bar-hint {
+  visibility: visible;
 }
 
 .search-bar-hint__label {
