@@ -43,4 +43,17 @@ describe("SearchBar", () => {
     expect(screen.getByRole("searchbox")).toBeDisabled();
     expect(screen.getByRole("button", { name: /search/i })).toBeDisabled();
   });
+
+  test("shows the boolean-operator hint", () => {
+    renderBar();
+    expect(screen.getByText(/Boolean operators can be used to search/)).toBeInTheDocument();
+  });
+
+  test("the hint links out to the search help doc", () => {
+    renderBar();
+    const link = screen.getByRole("link", { name: /learn more/i });
+    expect(link.getAttribute("href")).toContain("docs.google.com");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+  });
 });

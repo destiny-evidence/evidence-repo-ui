@@ -10,6 +10,8 @@ export type AnalyticsEvent =
   | { category: "Search"; action: "Performed"; name: string; value: number }
   // value: page navigated to
   | { category: "Search"; action: "Page Changed"; value: number }
+  // the search hint's "Learn more" link through to the syntax help doc
+  | { category: "Search"; action: "Help Opened" }
   // value: active filter count when opened
   | { category: "Filters"; action: "Drawer Opened"; value: number }
   // name: specific value (concept uri | country code | year-range); one per active value

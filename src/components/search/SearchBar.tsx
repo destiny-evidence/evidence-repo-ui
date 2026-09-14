@@ -1,5 +1,9 @@
+import { ExternalLink } from "@/components/common/ExternalLink";
 import { MagnifierIcon } from "@/components/common/icons";
 import "./SearchBar.css";
+
+const SEARCH_HELP_URL =
+  "https://docs.google.com/document/d/1V5SDE2FwYnN3rqOVtPSrwT_BCnJmUSfwbLDx-6FVKvM/preview";
 
 interface SearchBarProps {
   draftQ: string;
@@ -40,6 +44,17 @@ export function SearchBar({
             Search
           </button>
         </div>
+        <p class="search-bar-hint">
+          <span class="search-bar-hint__label">Hint:</span> Boolean operators can be
+          used to search
+          <ExternalLink
+            class="search-bar-hint__link"
+            href={SEARCH_HELP_URL}
+            event={{ category: "Search", action: "Help Opened" }}
+          >
+            Learn more
+          </ExternalLink>
+        </p>
       </div>
     </form>
   );

@@ -66,3 +66,29 @@
   cursor: not-allowed;
 }
 
+.search-bar-hint {
+  margin-top: var(--spacing-sm);
+  text-align: left;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.search-bar-hint__label {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.search-bar-hint__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: var(--spacing-sm);
+  color: var(--color-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.search-bar-hint__link:hover {
+  text-decoration: underline;
+}
+
