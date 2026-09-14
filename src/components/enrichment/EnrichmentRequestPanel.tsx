@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
+import type { AnalyticsEvent } from "@/analytics/events";
 import { track } from "@/analytics/matomo";
+import { ExternalLink } from "@/components/common/ExternalLink";
 import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
 import { ENRICHMENT_FORM_URL } from "@/config";
@@ -48,16 +50,15 @@ export function EnrichmentRequestPanel({
     });
   }, [referenceId]);
 
-  const trackClick = () =>
-    track({
-      category: "Enrichment",
-      action: "Request Coding Clicked",
-      name: referenceId,
-      value: codedAnnotations,
-    });
+  const clickEvent: AnalyticsEvent = {
+    category: "Enrichment",
+    action: "Request Coding Clicked",
+    name: referenceId,
+    value: codedAnnotations,
+  };
 
   function openModal() {
-    trackClick();
+    track(clickEvent);
     setModalOpen(true);
   }
 
@@ -77,16 +78,15 @@ export function EnrichmentRequestPanel({
               matomo_ignore drops this link from link tracking; it must be on
               the anchor itself.
               https://developer.matomo.org/guides/tracking-javascript-guide */}
-          <a
+          <ExternalLink
             class="enrichment-request__button matomo_ignore"
             href={formUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             aria-label="Request more data (opens form in a new tab)"
-            onClick={trackClick}
+            event={clickEvent}
+            icon={false}
           >
             Request more data
-          </a>
+          </ExternalLink>
         </>
       ) : (
         <>
