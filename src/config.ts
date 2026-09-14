@@ -17,6 +17,11 @@ export const FEEDBACK_FORM_URL: string | undefined =
 export const AI_SUMMARY_FLAG_FORM_URL: string | undefined =
   import.meta.env.VITE_AI_SUMMARY_FLAG_FORM_URL;
 
+// Search help document linked from the hint under the search bar. Unset hides
+// the link; the hint text itself stands on its own.
+export const SEARCH_HELP_URL: string | undefined =
+  import.meta.env.VITE_SEARCH_HELP_URL;
+
 // Google Forms pre-filled link for coding requests, carrying {referenceUrl},
 // {name} and {email} placeholders in place of its answer values. Unset until
 // the form exists; the request panel shows the fake door without it.

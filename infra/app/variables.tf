@@ -112,6 +112,12 @@ variable "feedback_form_url" {
   default     = "https://forms.gle/zH9fsNZk8BApTaVj9"
 }
 
+variable "search_help_url" {
+  description = "URL of the search help document linked from the hint under the search bar; empty hides the link"
+  type        = string
+  default     = "https://docs.google.com/document/d/1V5SDE2FwYnN3rqOVtPSrwT_BCnJmUSfwbLDx-6FVKvM/preview"
+}
+
 variable "summariser_base" {
   description = "Base URL of the evidence-summariser service; empty hides the AI summaries feature"
   type        = string

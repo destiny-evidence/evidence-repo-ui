@@ -1,5 +1,12 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/preact";
+
+// SEARCH_HELP_URL is read at module load, so the URL has to be in place before
+// SearchBar is imported.
+vi.mock("@/config", () => ({
+  SEARCH_HELP_URL: "https://docs.google.com/document/d/search-help/preview",
+}));
+
 import { SearchBar } from "@/components/search/SearchBar";
 
 function renderBar(overrides: Partial<Parameters<typeof SearchBar>[0]> = {}) {
