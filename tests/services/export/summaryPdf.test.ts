@@ -17,7 +17,7 @@ const context = {
 
 describe("citation", () => {
   test("single author with year", () => {
-    expect(citation(MOCK_SUMMARY.papers, "canfell-2020")).toBe(
+    expect(citation(MOCK_SUMMARY.papers, MOCK_SUMMARY.papers[1].paper)).toBe(
       "Canfell Karen (2020)",
     );
   });
@@ -135,8 +135,16 @@ describe("buildSummaryPdf", () => {
     expect(pdf).toContain("DejaVu");
     // Link annotations appear in plaintext (streams are uncompressed).
     expect(pdf).toContain("/URI");
-    expect(pdf).toContain("https://doi.org/"); // a source DOI link
+    // A quote's record link, built from the origin URL's community slug.
+    expect(pdf).toContain(`/hpv/references/${MOCK_SUMMARY.papers[0].paper}`);
     expect(pdf).toContain("q=hpv"); // the resolved "this search" link
     expect(pdf).toContain("/Dest"); // inline [n] → claim jumps
+  });
+
+  test("omits record links when the origin URL carries no community slug", async () => {
+    const doc = await buildSummaryPdf(MOCK_SUMMARY, context, "/");
+    const bytes = doc.output("arraybuffer") as ArrayBuffer;
+    const pdf = new TextDecoder("latin1").decode(new Uint8Array(bytes));
+    expect(pdf).not.toContain("/references/");
   });
 });
