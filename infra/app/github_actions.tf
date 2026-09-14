@@ -131,6 +131,13 @@ resource "github_actions_environment_variable" "vite_feedback_form_url" {
   value         = var.feedback_form_url
 }
 
+resource "github_actions_environment_variable" "vite_search_help_url" {
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_SEARCH_HELP_URL"
+  value         = var.search_help_url
+}
+
 # Empty in environments where the summariser isn't deployed yet, which keeps the
 # AI summaries feature hidden (the UI gates on this being set).
 resource "github_actions_environment_variable" "vite_summariser_base" {

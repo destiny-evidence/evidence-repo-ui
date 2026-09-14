@@ -1,5 +1,12 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/preact";
+
+// SEARCH_HELP_URL is read at module load, so the URL has to be in place before
+// SearchBar is imported.
+vi.mock("@/config", () => ({
+  SEARCH_HELP_URL: "https://docs.google.com/document/d/search-help/preview",
+}));
+
 import { SearchBar } from "@/components/search/SearchBar";
 
 function renderBar(overrides: Partial<Parameters<typeof SearchBar>[0]> = {}) {
@@ -42,5 +49,36 @@ describe("SearchBar", () => {
     renderBar({ disabled: true });
     expect(screen.getByRole("searchbox")).toBeDisabled();
     expect(screen.getByRole("button", { name: /search/i })).toBeDisabled();
+  });
+
+  test("shows the boolean-operator hint", () => {
+    renderBar();
+    expect(screen.getByText(/Boolean operators can be used to search/)).toBeVisible();
+  });
+
+  test("the query input is described by the hint", () => {
+    renderBar();
+    const hintId = screen.getByRole("searchbox").getAttribute("aria-describedby");
+    expect(hintId).toBeTruthy();
+    const description = document.getElementById(hintId!);
+    expect(description).toHaveTextContent(/Boolean operators can be used to search/);
+    // A screen reader shouldn't read out "Learn more" as part of the field's description.
+    expect(description).not.toHaveTextContent(/Learn more about search/);
+  });
+
+  test("the hint's link is in the tab order after the search button", () => {
+    renderBar();
+    const focusable = Array.from(
+      document.querySelectorAll<HTMLElement>("input, button, a[href]"),
+    );
+    expect(focusable.map((el) => el.tagName)).toEqual(["INPUT", "BUTTON", "A"]);
+  });
+
+  test("the hint links out to the search help doc", () => {
+    renderBar();
+    const link = screen.getByRole("link", { name: /learn more/i });
+    expect(link.getAttribute("href")).toContain("docs.google.com");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
   });
 });

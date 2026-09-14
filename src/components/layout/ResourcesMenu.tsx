@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
-import { track } from "@/analytics/matomo";
-import { ChevronDownIcon, ExternalLinkIcon } from "@/components/common/icons";
+import { ExternalLink } from "@/components/common/ExternalLink";
+import { ChevronDownIcon } from "@/components/common/icons";
 import type { ExternalResource } from "@/types/models";
 import "./ResourcesMenu.css";
 
@@ -58,26 +58,17 @@ export function ResourcesMenu({ resources }: ResourcesMenuProps) {
         hidden={!open}
       >
         {resources.map((r) => (
-          <a
+          <ExternalLink
             key={r.href}
             class="resource-link"
             href={r.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() =>
-              track({ category: "Resources", action: "Link Clicked", name: r.title })
-            }
+            event={{ category: "Resources", action: "Link Clicked", name: r.title }}
           >
             <span class="resource-link__body">
-              <span class="resource-link__title">
-                {r.title}
-                <span class="resource-link__ext" aria-hidden="true">
-                  <ExternalLinkIcon size={11} />
-                </span>
-              </span>
+              <span class="resource-link__title">{r.title}</span>
               <span class="resource-link__desc">{r.description}</span>
             </span>
-          </a>
+          </ExternalLink>
         ))}
       </div>
     </div>
