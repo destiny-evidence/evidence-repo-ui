@@ -158,15 +158,11 @@ function EvidenceMapView({
 
   // Schemes offered as axis options and filter cards — the same set the search
   // drawer filters on (excluded schemes make poor facets and poor axes alike).
-  // Stays null until the vocabulary lands, which the panel needs to tell apart
-  // from a vocabulary with nothing filterable in it.
   const filterableSchemes = useMemo(
     () =>
-      vocab.schemes === null
-        ? null
-        : vocab.schemes.filter(
-            (s) => !community.filterExcludedSchemes.includes(s.uri),
-          ),
+      (vocab.schemes ?? []).filter(
+        (s) => !community.filterExcludedSchemes.includes(s.uri),
+      ),
     [vocab.schemes, community.filterExcludedSchemes],
   );
 
@@ -345,7 +341,7 @@ function EvidenceMapView({
     const expanded = new Set(
       community.defaultExpandedFilters ?? DEFAULT_EXPANDED_FILTERS,
     );
-    for (const scheme of filterableSchemes ?? []) expanded.delete(scheme.uri);
+    for (const scheme of filterableSchemes) expanded.delete(scheme.uri);
     if (axes.row.kind === "scheme") expanded.add(axes.row.schemeUri);
     if (axes.column.kind === "scheme") expanded.add(axes.column.schemeUri);
     return [...expanded];
@@ -374,10 +370,7 @@ function EvidenceMapView({
   // Config + filters for each distinct map view, once.
   const lastViewTracked = useRef<string | null>(null);
   useEffect(() => {
-    // Wait for the schemes themselves, not for `loading` to clear: the hook
-    // reports loading false before its fetch starts, and naming the applied
-    // filters below needs the schemes that define them.
-    if (!result || (!vocab.schemes && !vocab.error)) return;
+    if (!result || vocab.loading) return;
     const identity = canonicalSearch(trackedParams, displayAxes);
     if (lastViewTracked.current === identity) return;
     lastViewTracked.current = identity;
@@ -388,10 +381,7 @@ function EvidenceMapView({
       name: axisPairTitle(rowAxis, columnAxis),
     });
 
-    const { values, categories } = activeFilters(
-      trackedParams,
-      filterableSchemes ?? [],
-    );
+    const { values, categories } = activeFilters(trackedParams, filterableSchemes);
     for (const value of values) {
       track({ category: "EvidenceMap", action: "Filter Applied", name: value });
     }
@@ -422,8 +412,7 @@ function EvidenceMapView({
     displayAxes,
     rowAxis,
     columnAxis,
-    vocab.schemes,
-    vocab.error,
+    vocab.loading,
     filterableSchemes,
   ]);
 
@@ -707,8 +696,8 @@ function EvidenceMapView({
           the committed query so it re-hydrates its draft when the URL changes. */}
       <MapConfigPanel
         key={canonical}
-        schemes={filterableSchemes}
-        schemesError={vocab.error}
+        schemes={vocab.error ? null : filterableSchemes}
+        loading={vocab.loading}
         showCountryFacetFilter={community.features.countryFacetFilter}
         pinnedFilters={community.pinnedFilters}
         defaultExpandedFilters={panelExpandedFilters}

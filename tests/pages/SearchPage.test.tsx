@@ -51,10 +51,10 @@ vi.mock("@/services/export/export", () => ({
 }));
 
 // useVocabulary is mocked so we don't fire real fetches at the stubbed
-// VITE_ESEA_VOCABULARY_URL during tests. The default below silences the
-// hook (no schemes, not loading, no error), which reads as still loading:
-// Refine is disabled, and on a bare browse load the meta bar holding it stays
-// hidden until results land. Tests that exercise the drawer override this.
+// VITE_ESEA_VOCABULARY_URL during tests. The default below leaves the hook
+// loading, so Refine is disabled and on a bare browse load the meta bar holding
+// it stays hidden until results land. Tests that exercise the drawer override
+// this.
 vi.mock("@/hooks/useVocabulary", () => ({
   useVocabulary: vi.fn(),
 }));
@@ -85,7 +85,7 @@ const mockGetExport = vi.mocked(getSearchExport);
 const mockVocab = vi.mocked(useVocabulary);
 
 function silentVocab(): ReturnType<typeof useVocabulary> {
-  return makeVocabResult();
+  return makeVocabResult({ loading: true });
 }
 
 function vocabWith(schemes: typeof OUTCOME_SCHEME_FIXTURE[]): ReturnType<typeof useVocabulary> {
@@ -412,9 +412,8 @@ describe("SearchPage", () => {
     window._paq = undefined;
   });
 
-  test("filter events wait for the schemes, not for loading to clear", async () => {
-    // Before the fetch starts the hook reports loading false with no schemes;
-    // tracking on that render would drop the concept filter and never revisit.
+  test("filter events wait for the vocabulary", async () => {
+    // Tracking before it lands would drop the concept filter and never revisit.
     history.replaceState(null, "", `/esea?concept=${encodeURIComponent(URI_LEARNING)}`);
     mockBoth({ results: makeResult(7, ["r1"]) });
     window._paq = [];
@@ -853,18 +852,6 @@ describe("SearchPage", () => {
         (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
           .disabled,
       ).toBe(true);
-    });
-
-    test("Refine is disabled before the vocabulary fetch has started", async () => {
-      // The hook reports loading false until its effect runs; that render is
-      // still loading, not a vocabulary with nothing to offer.
-      mockVocab.mockReturnValue(silentVocab());
-      mockBoth({ results: makeResult(120, ["r1"]) });
-      renderSearchPage();
-      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-
-      const refine = screen.getByRole("button", { name: /Refine/ });
-      expect((refine as HTMLButtonElement).disabled).toBe(true);
     });
 
     test("Refine is disabled while vocabulary is loading", async () => {

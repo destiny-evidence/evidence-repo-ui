@@ -19,7 +19,9 @@ export function useVocabulary(
   vocabularyUrl: string | undefined,
 ): VocabularyResult {
   const [data, setData] = useState<VocabularyData | null>(null);
-  const [loading, setLoading] = useState(false);
+  // True from the first render whenever there's a URL to fetch, so callers
+  // never see "not loading" before the effect has started the request.
+  const [loading, setLoading] = useState(Boolean(vocabularyUrl));
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {

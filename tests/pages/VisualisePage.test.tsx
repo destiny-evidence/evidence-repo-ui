@@ -1637,13 +1637,16 @@ describe("VisualisePage config panel hydration", () => {
   const FILTERED =
     "?concept=level%3Asecondary&row=scheme%3Alevel&column=scheme%3Atheme";
 
-  function vocabWith(schemes: ConceptScheme[] | null, error: Error | null = null) {
+  function vocabWith(
+    schemes: ConceptScheme[] | null,
+    { loading = false, error = null }: { loading?: boolean; error?: Error | null } = {},
+  ) {
     mockUseVocabulary.mockReturnValue({
       labels: LABELS,
       broader: null,
       definitions: null,
       schemes,
-      loading: false,
+      loading,
       error,
     });
   }
@@ -1661,7 +1664,7 @@ describe("VisualisePage config panel hydration", () => {
   });
 
   test("withholds the draft until the vocabulary arrives", () => {
-    vocabWith(null);
+    vocabWith(null, { loading: true });
     render(<VisualisePage />);
 
     expect(screen.getByRole("heading", { name: "Configure map" })).toBeInTheDocument();
@@ -1675,7 +1678,7 @@ describe("VisualisePage config panel hydration", () => {
   test("hydrates the URL's filters once the vocabulary arrives", () => {
     // The reported repro: the panel draws before the vocabulary resolves, so
     // it has to pick the filters up on the render that brings the schemes.
-    vocabWith(null);
+    vocabWith(null, { loading: true });
     const { rerender } = render(<VisualisePage />);
     vocabWith(SCHEMES);
     rerender(<VisualisePage />);
@@ -1691,7 +1694,7 @@ describe("VisualisePage config panel hydration", () => {
   });
 
   test("a vocabulary failure keeps the panel usable and carries the URL's concept filter through", () => {
-    vocabWith(null, new Error("boom"));
+    vocabWith(null, { error: new Error("boom") });
     render(<VisualisePage />);
 
     expect(screen.getByText(/Concept filters couldn't be loaded/)).toBeInTheDocument();

@@ -71,6 +71,16 @@ describe("useVocabulary", () => {
     });
   });
 
+  it("reports loading from the first render when given a URL", () => {
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}));
+
+    const { getByTestId } = render(
+      <TestComponent vocabularyUrl="https://vocab.example.org/v1" />,
+    );
+
+    expect(getByTestId("loading").textContent).toBe("true");
+  });
+
   it("skips fetch when URL is undefined", () => {
     vi.spyOn(globalThis, "fetch");
 

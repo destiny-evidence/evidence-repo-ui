@@ -34,7 +34,7 @@ type PanelProps = ComponentProps<typeof MapConfigPanel>;
 
 const baseProps: PanelProps = {
   schemes: SCHEMES,
-  schemesError: null,
+  loading: false,
   appliedAxes: AXES,
   defaultAxes: AXES,
   appliedConceptFilters: [],
@@ -235,8 +235,8 @@ describe("collapsible concept filters", () => {
 });
 
 describe("vocabulary not yet available", () => {
-  test("null schemes hold the panel's heading and withhold Show results", () => {
-    renderPanel({ schemes: null, appliedConceptFilters: [[URI_JOURNAL]] });
+  test("while loading, the panel holds its heading and withholds Show results", () => {
+    renderPanel({ schemes: null, loading: true, appliedConceptFilters: [[URI_JOURNAL]] });
     expect(screen.getByRole("heading", { name: "Configure map" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Loading filters…");
     // Committing here would drop the applied filters the draft can't yet read.
@@ -246,12 +246,7 @@ describe("vocabulary not yet available", () => {
 
   test("a vocabulary failure keeps axes, year and country usable and carries applied concept filters through", () => {
     const onApply = vi.fn();
-    renderPanel({
-      schemes: null,
-      schemesError: new Error("boom"),
-      appliedConceptFilters: [[URI_JOURNAL]],
-      onApply,
-    });
+    renderPanel({ schemes: null, appliedConceptFilters: [[URI_JOURNAL]], onApply });
     expect(screen.getByText(/Concept filters couldn't be loaded/)).toBeInTheDocument();
     expect(screen.getByText("Publication year")).toBeInTheDocument();
     expect(screen.queryByLabelText("Journal Article")).toBeNull();
@@ -266,12 +261,7 @@ describe("vocabulary not yet available", () => {
 
   test("Reset all clears concept filters the panel can't display", () => {
     const onApply = vi.fn();
-    renderPanel({
-      schemes: null,
-      schemesError: new Error("boom"),
-      appliedConceptFilters: [[URI_JOURNAL]],
-      onApply,
-    });
+    renderPanel({ schemes: null, appliedConceptFilters: [[URI_JOURNAL]], onApply });
     fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
     expect(showResults().disabled).toBe(false);
     fireEvent.click(showResults());

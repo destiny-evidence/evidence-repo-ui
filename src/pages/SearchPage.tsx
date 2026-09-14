@@ -69,23 +69,16 @@ const EXPORT_MAX_RESULTS = 10000;
 // The summariser accepts at most 50 references per request (1–50).
 const MAX_SUMMARY_REFERENCES = 50;
 
-interface RefineConfig {
-  count: number;
-  disabled: boolean;
-  disabledReason?: string;
-  onClick: () => void;
-}
-
-// Maps the useVocabulary() result to the SearchBar `refine` prop. "Loading" is
-// schemes absent with no error: the hook reports loading false before its
-// fetch starts.
+// Maps the useVocabulary() result to the SearchBar `refine` prop.
 function buildRefineConfig(
   vocab: ReturnType<typeof useVocabulary>,
   hasFilterCards: boolean,
   count: number,
   open: () => void,
-): RefineConfig | undefined {
-  if (vocab.schemes === null && !vocab.error) {
+):
+  | { count: number; disabled: boolean; disabledReason?: string; onClick: () => void }
+  | undefined {
+  if (vocab.loading) {
     return { count: 0, disabled: true, disabledReason: "Loading filters…", onClick: () => {} };
   }
   return hasFilterCards ? { count, disabled: false, onClick: open } : undefined;
@@ -275,14 +268,12 @@ function SearchPageInner({ community }: { community: Community }) {
   // whether typed, refined in the drawer, or arriving via a deep link /
   // evidence-map jump-in. Each specific value and its category are tracked
   // separately, since Matomo can't roll values up to categories itself. Gated on
-  // the vocabulary having settled (`loading` is false before the fetch even
-  // starts, so it can't be the signal); if it failed to load, concept filters
-  // can't be resolved and are dropped, but country and year still count.
+  // the vocabulary having settled; if it failed to load, concept filters can't be
+  // resolved and are dropped, but country and year still count.
   const lastFiltersTracked = useRef<string | null>(null);
   useEffect(() => {
     const fetched = results.resultsParams;
-    const vocabSettled = vocab.schemes !== null || vocab.error !== null;
-    if (!results.results || !fetched || !hasActiveSearch(fetched) || !vocabSettled) {
+    if (!results.results || !fetched || !hasActiveSearch(fetched) || vocab.loading) {
       return;
     }
     const identity = `${community.slug}?${toQueryString({ ...fetched, page: 1, sort: undefined })}`;
@@ -295,14 +286,7 @@ function SearchPageInner({ community }: { community: Community }) {
     for (const key of categories) {
       track({ category: "Filters", action: "Category Applied", name: key });
     }
-  }, [
-    results.results,
-    results.resultsParams,
-    community.slug,
-    vocab.schemes,
-    vocab.error,
-    filterableSchemes,
-  ]);
+  }, [results.results, results.resultsParams, community.slug, vocab.loading, filterableSchemes]);
 
   // With the vocabulary down every applied URI passes through, so count them all.
   const activeConceptCount = vocab.error
@@ -812,7 +796,7 @@ function SearchPageInner({ community }: { community: Community }) {
         <div class="search-results__pager">{paginationEl}</div>
       )}
 
-      {(vocab.schemes || vocab.error) && (
+      {!vocab.loading && (
         // Keyed on the committed query so Back with the drawer open re-seeds the draft.
         <FilterDrawer
           key={canonicalQs}

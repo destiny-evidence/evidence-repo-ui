@@ -21,8 +21,7 @@ import type { EvidenceMapAxis, EvidenceMapAxes } from "@/types/models";
 import "./MapConfigPanel.css";
 
 interface MapConfigPanelProps extends MapConfigPanelInnerProps {
-  // Null `schemes` with no error means the vocabulary is still loading.
-  schemesError: Error | null;
+  loading: boolean;
 }
 
 // `schemes` and `showCountryFacetFilter` also drive the axis dropdowns.
@@ -95,13 +94,12 @@ function MapConfigPanelLoading() {
  * "Show results" commits the axes + filters to the URL, "Reset all" returns the
  * axes to the community defaults and clears the filters.
  *
- * A vocabulary that loads with no filterable schemes still counts as loaded —
- * the country and year cards stand on their own. One that fails to load
- * leaves the axes and those cards usable too; only the concept filters go
- * missing, and any already applied ride along unchanged.
+ * A vocabulary with no filterable schemes still counts as loaded, and one that
+ * failed still leaves the axes and the year/country cards usable — applied
+ * concept filters then ride along unchanged.
  */
-export function MapConfigPanel({ schemesError, ...rest }: MapConfigPanelProps) {
-  if (rest.schemes === null && !schemesError) return <MapConfigPanelLoading />;
+export function MapConfigPanel({ loading, ...rest }: MapConfigPanelProps) {
+  if (loading) return <MapConfigPanelLoading />;
   return <MapConfigPanelInner {...rest} />;
 }
 
