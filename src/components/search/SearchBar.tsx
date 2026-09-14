@@ -46,9 +46,11 @@ export function SearchBar({
             Search
           </button>
         </div>
-        <p id={hintId} class="search-bar-hint">
-          <span class="search-bar-hint__label">Hint:</span> Boolean operators can be
-          used to search
+        <p class="search-bar-hint">
+          <span id={hintId}>
+            <span class="search-bar-hint__label">Hint:</span> Boolean operators can
+            be used to search
+          </span>
           {SEARCH_HELP_URL && (
             <ExternalLink
               class="search-bar-hint__link"
