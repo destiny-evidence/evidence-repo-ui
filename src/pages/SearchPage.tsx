@@ -76,11 +76,9 @@ interface RefineConfig {
   onClick: () => void;
 }
 
-// Maps the useVocabulary() result to the SearchBar `refine` prop. Loading is
-// judged by the schemes being absent with no error — the hook reports loading
-// false before its fetch starts. Once settled, loaded or failed, the trigger
-// is offered whenever the community has a filter card to show: the year and
-// country cards count even with no schemes. With none at all it isn't rendered.
+// Maps the useVocabulary() result to the SearchBar `refine` prop. "Loading" is
+// schemes absent with no error: the hook reports loading false before its
+// fetch starts.
 function buildRefineConfig(
   vocab: ReturnType<typeof useVocabulary>,
   hasFilterCards: boolean,
@@ -277,9 +275,9 @@ function SearchPageInner({ community }: { community: Community }) {
   // whether typed, refined in the drawer, or arriving via a deep link /
   // evidence-map jump-in. Each specific value and its category are tracked
   // separately, since Matomo can't roll values up to categories itself. Gated on
-  // the vocabulary having settled — schemes present, or the fetch failed (the
-  // hook reports loading false before it starts); after a failure concept
-  // filters can't be resolved and are dropped, but country and year still count.
+  // the vocabulary having settled (`loading` is false before the fetch even
+  // starts, so it can't be the signal); if it failed to load, concept filters
+  // can't be resolved and are dropped, but country and year still count.
   const lastFiltersTracked = useRef<string | null>(null);
   useEffect(() => {
     const fetched = results.resultsParams;
@@ -306,8 +304,12 @@ function SearchPageInner({ community }: { community: Community }) {
     filterableSchemes,
   ]);
 
+  // With the vocabulary down every applied URI passes through, so count them all.
+  const activeConceptCount = vocab.error
+    ? params.conceptFilters.reduce((n, group) => n + group.length, 0)
+    : totalSelectedCount(params.conceptFilters, filterableSchemes);
   const activeFilterCount =
-    totalSelectedCount(params.conceptFilters, filterableSchemes)
+    activeConceptCount
     + totalSelectedCountryCount(params.countryCodes)
     + totalSelectedYearCount(params.startYear, params.endYear);
 
@@ -811,9 +813,7 @@ function SearchPageInner({ community }: { community: Community }) {
       )}
 
       {(vocab.schemes || vocab.error) && (
-        // Keyed on the committed query so Back with the drawer open re-seeds
-        // the draft; a failed vocabulary hands over null so applied concept
-        // filters ride along untouched.
+        // Keyed on the committed query so Back with the drawer open re-seeds the draft.
         <FilterDrawer
           key={canonicalQs}
           open={drawerOpen}

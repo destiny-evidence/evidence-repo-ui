@@ -52,8 +52,9 @@ vi.mock("@/services/export/export", () => ({
 
 // useVocabulary is mocked so we don't fire real fetches at the stubbed
 // VITE_ESEA_VOCABULARY_URL during tests. The default below silences the
-// hook (no schemes, not loading, no error), which leaves the Refine button
-// disabled as still loading; tests that exercise the drawer override this.
+// hook (no schemes, not loading, no error), which reads as still loading:
+// Refine is disabled, and on a bare browse load the meta bar holding it stays
+// hidden until results land. Tests that exercise the drawer override this.
 vi.mock("@/hooks/useVocabulary", () => ({
   useVocabulary: vi.fn(),
 }));
@@ -820,6 +821,17 @@ describe("SearchPage", () => {
         screen.getByRole("button", { name: /Publication year/ }),
       ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /Country/ })).toBeInTheDocument();
+    });
+
+    test("Refine badge still counts applied concept filters after a vocabulary failure", async () => {
+      history.replaceState(null, "", `/esea?concept=${encodeURIComponent(URI_LEARNING)}`);
+      mockVocab.mockReturnValue(makeVocabResult({ error: new Error("boom") }));
+      mockBoth({ results: makeResult(7, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      // The drawer says applied filters stay in place; the badge must agree.
+      expect(screen.getByRole("button", { name: /Refine\s*1/ })).toBeInTheDocument();
     });
 
     test("Back with the drawer open re-seeds the draft from the new URL", async () => {
