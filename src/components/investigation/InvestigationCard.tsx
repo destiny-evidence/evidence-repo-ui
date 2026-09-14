@@ -1,7 +1,8 @@
 import "./InvestigationCard.css";
 import { AbstractSection } from "./AbstractSection";
 import { TagGroup } from "../common/TagGroup";
-import { WarningIcon, ExternalLinkIcon } from "../common/icons";
+import { ExternalLink } from "../common/ExternalLink";
+import { WarningIcon } from "../common/icons";
 import type { ComponentChildren } from "preact";
 import type {
   AbstractContentEnhancement,
@@ -116,19 +117,14 @@ export function InvestigationCard({
           <p class="investigation-card__venue">{venueText}</p>
         )}
         {doi && (
-          <a
+          <ExternalLink
             class="investigation-card__doi"
             href={`https://doi.org/${doi}`}
-            target="_blank"
-            rel="noopener noreferrer"
             aria-label={`DOI: ${doi} (opens in new tab)`}
           >
             <span class="investigation-card__doi-prefix" aria-hidden="true">doi:</span>
             <span class="investigation-card__doi-value">{doi}</span>
-            <span class="investigation-card__external-icon">
-              <ExternalLinkIcon />
-            </span>
-          </a>
+          </ExternalLink>
         )}
         <AbstractSection abstract={abstract} />
         {hasInvestigationContent && (

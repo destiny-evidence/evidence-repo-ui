@@ -1,6 +1,7 @@
 import { Fragment } from "preact";
 import { useRef } from "preact/hooks";
-import { ExternalLinkIcon, WarningIcon } from "@/components/common/icons";
+import { ExternalLink } from "@/components/common/ExternalLink";
+import { WarningIcon } from "@/components/common/icons";
 import { Spinner } from "@/components/common/Spinner";
 import type { PaperMeta, QuoteRef, SummaryBlock } from "@/services/summariser";
 import {
@@ -29,14 +30,9 @@ function QuoteSource({ quote, papers }: { quote: QuoteRef; papers: PaperMeta[] }
         <span>{citation(papers, quote.paper)}</span>
         {quote.page != null && <span class="ai-cite__page">p. {quote.page}</span>}
         {paper?.doi && (
-          <a
-            class="ai-cite__doi"
-            href={`https://doi.org/${paper.doi}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            DOI <ExternalLinkIcon size={11} />
-          </a>
+          <ExternalLink class="ai-cite__doi" href={`https://doi.org/${paper.doi}`}>
+            DOI
+          </ExternalLink>
         )}
       </div>
     </div>
