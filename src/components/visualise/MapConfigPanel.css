@@ -56,6 +56,13 @@
   padding: var(--spacing-md) var(--spacing-lg);
 }
 
+.map-config-panel__status {
+  margin: 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+}
+
 .map-config-panel__section {
   border-top: 1px solid var(--color-border);
 }

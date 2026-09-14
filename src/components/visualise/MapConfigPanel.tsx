@@ -21,7 +21,13 @@ import type {
 } from "@/types/models";
 import "./MapConfigPanel.css";
 
-interface MapConfigPanelProps {
+interface MapConfigPanelProps extends Omit<MapConfigPanelInnerProps, "schemes"> {
+  // Filterable concept schemes, or null while the vocabulary is still loading.
+  schemes: ConceptScheme[] | null;
+  schemesError: Error | null;
+}
+
+interface MapConfigPanelInnerProps {
   // Filterable concept schemes — both the axis options and the filter cards.
   schemes: ConceptScheme[];
   // Currently-applied axes (from the URL) → the initial axis draft.
@@ -84,12 +90,53 @@ function axesEqual(a: EvidenceMapAxes, b: EvidenceMapAxes): boolean {
 }
 
 /**
+ * Keeps the panel's heading and width while the vocabulary resolves. It offers
+ * no "Show results": the draft can only recognise the URL's concept filters
+ * once the schemes naming them are here, so an early commit would wipe them.
+ */
+function MapConfigPanelFrame({
+  status,
+  alert,
+}: {
+  status: string;
+  alert?: boolean;
+}) {
+  return (
+    <aside class="map-config-panel" aria-label="Configure the evidence map">
+      <header class="map-config-panel__header">
+        <h2 class="map-config-panel__heading">Configure map</h2>
+      </header>
+      <div class="map-config-panel__body">
+        <p class="map-config-panel__status" role={alert ? "alert" : "status"}>
+          {status}
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+/**
  * The persistent right-hand panel that configures the evidence map: row/column
  * axis dropdowns plus the search-page filters. Everything is draft state —
  * "Show results" commits the axes + filters to the URL, "Reset all" returns the
  * axes to the community defaults and clears the filters.
+ *
+ * A vocabulary that loads with no filterable schemes still counts as loaded —
+ * the country and year cards stand on their own.
  */
 export function MapConfigPanel({
+  schemes,
+  schemesError,
+  ...rest
+}: MapConfigPanelProps) {
+  if (schemesError) {
+    return <MapConfigPanelFrame status="Filters unavailable." alert />;
+  }
+  if (!schemes) return <MapConfigPanelFrame status="Loading filters…" />;
+  return <MapConfigPanelInner schemes={schemes} {...rest} />;
+}
+
+function MapConfigPanelInner({
   schemes,
   appliedAxes,
   defaultAxes,
@@ -104,7 +151,7 @@ export function MapConfigPanel({
   defaultExpandedFilters,
   collapsibleConceptFilters = false,
   onApply,
-}: MapConfigPanelProps) {
+}: MapConfigPanelInnerProps) {
   const [rowDraft, setRowDraft] = useState<EvidenceMapAxis>(appliedAxes.row);
   const [columnDraft, setColumnDraft] = useState<EvidenceMapAxis>(
     appliedAxes.column,

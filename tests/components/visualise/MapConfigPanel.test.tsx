@@ -34,6 +34,7 @@ type PanelProps = ComponentProps<typeof MapConfigPanel>;
 
 const baseProps: PanelProps = {
   schemes: SCHEMES,
+  schemesError: null,
   appliedAxes: AXES,
   defaultAxes: AXES,
   appliedConceptFilters: [],
@@ -230,5 +231,29 @@ describe("collapsible concept filters", () => {
         name: "Child concepts of Education Finance",
       }),
     ).toBeNull();
+  });
+});
+
+describe("vocabulary not yet available", () => {
+  test("null schemes hold the panel's heading and withhold Show results", () => {
+    renderPanel({ schemes: null, appliedConceptFilters: [[URI_JOURNAL]] });
+    expect(screen.getByRole("heading", { name: "Configure map" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading filters…");
+    // Committing here would drop the applied filters the draft can't yet read.
+    expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
+    expect(screen.queryByLabelText("Rows (y)")).toBeNull();
+  });
+
+  test("a vocabulary failure says so instead of offering an empty draft", () => {
+    renderPanel({ schemes: null, schemesError: new Error("boom") });
+    expect(screen.getByRole("alert")).toHaveTextContent("Filters unavailable.");
+    expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
+  });
+
+  test("a vocabulary with nothing filterable still counts as loaded", () => {
+    renderPanel({ schemes: [] });
+    expect(screen.getByLabelText("Rows (y)")).toBeInTheDocument();
+    expect(screen.getByText("Publication year")).toBeInTheDocument();
+    expect(showResults().disabled).toBe(true);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/preact";
 import { VisualisePage } from "@/pages/VisualisePage";
-import { parseSearchParams } from "@/services/searchParams";
+import { parseSearchParams, type SearchParams } from "@/services/searchParams";
 import { makeCommunity } from "../fixtures";
 import type { EvidenceMapAxes, ReferenceCrossFacetResult } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
@@ -16,14 +16,25 @@ import {
   mapExpansionState,
 } from "@/services/evidenceMap";
 
-const { mockUseCommunity, mockUseCrossFacets, mockUseVocabulary, mockUseUrlParams, mockNavigate } =
-  vi.hoisted(() => ({
-    mockUseCommunity: vi.fn(),
-    mockUseCrossFacets: vi.fn(),
-    mockUseVocabulary: vi.fn(),
-    mockUseUrlParams: vi.fn(),
-    mockNavigate: vi.fn(),
-  }));
+const {
+  mockUseCommunity,
+  mockUseCrossFacets,
+  mockUseVocabulary,
+  mockUseUrlParams,
+  mockUseSearchFacets,
+  mockNavigate,
+} = vi.hoisted(() => ({
+  mockUseCommunity: vi.fn(),
+  mockUseCrossFacets: vi.fn(),
+  mockUseVocabulary: vi.fn(),
+  mockUseUrlParams: vi.fn(),
+  mockUseSearchFacets: vi.fn((_params: SearchParams) => ({
+    counts: null,
+    loading: false,
+    error: null,
+  })),
+  mockNavigate: vi.fn(),
+}));
 
 vi.mock("@/community/CommunityContext", () => ({
   useCommunity: mockUseCommunity,
@@ -34,7 +45,7 @@ vi.mock("@/hooks/useUrlParams", () => ({ useUrlParams: mockUseUrlParams }));
 // The config panel previews the draft via useSearchFacets; keep it inert so
 // these tests don't fire real facet-count fetches.
 vi.mock("@/hooks/useSearchFacets", () => ({
-  useSearchFacets: vi.fn(() => ({ counts: null, loading: false, error: null })),
+  useSearchFacets: mockUseSearchFacets,
 }));
 vi.mock("@/services/navigation", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/navigation")>();
@@ -232,6 +243,7 @@ beforeEach(() => {
   mockUseCrossFacets.mockReset();
   mockUseVocabulary.mockReset();
   mockUseUrlParams.mockReset();
+  mockUseSearchFacets.mockClear();
   mockNavigate.mockReset();
   // Sensible defaults; individual tests override useCrossFacets.
   mockUseUrlParams.mockReturnValue("");
@@ -1618,5 +1630,71 @@ describe("VisualisePage analytics", () => {
       "banner",
       "panel",
     ]);
+  });
+});
+
+describe("VisualisePage config panel hydration", () => {
+  const FILTERED =
+    "?concept=level%3Asecondary&row=scheme%3Alevel&column=scheme%3Atheme";
+
+  function vocabWith(schemes: ConceptScheme[] | null, error: Error | null = null) {
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes,
+      loading: false,
+      error,
+    });
+  }
+
+  beforeEach(() => {
+    mockUseCommunity.mockReturnValue(mappedCommunity());
+    mockUseUrlParams.mockReturnValue(FILTERED);
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(1, [["level:secondary", "theme:numeracy", 1]]),
+      resultAxes: CROSS_AXES,
+      resultParams: parseSearchParams(FILTERED),
+      loading: false,
+      error: null,
+    });
+  });
+
+  test("withholds the draft until the vocabulary arrives", () => {
+    vocabWith(null);
+    render(<VisualisePage />);
+
+    expect(screen.getByRole("heading", { name: "Configure map" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
+    // Every facet request carries the URL's concept filters or isn't made.
+    for (const [params] of mockUseSearchFacets.mock.calls) {
+      expect(params.conceptFilters).toEqual([["level:secondary"]]);
+    }
+  });
+
+  test("hydrates the URL's filters once the vocabulary arrives", () => {
+    // The reported repro: the panel draws before the vocabulary resolves, so
+    // it has to pick the filters up on the render that brings the schemes.
+    vocabWith(null);
+    const { rerender } = render(<VisualisePage />);
+    vocabWith(SCHEMES);
+    rerender(<VisualisePage />);
+
+    expect(
+      (screen.getByLabelText("Secondary") as HTMLInputElement).checked,
+    ).toBe(true);
+    // Clean on arrival: the panel can't drop the filter without a user edit.
+    expect(
+      (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+  });
+
+  test("reports a vocabulary failure instead of offering an empty draft", () => {
+    vocabWith(null, new Error("boom"));
+    render(<VisualisePage />);
+
+    expect(screen.getByText("Filters unavailable.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
   });
 });
