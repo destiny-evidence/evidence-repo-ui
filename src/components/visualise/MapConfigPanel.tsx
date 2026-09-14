@@ -1,10 +1,14 @@
 import { useMemo, useState } from "preact/hooks";
 import { Select } from "@/components/common/Select";
-import { FilterCardList } from "@/components/filters/FilterCardList";
+import {
+  FilterCardList,
+  type FilterCardOptions,
+} from "@/components/filters/FilterCardList";
 import { FilterActions } from "@/components/filters/FilterActions";
 import {
   useFilterDraft,
   type AppliedFilters,
+  type FilterDraftInputs,
 } from "@/components/filters/useFilterDraft";
 import { track } from "@/analytics/matomo";
 import { axisToken, localName, parseAxis } from "@/services/evidenceMap";
@@ -13,12 +17,7 @@ import {
   schemeDisplayLabel,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
-import type { SearchParams } from "@/services/searchParams";
-import type {
-  EvidenceMapAxis,
-  EvidenceMapAxes,
-  PinnedFilter,
-} from "@/types/models";
+import type { EvidenceMapAxis, EvidenceMapAxes } from "@/types/models";
 import "./MapConfigPanel.css";
 
 interface MapConfigPanelProps extends Omit<MapConfigPanelInnerProps, "schemes"> {
@@ -27,30 +26,12 @@ interface MapConfigPanelProps extends Omit<MapConfigPanelInnerProps, "schemes"> 
   schemesError: Error | null;
 }
 
-interface MapConfigPanelInnerProps {
-  // Filterable concept schemes — both the axis options and the filter cards.
-  schemes: ConceptScheme[];
+// `schemes` and `showCountryFacetFilter` also drive the axis dropdowns.
+interface MapConfigPanelInnerProps extends FilterDraftInputs, FilterCardOptions {
   // Currently-applied axes (from the URL) → the initial axis draft.
   appliedAxes: EvidenceMapAxes;
   // Community defaults — what "Reset all" restores the axes to.
   defaultAxes: EvidenceMapAxes;
-  appliedConceptFilters: readonly (readonly string[])[];
-  appliedCountryCodes: readonly string[];
-  appliedStartYear: number | undefined;
-  appliedEndYear: number | undefined;
-  // Drives the facet-count preview (q / annotations live here).
-  params: SearchParams;
-  countNoun?: string;
-  // Hide the facet-backed Country card where the `countries` facet is empty;
-  // the Country concept-scheme card still renders from `schemes`.
-  showCountryFacetFilter?: boolean;
-  // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
-  pinnedFilters?: readonly PinnedFilter[];
-  // Filter cards that start expanded; absent ⇒ DEFAULT_EXPANDED_FILTERS.
-  defaultExpandedFilters?: readonly PinnedFilter[];
-  // Collapse concept-filter children behind their parents; only for
-  // communities with ancestor-closed codings.
-  collapsibleConceptFilters?: boolean;
   onApply: (next: { axes: EvidenceMapAxes; filters: AppliedFilters }) => void;
 }
 
@@ -145,12 +126,9 @@ function MapConfigPanelInner({
   appliedStartYear,
   appliedEndYear,
   params,
-  countNoun = "results",
   showCountryFacetFilter = true,
-  pinnedFilters,
-  defaultExpandedFilters,
-  collapsibleConceptFilters = false,
   onApply,
+  ...cardOptions
 }: MapConfigPanelInnerProps) {
   const [rowDraft, setRowDraft] = useState<EvidenceMapAxis>(appliedAxes.row);
   const [columnDraft, setColumnDraft] = useState<EvidenceMapAxis>(
@@ -219,11 +197,8 @@ function MapConfigPanelInner({
           <h3 class="map-config-panel__section-title">Filters</h3>
           <FilterCardList
             draft={draft}
-            countNoun={countNoun}
             showCountryFacetFilter={showCountryFacetFilter}
-            pinnedFilters={pinnedFilters}
-            defaultExpandedFilters={defaultExpandedFilters}
-            collapsibleConceptFilters={collapsibleConceptFilters}
+            {...cardOptions}
           />
         </section>
       </div>

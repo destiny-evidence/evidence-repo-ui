@@ -55,7 +55,9 @@ export interface FilterDraft {
   buildApplied: () => AppliedFilters | null;
 }
 
-interface UseFilterDraftOptions {
+// What a filter surface needs to seed its draft.
+export interface FilterDraftInputs {
+  // Filterable concept schemes — one filter card each.
   schemes: ConceptScheme[];
   appliedConceptFilters: readonly (readonly string[])[];
   appliedCountryCodes: readonly string[];
@@ -106,6 +108,10 @@ function conceptFiltersEqual(
  * facet-count fetch that previews the draft, and the reset / dirty / apply
  * derivations. Shared by the search drawer and the evidence-map config panel so
  * both drive filters identically.
+ *
+ * Seeded from the applied filters once, on mount, never re-read: hosts remount
+ * it whenever the applied filters or schemes change — without the schemes, the
+ * applied concept filters parse to nothing.
  */
 export function useFilterDraft({
   schemes,
@@ -114,7 +120,7 @@ export function useFilterDraft({
   appliedStartYear,
   appliedEndYear,
   params,
-}: UseFilterDraftOptions): FilterDraft {
+}: FilterDraftInputs): FilterDraft {
   const [conceptDraft, setConceptDraft] = useState<ConceptDraft>(() =>
     parseConceptFilters(appliedConceptFilters, schemes),
   );
