@@ -53,7 +53,24 @@ describe("SearchBar", () => {
 
   test("shows the boolean-operator hint", () => {
     renderBar();
-    expect(screen.getByText(/Boolean operators can be used to search/)).toBeInTheDocument();
+    expect(screen.getByText(/Boolean operators can be used to search/)).toBeVisible();
+  });
+
+  test("the query input is described by the hint", () => {
+    renderBar();
+    const hintId = screen.getByRole("searchbox").getAttribute("aria-describedby");
+    expect(hintId).toBeTruthy();
+    expect(document.getElementById(hintId!)).toHaveTextContent(
+      /Boolean operators can be used to search/,
+    );
+  });
+
+  test("the hint's link is in the tab order after the search button", () => {
+    renderBar();
+    const focusable = Array.from(
+      document.querySelectorAll<HTMLElement>("input, button, a[href]"),
+    );
+    expect(focusable.map((el) => el.tagName)).toEqual(["INPUT", "BUTTON", "A"]);
   });
 
   test("the hint links out to the search help doc", () => {

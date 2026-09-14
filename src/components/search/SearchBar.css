@@ -76,8 +76,14 @@
 }
 
 /* On the wrapper, not the bar: clicking the hint's own link moves focus out of
-   the bar, and a hint that hides on mousedown never receives the click. */
-.search-bar-wrapper:focus-within .search-bar-hint {
+   the bar, and a hint that hides on mousedown never receives the click.
+
+   Hover is needed as well as focus: Safari and Firefox don't focus a link on
+   mousedown, so focus leaves the input and the hint would vanish before the
+   click lands. Hovering the wrapper — never itself hidden — avoids the
+   circularity of hanging the rule off the hint's own :hover. */
+.search-bar-wrapper:focus-within .search-bar-hint,
+.search-bar-wrapper:hover .search-bar-hint {
   visibility: visible;
 }
 
