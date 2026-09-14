@@ -36,6 +36,7 @@ import { RefineButton } from "@/components/search/RefineButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
 import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
+import { orderFilterItems } from "@/components/filters/filterOrder";
 import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
 import { useAiSummaryContext } from "@/components/ai-summary/AiSummaryProvider";
 import { aiSummariesEnabled } from "@/components/ai-summary/aiSummariesEnabled";
@@ -68,26 +69,31 @@ const EXPORT_MAX_RESULTS = 10000;
 // The summariser accepts at most 50 references per request (1–50).
 const MAX_SUMMARY_REFERENCES = 50;
 
-// Maps the useVocabulary() result to the SearchBar `refine` prop. Returns
-// undefined when there are no facets to offer (empty schemes) so the Refine
-// trigger isn't rendered at all.
+interface RefineConfig {
+  count: number;
+  disabled: boolean;
+  disabledReason?: string;
+  onClick: () => void;
+}
+
+// Maps the useVocabulary() result to the SearchBar `refine` prop. Loaded means
+// the schemes are present — the hook reports loading false before its fetch
+// starts. Once loaded, the trigger is offered whenever the community has a
+// filter card to show, so the year and country cards count even with no
+// filterable schemes; with none at all it isn't rendered.
 function buildRefineConfig(
   vocab: ReturnType<typeof useVocabulary>,
+  hasFilterCards: boolean,
   count: number,
   open: () => void,
-):
-  | { count: number; disabled: boolean; disabledReason?: string; onClick: () => void }
-  | undefined {
-  if (vocab.schemes && vocab.schemes.length > 0) {
-    return { count, disabled: false, onClick: open };
+): RefineConfig | undefined {
+  if (vocab.schemes) {
+    return hasFilterCards ? { count, disabled: false, onClick: open } : undefined;
   }
   if (vocab.error) {
     return { count: 0, disabled: true, disabledReason: "Filters unavailable", onClick: () => {} };
   }
-  if (vocab.loading) {
-    return { count: 0, disabled: true, disabledReason: "Loading filters…", onClick: () => {} };
-  }
-  return undefined;
+  return { count: 0, disabled: true, disabledReason: "Loading filters…", onClick: () => {} };
 }
 
 // `evidence-repository-<stem>-<slug>-YYYYMMDD.<ext>`. UTC so the same
@@ -274,12 +280,14 @@ function SearchPageInner({ community }: { community: Community }) {
   // whether typed, refined in the drawer, or arriving via a deep link /
   // evidence-map jump-in. Each specific value and its category are tracked
   // separately, since Matomo can't roll values up to categories itself. Gated on
-  // the vocabulary having settled; if it failed to load, concept filters can't be
-  // resolved and are dropped, but country and year still count.
+  // the vocabulary having settled — schemes present, or the fetch failed (the
+  // hook reports loading false before it starts); after a failure concept
+  // filters can't be resolved and are dropped, but country and year still count.
   const lastFiltersTracked = useRef<string | null>(null);
   useEffect(() => {
     const fetched = results.resultsParams;
-    if (!results.results || !fetched || !hasActiveSearch(fetched) || vocab.loading) {
+    const vocabSettled = vocab.schemes !== null || vocab.error !== null;
+    if (!results.results || !fetched || !hasActiveSearch(fetched) || !vocabSettled) {
       return;
     }
     const identity = `${community.slug}?${toQueryString({ ...fetched, page: 1, sort: undefined })}`;
@@ -292,7 +300,14 @@ function SearchPageInner({ community }: { community: Community }) {
     for (const key of categories) {
       track({ category: "Filters", action: "Category Applied", name: key });
     }
-  }, [results.results, results.resultsParams, community.slug, vocab.loading, filterableSchemes]);
+  }, [
+    results.results,
+    results.resultsParams,
+    community.slug,
+    vocab.schemes,
+    vocab.error,
+    filterableSchemes,
+  ]);
 
   const activeFilterCount =
     totalSelectedCount(params.conceptFilters, filterableSchemes)
@@ -313,7 +328,19 @@ function SearchPageInner({ community }: { community: Community }) {
     setDrawerOpen(true);
   }
 
-  const refine = buildRefineConfig(vocab, activeFilterCount, handleOpenDrawer);
+  // The same ordering the drawer renders from, so the trigger and the drawer's
+  // contents can't disagree about whether there is anything to refine by.
+  const hasFilterCards =
+    orderFilterItems(filterableSchemes, {
+      pinned: community.pinnedFilters,
+      showCountryFacetFilter: community.features.countryFacetFilter,
+    }).length > 0;
+  const refine = buildRefineConfig(
+    vocab,
+    hasFilterCards,
+    activeFilterCount,
+    handleOpenDrawer,
+  );
 
   function handleApplyFilters(next: AppliedFilters) {
     const committed = draft.commitDraft();
@@ -331,7 +358,8 @@ function SearchPageInner({ community }: { community: Community }) {
   // Hide the bar on the initial browse-mode load so the skeleton owns the
   // full vertical space; show it as soon as there's anything to put in it.
   // Refine living in the meta bar means we also keep the bar visible whenever
-  // a Refine trigger is offered, so it stays reachable before the first result.
+  // a usable Refine trigger is offered, so it stays reachable before the first
+  // result.
   const showMetaBar =
     results.results !== null ||
     results.error !== null ||
@@ -340,7 +368,7 @@ function SearchPageInner({ community }: { community: Community }) {
     params.endYear !== undefined ||
     params.countryCodes.length > 0 ||
     params.conceptFilters.length > 0 ||
-    refine !== undefined;
+    refine?.disabled === false;
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary =
@@ -785,7 +813,7 @@ function SearchPageInner({ community }: { community: Community }) {
         <div class="search-results__pager">{paginationEl}</div>
       )}
 
-      {filterableSchemes.length > 0 && (
+      {vocab.schemes && (
         <FilterDrawer
           open={drawerOpen}
           title={community.copy.drawerTitle}
