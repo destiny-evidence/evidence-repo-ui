@@ -14,6 +14,18 @@ export function pathSlug(
 export const recordDetailPath = (communitySlug: string, referenceId: string) =>
   `/${communitySlug}/references/${referenceId}`;
 
+/**
+ * Community slug read off an app URL (relative or absolute).
+ */
+export function urlCommunitySlug(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    return pathSlug(new URL(url, window.location.href).pathname) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Restamps the current entry's state, leaving the URL and the router untouched. */
 export function stampHistoryState(state: unknown): void {
   history.replaceState(state, "", window.location.href);

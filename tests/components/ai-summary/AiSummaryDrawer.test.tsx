@@ -99,13 +99,13 @@ describe("AiSummaryDrawer", () => {
               quotes: [
                 {
                   quote: "Catch-up vaccination remained cost-effective.",
-                  paper: "anwari-2019",
+                  paper: MOCK_SUMMARY.papers[0].paper,
                   page: "12",
                   terms: [2],
                 },
                 {
                   quote: "Catch-up offered poor value for money.",
-                  paper: "canfell-2020",
+                  paper: MOCK_SUMMARY.papers[1].paper,
                   terms: [2],
                 },
               ],
@@ -137,6 +137,54 @@ describe("AiSummaryDrawer", () => {
     render(<AiSummaryDrawer ai={makeAi()} />);
     expect(screen.getByText("p. S17")).toBeDefined();
     expect(screen.getByText("p. iv")).toBeDefined();
+  });
+
+  test("each quote links to its reference in the summary's own community", () => {
+    render(<AiSummaryDrawer ai={makeAi()} />);
+    const links = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>(".ai-cite__record"),
+    );
+    // One per quote, claims and contradictions alike.
+    const quoteCount =
+      MOCK_SUMMARY.summary.claims.reduce((n, c) => n + c.quotes.length, 0) +
+      MOCK_SUMMARY.summary.contradictions.reduce(
+        (n, c) => n + c.quotes.length,
+        0,
+      );
+    expect(links.length).toBe(quoteCount);
+    // The slug comes from originUrl, not the current page.
+    expect(links[0].getAttribute("href")).toBe(
+      `/test-community/references/${MOCK_SUMMARY.summary.claims[0].quotes[0].paper}`,
+    );
+    // A new tab, so the summary stays put behind it.
+    expect(links[0].target).toBe("_blank");
+    expect(links[0].rel).toBe("noopener noreferrer");
+  });
+
+  test("omits the record link for a quote whose paper has no metadata", () => {
+    const [claim] = MOCK_SUMMARY.summary.claims;
+    const ai = makeAi({
+      result: {
+        ...MOCK_SUMMARY,
+        summary: {
+          ...MOCK_SUMMARY.summary,
+          contradictions: [],
+          claims: [
+            {
+              ...claim,
+              quotes: [{ ...claim.quotes[0], paper: "not-a-known-paper" }],
+            },
+          ],
+        },
+      },
+    });
+    render(<AiSummaryDrawer ai={ai} />);
+    expect(document.querySelector(".ai-cite__record")).toBeNull();
+  });
+
+  test("omits record links when the summary has no origin URL", () => {
+    render(<AiSummaryDrawer ai={makeAi({ originUrl: null })} />);
+    expect(document.querySelector(".ai-cite__record")).toBeNull();
   });
 
   test("clicking a footnote scrolls to and flashes its claim", () => {
