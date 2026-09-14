@@ -57,7 +57,7 @@ export function SearchBar({
               href={SEARCH_HELP_URL}
               event={{ category: "Search", action: "Help Opened" }}
             >
-              Learn more
+              Learn more about search
             </ExternalLink>
           )}
         </p>

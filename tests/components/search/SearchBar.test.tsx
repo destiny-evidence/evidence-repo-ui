@@ -63,7 +63,7 @@ describe("SearchBar", () => {
     const description = document.getElementById(hintId!);
     expect(description).toHaveTextContent(/Boolean operators can be used to search/);
     // A screen reader shouldn't read out "Learn more" as part of the field's description.
-    expect(description).not.toHaveTextContent(/Learn more/);
+    expect(description).not.toHaveTextContent(/Learn more about search/);
   });
 
   test("the hint's link is in the tab order after the search button", () => {
