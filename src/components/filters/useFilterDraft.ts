@@ -1,6 +1,7 @@
 import { useMemo, useState } from "preact/hooks";
 import { useSearchFacets, type FacetCounts } from "@/hooks/useSearchFacets";
 import type { SearchParams } from "@/services/searchParams";
+import type { CrossFacetAxisPair } from "@/services/crossFacets";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import {
   emptyConceptSchemeState,
@@ -67,6 +68,7 @@ export interface FilterDraftInputs {
   // Drives the facet-count fetch alongside the draft — the source of truth for
   // q / annotations. Owned by the page hosting the filters.
   params: SearchParams;
+  axes?: CrossFacetAxisPair;
 }
 
 function draftToConceptFilters(
@@ -121,6 +123,7 @@ export function useFilterDraft({
   appliedStartYear,
   appliedEndYear,
   params,
+  axes,
 }: FilterDraftInputs): FilterDraft {
   const [conceptDraft, setConceptDraft] = useState<ConceptDraft>(() =>
     parseConceptFilters(appliedConceptFilters, schemes ?? []),
@@ -166,7 +169,7 @@ export function useFilterDraft({
     counts: facetCounts,
     loading: facetCountsLoading,
     error: facetError,
-  } = useSearchFacets(facetParams);
+  } = useSearchFacets(facetParams, axes);
 
   function onSchemeChange(
     scheme: ConceptScheme,

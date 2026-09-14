@@ -1,4 +1,5 @@
 import { api } from "@/api/client";
+import type { CrossFacetQueryAxes } from "@/services/crossFacets";
 import type {
   Reference,
   ReferenceCrossFacetResponse,
@@ -99,13 +100,13 @@ export async function searchReferenceFacets(
   query: string | undefined,
   filters: Pick<SearchFilters, SharedFilterFields>,
   facets: FacetType[],
-  options: { vocabularyUrl?: string } = {},
+  options: Partial<CrossFacetQueryAxes> = {},
 ): Promise<ReferenceFacetResult> {
   const params = buildSharedSearchParams(query, filters);
   for (const f of facets) params.append("facet", f);
-  // `vocabulary=` is what triggers sibling-aware aggregation; only required
-  // when concept filters are active.
-  if (options.vocabularyUrl && filters.conceptFilters?.length) {
+  for (const axis of options.axes ?? []) params.append("axes", axis);
+  // Map axes need vocabulary resolution even without a concept selection.
+  if (options.vocabularyUrl && (options.axes || filters.conceptFilters?.length)) {
     params.set("vocabulary", options.vocabularyUrl);
   }
   return api.get<ReferenceFacetResult>(

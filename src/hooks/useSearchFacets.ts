@@ -3,6 +3,7 @@ import { searchReferenceFacets } from "@/services/apiClient";
 import { useCommunity } from "@/community/CommunityContext";
 import { toTurtleUrl } from "@/services/vocabulary/vocabularyService";
 import type { SearchParams } from "@/services/searchParams";
+import { axisPairToParams, type CrossFacetAxisPair } from "@/services/crossFacets";
 
 export interface FacetCounts {
   concepts: ReadonlyMap<string, number>;
@@ -14,6 +15,7 @@ function paramsKey(
   params: SearchParams,
   slug: string,
   annotations: string[],
+  axes: CrossFacetAxisPair | undefined,
 ): string {
   return [
     `q=${params.q}`,
@@ -23,10 +25,12 @@ function paramsKey(
     `ann=${JSON.stringify(annotations)}`,
     `countries=${JSON.stringify(params.countryCodes)}`,
     `concepts=${JSON.stringify(params.conceptFilters)}`,
+    `row=${JSON.stringify(axes?.row)}`,
+    `column=${JSON.stringify(axes?.column)}`,
   ].join("&");
 }
 
-export function useSearchFacets(params: SearchParams): {
+export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair): {
   counts: FacetCounts | null;
   loading: boolean;
   error: Error | null;
@@ -36,6 +40,7 @@ export function useSearchFacets(params: SearchParams): {
     params,
     community?.slug ?? "",
     community?.defaultAnnotations ?? [],
+    axes,
   );
   const [counts, setCounts] = useState<FacetCounts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +53,8 @@ export function useSearchFacets(params: SearchParams): {
     // Keep prior counts visible while refetching (dim-while-updating).
     setError(null);
     setLoading(true);
+    // Backend wants the Turtle vocab; the env URL is the JSON-LD one.
+    const vocabularyUrl = toTurtleUrl(community.vocabularyUrl);
 
     searchReferenceFacets(
       params.q || undefined,
@@ -59,8 +66,9 @@ export function useSearchFacets(params: SearchParams): {
         countryCodes: params.countryCodes,
       },
       ["concepts", "countries"],
-      // Backend wants the Turtle vocab; the env URL is the JSON-LD one.
-      { vocabularyUrl: toTurtleUrl(community.vocabularyUrl) },
+      // axisPairToParams drops the vocabulary for literal-only axes; /facets/ still
+      // needs it to resolve concept filters, so keep it regardless of the axes.
+      { vocabularyUrl, ...(axes ? axisPairToParams(axes, vocabularyUrl) : {}) },
     )
       .then((r) => {
         if (cancelled) return;
