@@ -27,7 +27,7 @@ export function ExternalLink({
   href,
   class: className,
   event,
-  icon = <ExternalLinkIcon size={11} />,
+  icon = <ExternalLinkIcon />,
   "aria-label": ariaLabel,
   children,
 }: ExternalLinkProps) {

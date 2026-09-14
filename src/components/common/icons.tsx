@@ -130,7 +130,7 @@ export function DownloadIcon({ size = 16 }: { size?: number }) {
 }
 
 /** Arrow pointing to upper-right — indicates an external link. */
-export function ExternalLinkIcon({ size = 12 }: { size?: number }) {
+export function ExternalLinkIcon({ size = 11 }: { size?: number }) {
   return (
     <svg
       viewBox="0 0 12 12"
