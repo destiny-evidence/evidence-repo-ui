@@ -90,4 +90,6 @@ export type AnalyticsEvent =
   | { category: "AISummary"; action: "Reopened"; name: string }
   | { category: "AISummary"; action: "Downloaded" }
   | { category: "AISummary"; action: "Flagged" }
-  | { category: "AISummary"; action: "Search Opened" };
+  | { category: "AISummary"; action: "Search Opened" }
+  // name: reference_id — the record a quote's "View record" link opened
+  | { category: "AISummary"; action: "Record Opened"; name: string };

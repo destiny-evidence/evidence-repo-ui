@@ -13,6 +13,7 @@ import type {
   SummariseResponse,
 } from "@/services/summariser";
 import { formatTotal } from "@/utils/searchTotal";
+import { recordDetailPath, urlCommunitySlug } from "@/services/navigation";
 import {
   type ApaReferenceInput,
   formatApaReference,
@@ -113,10 +114,15 @@ export function buildSummaryFilename(
   return `${stem}-${y}${m}${d}.pdf`;
 }
 
+/** App-relative path to an absolute href — a PDF's link annotations need one. */
+function absoluteUrl(path: string): string {
+  return new URL(path, window.location.href).href;
+}
+
 /** Resolve the summary's (possibly relative) origin URL to an absolute href. */
 function resolveOriginUrl(originUrl: string | null): string {
   try {
-    return new URL(originUrl ?? "", window.location.href).href;
+    return absoluteUrl(originUrl ?? "");
   } catch {
     return window.location.href;
   }
@@ -144,6 +150,10 @@ export async function buildSummaryPdf(
   const pageH = doc.internal.pageSize.getHeight();
   const contentW = pageW - PAGE_MARGIN * 2;
   let y = PAGE_MARGIN;
+
+  // Quote citations link back to the record in the community the summary was
+  // generated in; without a resolvable slug they carry no link at all.
+  const communitySlug = urlCommunitySlug(originUrl);
 
   // Recorded during layout, then wired to claims as internal jumps in a second
   // pass — the narrative is drawn before the claims it points at.
@@ -308,7 +318,8 @@ export async function buildSummaryPdf(
     y += lineHeight + opts.gapAfter;
   }
 
-  // A verbatim quote (serif italic) + its citation line and optional DOI link.
+  // A verbatim quote (serif italic) + its citation line and a link to the
+  // record in the repository.
   function quoteBlock(quote: QuoteRef): void {
     paragraph(`"${quote.quote}"`, {
       size: 10.5,
@@ -328,13 +339,15 @@ export async function buildSummaryPdf(
       gapAfter: 2,
     });
     const paper = result.papers.find((p) => p.paper === quote.paper);
-    if (paper?.doi) {
+    if (paper && communitySlug) {
       const lineHeight = 8.5 * 1.4;
       ensureSpace(lineHeight);
-      drawLink(`doi.org/${paper.doi}`, `https://doi.org/${paper.doi}`, PAGE_MARGIN + 28, {
-        size: 8.5,
-        font: FONT_MONO,
-      });
+      drawLink(
+        "View record in repository",
+        absoluteUrl(recordDetailPath(communitySlug, quote.paper)),
+        PAGE_MARGIN + 28,
+        { size: 8.5 },
+      );
       y += lineHeight + 6;
     } else {
       y += 4;
