@@ -52,13 +52,12 @@
 }
 
 .resource-link__body {
+  flex: 1;
   min-width: 0;
 }
 
 .resource-link__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: block;
   font-family: var(--font-body);
   font-size: var(--font-size-body);
   font-weight: 500;
@@ -70,16 +69,18 @@
   color: var(--color-accent);
 }
 
-.resource-link__ext {
-  display: inline-flex;
+/* The row is top-aligned, so the glyph is nudged onto the title's line. */
+.resource-link .external-link__icon {
+  margin-top: 4px;
   color: var(--color-text-tertiary);
 }
 
-.resource-link:hover .resource-link__ext {
+.resource-link:hover .external-link__icon {
   color: var(--color-accent);
 }
 
 .resource-link__desc {
+  display: block;
   font-size: var(--font-size-small);
   color: var(--color-text-tertiary);
   line-height: 1.45;
