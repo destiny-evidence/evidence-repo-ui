@@ -1,36 +1,19 @@
 import { Drawer } from "@/components/common/Drawer";
-import { FilterCardList } from "./FilterCardList";
+import { FilterCardList, type FilterCardOptions } from "./FilterCardList";
 import { FilterActions } from "./FilterActions";
-import { useFilterDraft, type AppliedFilters } from "./useFilterDraft";
+import {
+  useFilterDraft,
+  type AppliedFilters,
+  type FilterDraftInputs,
+} from "./useFilterDraft";
 import { track } from "@/analytics/matomo";
-import type { SearchParams } from "@/services/searchParams";
-import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
-import type { PinnedFilter } from "@/types/models";
 import "./FilterDrawer.css";
 
 export type { AppliedFilters };
 
-interface FilterDrawerProps {
+interface FilterDrawerProps extends FilterDraftInputs, FilterCardOptions {
   open: boolean;
   title?: string;
-  countNoun?: string;
-  // Show the facet-backed country card; off where the `countries` facet is empty.
-  showCountryFacetFilter?: boolean;
-  // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
-  pinnedFilters?: readonly PinnedFilter[];
-  // Filter cards that start expanded; absent ⇒ DEFAULT_EXPANDED_FILTERS.
-  defaultExpandedFilters?: readonly PinnedFilter[];
-  // Collapse concept-filter children behind their parents; only for
-  // communities with ancestor-closed codings.
-  collapsibleConceptFilters?: boolean;
-  schemes: ConceptScheme[];
-  appliedConceptFilters: readonly (readonly string[])[];
-  appliedCountryCodes: readonly string[];
-  appliedStartYear: number | undefined;
-  appliedEndYear: number | undefined;
-  // Drives the facet-count fetch alongside the draft. Owned by SearchPage as
-  // the source of truth for q / annotations.
-  params: SearchParams;
   onApply: (next: AppliedFilters) => void;
   onCancel: () => void;
 }
@@ -45,11 +28,6 @@ type FilterDrawerPanelProps = Omit<FilterDrawerProps, "open">;
 
 function FilterDrawerPanel({
   title = "Refine the evidence",
-  countNoun = "results",
-  showCountryFacetFilter = true,
-  pinnedFilters,
-  defaultExpandedFilters,
-  collapsibleConceptFilters = false,
   schemes,
   appliedConceptFilters,
   appliedCountryCodes,
@@ -58,6 +36,7 @@ function FilterDrawerPanel({
   params,
   onApply,
   onCancel,
+  ...cardOptions
 }: FilterDrawerPanelProps) {
   const draft = useFilterDraft({
     schemes,
@@ -107,14 +86,7 @@ function FilterDrawerPanel({
       }
       onClose={onCancel}
     >
-      <FilterCardList
-        draft={draft}
-        countNoun={countNoun}
-        showCountryFacetFilter={showCountryFacetFilter}
-        pinnedFilters={pinnedFilters}
-        defaultExpandedFilters={defaultExpandedFilters}
-        collapsibleConceptFilters={collapsibleConceptFilters}
-      />
+      <FilterCardList draft={draft} {...cardOptions} />
     </Drawer>
   );
 }

@@ -696,7 +696,8 @@ function EvidenceMapView({
           the committed query so it re-hydrates its draft when the URL changes. */}
       <MapConfigPanel
         key={canonical}
-        schemes={filterableSchemes}
+        schemes={vocab.error ? null : filterableSchemes}
+        loading={vocab.loading}
         showCountryFacetFilter={community.features.countryFacetFilter}
         pinnedFilters={community.pinnedFilters}
         defaultExpandedFilters={panelExpandedFilters}

@@ -18,8 +18,8 @@ import {
   URI_ACCESS,
 } from "../components/filters/fixtures";
 
-function renderSearchPage() {
-  return render(
+function searchPageTree() {
+  return (
     <AuthProvider>
       <CommunityProvider>
         <AiSummaryProvider>
@@ -28,8 +28,12 @@ function renderSearchPage() {
           </SelectionProvider>
         </AiSummaryProvider>
       </CommunityProvider>
-    </AuthProvider>,
+    </AuthProvider>
   );
+}
+
+function renderSearchPage() {
+  return render(searchPageTree());
 }
 
 vi.mock("@/services/apiClient", async (importOriginal) => {
@@ -47,12 +51,24 @@ vi.mock("@/services/export/export", () => ({
 }));
 
 // useVocabulary is mocked so we don't fire real fetches at the stubbed
-// VITE_ESEA_VOCABULARY_URL during tests. The default below silences the
-// hook (no schemes, not loading, no error) which makes the Refine button
-// disappear entirely; tests that exercise the drawer override this.
+// VITE_ESEA_VOCABULARY_URL during tests. The default below leaves the hook
+// loading, so Refine is disabled and on a bare browse load the meta bar holding
+// it stays hidden until results land. Tests that exercise the drawer override
+// this.
 vi.mock("@/hooks/useVocabulary", () => ({
   useVocabulary: vi.fn(),
 }));
+
+// Real communities by default; a test can swap in a variant none of them ship.
+const communityOverride = vi.hoisted(() => ({ current: null as Community | null }));
+vi.mock("@/services/communities", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/communities")>();
+  return {
+    ...actual,
+    findCommunity: (slug: string) =>
+      communityOverride.current ?? actual.findCommunity(slug),
+  };
+});
 
 import {
   searchReferences,
@@ -60,6 +76,8 @@ import {
   getSearchExport,
 } from "@/services/apiClient";
 import { useVocabulary } from "@/hooks/useVocabulary";
+import { findCommunity } from "@/services/communities";
+import type { Community } from "@/types/models";
 import { makeVocabResult } from "../fixtures";
 const mockSearch = vi.mocked(searchReferences);
 const mockRequestExport = vi.mocked(requestSearchExport);
@@ -67,7 +85,7 @@ const mockGetExport = vi.mocked(getSearchExport);
 const mockVocab = vi.mocked(useVocabulary);
 
 function silentVocab(): ReturnType<typeof useVocabulary> {
-  return makeVocabResult();
+  return makeVocabResult({ loading: true });
 }
 
 function vocabWith(schemes: typeof OUTCOME_SCHEME_FIXTURE[]): ReturnType<typeof useVocabulary> {
@@ -122,6 +140,7 @@ beforeEach(() => {
   mockRequestExport.mockReset();
   mockGetExport.mockReset();
   mockVocab.mockReset().mockReturnValue(silentVocab());
+  communityOverride.current = null;
   history.replaceState(null, "", "/esea");
 });
 
@@ -387,6 +406,28 @@ describe("SearchPage", () => {
       (e) => e[0] === "trackEvent" && e[1] === "Filters" && e[2] !== "Drawer Opened",
     );
     expect(filterEvents).toEqual([
+      ["trackEvent", "Filters", "Applied", "Educational Outcomes and Learning", undefined],
+      ["trackEvent", "Filters", "Category Applied", "Outcome", undefined],
+    ]);
+    window._paq = undefined;
+  });
+
+  test("filter events wait for the vocabulary", async () => {
+    // Tracking before it lands would drop the concept filter and never revisit.
+    history.replaceState(null, "", `/esea?concept=${encodeURIComponent(URI_LEARNING)}`);
+    mockBoth({ results: makeResult(7, ["r1"]) });
+    window._paq = [];
+    const { rerender } = renderSearchPage();
+    await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+    const filterEvents = () =>
+      (window._paq ?? []).filter(
+        (e) => e[0] === "trackEvent" && e[1] === "Filters" && e[2] !== "Drawer Opened",
+      );
+    expect(filterEvents()).toEqual([]);
+
+    mockVocab.mockReturnValue(vocabWith([OUTCOME_SCHEME_FIXTURE]));
+    rerender(searchPageTree());
+    expect(filterEvents()).toEqual([
       ["trackEvent", "Filters", "Applied", "Educational Outcomes and Learning", undefined],
       ["trackEvent", "Filters", "Category Applied", "Outcome", undefined],
     ]);
@@ -724,13 +765,93 @@ describe("SearchPage", () => {
       expect(screen.getByRole("button", { name: /Refine\s*3/ })).toBeDefined();
     });
 
-    test("Refine is hidden when vocabulary has no schemes", async () => {
+    test("Refine is offered when the vocabulary has no filterable schemes", async () => {
+      // ESEA pins year and country, neither of which needs the vocabulary.
+      mockVocab.mockReturnValue(vocabWith([]));
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("button", { name: "Refine" }));
+      expect(
+        screen.getByRole("button", { name: /Publication year/ }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Country/ })).toBeInTheDocument();
+    });
+
+    test("the no-scheme drawer follows the community's cards: HPV has no Country facet", async () => {
+      history.replaceState(null, "", "/hpv");
+      mockVocab.mockReturnValue(vocabWith([]));
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("button", { name: "Refine" }));
+      expect(
+        screen.getByRole("button", { name: /Publication year/ }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Country/ })).toBeNull();
+    });
+
+    test("Refine is hidden when the community has no filter cards to show", async () => {
+      const esea = findCommunity("esea")!;
+      communityOverride.current = {
+        ...esea,
+        pinnedFilters: [],
+        features: { ...esea.features, countryFacetFilter: false },
+      };
       mockVocab.mockReturnValue(vocabWith([]));
       mockBoth({ results: makeResult(120, ["r1"]) });
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
       expect(screen.queryByRole("button", { name: /Refine/ })).toBeNull();
+    });
+
+    test("a failed vocabulary still offers Refine with the year and country cards", async () => {
+      mockVocab.mockReturnValue(makeVocabResult({ error: new Error("boom") }));
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("button", { name: "Refine" }));
+      expect(screen.getByText(/Concept filters couldn't be loaded/)).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Publication year/ }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Country/ })).toBeInTheDocument();
+    });
+
+    test("Refine badge still counts applied concept filters after a vocabulary failure", async () => {
+      history.replaceState(null, "", `/esea?concept=${encodeURIComponent(URI_LEARNING)}`);
+      mockVocab.mockReturnValue(makeVocabResult({ error: new Error("boom") }));
+      mockBoth({ results: makeResult(7, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      // The drawer says applied filters stay in place; the badge must agree.
+      expect(screen.getByRole("button", { name: /Refine\s*1/ })).toBeInTheDocument();
+    });
+
+    test("Back with the drawer open re-seeds the draft from the new URL", async () => {
+      history.replaceState(null, "", `/esea?concept=${encodeURIComponent(URI_LEARNING)}`);
+      mockBoth({ results: makeResult(7, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+      fireEvent.click(screen.getByRole("button", { name: /Refine\s*1/ }));
+      const learning = () =>
+        screen.getByLabelText("Educational Outcomes and Learning") as HTMLInputElement;
+      expect(learning().checked).toBe(true);
+
+      // The previous history entry carried no concept filter.
+      history.replaceState(null, "", "/esea");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+
+      await waitFor(() => expect(learning().checked).toBe(false));
+      expect(
+        (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
     });
 
     test("Refine is disabled while vocabulary is loading", async () => {

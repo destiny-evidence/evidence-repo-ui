@@ -18,8 +18,8 @@ import type { PinnedFilter } from "@/types/models";
 import type { FilterDraft } from "./useFilterDraft";
 import "./FilterCardList.css";
 
-interface FilterCardListProps {
-  draft: FilterDraft;
+// Presentation options for the card stack, passed through by its host.
+export interface FilterCardOptions {
   countNoun?: string;
   // Show the facet-backed country card; off where the `countries` facet is empty.
   showCountryFacetFilter?: boolean;
@@ -30,6 +30,10 @@ interface FilterCardListProps {
   // Collapse concept-filter children behind their parents; only for
   // communities with ancestor-closed codings.
   collapsibleConceptFilters?: boolean;
+}
+
+interface FilterCardListProps extends FilterCardOptions {
+  draft: FilterDraft;
 }
 
 /**
@@ -46,7 +50,7 @@ export function FilterCardList({
   defaultExpandedFilters = DEFAULT_EXPANDED_FILTERS,
   collapsibleConceptFilters = false,
 }: FilterCardListProps) {
-  const items = orderFilterItems(draft.schemes, {
+  const items = orderFilterItems(draft.schemes ?? [], {
     pinned: pinnedFilters,
     showCountryFacetFilter,
   });
@@ -54,6 +58,12 @@ export function FilterCardList({
 
   return (
     <>
+      {draft.schemes === null && (
+        <div class="filter-card-list__notice" role="alert">
+          Concept filters couldn't be loaded. Those already applied stay in
+          place.
+        </div>
+      )}
       {draft.facetError && (
         <div class="filter-card-list__notice" role="status">
           Filter counts unavailable.

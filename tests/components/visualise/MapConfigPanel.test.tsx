@@ -34,6 +34,7 @@ type PanelProps = ComponentProps<typeof MapConfigPanel>;
 
 const baseProps: PanelProps = {
   schemes: SCHEMES,
+  loading: false,
   appliedAxes: AXES,
   defaultAxes: AXES,
   appliedConceptFilters: [],
@@ -230,5 +231,47 @@ describe("collapsible concept filters", () => {
         name: "Child concepts of Education Finance",
       }),
     ).toBeNull();
+  });
+});
+
+describe("vocabulary not yet available", () => {
+  test("while loading, the panel holds its heading and withholds Show results", () => {
+    renderPanel({ schemes: null, loading: true, appliedConceptFilters: [[URI_JOURNAL]] });
+    expect(screen.getByRole("heading", { name: "Configure map" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading filters…");
+    // Committing here would drop the applied filters the draft can't yet read.
+    expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
+    expect(screen.queryByLabelText("Rows (y)")).toBeNull();
+  });
+
+  test("a vocabulary failure keeps axes, year and country usable and carries applied concept filters through", () => {
+    const onApply = vi.fn();
+    renderPanel({ schemes: null, appliedConceptFilters: [[URI_JOURNAL]], onApply });
+    expect(screen.getByText(/Concept filters couldn't be loaded/)).toBeInTheDocument();
+    expect(screen.getByText("Publication year")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Journal Article")).toBeNull();
+    // Clean on arrival: the applied filter can't be shown, but it isn't
+    // counted as dropped either.
+    expect(showResults().disabled).toBe(true);
+
+    fireEvent.change(rowSelect(), { target: { value: AXIS_COUNTRIES } });
+    fireEvent.click(showResults());
+    expect(onApply.mock.calls[0][0].filters.conceptFilters).toEqual([[URI_JOURNAL]]);
+  });
+
+  test("Reset all clears concept filters the panel can't display", () => {
+    const onApply = vi.fn();
+    renderPanel({ schemes: null, appliedConceptFilters: [[URI_JOURNAL]], onApply });
+    fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
+    expect(showResults().disabled).toBe(false);
+    fireEvent.click(showResults());
+    expect(onApply.mock.calls[0][0].filters.conceptFilters).toEqual([]);
+  });
+
+  test("a vocabulary with nothing filterable still counts as loaded", () => {
+    renderPanel({ schemes: [] });
+    expect(screen.getByLabelText("Rows (y)")).toBeInTheDocument();
+    expect(screen.getByText("Publication year")).toBeInTheDocument();
+    expect(showResults().disabled).toBe(true);
   });
 });

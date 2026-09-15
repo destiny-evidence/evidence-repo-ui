@@ -1,10 +1,14 @@
 import { useMemo, useState } from "preact/hooks";
 import { Select } from "@/components/common/Select";
-import { FilterCardList } from "@/components/filters/FilterCardList";
+import {
+  FilterCardList,
+  type FilterCardOptions,
+} from "@/components/filters/FilterCardList";
 import { FilterActions } from "@/components/filters/FilterActions";
 import {
   useFilterDraft,
   type AppliedFilters,
+  type FilterDraftInputs,
 } from "@/components/filters/useFilterDraft";
 import { track } from "@/analytics/matomo";
 import { axisToken, localName, parseAxis } from "@/services/evidenceMap";
@@ -13,38 +17,19 @@ import {
   schemeDisplayLabel,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
-import type { SearchParams } from "@/services/searchParams";
-import type {
-  EvidenceMapAxis,
-  EvidenceMapAxes,
-  PinnedFilter,
-} from "@/types/models";
+import type { EvidenceMapAxis, EvidenceMapAxes } from "@/types/models";
 import "./MapConfigPanel.css";
 
-interface MapConfigPanelProps {
-  // Filterable concept schemes — both the axis options and the filter cards.
-  schemes: ConceptScheme[];
+interface MapConfigPanelProps extends MapConfigPanelInnerProps {
+  loading: boolean;
+}
+
+// `schemes` and `showCountryFacetFilter` also drive the axis dropdowns.
+interface MapConfigPanelInnerProps extends FilterDraftInputs, FilterCardOptions {
   // Currently-applied axes (from the URL) → the initial axis draft.
   appliedAxes: EvidenceMapAxes;
   // Community defaults — what "Reset all" restores the axes to.
   defaultAxes: EvidenceMapAxes;
-  appliedConceptFilters: readonly (readonly string[])[];
-  appliedCountryCodes: readonly string[];
-  appliedStartYear: number | undefined;
-  appliedEndYear: number | undefined;
-  // Drives the facet-count preview (q / annotations live here).
-  params: SearchParams;
-  countNoun?: string;
-  // Hide the facet-backed Country card where the `countries` facet is empty;
-  // the Country concept-scheme card still renders from `schemes`.
-  showCountryFacetFilter?: boolean;
-  // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
-  pinnedFilters?: readonly PinnedFilter[];
-  // Filter cards that start expanded; absent ⇒ DEFAULT_EXPANDED_FILTERS.
-  defaultExpandedFilters?: readonly PinnedFilter[];
-  // Collapse concept-filter children behind their parents; only for
-  // communities with ancestor-closed codings.
-  collapsibleConceptFilters?: boolean;
   onApply: (next: { axes: EvidenceMapAxes; filters: AppliedFilters }) => void;
 }
 
@@ -84,12 +69,41 @@ function axesEqual(a: EvidenceMapAxes, b: EvidenceMapAxes): boolean {
 }
 
 /**
+ * Keeps the panel's heading and width while the vocabulary resolves. It offers
+ * no "Show results": the draft can only recognise the URL's concept filters
+ * once the schemes naming them are here, so an early commit would wipe them.
+ */
+function MapConfigPanelLoading() {
+  return (
+    <aside class="map-config-panel" aria-label="Configure the evidence map">
+      <header class="map-config-panel__header">
+        <h2 class="map-config-panel__heading">Configure map</h2>
+      </header>
+      <div class="map-config-panel__body">
+        <p class="map-config-panel__status" role="status">
+          Loading filters…
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+/**
  * The persistent right-hand panel that configures the evidence map: row/column
  * axis dropdowns plus the search-page filters. Everything is draft state —
  * "Show results" commits the axes + filters to the URL, "Reset all" returns the
  * axes to the community defaults and clears the filters.
+ *
+ * A vocabulary with no filterable schemes still counts as loaded, and one that
+ * failed still leaves the axes and the year/country cards usable — applied
+ * concept filters then ride along unchanged.
  */
-export function MapConfigPanel({
+export function MapConfigPanel({ loading, ...rest }: MapConfigPanelProps) {
+  if (loading) return <MapConfigPanelLoading />;
+  return <MapConfigPanelInner {...rest} />;
+}
+
+function MapConfigPanelInner({
   schemes,
   appliedAxes,
   defaultAxes,
@@ -98,13 +112,10 @@ export function MapConfigPanel({
   appliedStartYear,
   appliedEndYear,
   params,
-  countNoun = "results",
   showCountryFacetFilter = true,
-  pinnedFilters,
-  defaultExpandedFilters,
-  collapsibleConceptFilters = false,
   onApply,
-}: MapConfigPanelProps) {
+  ...cardOptions
+}: MapConfigPanelInnerProps) {
   const [rowDraft, setRowDraft] = useState<EvidenceMapAxis>(appliedAxes.row);
   const [columnDraft, setColumnDraft] = useState<EvidenceMapAxis>(
     appliedAxes.column,
@@ -120,7 +131,8 @@ export function MapConfigPanel({
   });
 
   const options = useMemo(
-    () => buildAxisOptions(schemes, [rowDraft, columnDraft], showCountryFacetFilter),
+    () =>
+      buildAxisOptions(schemes ?? [], [rowDraft, columnDraft], showCountryFacetFilter),
     [schemes, rowDraft, columnDraft, showCountryFacetFilter],
   );
 
@@ -172,11 +184,8 @@ export function MapConfigPanel({
           <h3 class="map-config-panel__section-title">Filters</h3>
           <FilterCardList
             draft={draft}
-            countNoun={countNoun}
             showCountryFacetFilter={showCountryFacetFilter}
-            pinnedFilters={pinnedFilters}
-            defaultExpandedFilters={defaultExpandedFilters}
-            collapsibleConceptFilters={collapsibleConceptFilters}
+            {...cardOptions}
           />
         </section>
       </div>

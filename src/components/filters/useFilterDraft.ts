@@ -35,7 +35,7 @@ export interface AppliedFilters {
 type ConceptDraft = Map<string, ConceptSchemeFilterState>;
 
 export interface FilterDraft {
-  schemes: ConceptScheme[];
+  schemes: ConceptScheme[] | null;
   countryDraft: CountryFilterState;
   yearDraft: YearRangeFilterState;
   onSchemeChange: (scheme: ConceptScheme, next: ConceptSchemeFilterState) => void;
@@ -55,8 +55,11 @@ export interface FilterDraft {
   buildApplied: () => AppliedFilters | null;
 }
 
-interface UseFilterDraftOptions {
-  schemes: ConceptScheme[];
+// What a filter surface needs to seed its draft.
+export interface FilterDraftInputs {
+  // Null when the vocabulary is unavailable — applied concept filters then
+  // pass through untouched, since nothing can show or edit them.
+  schemes: ConceptScheme[] | null;
   appliedConceptFilters: readonly (readonly string[])[];
   appliedCountryCodes: readonly string[];
   appliedStartYear: number | undefined;
@@ -106,6 +109,10 @@ function conceptFiltersEqual(
  * facet-count fetch that previews the draft, and the reset / dirty / apply
  * derivations. Shared by the search drawer and the evidence-map config panel so
  * both drive filters identically.
+ *
+ * Seeded from the applied filters once, on mount, never re-read: hosts remount
+ * it whenever the applied filters or schemes change — without the schemes, the
+ * applied concept filters parse to nothing.
  */
 export function useFilterDraft({
   schemes,
@@ -114,10 +121,13 @@ export function useFilterDraft({
   appliedStartYear,
   appliedEndYear,
   params,
-}: UseFilterDraftOptions): FilterDraft {
+}: FilterDraftInputs): FilterDraft {
   const [conceptDraft, setConceptDraft] = useState<ConceptDraft>(() =>
-    parseConceptFilters(appliedConceptFilters, schemes),
+    parseConceptFilters(appliedConceptFilters, schemes ?? []),
   );
+  // State rather than the applied value itself so "Reset all" can clear them.
+  const [opaqueConceptFilters, setOpaqueConceptFilters] =
+    useState(appliedConceptFilters);
   const [countryDraft, setCountryDraft] = useState<CountryFilterState>(() =>
     countryStateFromCodes(appliedCountryCodes),
   );
@@ -126,8 +136,11 @@ export function useFilterDraft({
   );
 
   const draftConceptFilters = useMemo(
-    () => draftToConceptFilters(conceptDraft, schemes),
-    [conceptDraft, schemes],
+    () =>
+      schemes === null
+        ? opaqueConceptFilters
+        : draftToConceptFilters(conceptDraft, schemes),
+    [conceptDraft, schemes, opaqueConceptFilters],
   );
   const draftCountryCodes = useMemo(
     () => selectedCodes(countryDraft),
@@ -173,6 +186,7 @@ export function useFilterDraft({
 
   function reset() {
     setConceptDraft(new Map());
+    setOpaqueConceptFilters([]);
     setCountryDraft(emptyCountryState());
     setYearDraft(emptyYearRangeState());
   }

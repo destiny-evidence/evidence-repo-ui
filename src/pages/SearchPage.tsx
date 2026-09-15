@@ -36,6 +36,7 @@ import { RefineButton } from "@/components/search/RefineButton";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
 import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
+import { orderFilterItems } from "@/components/filters/filterOrder";
 import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
 import { useAiSummaryContext } from "@/components/ai-summary/AiSummaryProvider";
 import { aiSummariesEnabled } from "@/components/ai-summary/aiSummariesEnabled";
@@ -68,26 +69,19 @@ const EXPORT_MAX_RESULTS = 10000;
 // The summariser accepts at most 50 references per request (1–50).
 const MAX_SUMMARY_REFERENCES = 50;
 
-// Maps the useVocabulary() result to the SearchBar `refine` prop. Returns
-// undefined when there are no facets to offer (empty schemes) so the Refine
-// trigger isn't rendered at all.
+// Maps the useVocabulary() result to the SearchBar `refine` prop.
 function buildRefineConfig(
   vocab: ReturnType<typeof useVocabulary>,
+  hasFilterCards: boolean,
   count: number,
   open: () => void,
 ):
   | { count: number; disabled: boolean; disabledReason?: string; onClick: () => void }
   | undefined {
-  if (vocab.schemes && vocab.schemes.length > 0) {
-    return { count, disabled: false, onClick: open };
-  }
-  if (vocab.error) {
-    return { count: 0, disabled: true, disabledReason: "Filters unavailable", onClick: () => {} };
-  }
   if (vocab.loading) {
     return { count: 0, disabled: true, disabledReason: "Loading filters…", onClick: () => {} };
   }
-  return undefined;
+  return hasFilterCards ? { count, disabled: false, onClick: open } : undefined;
 }
 
 // `evidence-repository-<stem>-<slug>-YYYYMMDD.<ext>`. UTC so the same
@@ -294,8 +288,12 @@ function SearchPageInner({ community }: { community: Community }) {
     }
   }, [results.results, results.resultsParams, community.slug, vocab.loading, filterableSchemes]);
 
+  // With the vocabulary down every applied URI passes through, so count them all.
+  const activeConceptCount = vocab.error
+    ? params.conceptFilters.reduce((n, group) => n + group.length, 0)
+    : totalSelectedCount(params.conceptFilters, filterableSchemes);
   const activeFilterCount =
-    totalSelectedCount(params.conceptFilters, filterableSchemes)
+    activeConceptCount
     + totalSelectedCountryCount(params.countryCodes)
     + totalSelectedYearCount(params.startYear, params.endYear);
 
@@ -313,7 +311,19 @@ function SearchPageInner({ community }: { community: Community }) {
     setDrawerOpen(true);
   }
 
-  const refine = buildRefineConfig(vocab, activeFilterCount, handleOpenDrawer);
+  // The same ordering the drawer renders from, so the trigger and the drawer's
+  // contents can't disagree about whether there is anything to refine by.
+  const hasFilterCards =
+    orderFilterItems(filterableSchemes, {
+      pinned: community.pinnedFilters,
+      showCountryFacetFilter: community.features.countryFacetFilter,
+    }).length > 0;
+  const refine = buildRefineConfig(
+    vocab,
+    hasFilterCards,
+    activeFilterCount,
+    handleOpenDrawer,
+  );
 
   function handleApplyFilters(next: AppliedFilters) {
     const committed = draft.commitDraft();
@@ -331,7 +341,8 @@ function SearchPageInner({ community }: { community: Community }) {
   // Hide the bar on the initial browse-mode load so the skeleton owns the
   // full vertical space; show it as soon as there's anything to put in it.
   // Refine living in the meta bar means we also keep the bar visible whenever
-  // a Refine trigger is offered, so it stays reachable before the first result.
+  // a usable Refine trigger is offered, so it stays reachable before the first
+  // result.
   const showMetaBar =
     results.results !== null ||
     results.error !== null ||
@@ -340,7 +351,7 @@ function SearchPageInner({ community }: { community: Community }) {
     params.endYear !== undefined ||
     params.countryCodes.length > 0 ||
     params.conceptFilters.length > 0 ||
-    refine !== undefined;
+    refine?.disabled === false;
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary =
@@ -785,8 +796,10 @@ function SearchPageInner({ community }: { community: Community }) {
         <div class="search-results__pager">{paginationEl}</div>
       )}
 
-      {filterableSchemes.length > 0 && (
+      {!vocab.loading && (
+        // Keyed on the committed query so Back with the drawer open re-seeds the draft.
         <FilterDrawer
+          key={canonicalQs}
           open={drawerOpen}
           title={community.copy.drawerTitle}
           countNoun={community.copy.countNoun}
@@ -794,7 +807,7 @@ function SearchPageInner({ community }: { community: Community }) {
           pinnedFilters={community.pinnedFilters}
           defaultExpandedFilters={community.defaultExpandedFilters}
           collapsibleConceptFilters={community.features.ancestorClosedCodings}
-          schemes={filterableSchemes}
+          schemes={vocab.error ? null : filterableSchemes}
           appliedConceptFilters={params.conceptFilters}
           appliedCountryCodes={params.countryCodes}
           appliedStartYear={params.startYear}
