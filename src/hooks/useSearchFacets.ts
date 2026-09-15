@@ -66,9 +66,7 @@ export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair)
         countryCodes: params.countryCodes,
       },
       ["concepts", "countries"],
-      // axisPairToParams drops the vocabulary for literal-only axes; /facets/ still
-      // needs it to resolve concept filters, so keep it regardless of the axes.
-      { vocabularyUrl, ...(axes ? axisPairToParams(axes, vocabularyUrl) : {}) },
+      axes ? axisPairToParams(axes, vocabularyUrl) : { vocabularyUrl },
     )
       .then((r) => {
         if (cancelled) return;

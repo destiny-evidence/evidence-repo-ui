@@ -125,16 +125,16 @@ describe("map panel facet requests", () => {
     expect(onApply).not.toHaveBeenCalled();
   });
 
-  test("keeps the vocabulary when both axes are literal and a concept is selected", async () => {
+  test("sends the vocabulary for literal-only axes", async () => {
     // Reachable from the URL: ?row=countries&column=countries parses even though
-    // the dropdowns disable it. `/facets/` needs the vocabulary for the concept
-    // filter regardless of the axes.
+    // the dropdowns disable it.
     render(<MapConfigPanel
       {...baseProps}
       appliedAxes={{ row: { kind: "countries" }, column: { kind: "countries" } }}
     />);
     await screen.findByLabelText("12 results");
     expect(latestParams().getAll("axes")).toEqual(["countries", "countries"]);
+    expect(latestParams().get("vocabulary")).toBe("https://vocab.example/vocabulary.ttl");
 
     fireEvent.click(screen.getByRole("checkbox", { name: /Journal Article/ }));
     await waitFor(() => expect(latestParams().getAll("concept")).toEqual([URI_JOURNAL]));
@@ -157,11 +157,11 @@ describe("map panel facet requests", () => {
   });
 });
 
-test("the Search drawer keeps unscoped counts, including after selecting a concept", async () => {
+test("the Search drawer sends no axes, and sends the vocabulary with or without a concept", async () => {
   render(<FilterDrawer {...baseProps} open onCancel={() => {}} onApply={vi.fn()} />);
   await screen.findByLabelText("12 results");
   expect(latestParams().has("axes")).toBe(false);
-  expect(latestParams().has("vocabulary")).toBe(false);
+  expect(latestParams().get("vocabulary")).toBe("https://vocab.example/vocabulary.ttl");
 
   fireEvent.click(screen.getByRole("checkbox", { name: /Journal Article/ }));
   await waitFor(() => expect(latestParams().getAll("concept")).toEqual([URI_JOURNAL]));

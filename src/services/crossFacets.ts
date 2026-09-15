@@ -14,7 +14,7 @@ export interface CrossFacetAxisPair {
 
 export interface CrossFacetQueryAxes {
   axes: [string, string];
-  vocabularyUrl?: string;
+  vocabularyUrl: string;
 }
 
 function axisToken(axis: CrossFacetAxis): string {
@@ -25,11 +25,8 @@ export function axisPairToParams(
   pair: CrossFacetAxisPair,
   vocabularyUrl: string,
 ): CrossFacetQueryAxes {
-  const result: CrossFacetQueryAxes = {
+  return {
     axes: [axisToken(pair.row), axisToken(pair.column)],
+    vocabularyUrl,
   };
-  if (pair.row.kind === "scheme" || pair.column.kind === "scheme") {
-    result.vocabularyUrl = vocabularyUrl;
-  }
-  return result;
 }

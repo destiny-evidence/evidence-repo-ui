@@ -15,13 +15,13 @@ const scheme: CrossFacetAxis = { kind: "scheme", schemeUri: SCHEME };
 
 describe("axisPairToParams", () => {
   // row→axes[0], column→axes[1]; a literal resolves to its token, a scheme to its
-  // URI; vocabularyUrl is attached iff either axis is a scheme.
+  // URI. The vocabulary always rides along; the backend decides if it needs it.
   test.each([
     {
       label: "both literal",
       row: regions,
       column: countries,
-      expected: { axes: ["country_wb_regions", "countries"] },
+      expected: { axes: ["country_wb_regions", "countries"], vocabularyUrl: VOCAB },
     },
     {
       label: "row scheme",

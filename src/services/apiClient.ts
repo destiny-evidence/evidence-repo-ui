@@ -105,10 +105,7 @@ export async function searchReferenceFacets(
   const params = buildSharedSearchParams(query, filters);
   for (const f of facets) params.append("facet", f);
   for (const axis of options.axes ?? []) params.append("axes", axis);
-  // Map axes need vocabulary resolution even without a concept selection.
-  if (options.vocabularyUrl && (options.axes || filters.conceptFilters?.length)) {
-    params.set("vocabulary", options.vocabularyUrl);
-  }
+  if (options.vocabularyUrl) params.set("vocabulary", options.vocabularyUrl);
   return api.get<ReferenceFacetResult>(
     `/v1/references/search/facets/?${params.toString()}`,
   );
