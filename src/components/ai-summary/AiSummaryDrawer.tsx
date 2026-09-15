@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { Drawer } from "@/components/common/Drawer";
+import { ExternalLink } from "@/components/common/ExternalLink";
 import { Spinner } from "@/components/common/Spinner";
 import { DownloadIcon, WarningIcon } from "@/components/common/icons";
 import { track } from "@/analytics/matomo";
@@ -294,15 +295,14 @@ function DrawerFooter({
         </a>
       )}
       {AI_SUMMARY_FLAG_FORM_URL && (
-        <a
+        <ExternalLink
           class="ai-btn ai-btn--flag ai-btn--push"
           href={AI_SUMMARY_FLAG_FORM_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => track({ category: "AISummary", action: "Flagged" })}
+          event={{ category: "AISummary", action: "Flagged" }}
+          icon={false}
         >
           ⚑ Flag this summary
-        </a>
+        </ExternalLink>
       )}
     </footer>
   );

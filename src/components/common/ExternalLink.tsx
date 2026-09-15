@@ -10,8 +10,10 @@ interface ExternalLinkProps {
   class?: string;
   /** Matomo event fired on click. */
   event?: AnalyticsEvent;
-  /** Size of the trailing ↗ glyph. */
-  iconSize?: number;
+  /**
+   * Replace the default ExternalLinkIcon, or `false` to drop it.
+   */
+  icon?: ComponentChildren;
   "aria-label"?: string;
   children: ComponentChildren;
 }
@@ -25,7 +27,7 @@ export function ExternalLink({
   href,
   class: className,
   event,
-  iconSize = 11,
+  icon = <ExternalLinkIcon />,
   "aria-label": ariaLabel,
   children,
 }: ExternalLinkProps) {
@@ -39,9 +41,11 @@ export function ExternalLink({
       onClick={event ? () => track(event) : undefined}
     >
       {children}
-      <span class="external-link__icon" aria-hidden="true">
-        <ExternalLinkIcon size={iconSize} />
-      </span>
+      {icon && (
+        <span class="external-link__icon" aria-hidden="true">
+          {icon}
+        </span>
+      )}
     </a>
   );
 }

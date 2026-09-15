@@ -1,19 +1,18 @@
-import { track } from "@/analytics/matomo";
+import { ExternalLink } from "@/components/common/ExternalLink";
 import { FEEDBACK_FORM_URL } from "@/config";
 import "./FeedbackFAB.css";
 
 export function FeedbackFAB() {
   if (!FEEDBACK_FORM_URL) return null;
   return (
-    <a
+    <ExternalLink
       class="feedback-fab"
       href={FEEDBACK_FORM_URL}
-      target="_blank"
-      rel="noopener noreferrer"
       aria-label="Send feedback (opens form in a new tab)"
-      onClick={() => track({ category: "Feedback", action: "FAB Clicked" })}
+      event={{ category: "Feedback", action: "FAB Clicked" }}
+      icon={false}
     >
       Feedback
-    </a>
+    </ExternalLink>
   );
 }

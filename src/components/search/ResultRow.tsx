@@ -18,9 +18,11 @@ import { conceptsToTags } from "@/services/conceptLabels";
 import { recordDetailPath } from "@/services/navigation";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
+import { ExternalLink } from "@/components/common/ExternalLink";
 import { TagGroup } from "@/components/common/TagGroup";
 import { track } from "@/analytics/matomo";
 import "./ResultRow.css";
+import { ExternalLinkIcon } from "../common/icons";
 
 interface ResultRowProps {
   communitySlug: string;
@@ -202,16 +204,15 @@ export function ResultRow({
       </a>
       <div class="row-right">
         {doi && (
-          <a
+          <ExternalLink
             class="doi-link"
             href={`https://doi.org/${doi}`}
             aria-label={`DOI: ${doi}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track({ category: "Record", action: "DOI Clicked" })}
+            event={{ category: "Record", action: "DOI Clicked" }}
+            icon=<ExternalLinkIcon size={9}/>
           >
-            DOI ↗
-          </a>
+            DOI
+          </ExternalLink>
         )}
         {findingsAndEstimates && (
           <>

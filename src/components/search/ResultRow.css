@@ -143,6 +143,9 @@
 .doi-link {
   position: relative;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-family: var(--font-mono);
   font-size: var(--font-size-mono-sm);
   color: var(--color-accent);

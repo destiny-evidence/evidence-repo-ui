@@ -76,10 +76,6 @@
   text-decoration: underline;
 }
 
-.investigation-card__external-icon {
-  flex-shrink: 0;
-}
-
 .investigation-card__divider {
   margin: var(--spacing-md) 0;
 }
