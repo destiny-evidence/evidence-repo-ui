@@ -27,6 +27,7 @@ const axes: EvidenceMapAxes = {
 };
 const baseProps: ComponentProps<typeof MapConfigPanel> = {
   schemes: [OUTCOME_SCHEME_FIXTURE, DOCUMENT_TYPE_SCHEME],
+  loading: false,
   appliedAxes: axes,
   defaultAxes: axes,
   appliedConceptFilters: [],
