@@ -68,7 +68,6 @@ export interface FilterDraftInputs {
   // Drives the facet-count fetch alongside the draft — the source of truth for
   // q / annotations. Owned by the page hosting the filters.
   params: SearchParams;
-  axes?: CrossFacetAxisPair;
 }
 
 function draftToConceptFilters(
@@ -124,7 +123,7 @@ export function useFilterDraft({
   appliedEndYear,
   params,
   axes,
-}: FilterDraftInputs): FilterDraft {
+}: FilterDraftInputs & { axes?: CrossFacetAxisPair }): FilterDraft {
   const [conceptDraft, setConceptDraft] = useState<ConceptDraft>(() =>
     parseConceptFilters(appliedConceptFilters, schemes ?? []),
   );
