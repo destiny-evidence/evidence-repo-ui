@@ -1,5 +1,6 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/preact";
+import { useState } from "preact/hooks";
 import { ConceptSchemeFilter } from "@/components/filters/ConceptSchemeFilter";
 import {
   conceptSchemeStateFromUris,
@@ -419,6 +420,37 @@ describe("ConceptSchemeFilter 0-count rendering", () => {
     expect(financeRow.className).not.toContain(
       "concept-scheme-filter__row--empty",
     );
+  });
+
+  test("a concept de-selected after its count drops to 0 stays enabled", () => {
+    function Controlled({ counts }: { counts: ReadonlyMap<string, number> }) {
+      const [state, setState] = useState(emptyConceptSchemeState());
+      return (
+        <ConceptSchemeFilter
+          scheme={OUTCOME_SCHEME_FIXTURE}
+          state={state}
+          counts={counts}
+          onChange={setState}
+        />
+      );
+    }
+    const finance = () =>
+      screen.getByLabelText<HTMLInputElement>(/^Education Finance/);
+
+    const withCount = new Map<string, number>([[URI_EDUCATION_FINANCE, 12]]);
+    const zeroed = new Map<string, number>([[URI_EDUCATION_FINANCE, 0]]);
+    const { rerender } = render(<Controlled counts={withCount} />);
+    fireEvent.click(finance());
+    expect(finance().checked).toBe(true);
+
+    // An axis change rescopes the counts to 0 while it is still selected.
+    rerender(<Controlled counts={zeroed} />);
+    expect(finance().disabled).toBe(false);
+
+    // De-selecting must not strand the user: re-ticking is the undo.
+    fireEvent.click(finance());
+    expect(finance().checked).toBe(false);
+    expect(finance().disabled).toBe(false);
   });
 
   test("count > 0 renders normally regardless of selection", () => {

@@ -36,6 +36,7 @@ interface ConceptItemProps {
   collapsible: boolean;
   expanded: ReadonlySet<string>;
   checkedAncestors: ReadonlySet<string>;
+  everSelected: ReadonlySet<string>;
   onToggleExpand: (uri: string) => void;
   onChange: (next: ConceptSchemeFilterState) => void;
 }
@@ -55,6 +56,7 @@ function ConceptItem({
   collapsible,
   expanded,
   checkedAncestors,
+  everSelected,
   onToggleExpand,
   onChange,
 }: ConceptItemProps) {
@@ -76,9 +78,10 @@ function ConceptItem({
   const count: number | undefined =
     rawCount !== undefined ? rawCount : counts != null ? 0 : undefined;
   const selected = isSelected(state, concept.uri);
-  // 0 + unselected = guaranteed-empty pick → disable. 0 + selected stays
-  // enabled so the user can un-tick a no-op filter.
-  const isEmpty = count === 0 && !selected;
+  // 0 + unselected = guaranteed-empty pick → disable. Rows selected now or
+  // earlier in this draft stay enabled, so un-ticking one is undoable.
+  const isEmpty =
+    count === 0 && !selected && !everSelected.has(concept.uri);
   const showCountBadge = count !== undefined && count > 0;
   const rowClass = `concept-scheme-filter__row${
     isEmpty ? " concept-scheme-filter__row--empty" : ""
@@ -179,6 +182,7 @@ function ConceptItem({
               collapsible={collapsible}
               expanded={expanded}
               checkedAncestors={checkedAncestors}
+              everSelected={everSelected}
               onToggleExpand={onToggleExpand}
               onChange={onChange}
             />
@@ -206,6 +210,21 @@ export function ConceptSchemeFilter({
     collapsible ? defaultExpandedUris(scheme, state) : NONE_EXPANDED,
   );
 
+  // Seeded from the applied selection and grown on every toggle, so a row
+  // whose count later drops to 0 can still be re-ticked after un-ticking.
+  const [everSelected, setEverSelected] = useState<ReadonlySet<string>>(
+    () => new Set(state),
+  );
+
+  const handleChange = (next: ConceptSchemeFilterState) => {
+    setEverSelected((current) => {
+      const merged = new Set(current);
+      for (const uri of next) merged.add(uri);
+      return merged;
+    });
+    onChange(next);
+  };
+
   const checkedAncestors = useMemo(
     () => (collapsible ? ancestorUrisOf(scheme, state) : NONE_EXPANDED),
     [collapsible, scheme, state],
@@ -232,8 +251,9 @@ export function ConceptSchemeFilter({
           collapsible={collapsible}
           expanded={expanded}
           checkedAncestors={checkedAncestors}
+          everSelected={everSelected}
           onToggleExpand={toggleExpand}
-          onChange={onChange}
+          onChange={handleChange}
         />
       ))}
     </ul>
