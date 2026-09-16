@@ -116,7 +116,7 @@ export async function searchReferenceFacets(
 export async function crossFacets(
   query: string | undefined,
   filters: Pick<SearchFilters, SharedFilterFields>,
-  axes: { axes: readonly [string, string]; vocabularyUrl?: string },
+  axes: CrossFacetQueryAxes,
 ): Promise<ReferenceCrossFacetResult> {
   const params = buildSharedSearchParams(query, filters);
   // Repeated `axes=` param, in order — the backend reads it as a 2-tuple.

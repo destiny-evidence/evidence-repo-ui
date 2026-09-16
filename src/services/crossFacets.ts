@@ -13,8 +13,8 @@ export interface CrossFacetAxisPair {
 }
 
 export interface CrossFacetQueryAxes {
-  axes: [string, string];
-  vocabularyUrl: string;
+  axes: readonly [string, string];
+  vocabularyUrl?: string;
 }
 
 function axisToken(axis: CrossFacetAxis): string {
