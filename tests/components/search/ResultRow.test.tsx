@@ -5,8 +5,10 @@ import { rawSourcePatterns } from "@/services/codingInstitution";
 import {
   abstractEnh,
   bibliographicEnh,
+  linkedDataEnh,
   makeReference,
   makeVocabResult,
+  rawEnh,
 } from "../../fixtures";
 
 const CODING = rawSourcePatterns([[/(^|[^a-z])eef([^a-z]|$)/, "EEF"]]);
@@ -472,6 +474,76 @@ describe("ResultRow", () => {
         screen.getByRole("checkbox", { name: /deselect on phonics/i }),
       ).toBeChecked();
       expect(container.querySelector(".result-row")).toHaveClass("is-selected");
+    });
+  });
+
+  describe("coder attribution follows the coding lineage", () => {
+    // Both patterns, so a wrong answer renders a different institution rather
+    // than nothing — the failure this guards against is misattribution.
+    const CODING_BOTH = rawSourcePatterns([
+      [/(^|[^a-z])eef([^a-z]|$)/, "EEF"],
+      [/(^|[^a-z])wwhge([^a-z]|$)/, "WWHGE"],
+    ]);
+    const DUP_REF = "dup-ref-1";
+
+    test("credits the coder the linked data derives from, not the newest raw", () => {
+      const ref = makeRef({
+        enhancements: [
+          rawEnh(DUP_REF, { id: "raw-eef", source: "eef-eppi-review" }),
+          rawEnh(REF_ID, {
+            id: "raw-wwhge",
+            source: "ad_hoc_ingestors.wwhge_ingestor@1.0",
+          }),
+          linkedDataEnh(REF_ID, { derivedFrom: ["raw-eef"] }),
+        ],
+      });
+      render(
+        <ResultRow
+          communitySlug="esea"
+          reference={ref}
+          codingInstitution={CODING_BOTH}
+        />,
+      );
+      expect(screen.getByTestId("coder-text")).toHaveTextContent("EEF");
+    });
+
+    test("falls back to the latest raw when there is no linked data", () => {
+      const ref = makeRef({
+        enhancements: [
+          rawEnh(REF_ID, {
+            id: "raw-wwhge",
+            source: "ad_hoc_ingestors.wwhge_ingestor@1.0",
+          }),
+        ],
+      });
+      render(
+        <ResultRow
+          communitySlug="esea"
+          reference={ref}
+          codingInstitution={CODING_BOTH}
+        />,
+      );
+      expect(screen.getByTestId("coder-text")).toHaveTextContent("WWHGE");
+    });
+
+    test("falls back to the latest raw when the lineage cannot be resolved", () => {
+      const ref = makeRef({
+        enhancements: [
+          rawEnh(REF_ID, {
+            id: "raw-wwhge",
+            source: "ad_hoc_ingestors.wwhge_ingestor@1.0",
+          }),
+          linkedDataEnh(REF_ID, { derivedFrom: null }),
+        ],
+      });
+      render(
+        <ResultRow
+          communitySlug="esea"
+          reference={ref}
+          codingInstitution={CODING_BOTH}
+        />,
+      );
+      expect(screen.getByTestId("coder-text")).toHaveTextContent("WWHGE");
     });
   });
 });
