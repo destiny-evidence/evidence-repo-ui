@@ -12,6 +12,7 @@ import {
 import { navigate, stampHistoryState } from "@/services/navigation";
 import {
   axisToken,
+  toCrossFacetAxis,
   buildAxisBands,
   buildEvidenceMapModel,
   defaultExpandedKeys,
@@ -31,7 +32,6 @@ import {
   exceedsEvidenceMapRenderLimits,
 } from "@/services/evidenceMap";
 import {
-  AXIS_COUNTRIES,
   type CrossFacetAxis,
   type CrossFacetAxisPair,
 } from "@/services/crossFacets";
@@ -63,13 +63,6 @@ interface VisualisePageProps {
 
 const ROW_PARAM = "row";
 const COLUMN_PARAM = "column";
-
-// Config axis → the shape the cross-facets client/hook expects.
-function toCrossFacetAxis(axis: EvidenceMapAxis): CrossFacetAxis {
-  return axis.kind === "countries"
-    ? { kind: "literal", token: AXIS_COUNTRIES }
-    : { kind: "scheme", schemeUri: axis.schemeUri };
-}
 
 // Inverse of toCrossFacetAxis — recover the config axis from the pair the hook
 // reports a result was fetched for. (This page only ever produces the COUNTRIES

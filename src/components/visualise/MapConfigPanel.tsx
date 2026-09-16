@@ -11,7 +11,7 @@ import {
   type FilterDraftInputs,
 } from "@/components/filters/useFilterDraft";
 import { track } from "@/analytics/matomo";
-import { axisToken, localName, parseAxis } from "@/services/evidenceMap";
+import { axisToken, localName, parseAxis, toCrossFacetAxis } from "@/services/evidenceMap";
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
 import {
   schemeDisplayLabel,
@@ -128,6 +128,10 @@ function MapConfigPanelInner({
     appliedStartYear,
     appliedEndYear,
     params,
+    axes: {
+      row: toCrossFacetAxis(rowDraft),
+      column: toCrossFacetAxis(columnDraft),
+    },
   });
 
   const options = useMemo(

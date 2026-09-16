@@ -1,4 +1,5 @@
 import { api } from "@/api/client";
+import type { CrossFacetQueryAxes } from "@/services/crossFacets";
 import type {
   Reference,
   ReferenceCrossFacetResponse,
@@ -99,15 +100,12 @@ export async function searchReferenceFacets(
   query: string | undefined,
   filters: Pick<SearchFilters, SharedFilterFields>,
   facets: FacetType[],
-  options: { vocabularyUrl?: string } = {},
+  options: Partial<CrossFacetQueryAxes> = {},
 ): Promise<ReferenceFacetResult> {
   const params = buildSharedSearchParams(query, filters);
   for (const f of facets) params.append("facet", f);
-  // `vocabulary=` is what triggers sibling-aware aggregation; only required
-  // when concept filters are active.
-  if (options.vocabularyUrl && filters.conceptFilters?.length) {
-    params.set("vocabulary", options.vocabularyUrl);
-  }
+  for (const axis of options.axes ?? []) params.append("axes", axis);
+  if (options.vocabularyUrl) params.set("vocabulary", options.vocabularyUrl);
   return api.get<ReferenceFacetResult>(
     `/v1/references/search/facets/?${params.toString()}`,
   );
@@ -118,7 +116,7 @@ export async function searchReferenceFacets(
 export async function crossFacets(
   query: string | undefined,
   filters: Pick<SearchFilters, SharedFilterFields>,
-  axes: { axes: readonly [string, string]; vocabularyUrl?: string },
+  axes: CrossFacetQueryAxes,
 ): Promise<ReferenceCrossFacetResult> {
   const params = buildSharedSearchParams(query, filters);
   // Repeated `axes=` param, in order — the backend reads it as a 2-tuple.

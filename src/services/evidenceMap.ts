@@ -12,7 +12,13 @@ import {
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
-import { AXIS_COUNTRIES } from "@/services/crossFacets";
+import { AXIS_COUNTRIES, type CrossFacetAxis } from "@/services/crossFacets";
+
+export function toCrossFacetAxis(axis: EvidenceMapAxis): CrossFacetAxis {
+  return axis.kind === "countries"
+    ? { kind: "literal", token: AXIS_COUNTRIES }
+    : { kind: "scheme", schemeUri: axis.schemeUri };
+}
 
 // The token written to / read from the URL (and a <select> value) for an axis.
 export function axisToken(axis: EvidenceMapAxis): string {

@@ -154,6 +154,7 @@ describe("searchReferences", () => {
 
 describe("searchReferenceFacets", () => {
   const emptyResult: ReferenceFacetResult = { concepts: [] };
+  const VOCAB = "https://vocab.example/v1/vocabulary.ttl";
 
   test("hits the /facets/ endpoint with q and one facet param", async () => {
     mockedGet.mockResolvedValue(emptyResult);
@@ -193,6 +194,27 @@ describe("searchReferenceFacets", () => {
     expect(new URLSearchParams(url.split("?")[1]).getAll("facet")).toEqual([
       "concepts",
       "concepts",
+    ]);
+  });
+
+  test("forwards the vocabulary on an unscoped, unfiltered request", async () => {
+    mockedGet.mockResolvedValue(emptyResult);
+    await searchReferenceFacets("x", {}, ["concepts"], { vocabularyUrl: VOCAB });
+    const params = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]);
+    expect(params.get("vocabulary")).toBe(VOCAB);
+    expect(params.has("axes")).toBe(false);
+  });
+
+  test("appends the axes pair in order", async () => {
+    mockedGet.mockResolvedValue(emptyResult);
+    await searchReferenceFacets("x", {}, ["concepts"], {
+      axes: ["countries", "https://vocab.example/scheme/Themes"],
+      vocabularyUrl: VOCAB,
+    });
+    const params = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]);
+    expect(params.getAll("axes")).toEqual([
+      "countries",
+      "https://vocab.example/scheme/Themes",
     ]);
   });
 
