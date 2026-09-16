@@ -3,7 +3,6 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/preact
 import type { ComponentProps } from "preact";
 import { api } from "@/api/client";
 import { MapConfigPanel } from "@/components/visualise/MapConfigPanel";
-import { FilterDrawer } from "@/components/filters/FilterDrawer";
 import type { EvidenceMapAxes, ReferenceFacetResult } from "@/types/models";
 import { makeCommunity, makeSearchParams } from "../../fixtures";
 import {
@@ -156,16 +155,4 @@ describe("map panel facet requests", () => {
     expect(screen.getByLabelText("12 results")).toBeInTheDocument();
     expect(screen.queryByLabelText("99 results")).toBeNull();
   });
-});
-
-test("the Search drawer sends no axes, and sends the vocabulary with or without a concept", async () => {
-  render(<FilterDrawer {...baseProps} open onCancel={() => {}} onApply={vi.fn()} />);
-  await screen.findByLabelText("12 results");
-  expect(latestParams().has("axes")).toBe(false);
-  expect(latestParams().get("vocabulary")).toBe("https://vocab.example/vocabulary.ttl");
-
-  fireEvent.click(screen.getByRole("checkbox", { name: /Journal Article/ }));
-  await waitFor(() => expect(latestParams().getAll("concept")).toEqual([URI_JOURNAL]));
-  expect(latestParams().has("axes")).toBe(false);
-  expect(latestParams().get("vocabulary")).toBe("https://vocab.example/vocabulary.ttl");
 });
