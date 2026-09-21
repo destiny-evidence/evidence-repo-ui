@@ -1,6 +1,6 @@
 /* Wrapping the glyph keeps it level with the text and unsquashed regardless of
    how the caller lays its anchor out. Spacing before it is the caller's `gap`. */
-.external-link__icon {
+.new-tab-link__icon {
   display: inline-flex;
   align-items: center;
   flex: none;

@@ -1,14 +1,14 @@
 import { describe, test, expect, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/preact";
-import { ExternalLink } from "@/components/common/ExternalLink";
+import { NewTabLink } from "@/components/common/NewTabLink";
 
 afterEach(() => {
   delete window._paq;
 });
 
-describe("ExternalLink", () => {
+describe("NewTabLink", () => {
   test("opens in a new tab with safe rel", () => {
-    render(<ExternalLink href="https://example.org/doc">Read the doc</ExternalLink>);
+    render(<NewTabLink href="https://example.org/doc">Read the doc</NewTabLink>);
     const link = screen.getByRole("link", { name: /Read the doc/ });
     expect(link.getAttribute("href")).toBe("https://example.org/doc");
     expect(link.getAttribute("target")).toBe("_blank");
@@ -19,12 +19,12 @@ describe("ExternalLink", () => {
     // A defined _paq is what analyticsEnabled() reads as "Matomo is loaded".
     window._paq = [];
     render(
-      <ExternalLink
+      <NewTabLink
         href="https://example.org/doc"
         event={{ category: "Resources", action: "Link Clicked", name: "Doc" }}
       >
         Read the doc
-      </ExternalLink>,
+      </NewTabLink>,
     );
     fireEvent.click(screen.getByRole("link", { name: /Read the doc/ }));
 
@@ -35,7 +35,7 @@ describe("ExternalLink", () => {
 
   test("reports nothing when no event is given", () => {
     window._paq = [];
-    render(<ExternalLink href="https://example.org/doc">Read the doc</ExternalLink>);
+    render(<NewTabLink href="https://example.org/doc">Read the doc</NewTabLink>);
     fireEvent.click(screen.getByRole("link", { name: /Read the doc/ }));
 
     expect(window._paq).toEqual([]);

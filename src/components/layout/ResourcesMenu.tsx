@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
-import { ExternalLink } from "@/components/common/ExternalLink";
+import { NewTabLink } from "@/components/common/NewTabLink";
 import { ChevronDownIcon } from "@/components/common/icons";
 import type { ExternalResource } from "@/types/models";
 import "./ResourcesMenu.css";
@@ -58,7 +58,7 @@ export function ResourcesMenu({ resources }: ResourcesMenuProps) {
         hidden={!open}
       >
         {resources.map((r) => (
-          <ExternalLink
+          <NewTabLink
             key={r.href}
             class="resource-link"
             href={r.href}
@@ -68,7 +68,7 @@ export function ResourcesMenu({ resources }: ResourcesMenuProps) {
               <span class="resource-link__title">{r.title}</span>
               <span class="resource-link__desc">{r.description}</span>
             </span>
-          </ExternalLink>
+          </NewTabLink>
         ))}
       </div>
     </div>

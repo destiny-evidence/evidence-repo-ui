@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { AnalyticsEvent } from "@/analytics/events";
 import { track } from "@/analytics/matomo";
-import { ExternalLink } from "@/components/common/ExternalLink";
+import { NewTabLink } from "@/components/common/NewTabLink";
 import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
 import { ENRICHMENT_FORM_URL } from "@/config";
@@ -78,7 +78,7 @@ export function EnrichmentRequestPanel({
               matomo_ignore drops this link from link tracking; it must be on
               the anchor itself.
               https://developer.matomo.org/guides/tracking-javascript-guide */}
-          <ExternalLink
+          <NewTabLink
             class="enrichment-request__button matomo_ignore"
             href={formUrl}
             aria-label="Request more data (opens form in a new tab)"
@@ -86,7 +86,7 @@ export function EnrichmentRequestPanel({
             icon={false}
           >
             Request more data
-          </ExternalLink>
+          </NewTabLink>
         </>
       ) : (
         <>

@@ -70,12 +70,12 @@
 }
 
 /* The row is top-aligned, so the glyph is nudged onto the title's line. */
-.resource-link .external-link__icon {
+.resource-link .new-tab-link__icon {
   margin-top: 4px;
   color: var(--color-text-tertiary);
 }
 
-.resource-link:hover .external-link__icon {
+.resource-link:hover .new-tab-link__icon {
   color: var(--color-accent);
 }
 

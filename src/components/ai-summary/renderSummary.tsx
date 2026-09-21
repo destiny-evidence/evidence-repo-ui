@@ -1,7 +1,7 @@
 import { Fragment } from "preact";
 import { useRef } from "preact/hooks";
-import { track } from "@/analytics/matomo";
-import { NewTabLinkIcon, WarningIcon } from "@/components/common/icons";
+import { WarningIcon } from "@/components/common/icons";
+import { NewTabLink } from "@/components/common/NewTabLink";
 import { Spinner } from "@/components/common/Spinner";
 import { recordDetailPath } from "@/services/navigation";
 import type { PaperMeta, QuoteRef, SummaryBlock } from "@/services/summariser";
@@ -33,26 +33,19 @@ function QuoteSource({
         {quote.page != null && <span class="ai-cite__page">p. {quote.page}</span>}
         {paper && communitySlug && (
           // No citation link if paper cannot be resolved from quote.
-          <a
+          <NewTabLink
             class="ai-cite__record"
             // `quote.paper` is the repository reference id.
             href={recordDetailPath(communitySlug, quote.paper)}
-            target="_blank"
-            rel="noopener noreferrer"
             aria-label={`View record for ${cite} (opens in new tab)`}
-            onClick={() =>
-              track({
-                category: "AISummary",
-                action: "Record Opened",
-                name: quote.paper,
-              })
-            }
+            event={{
+              category: "AISummary",
+              action: "Record Opened",
+              name: quote.paper,
+            }}
           >
             View record
-            <span class="ai-cite__record-icon" aria-hidden="true">
-              <NewTabLinkIcon />
-            </span>
-          </a>
+          </NewTabLink>
         )}
       </div>
     </div>

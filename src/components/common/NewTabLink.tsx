@@ -2,9 +2,9 @@ import type { ComponentChildren } from "preact";
 import type { AnalyticsEvent } from "@/analytics/events";
 import { track } from "@/analytics/matomo";
 import { NewTabLinkIcon } from "@/components/common/icons";
-import "./ExternalLink.css";
+import "./NewTabLink.css";
 
-interface ExternalLinkProps {
+interface NewTabLinkProps {
   href: string;
   /** Layout classes for the anchor; this component styles only the glyph. */
   class?: string;
@@ -23,14 +23,14 @@ interface ExternalLinkProps {
  *
  * Spacing before the glyph comes from the caller's own `gap`.
  */
-export function ExternalLink({
+export function NewTabLink({
   href,
   class: className,
   event,
   icon = <NewTabLinkIcon />,
   "aria-label": ariaLabel,
   children,
-}: ExternalLinkProps) {
+}: NewTabLinkProps) {
   return (
     <a
       class={className}
@@ -42,7 +42,7 @@ export function ExternalLink({
     >
       {children}
       {icon && (
-        <span class="external-link__icon" aria-hidden="true">
+        <span class="new-tab-link__icon" aria-hidden="true">
           {icon}
         </span>
       )}

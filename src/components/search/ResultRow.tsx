@@ -18,7 +18,7 @@ import { conceptsToTags } from "@/services/conceptLabels";
 import { recordDetailPath } from "@/services/navigation";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
-import { ExternalLink } from "@/components/common/ExternalLink";
+import { NewTabLink } from "@/components/common/NewTabLink";
 import { TagGroup } from "@/components/common/TagGroup";
 import { track } from "@/analytics/matomo";
 import "./ResultRow.css";
@@ -212,7 +212,7 @@ export function ResultRow({
       </a>
       <div class="row-right">
         {doi && (
-          <ExternalLink
+          <NewTabLink
             class="doi-link"
             href={`https://doi.org/${doi}`}
             aria-label={`DOI: ${doi}`}
@@ -220,7 +220,7 @@ export function ResultRow({
             icon=<NewTabLinkIcon size={9}/>
           >
             DOI
-          </ExternalLink>
+          </NewTabLink>
         )}
         {findingsAndEstimates && (
           <>
