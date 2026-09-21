@@ -1,7 +1,7 @@
 import type { ComponentChildren } from "preact";
 import type { AnalyticsEvent } from "@/analytics/events";
 import { track } from "@/analytics/matomo";
-import { ExternalLinkIcon } from "@/components/common/icons";
+import { NewTabLinkIcon } from "@/components/common/icons";
 import "./ExternalLink.css";
 
 interface ExternalLinkProps {
@@ -11,7 +11,7 @@ interface ExternalLinkProps {
   /** Matomo event fired on click. */
   event?: AnalyticsEvent;
   /**
-   * Replace the default ExternalLinkIcon, or `false` to drop it.
+   * Replace the default NewTabLinkIcon, or `false` to drop it.
    */
   icon?: ComponentChildren;
   "aria-label"?: string;
@@ -27,7 +27,7 @@ export function ExternalLink({
   href,
   class: className,
   event,
-  icon = <ExternalLinkIcon />,
+  icon = <NewTabLinkIcon />,
   "aria-label": ariaLabel,
   children,
 }: ExternalLinkProps) {

@@ -22,7 +22,7 @@ import { ExternalLink } from "@/components/common/ExternalLink";
 import { TagGroup } from "@/components/common/TagGroup";
 import { track } from "@/analytics/matomo";
 import "./ResultRow.css";
-import { ExternalLinkIcon } from "../common/icons";
+import { NewTabLinkIcon } from "../common/icons";
 
 interface ResultRowProps {
   communitySlug: string;
@@ -217,7 +217,7 @@ export function ResultRow({
             href={`https://doi.org/${doi}`}
             aria-label={`DOI: ${doi}`}
             event={{ category: "Record", action: "DOI Clicked" }}
-            icon=<ExternalLinkIcon size={9}/>
+            icon=<NewTabLinkIcon size={9}/>
           >
             DOI
           </ExternalLink>
