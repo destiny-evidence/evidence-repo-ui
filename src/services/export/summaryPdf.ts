@@ -7,7 +7,6 @@
 import type { jsPDF as JsPdfDoc } from "jspdf";
 import type { AiSummaryContext } from "@/hooks/useAiSummary";
 import type {
-  PaperMeta,
   QuoteRef,
   SkipReason,
   SummariseResponse,
@@ -19,6 +18,7 @@ import {
   formatApaReference,
   compareApaReferences,
 } from "@/services/citation/apa";
+import { quoteCitation } from "@/services/citation/quoteCitation";
 import {
   type RGB,
   type PdfFont,
@@ -45,16 +45,6 @@ const SKIP_REASON_TEXT: Record<SkipReason, string> = {
   not_pdf: "were not in PDF format",
   download_failed: "couldn't be downloaded",
 };
-
-/** Author-year citation for a quote's source paper. Mirrors renderSummary.tsx. */
-export function citation(papers: PaperMeta[], paperId: string): string {
-  const paper = papers.find((p) => p.paper === paperId);
-  if (!paper) return paperId;
-  const lead = paper.authors[0] ?? paper.title ?? paperId;
-  const etAl = paper.authors.length > 1 ? " et al." : "";
-  const year = paper.year ? ` (${paper.year})` : "";
-  return `${lead}${etAl}${year}`;
-}
 
 /** The "Based on N of M references…" coverage sentence. Mirrors the drawer. */
 export function coverageNoteText(result: SummariseResponse): string {
@@ -330,7 +320,10 @@ export async function buildSummaryPdf(
       gapAfter: 3,
       lineFactor: 1.5,
     });
-    const cite = citation(result.papers, quote.paper);
+    // No metadata means the id doesn't resolve to a record, so the quote gets
+    // no link and `quoteCitation` prints the id itself.
+    const paper = result.papers.find((p) => p.paper === quote.paper);
+    const cite = quoteCitation(paper, quote.paper);
     const citeLine = quote.page != null ? `${cite} · p. ${quote.page}` : cite;
     paragraph(citeLine, {
       size: 8.5,
@@ -338,7 +331,6 @@ export async function buildSummaryPdf(
       indent: 28,
       gapAfter: 2,
     });
-    const paper = result.papers.find((p) => p.paper === quote.paper);
     if (paper && communitySlug) {
       const lineHeight = 8.5 * 1.4;
       ensureSpace(lineHeight);

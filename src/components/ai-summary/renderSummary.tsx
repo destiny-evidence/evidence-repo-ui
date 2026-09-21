@@ -10,16 +10,8 @@ import {
   formatApaReference,
   compareApaReferences,
 } from "@/services/citation/apa";
+import { quoteCitation } from "@/services/citation/quoteCitation";
 import type { UseReferenceListExportResult } from "@/hooks/useReferenceListExport";
-
-function citation(papers: PaperMeta[], paperId: string): string {
-  const paper = papers.find((p) => p.paper === paperId);
-  if (!paper) return paperId;
-  const lead = paper.authors[0] ?? paper.title ?? paperId;
-  const etAl = paper.authors.length > 1 ? " et al." : "";
-  const year = paper.year ? ` (${paper.year})` : "";
-  return `${lead}${etAl}${year}`;
-}
 
 // A verbatim quote with its provenance, shared by claims and contradictions.
 function QuoteSource({
@@ -34,7 +26,7 @@ function QuoteSource({
   // Without metadata the id doesn't resolve to a record, so there's nothing to
   // link to — `citation` falls back to printing the id itself.
   const paper = papers.find((p) => p.paper === quote.paper);
-  const cite = citation(papers, quote.paper);
+  const cite = quoteCitation(paper, quote.paper);
   return (
     <div class="ai-claim__source">
       <p class="ai-quote">“{quote.quote}”</p>
