@@ -1,7 +1,7 @@
 import { Fragment } from "preact";
 import { useRef } from "preact/hooks";
-import { ExternalLink } from "@/components/common/ExternalLink";
-import { WarningIcon } from "@/components/common/icons";
+import { track } from "@/analytics/matomo";
+import { NewTabLinkIcon, WarningIcon } from "@/components/common/icons";
 import { Spinner } from "@/components/common/Spinner";
 import { recordDetailPath } from "@/services/navigation";
 import type { PaperMeta, QuoteRef, SummaryBlock } from "@/services/summariser";
@@ -31,26 +31,37 @@ function QuoteSource({
   papers: PaperMeta[];
   communitySlug: string | null;
 }) {
+  // Without metadata the id doesn't resolve to a record, so there's nothing to
+  // link to — `citation` falls back to printing the id itself.
   const paper = papers.find((p) => p.paper === quote.paper);
+  const cite = citation(papers, quote.paper);
   return (
     <div class="ai-claim__source">
       <p class="ai-quote">“{quote.quote}”</p>
       <div class="ai-cite">
-        <span>{citation(papers, quote.paper)}</span>
+        <span>{cite}</span>
         {quote.page != null && <span class="ai-cite__page">p. {quote.page}</span>}
         {paper && communitySlug && (
-          <ExternalLink
+          <a
             class="ai-cite__record"
             // `quote.paper` is the repository reference id.
             href={recordDetailPath(communitySlug, quote.paper)}
-            event={{
-              category: "AISummary",
-              action: "Record Opened",
-              name: quote.paper,
-            }}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`View record for ${cite} (opens in new tab)`}
+            onClick={() =>
+              track({
+                category: "AISummary",
+                action: "Record Opened",
+                name: quote.paper,
+              })
+            }
           >
             View record
-          </ExternalLink>
+            <span class="ai-cite__record-icon" aria-hidden="true">
+              <NewTabLinkIcon />
+            </span>
+          </a>
         )}
       </div>
     </div>

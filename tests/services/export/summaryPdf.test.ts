@@ -135,8 +135,11 @@ describe("buildSummaryPdf", () => {
     expect(pdf).toContain("DejaVu");
     // Link annotations appear in plaintext (streams are uncompressed).
     expect(pdf).toContain("/URI");
-    // A quote's record link, built from the origin URL's community slug.
-    expect(pdf).toContain(`/hpv/references/${MOCK_SUMMARY.papers[0].paper}`);
+    // A quote's record link, built from the origin URL's community slug. 
+    // Must be absolute. 
+    expect(pdf).toContain(
+      `${window.location.origin}/hpv/references/${MOCK_SUMMARY.papers[0].paper}`,
+    );
     expect(pdf).toContain("q=hpv"); // the resolved "this search" link
     expect(pdf).toContain("/Dest"); // inline [n] → claim jumps
   });

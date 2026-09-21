@@ -279,6 +279,12 @@
 .ai-cite__record:hover {
   text-decoration: underline;
 }
+/* Keeps the glyph level with the text and unsquashed by the flex row. */
+.ai-cite__record-icon {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
 .ai-cite__page {
   font-family: var(--font-mono);
   font-size: var(--font-size-mono-sm);

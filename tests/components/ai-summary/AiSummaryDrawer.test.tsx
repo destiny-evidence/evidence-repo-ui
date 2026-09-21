@@ -159,6 +159,10 @@ describe("AiSummaryDrawer", () => {
     // A new tab, so the summary stays put behind it.
     expect(links[0].target).toBe("_blank");
     expect(links[0].rel).toBe("noopener noreferrer");
+    // Every link reads "View record", so the citation distinguishes them.
+    expect(links[0].getAttribute("aria-label")).toBe(
+      "View record for Anwari Palwasha (2019) (opens in new tab)",
+    );
   });
 
   test("omits the record link for a quote whose paper has no metadata", () => {
