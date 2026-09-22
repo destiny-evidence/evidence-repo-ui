@@ -1,0 +1,42 @@
+.site-footer {
+  background: var(--color-bg-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+/* The band is full-bleed but its row tracks the content column, so the two
+   ends line up with the cards above rather than with the header's gutter. */
+.site-footer__inner {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-small);
+}
+
+.site-footer__copyright {
+  color: var(--color-text-tertiary);
+}
+
+.site-footer__link {
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.site-footer__link:hover {
+  color: var(--color-accent);
+}
+
+/* AppShell already anchors its footer; the renders that have no shell (the
+   community signpost and the policy on a cold load) get it from the frame. */
+.site-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.site-frame > .site-footer {
+  margin-top: auto;
+}

@@ -2,6 +2,7 @@ import { render } from "preact";
 import { App } from "./App";
 import { initMatomo, initSpaPageviews, trackSpaPageView } from "./analytics/matomo";
 import { AuthError, Landing, Loading } from "./auth/AuthGate";
+import { SiteFooter } from "./components/layout/SiteFooter";
 import { initKeycloak } from "./auth/keycloak";
 import { MATOMO_SITE_ID, MATOMO_URL } from "./config";
 import { HomePage } from "./pages/HomePage";
@@ -23,12 +24,24 @@ initSpaPageviews();
 if (isReservedPath()) {
   // The privacy policy has to be readable by anyone, so it must not reach
   // initKeycloak, whose non-signup mode is login-required.
-  render(<PrivacyPage />, root);
+  render(
+    <div class="site-frame">
+      <PrivacyPage />
+      <SiteFooter />
+    </div>,
+    root,
+  );
   trackSpaPageView();
 } else if (pathSlug() === undefined) {
   // The slug-less root belongs to no community, so it has no sign-in mode to
   // pick: render the signpost without touching Keycloak.
-  render(<HomePage />, root);
+  render(
+    <div class="site-frame">
+      <HomePage />
+      <SiteFooter />
+    </div>,
+    root,
+  );
   trackSpaPageView();
 } else {
   initKeycloak()

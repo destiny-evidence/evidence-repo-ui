@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
 import { FeedbackFAB } from "@/components/feedback/FeedbackFAB";
 import { ResourcesMenu } from "./ResourcesMenu";
+import { SiteFooter } from "./SiteFooter";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 import "./AppShell.css";
 
@@ -87,6 +88,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
       <main class="app-main">{children}</main>
+      <SiteFooter />
       <FeedbackFAB />
     </div>
   );

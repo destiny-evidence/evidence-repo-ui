@@ -42,6 +42,7 @@ describe("bootstrap", () => {
     expect(
       screen.getByRole("heading", { name: "Welcome to the Evidence Repository" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Privacy policy" })).toBeInTheDocument();
   });
 
   test("the privacy policy renders without initialising Keycloak", async () => {
@@ -51,6 +52,7 @@ describe("bootstrap", () => {
     expect(
       screen.getByRole("heading", { name: "Privacy Policy", level: 1 }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Privacy policy" })).toBeInTheDocument();
   });
 
   test("a community route initialises Keycloak before rendering", async () => {

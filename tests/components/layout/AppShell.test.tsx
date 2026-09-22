@@ -28,6 +28,13 @@ describe("AppShell header", () => {
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 
+  test("renders the site footer below the page content", () => {
+    renderShell();
+    expect(
+      screen.getByRole("link", { name: "Privacy policy" }),
+    ).toHaveAttribute("href", "/privacy");
+  });
+
   test("Sign out button calls keycloak.logout", () => {
     renderShell();
     screen.getByRole("button", { name: "Sign out" }).click();
