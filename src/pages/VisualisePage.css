@@ -72,6 +72,11 @@
   body.visualise-has-panel .app-main {
     padding-bottom: 0;
   }
+  /* Same bargain as the padding above: the map is sized to the viewport, so a
+     footer below it would put the whole page into scroll for its own height. */
+  body.visualise-has-panel .site-footer {
+    display: none;
+  }
   body.visualise-has-panel .feedback-fab {
     right: calc(28px + var(--map-panel-width));
   }
