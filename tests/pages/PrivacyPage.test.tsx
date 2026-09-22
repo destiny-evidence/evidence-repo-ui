@@ -5,8 +5,8 @@ import { PrivacyPage } from "@/pages/PrivacyPage";
 describe("PrivacyPage", () => {
   test("states the effective and last-updated dates", () => {
     render(<PrivacyPage />);
-    expect(screen.getByText(/Effective date: 22 September 2026/)).toBeInTheDocument();
-    expect(screen.getByText(/Last updated: 22 September 2026/)).toBeInTheDocument();
+    expect(screen.getByText(/Effective date: 1 October 2026/)).toBeInTheDocument();
+    expect(screen.getByText(/Last updated: 1 October 2026/)).toBeInTheDocument();
   });
 
   test("carries every numbered section of the policy, in order", () => {

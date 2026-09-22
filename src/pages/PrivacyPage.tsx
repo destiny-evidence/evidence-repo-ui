@@ -2,7 +2,7 @@ import "./PrivacyPage.css";
 
 // A committed constant, not a build-time value: a legal document's stated date
 // must not move every time the site is redeployed.
-const EFFECTIVE_DATE = "22 September 2026";
+const EFFECTIVE_DATE = "1 October 2026";
 
 const PRIVACY_EMAIL = "privacy@futureevidence.org";
 
