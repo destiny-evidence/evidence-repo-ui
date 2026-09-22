@@ -10,8 +10,15 @@ describe("SiteFooter", () => {
     ).toHaveAttribute("href", "/privacy");
   });
 
-  test("carries the copyright line", () => {
+  test("dates the copyright from the year it is given", () => {
+    render(<SiteFooter now={new Date("2027-03-01")} />);
+    expect(screen.getByText("© 2027")).toBeInTheDocument();
+  });
+
+  test("falls back to the current year", () => {
     render(<SiteFooter />);
-    expect(screen.getByText("© 2026")).toBeInTheDocument();
+    expect(
+      screen.getByText(`© ${new Date().getFullYear()}`),
+    ).toBeInTheDocument();
   });
 });
