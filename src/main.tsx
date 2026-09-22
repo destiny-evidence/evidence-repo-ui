@@ -5,7 +5,8 @@ import { AuthError, Landing, Loading } from "./auth/AuthGate";
 import { initKeycloak } from "./auth/keycloak";
 import { MATOMO_SITE_ID, MATOMO_URL } from "./config";
 import { HomePage } from "./pages/HomePage";
-import { pathSlug } from "./services/navigation";
+import { PrivacyPage } from "./pages/PrivacyPage";
+import { isReservedPath, pathSlug } from "./services/navigation";
 import "./styles/reset.css";
 import "./styles/fonts.css";
 import "./styles/variables.css";
@@ -19,7 +20,12 @@ render(<Loading />, root);
 initMatomo(MATOMO_URL, MATOMO_SITE_ID);
 initSpaPageviews();
 
-if (pathSlug() === undefined) {
+if (isReservedPath()) {
+  // The privacy policy has to be readable by anyone, so it must not reach
+  // initKeycloak, whose non-signup mode is login-required.
+  render(<PrivacyPage />, root);
+  trackSpaPageView();
+} else if (pathSlug() === undefined) {
   // The slug-less root belongs to no community, so it has no sign-in mode to
   // pick: render the signpost without touching Keycloak.
   render(<HomePage />, root);

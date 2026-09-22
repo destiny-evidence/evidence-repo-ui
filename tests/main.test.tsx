@@ -44,6 +44,15 @@ describe("bootstrap", () => {
     ).toBeInTheDocument();
   });
 
+  test("the privacy policy renders without initialising Keycloak", async () => {
+    const initKeycloak = await boot("/privacy");
+
+    expect(initKeycloak).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("heading", { name: "Privacy Policy", level: 1 }),
+    ).toBeInTheDocument();
+  });
+
   test("a community route initialises Keycloak before rendering", async () => {
     const initKeycloak = await boot("/hpv");
 

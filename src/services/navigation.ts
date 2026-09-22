@@ -2,12 +2,24 @@ export const URL_CHANGE_EVENT = "urlchange";
 
 /**
  * First path segment — the community slug on every app route, and undefined at
- * the slug-less root.
+ * the slug-less root. Reserved paths are the exception; see isReservedPath.
  */
 export function pathSlug(
   pathname: string = window.location.pathname,
 ): string | undefined {
   return pathname.split("/").filter(Boolean)[0];
+}
+
+export const PRIVACY_PATH = "/privacy";
+
+/**
+ * Whether a top-level path belongs to the app itself rather than a community.
+ * These render without Keycloak, so they must never be read as a slug.
+ */
+export function isReservedPath(
+  pathname: string = window.location.pathname,
+): boolean {
+  return pathSlug(pathname) === pathSlug(PRIVACY_PATH);
 }
 
 /** Must stay in step with the RecordDetailPage route declared in App.tsx. */

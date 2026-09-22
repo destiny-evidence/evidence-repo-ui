@@ -9,7 +9,8 @@ import { VisualisePage } from "./pages/VisualisePage";
 import { RecordDetailPage } from "./pages/RecordDetailPage";
 import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
-import { URL_CHANGE_EVENT } from "./services/navigation";
+import { PrivacyPage } from "./pages/PrivacyPage";
+import { PRIVACY_PATH, URL_CHANGE_EVENT } from "./services/navigation";
 
 // preact-router intercepts internal <a href="/..."> clicks and updates the
 // URL via history.pushState without firing popstate or our URL_CHANGE_EVENT.
@@ -29,6 +30,9 @@ export function App() {
               <Router onChange={emitUrlChange}>
                 <RecordDetailPage path="/:community/references/:id" />
                 <VisualisePage path="/:community/visualise" />
+                {/* Also served pre-auth by main.tsx; this route is what keeps
+                    the shell in place for a signed-in user clicking the footer. */}
+                <PrivacyPage path={PRIVACY_PATH} />
                 <SearchPage path="/:community" />
                 {/* Reached in-app only from the header brand, which points at
                     "/" off a community (an unknown slug). A cold load of "/"
