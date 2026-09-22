@@ -10,7 +10,7 @@ import {
   extractBibliographic,
   extractDoi,
   extractFindingsAndEstimatesCount,
-  extractLinkedData,
+  extractLinkedDataEnhancement,
   formatPagination,
 } from "@/services/referenceUtils";
 import { parseInvestigation } from "@/services/investigationParser";
@@ -100,7 +100,8 @@ export function ResultRow({
   const abstract = extractAbstract(reference)?.abstract ?? null;
   const counts = extractFindingsAndEstimatesCount(reference);
 
-  const linkedData = extractLinkedData(reference);
+  const linkedDataEnhancement = extractLinkedDataEnhancement(reference);
+  const linkedData = linkedDataEnhancement?.content ?? null;
   const rawContext = linkedData?.data?.["@context"];
   const contextUrl = typeof rawContext === "string" ? rawContext : undefined;
 
@@ -144,7 +145,14 @@ export function ResultRow({
   const year = bib?.publication_year !== null && bib?.publication_year !== undefined
     ? String(bib.publication_year)
     : "";
-  const codingInstitution = codingConfig?.fromReference(reference) ?? null;
+  // Credit the coder the linked data derives from; a newer raw from an
+  // unrelated ingestor is not the coder. Latest-raw remains the fallback.
+  const codingInstitution =
+    (linkedDataEnhancement
+      ? codingConfig?.fromLinkedData(reference, linkedDataEnhancement)
+      : null) ??
+    codingConfig?.fromReference(reference) ??
+    null;
 
   const findingsLabel = counts ? String(counts.findings) : "—";
   const estimatesLabel = counts ? String(counts.estimates) : "—";
