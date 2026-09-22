@@ -23,17 +23,16 @@ function QuoteSource({
   papers: PaperMeta[];
   communitySlug: string | null;
 }) {
-  const cite = quoteCitation(
-    papers.find((p) => p.paper === quote.paper),
-    quote.paper,
-  );
+  const paper = papers.find((p) => p.paper === quote.paper);
+  const cite = quoteCitation(paper, quote.paper);
   return (
     <div class="ai-claim__source">
       <p class="ai-quote">“{quote.quote}”</p>
       <div class="ai-cite">
         <span>{cite}</span>
         {quote.page != null && <span class="ai-cite__page">p. {quote.page}</span>}
-        {communitySlug && (
+        {paper && communitySlug && (
+          // No citation link if paper cannot be resolved from quote.
           <a
             class="ai-cite__record"
             // `quote.paper` is the repository reference id.

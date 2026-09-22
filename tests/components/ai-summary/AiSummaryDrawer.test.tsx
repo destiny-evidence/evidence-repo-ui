@@ -165,7 +165,7 @@ describe("AiSummaryDrawer", () => {
     );
   });
 
-  test("still links a quote whose paper has no metadata, citing the id", () => {
+  test("omits the record link for a quote whose paper has no metadata", () => {
     const [claim] = MOCK_SUMMARY.summary.claims;
     const ai = makeAi({
       result: {
@@ -183,13 +183,7 @@ describe("AiSummaryDrawer", () => {
       },
     });
     render(<AiSummaryDrawer ai={ai} />);
-    const link = document.querySelector<HTMLAnchorElement>(".ai-cite__record");
-    expect(link?.getAttribute("href")).toBe(
-      "/test-community/references/not-a-known-paper",
-    );
-    expect(link?.getAttribute("aria-label")).toBe(
-      "View record for not-a-known-paper (opens in new tab)",
-    );
+    expect(document.querySelector(".ai-cite__record")).toBeNull();
   });
 
   test("omits record links when the summary has no origin URL", () => {

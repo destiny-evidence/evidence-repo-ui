@@ -320,10 +320,8 @@ export async function buildSummaryPdf(
       gapAfter: 3,
       lineFactor: 1.5,
     });
-    const cite = quoteCitation(
-      result.papers.find((p) => p.paper === quote.paper),
-      quote.paper,
-    );
+    const paper = result.papers.find((p) => p.paper === quote.paper);
+    const cite = quoteCitation(paper, quote.paper);
     const citeLine = quote.page != null ? `${cite} · p. ${quote.page}` : cite;
     paragraph(citeLine, {
       size: 8.5,
@@ -331,7 +329,8 @@ export async function buildSummaryPdf(
       indent: 28,
       gapAfter: 2,
     });
-    if (communitySlug) {
+    // No citation link if paper cannot be resolved from quote.
+    if (paper && communitySlug) {
       const lineHeight = 8.5 * 1.4;
       ensureSpace(lineHeight);
       drawLink(
