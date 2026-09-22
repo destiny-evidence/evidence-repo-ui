@@ -1,11 +1,9 @@
 import type { PaperMeta } from "@/services/summariser";
 
 /**
- * Author-year citation for a quote's source paper, shared by the summary drawer
- * and the PDF export so the two never drift.
+ * Author-year citation for a quote's source paper.
  *
- * Takes the resolved paper rather than looking it up, because callers need the
- * same lookup to decide whether the paper links to a record at all.
+ * Falls back to paperId if no paper metadata available.
  */
 export function quoteCitation(
   paper: PaperMeta | undefined,
