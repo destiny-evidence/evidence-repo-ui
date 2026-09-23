@@ -377,7 +377,8 @@
 .ai-mini {
   position: fixed;
   right: 28px;
-  bottom: 84px;
+  /* Stacked 12px above the Feedback button: its bottom offset plus its 44px. */
+  bottom: calc(var(--footer-height) + 68px);
   z-index: 300;
   display: flex;
   align-items: center;

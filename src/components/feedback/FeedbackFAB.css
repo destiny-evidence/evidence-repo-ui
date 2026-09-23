@@ -1,7 +1,8 @@
 .feedback-fab {
   position: fixed;
   right: 28px;
-  bottom: 28px;
+  /* Clear of the footer band, so it never sits over the privacy link. */
+  bottom: calc(var(--footer-height) + 12px);
   z-index: 200;
   height: 44px;
   padding: 0 18px;
@@ -34,6 +35,5 @@
 @media (max-width: 600px) {
   .feedback-fab {
     right: 16px;
-    bottom: 16px;
   }
 }
