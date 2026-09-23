@@ -57,6 +57,12 @@
   color: var(--color-accent);
 }
 
+.privacy-page__external-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .privacy-page__address {
   font-style: normal;
   margin: 0 0 var(--spacing-md);

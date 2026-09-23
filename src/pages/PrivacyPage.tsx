@@ -1,3 +1,4 @@
+import { ExternalLink } from "@/components/common/ExternalLink";
 import "./PrivacyPage.css";
 
 // A committed constant, not a build-time value: a legal document's stated date
@@ -79,9 +80,12 @@ export function PrivacyPage(_props: PrivacyPageProps) {
         Email: <PrivacyEmail />
         <br />
         Website:{" "}
-        <a href="https://www.futureevidence.org" rel="noopener noreferrer">
+        <ExternalLink
+          class="privacy-page__external-link"
+          href="https://www.futureevidence.org"
+        >
           www.futureevidence.org
-        </a>
+        </ExternalLink>
       </address>
 
       <h2>2. What data we collect</h2>

@@ -54,6 +54,13 @@ describe("PrivacyPage", () => {
     expect(within(table).getAllByRole("row")).toHaveLength(7);
   });
 
+  test("opens the company website in a new tab", () => {
+    render(<PrivacyPage />);
+    const link = screen.getByRole("link", { name: /www\.futureevidence\.org/ });
+    expect(link).toHaveAttribute("href", "https://www.futureevidence.org");
+    expect(link).toHaveAttribute("target", "_blank");
+  });
+
   test("offers the privacy officer's address as a mail link", () => {
     render(<PrivacyPage />);
     for (const link of screen.getAllByRole("link", {
