@@ -1,5 +1,5 @@
 /* Docked full-height to the right of the map region: it stretches to the
-   region (which is the viewport height below the header) and its body scrolls
+   region (the viewport between the header and footer) and its body scrolls
    internally, keeping Reset / Show results pinned. The region clips, so the
    page can't scroll and there's no fixed/sticky element for the header to
    rubber-band over. */
