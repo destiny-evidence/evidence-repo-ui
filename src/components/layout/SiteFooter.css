@@ -21,12 +21,12 @@
 }
 
 .site-footer__link {
-  color: var(--color-text-primary);
+  color: var(--color-accent);
   text-decoration: none;
 }
 
 .site-footer__link:hover {
-  color: var(--color-accent);
+  text-decoration: underline;
 }
 
 /* Wraps every render, shell or bare, so the footer sits at the bottom of the
