@@ -1,9 +1,10 @@
 import { ExternalLink } from "@/components/common/ExternalLink";
 import "./PrivacyPage.css";
 
-// A committed constant, not a build-time value: a legal document's stated date
+// Committed constants, not build-time values: a legal document's stated dates
 // must not move every time the site is redeployed.
 const EFFECTIVE_DATE = "1 October 2026";
+const LAST_UPDATED = "1 October 2026";
 
 const PRIVACY_EMAIL = "privacy@futureevidence.org";
 
@@ -49,7 +50,7 @@ export function PrivacyPage(_props: PrivacyPageProps) {
     <article class="privacy-page">
       <h1 class="privacy-page__title">Privacy Policy</h1>
       <p class="privacy-page__dates">
-        Effective date: {EFFECTIVE_DATE} · Last updated: {EFFECTIVE_DATE}
+        Effective date: {EFFECTIVE_DATE} · Last updated: {LAST_UPDATED}
       </p>
 
       <p>
