@@ -1,3 +1,4 @@
+import { useEffect } from "preact/hooks";
 import { ExternalLink } from "@/components/common/ExternalLink";
 import "./PrivacyPage.css";
 
@@ -46,6 +47,11 @@ interface PrivacyPageProps {
 }
 
 export function PrivacyPage(_props: PrivacyPageProps) {
+  // The footer link is clicked from the bottom of a page, and in-app navigation
+  // keeps that scroll position.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <article class="privacy-page">
       <h1 class="privacy-page__title">Privacy Policy</h1>

@@ -1,8 +1,15 @@
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/preact";
 import { PrivacyPage } from "@/pages/PrivacyPage";
 
 describe("PrivacyPage", () => {
+  test("opens at the top rather than at the scroll position it was reached from", () => {
+    const scrollTo = vi.spyOn(window, "scrollTo");
+    render(<PrivacyPage />);
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+    scrollTo.mockRestore();
+  });
+
   test("states the effective and last-updated dates", () => {
     render(<PrivacyPage />);
     expect(screen.getByText(/Effective date: 1 October 2026/)).toBeInTheDocument();
