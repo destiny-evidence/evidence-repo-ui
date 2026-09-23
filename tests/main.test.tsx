@@ -45,15 +45,18 @@ describe("bootstrap", () => {
     expect(screen.getByRole("link", { name: "Privacy policy" })).toBeInTheDocument();
   });
 
-  test("the privacy policy renders without initialising Keycloak", async () => {
-    const initKeycloak = await boot("/privacy");
+  test.each(["/privacy", "/Privacy", "/PRIVACY"])(
+    "the privacy policy at %s renders without initialising Keycloak",
+    async (pathname) => {
+      const initKeycloak = await boot(pathname);
 
-    expect(initKeycloak).not.toHaveBeenCalled();
-    expect(
-      screen.getByRole("heading", { name: "Privacy Policy", level: 1 }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Privacy policy" })).toBeInTheDocument();
-  });
+      expect(initKeycloak).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole("heading", { name: "Privacy Policy", level: 1 }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Privacy policy" })).toBeInTheDocument();
+    },
+  );
 
   test("a community route initialises Keycloak before rendering", async () => {
     const initKeycloak = await boot("/hpv");

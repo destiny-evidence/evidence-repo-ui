@@ -19,7 +19,7 @@ export const PRIVACY_PATH = "/privacy";
 export function isReservedPath(
   pathname: string = window.location.pathname,
 ): boolean {
-  return pathSlug(pathname) === pathSlug(PRIVACY_PATH);
+  return pathSlug(pathname)?.toLowerCase() === pathSlug(PRIVACY_PATH);
 }
 
 /** Must stay in step with the RecordDetailPage route declared in App.tsx. */
