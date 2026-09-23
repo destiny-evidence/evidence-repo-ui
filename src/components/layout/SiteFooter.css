@@ -29,8 +29,8 @@
   color: var(--color-accent);
 }
 
-/* AppShell already anchors its footer; the renders that have no shell (the
-   community signpost and the policy on a cold load) get it from the frame. */
+/* Wraps every render, shell or bare, so the footer sits at the bottom of the
+   viewport on a page too short to push it there. */
 .site-frame {
   display: flex;
   flex-direction: column;

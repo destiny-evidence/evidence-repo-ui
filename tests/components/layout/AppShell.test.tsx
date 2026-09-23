@@ -28,7 +28,7 @@ describe("AppShell header", () => {
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 
-  test("renders the site footer below the page content", () => {
+  test("renders the site footer", () => {
     renderShell();
     expect(
       screen.getByRole("link", { name: "Privacy policy" }),

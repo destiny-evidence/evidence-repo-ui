@@ -43,7 +43,7 @@ export function AppShell({ children }: AppShellProps) {
   const trackTab = (name: string) => () =>
     track({ category: "Navigation", action: "Tab Clicked", name });
   return (
-    <div class="app-shell">
+    <div class="site-frame">
       <header class="app-header">
         <a href={brandHref} class="app-header__brand">
           <span class="app-header__logo-mark" aria-hidden="true">E</span>
