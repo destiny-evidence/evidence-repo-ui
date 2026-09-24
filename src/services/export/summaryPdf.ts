@@ -7,17 +7,18 @@
 import type { jsPDF as JsPdfDoc } from "jspdf";
 import type { AiSummaryContext } from "@/hooks/useAiSummary";
 import type {
-  PaperMeta,
   QuoteRef,
   SkipReason,
   SummariseResponse,
 } from "@/services/summariser";
 import { formatTotal } from "@/utils/searchTotal";
+import { recordDetailPath, urlCommunitySlug } from "@/services/navigation";
 import {
   type ApaReferenceInput,
   formatApaReference,
   compareApaReferences,
 } from "@/services/citation/apa";
+import { quoteCitation } from "@/services/citation/quoteCitation";
 import {
   type RGB,
   type PdfFont,
@@ -44,16 +45,6 @@ const SKIP_REASON_TEXT: Record<SkipReason, string> = {
   not_pdf: "were not in PDF format",
   download_failed: "couldn't be downloaded",
 };
-
-/** Author-year citation for a quote's source paper. Mirrors renderSummary.tsx. */
-export function citation(papers: PaperMeta[], paperId: string): string {
-  const paper = papers.find((p) => p.paper === paperId);
-  if (!paper) return paperId;
-  const lead = paper.authors[0] ?? paper.title ?? paperId;
-  const etAl = paper.authors.length > 1 ? " et al." : "";
-  const year = paper.year ? ` (${paper.year})` : "";
-  return `${lead}${etAl}${year}`;
-}
 
 /** The "Based on N of M references…" coverage sentence. Mirrors the drawer. */
 export function coverageNoteText(result: SummariseResponse): string {
@@ -113,10 +104,15 @@ export function buildSummaryFilename(
   return `${stem}-${y}${m}${d}.pdf`;
 }
 
+/** App-relative path to an absolute href — a PDF's link annotations need one. */
+function absoluteUrl(path: string): string {
+  return new URL(path, window.location.href).href;
+}
+
 /** Resolve the summary's (possibly relative) origin URL to an absolute href. */
 function resolveOriginUrl(originUrl: string | null): string {
   try {
-    return new URL(originUrl ?? "", window.location.href).href;
+    return absoluteUrl(originUrl ?? "");
   } catch {
     return window.location.href;
   }
@@ -144,6 +140,10 @@ export async function buildSummaryPdf(
   const pageH = doc.internal.pageSize.getHeight();
   const contentW = pageW - PAGE_MARGIN * 2;
   let y = PAGE_MARGIN;
+
+  // Quote citations link back to the record in the community the summary was
+  // generated in; without a resolvable slug they carry no link at all.
+  const communitySlug = urlCommunitySlug(originUrl);
 
   // Recorded during layout, then wired to claims as internal jumps in a second
   // pass — the narrative is drawn before the claims it points at.
@@ -308,7 +308,8 @@ export async function buildSummaryPdf(
     y += lineHeight + opts.gapAfter;
   }
 
-  // A verbatim quote (serif italic) + its citation line and optional DOI link.
+  // A verbatim quote (serif italic) + its citation line and a link to the
+  // record in the repository.
   function quoteBlock(quote: QuoteRef): void {
     paragraph(`"${quote.quote}"`, {
       size: 10.5,
@@ -319,7 +320,8 @@ export async function buildSummaryPdf(
       gapAfter: 3,
       lineFactor: 1.5,
     });
-    const cite = citation(result.papers, quote.paper);
+    const paper = result.papers.find((p) => p.paper === quote.paper);
+    const cite = quoteCitation(paper, quote.paper);
     const citeLine = quote.page != null ? `${cite} · p. ${quote.page}` : cite;
     paragraph(citeLine, {
       size: 8.5,
@@ -327,14 +329,16 @@ export async function buildSummaryPdf(
       indent: 28,
       gapAfter: 2,
     });
-    const paper = result.papers.find((p) => p.paper === quote.paper);
-    if (paper?.doi) {
+    // No citation link if paper cannot be resolved from quote.
+    if (paper && communitySlug) {
       const lineHeight = 8.5 * 1.4;
       ensureSpace(lineHeight);
-      drawLink(`doi.org/${paper.doi}`, `https://doi.org/${paper.doi}`, PAGE_MARGIN + 28, {
-        size: 8.5,
-        font: FONT_MONO,
-      });
+      drawLink(
+        "View record in repository",
+        absoluteUrl(recordDetailPath(communitySlug, quote.paper)),
+        PAGE_MARGIN + 28,
+        { size: 8.5 },
+      );
       y += lineHeight + 6;
     } else {
       y += 4;

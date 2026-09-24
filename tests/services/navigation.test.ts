@@ -3,6 +3,7 @@ import {
   navigate,
   pathSlug,
   recordDetailPath,
+  urlCommunitySlug,
   URL_CHANGE_EVENT,
 } from "@/services/navigation";
 
@@ -26,6 +27,23 @@ describe("pathSlug", () => {
   test.each(["/", ""])("is undefined for the slug-less root (%s)", (pathname) => {
     expect(pathSlug(pathname)).toBeUndefined();
   });
+});
+
+describe("urlCommunitySlug", () => {
+  test.each([
+    ["/hpv?q=vaccine&page=2", "hpv"],
+    ["/hpv/visualise", "hpv"],
+    ["https://repo.example.org/esea?q=x", "esea"],
+  ])("reads the community slug from %s", (url, slug) => {
+    expect(urlCommunitySlug(url)).toBe(slug);
+  });
+
+  test.each([null, undefined, "", "/", "?q=x"])(
+    "is null without a resolvable slug (%s)",
+    (url) => {
+      expect(urlCommunitySlug(url)).toBeNull();
+    },
+  );
 });
 
 describe("navigate", () => {

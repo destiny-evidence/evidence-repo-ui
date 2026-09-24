@@ -2,11 +2,10 @@ import { describe, test, expect } from "vitest";
 import {
   buildSummaryFilename,
   buildSummaryPdf,
-  citation,
   coverageNoteText,
 } from "@/services/export/summaryPdf";
 import { MOCK_SUMMARY } from "@/services/summariserMock";
-import type { PaperMeta, SummariseResponse } from "@/services/summariser";
+import type { SummariseResponse } from "@/services/summariser";
 import { useDiskFonts } from "./diskFonts";
 
 const context = {
@@ -14,39 +13,6 @@ const context = {
   count: { count: 15, is_lower_bound: false },
   countNoun: "references",
 };
-
-describe("citation", () => {
-  test("single author with year", () => {
-    expect(citation(MOCK_SUMMARY.papers, "canfell-2020")).toBe(
-      "Canfell Karen (2020)",
-    );
-  });
-
-  test("multiple authors collapse to et al.", () => {
-    const papers: PaperMeta[] = [
-      { paper: "p1", authors: ["First A", "Second B"], affiliations: [], year: 2021 },
-    ];
-    expect(citation(papers, "p1")).toBe("First A et al. (2021)");
-  });
-
-  test("falls back to the title when there are no authors", () => {
-    const papers: PaperMeta[] = [
-      { paper: "p1", authors: [], affiliations: [], title: "A study", year: 2020 },
-    ];
-    expect(citation(papers, "p1")).toBe("A study (2020)");
-  });
-
-  test("omits the year when absent", () => {
-    const papers: PaperMeta[] = [
-      { paper: "p1", authors: ["Solo S"], affiliations: [] },
-    ];
-    expect(citation(papers, "p1")).toBe("Solo S");
-  });
-
-  test("falls back to the paper id when the paper is unknown", () => {
-    expect(citation(MOCK_SUMMARY.papers, "missing-id")).toBe("missing-id");
-  });
-});
 
 describe("coverageNoteText", () => {
   test("reads cleanly at full coverage", () => {
@@ -135,8 +101,19 @@ describe("buildSummaryPdf", () => {
     expect(pdf).toContain("DejaVu");
     // Link annotations appear in plaintext (streams are uncompressed).
     expect(pdf).toContain("/URI");
-    expect(pdf).toContain("https://doi.org/"); // a source DOI link
+    // A quote's record link, built from the origin URL's community slug. 
+    // Must be absolute. 
+    expect(pdf).toContain(
+      `${window.location.origin}/hpv/references/${MOCK_SUMMARY.papers[0].paper}`,
+    );
     expect(pdf).toContain("q=hpv"); // the resolved "this search" link
     expect(pdf).toContain("/Dest"); // inline [n] → claim jumps
+  });
+
+  test("omits record links when the origin URL carries no community slug", async () => {
+    const doc = await buildSummaryPdf(MOCK_SUMMARY, context, "/");
+    const bytes = doc.output("arraybuffer") as ArrayBuffer;
+    const pdf = new TextDecoder("latin1").decode(new Uint8Array(bytes));
+    expect(pdf).not.toContain("/references/");
   });
 });

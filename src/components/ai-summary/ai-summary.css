@@ -268,16 +268,15 @@
   font-size: var(--font-size-small);
   color: var(--color-text-tertiary);
 }
-.ai-cite__doi {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-mono-sm);
+.ai-cite__record {
   color: var(--color-accent);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 3px;
+  white-space: nowrap;
 }
-.ai-cite__doi:hover {
+.ai-cite__record:hover {
   text-decoration: underline;
 }
 .ai-cite__page {

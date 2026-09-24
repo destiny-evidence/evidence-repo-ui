@@ -1,38 +1,51 @@
 import { Fragment } from "preact";
 import { useRef } from "preact/hooks";
-import { ExternalLink } from "@/components/common/ExternalLink";
 import { WarningIcon } from "@/components/common/icons";
+import { NewTabLink } from "@/components/common/NewTabLink";
 import { Spinner } from "@/components/common/Spinner";
+import { recordDetailPath } from "@/services/navigation";
 import type { PaperMeta, QuoteRef, SummaryBlock } from "@/services/summariser";
 import {
   type ApaReferenceInput,
   formatApaReference,
   compareApaReferences,
 } from "@/services/citation/apa";
+import { quoteCitation } from "@/services/citation/quoteCitation";
 import type { UseReferenceListExportResult } from "@/hooks/useReferenceListExport";
 
-function citation(papers: PaperMeta[], paperId: string): string {
-  const paper = papers.find((p) => p.paper === paperId);
-  if (!paper) return paperId;
-  const lead = paper.authors[0] ?? paper.title ?? paperId;
-  const etAl = paper.authors.length > 1 ? " et al." : "";
-  const year = paper.year ? ` (${paper.year})` : "";
-  return `${lead}${etAl}${year}`;
-}
-
 // A verbatim quote with its provenance, shared by claims and contradictions.
-function QuoteSource({ quote, papers }: { quote: QuoteRef; papers: PaperMeta[] }) {
+function QuoteSource({
+  quote,
+  papers,
+  communitySlug,
+}: {
+  quote: QuoteRef;
+  papers: PaperMeta[];
+  communitySlug: string | null;
+}) {
   const paper = papers.find((p) => p.paper === quote.paper);
+  const cite = quoteCitation(paper, quote.paper);
   return (
     <div class="ai-claim__source">
       <p class="ai-quote">“{quote.quote}”</p>
       <div class="ai-cite">
-        <span>{citation(papers, quote.paper)}</span>
+        <span>{cite}</span>
         {quote.page != null && <span class="ai-cite__page">p. {quote.page}</span>}
-        {paper?.doi && (
-          <ExternalLink class="ai-cite__doi" href={`https://doi.org/${paper.doi}`}>
-            DOI
-          </ExternalLink>
+        {paper && communitySlug && (
+          // No citation link if paper cannot be resolved from quote.
+          <NewTabLink
+            class="ai-cite__record"
+            // `quote.paper` is the repository reference id.
+            href={recordDetailPath(communitySlug, quote.paper)}
+            aria-label={`View record for ${cite} (opens in new tab)`}
+            event={{
+              category: "AISummary",
+              action: "Record Opened",
+              name: quote.paper,
+            }}
+          >
+            View record
+          </NewTabLink>
         )}
       </div>
     </div>
@@ -91,6 +104,8 @@ export function SummaryReferences({
 interface SummaryBodyProps {
   summary: SummaryBlock;
   papers: PaperMeta[];
+  /** null suppresses the per-quote record links. */
+  communitySlug: string | null;
 }
 
 /**
@@ -99,7 +114,11 @@ interface SummaryBodyProps {
  * Contradictions, when present, follow in a distinct "Where papers disagree"
  * section with their own supporting quotes.
  */
-export function SummaryBody({ summary, papers }: SummaryBodyProps) {
+export function SummaryBody({
+  summary,
+  papers,
+  communitySlug,
+}: SummaryBodyProps) {
   const rootRef = useRef<HTMLDivElement>(null);
 
   function jumpToClaim(n: number) {
@@ -148,7 +167,12 @@ export function SummaryBody({ summary, papers }: SummaryBodyProps) {
             <div class="ai-claim__num">{n}</div>
             <div class="ai-claim__body">
               {claim.quotes.map((quote, qi) => (
-                <QuoteSource key={qi} quote={quote} papers={papers} />
+                <QuoteSource
+                  key={qi}
+                  quote={quote}
+                  papers={papers}
+                  communitySlug={communitySlug}
+                />
               ))}
             </div>
           </div>
@@ -166,7 +190,12 @@ export function SummaryBody({ summary, papers }: SummaryBodyProps) {
               <div class="ai-claim__body">
                 <p class="ai-contradiction__text">{c.contradiction}</p>
                 {c.quotes.map((quote, qi) => (
-                  <QuoteSource key={qi} quote={quote} papers={papers} />
+                  <QuoteSource
+                    key={qi}
+                    quote={quote}
+                    papers={papers}
+                    communitySlug={communitySlug}
+                  />
                 ))}
               </div>
             </div>

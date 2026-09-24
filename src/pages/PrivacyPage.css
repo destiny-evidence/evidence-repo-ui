@@ -59,9 +59,16 @@
 
 .privacy-page__external-link {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 4px;
 }
+
+/* The glyph's box rests on the text baseline; the arrowhead's mass is
+   top-right, so the ink drops a further 0.1em onto the lowercase band. */
+.privacy-page__external-link .new-tab-link__icon {
+  transform: translateY(0.1em);
+}
+
 
 .privacy-page__address {
   font-style: normal;

@@ -1,7 +1,7 @@
 import "./InvestigationCard.css";
 import { AbstractSection } from "./AbstractSection";
 import { TagGroup } from "../common/TagGroup";
-import { ExternalLink } from "../common/ExternalLink";
+import { NewTabLink } from "../common/NewTabLink";
 import { WarningIcon } from "../common/icons";
 import type { ComponentChildren } from "preact";
 import type {
@@ -117,14 +117,14 @@ export function InvestigationCard({
           <p class="investigation-card__venue">{venueText}</p>
         )}
         {doi && (
-          <ExternalLink
+          <NewTabLink
             class="investigation-card__doi"
             href={`https://doi.org/${doi}`}
             aria-label={`DOI: ${doi} (opens in new tab)`}
           >
             <span class="investigation-card__doi-prefix" aria-hidden="true">doi:</span>
             <span class="investigation-card__doi-value">{doi}</span>
-          </ExternalLink>
+          </NewTabLink>
         )}
         <AbstractSection abstract={abstract} />
         {hasInvestigationContent && (

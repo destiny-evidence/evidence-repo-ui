@@ -1,5 +1,5 @@
 import { useId } from "preact/hooks";
-import { ExternalLink } from "@/components/common/ExternalLink";
+import { NewTabLink } from "@/components/common/NewTabLink";
 import { MagnifierIcon } from "@/components/common/icons";
 import { SEARCH_HELP_URL } from "@/config";
 import "./SearchBar.css";
@@ -52,13 +52,13 @@ export function SearchBar({
             be used to search
           </span>
           {SEARCH_HELP_URL && (
-            <ExternalLink
+            <NewTabLink
               class="search-bar-hint__link"
               href={SEARCH_HELP_URL}
               event={{ category: "Search", action: "Help Opened" }}
             >
               Learn more about search
-            </ExternalLink>
+            </NewTabLink>
           )}
         </p>
       </div>

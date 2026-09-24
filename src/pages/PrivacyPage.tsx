@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "preact/hooks";
-import { ExternalLink } from "@/components/common/ExternalLink";
+import { NewTabLink } from "@/components/common/NewTabLink";
 import "./PrivacyPage.css";
 
 // Committed constants, not build-time values: a legal document's stated dates
@@ -91,12 +91,12 @@ export function PrivacyPage(_props: PrivacyPageProps) {
         Email: <PrivacyEmail />
         <br />
         Website:{" "}
-        <ExternalLink
+        <NewTabLink
           class="privacy-page__external-link"
           href="https://www.futureevidence.org"
         >
           www.futureevidence.org
-        </ExternalLink>
+        </NewTabLink>
       </address>
 
       <h2>2. What data we collect</h2>

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "preact/hooks";
 import { Drawer } from "@/components/common/Drawer";
-import { ExternalLink } from "@/components/common/ExternalLink";
+import { NewTabLink } from "@/components/common/NewTabLink";
 import { Spinner } from "@/components/common/Spinner";
 import { DownloadIcon, WarningIcon } from "@/components/common/icons";
 import { track } from "@/analytics/matomo";
 import { AI_SUMMARY_FLAG_FORM_URL } from "@/config";
-import { URL_CHANGE_EVENT } from "@/services/navigation";
+import { URL_CHANGE_EVENT, urlCommunitySlug } from "@/services/navigation";
 import type {
   AiSummaryContext,
   UseAiSummaryResult,
@@ -96,7 +96,11 @@ export function AiSummaryDrawer({ ai }: AiSummaryDrawerProps) {
       {ai.status === "done" && ai.result && (
         <>
           <Disclaimer />
-          <SummaryBody summary={ai.result.summary} papers={ai.result.papers} />
+          <SummaryBody
+            summary={ai.result.summary}
+            papers={ai.result.papers}
+            communitySlug={urlCommunitySlug(ai.originUrl)}
+          />
           <CoverageNote result={ai.result} />
           <SummaryReferences references={references} />
         </>
@@ -295,14 +299,14 @@ function DrawerFooter({
         </a>
       )}
       {AI_SUMMARY_FLAG_FORM_URL && (
-        <ExternalLink
+        <NewTabLink
           class="ai-btn ai-btn--flag ai-btn--push"
           href={AI_SUMMARY_FLAG_FORM_URL}
           event={{ category: "AISummary", action: "Flagged" }}
           icon={false}
         >
           ⚑ Flag this summary
-        </ExternalLink>
+        </NewTabLink>
       )}
     </footer>
   );
