@@ -44,6 +44,17 @@ test("the brand link off an unknown community lands on the home page", () => {
   ).toBeInTheDocument();
 });
 
+// Signed in, the policy is a route like any other and keeps the shell. Cold,
+// it bypasses Keycloak entirely — see tests/main.test.tsx for that path.
+test("the privacy policy routes inside the app shell", () => {
+  history.pushState({}, "", "/privacy");
+  render(<App />);
+  expect(
+    screen.getByRole("heading", { name: "Privacy Policy", level: 1 }),
+  ).toBeInTheDocument();
+  expect(screen.getByText("Evidence Repository")).toBeInTheDocument();
+});
+
 test("shows the Visualise tab and routes to the visualise page when enabled", () => {
   history.pushState({}, "", "/hpv");
   const { unmount } = render(<App />);

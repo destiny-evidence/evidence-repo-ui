@@ -1,0 +1,32 @@
+.site-footer {
+  height: var(--footer-height);
+  background: var(--color-bg-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+/* The band is full-bleed but its row shares the content column's width, so its
+   ends sit near the page content rather than out at the header's gutter. */
+.site-footer__inner {
+  height: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-small);
+}
+
+.site-footer__copyright {
+  color: var(--color-text-tertiary);
+}
+
+.site-footer__link {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.site-footer__link:hover {
+  text-decoration: underline;
+}

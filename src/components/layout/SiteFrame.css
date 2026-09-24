@@ -1,0 +1,11 @@
+/* Wraps every render, shell or bare, so the footer sits at the bottom of the
+   viewport on a page too short to push it there. */
+.site-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.site-frame > .site-footer {
+  margin-top: auto;
+}

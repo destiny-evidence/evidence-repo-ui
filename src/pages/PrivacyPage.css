@@ -1,0 +1,96 @@
+/* Caps its own measure because a cold load renders this page bare, outside
+   .app-main, which is what otherwise supplies the column width. */
+.privacy-page {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body);
+  line-height: 1.6;
+}
+
+.privacy-page__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-hero);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs);
+}
+
+.privacy-page__dates {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-small);
+  margin: 0 0 var(--spacing-xl);
+}
+
+.privacy-page h2 {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin: var(--spacing-xl) 0 var(--spacing-sm);
+}
+
+.privacy-page h3 {
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: var(--spacing-lg) 0 var(--spacing-xs);
+}
+
+.privacy-page p {
+  margin: 0 0 var(--spacing-md);
+}
+
+.privacy-page ul {
+  margin: 0 0 var(--spacing-md);
+  padding-left: var(--spacing-lg);
+}
+
+.privacy-page li {
+  margin-bottom: var(--spacing-xs);
+}
+
+.privacy-page a {
+  color: var(--color-accent);
+}
+
+.privacy-page__external-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.privacy-page__address {
+  font-style: normal;
+  margin: 0 0 var(--spacing-md);
+}
+
+/* The three-column grid is the one thing here that cannot reflow to a phone,
+   so it scrolls sideways rather than squeezing the prose column. */
+.privacy-page__table-scroll {
+  overflow-x: auto;
+  margin: 0 0 var(--spacing-md);
+}
+
+.privacy-page__table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 480px;
+  text-align: left;
+}
+
+.privacy-page__table th,
+.privacy-page__table td {
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-sm);
+  vertical-align: top;
+}
+
+.privacy-page__table th {
+  background: var(--color-bg-inset);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}

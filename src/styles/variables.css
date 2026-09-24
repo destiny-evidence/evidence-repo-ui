@@ -95,6 +95,8 @@
 
   /* ── Layout ── */
   --header-height: 56px;
+  /* Fixed rather than content-sized so the docked evidence map can subtract it. */
+  --footer-height: 68px;
   --content-max-width: 920px;
   /* Docked evidence-map configure panel; shared by the map layout and the
      Feedback button's inset on that page. */

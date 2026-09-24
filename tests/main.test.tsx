@@ -42,7 +42,21 @@ describe("bootstrap", () => {
     expect(
       screen.getByRole("heading", { name: "Welcome to the Evidence Repository" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Privacy policy" })).toBeInTheDocument();
   });
+
+  test.each(["/privacy", "/Privacy", "/PRIVACY"])(
+    "the privacy policy at %s renders without initialising Keycloak",
+    async (pathname) => {
+      const initKeycloak = await boot(pathname);
+
+      expect(initKeycloak).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole("heading", { name: "Privacy Policy", level: 1 }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Privacy policy" })).toBeInTheDocument();
+    },
+  );
 
   test("a community route initialises Keycloak before rendering", async () => {
     const initKeycloak = await boot("/hpv");
