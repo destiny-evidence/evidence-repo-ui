@@ -5,7 +5,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
 import { FeedbackFAB } from "@/components/feedback/FeedbackFAB";
 import { ResourcesMenu } from "./ResourcesMenu";
-import { SiteFooter } from "./SiteFooter";
+import { SiteFrame } from "./SiteFrame";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 import "./AppShell.css";
 
@@ -43,7 +43,7 @@ export function AppShell({ children }: AppShellProps) {
   const trackTab = (name: string) => () =>
     track({ category: "Navigation", action: "Tab Clicked", name });
   return (
-    <div class="site-frame">
+    <SiteFrame>
       <header class="app-header">
         <a href={brandHref} class="app-header__brand">
           <span class="app-header__logo-mark" aria-hidden="true">E</span>
@@ -88,8 +88,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
       <main class="app-main">{children}</main>
-      <SiteFooter />
       <FeedbackFAB />
-    </div>
+    </SiteFrame>
   );
 }

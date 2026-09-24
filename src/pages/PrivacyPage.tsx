@@ -7,8 +7,6 @@ import "./PrivacyPage.css";
 const EFFECTIVE_DATE = "1 October 2026";
 const LAST_UPDATED = "1 October 2026";
 
-const PRIVACY_EMAIL = "privacy@futureevidence.org";
-
 const LEGAL_BASES: [purpose: string, data: string, basis: string][] = [
   [
     "Providing and maintaining accounts/access",
@@ -39,7 +37,9 @@ const LEGAL_BASES: [purpose: string, data: string, basis: string][] = [
 ];
 
 function PrivacyEmail() {
-  return <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a>;
+  return (
+    <a href="mailto:privacy@futureevidence.org">privacy@futureevidence.org</a>
+  );
 }
 
 interface PrivacyPageProps {
