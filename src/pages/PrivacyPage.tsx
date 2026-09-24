@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import { ExternalLink } from "@/components/common/ExternalLink";
 import "./PrivacyPage.css";
 
@@ -47,14 +47,18 @@ interface PrivacyPageProps {
 }
 
 export function PrivacyPage(_props: PrivacyPageProps) {
+  const titleRef = useRef<HTMLHeadingElement>(null);
   // The footer link is clicked from the bottom of a page, and in-app navigation
-  // keeps that scroll position.
+  // keeps both that scroll position and keyboard focus on the link.
   useEffect(() => {
     window.scrollTo(0, 0);
+    titleRef.current?.focus({ preventScroll: true });
   }, []);
   return (
     <article class="privacy-page">
-      <h1 class="privacy-page__title">Privacy Policy</h1>
+      <h1 class="privacy-page__title" tabIndex={-1} ref={titleRef}>
+        Privacy Policy
+      </h1>
       <p class="privacy-page__dates">
         Effective date: {EFFECTIVE_DATE} · Last updated: {LAST_UPDATED}
       </p>

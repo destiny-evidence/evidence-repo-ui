@@ -10,6 +10,13 @@ describe("PrivacyPage", () => {
     scrollTo.mockRestore();
   });
 
+  test("moves keyboard focus to the title, not leaving it on the footer link", () => {
+    render(<PrivacyPage />);
+    expect(document.activeElement).toBe(
+      screen.getByRole("heading", { level: 1, name: "Privacy Policy" }),
+    );
+  });
+
   test("renders the legal-basis grid as a table, one row per purpose", () => {
     render(<PrivacyPage />);
     const table = screen.getByRole("table");
