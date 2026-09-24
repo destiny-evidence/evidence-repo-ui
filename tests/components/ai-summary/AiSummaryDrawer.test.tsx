@@ -361,4 +361,12 @@ describe("AiSummaryDrawer analytics", () => {
 
     expect(events().map((e) => e[2])).toEqual(["Flagged", "Search Opened"]);
   });
+
+  test("tracks when a quote source link is opened", () => {
+    render(<AiSummaryDrawer ai={makeAi()} />);
+    fireEvent.click(screen.getByLabelText("View record for Anwari Palwasha (2019) (opens in new tab)"))
+    expect(events("Record Opened")).toEqual([
+      ["trackEvent", "AISummary", "Record Opened", "0196b1a0-0000-7000-8000-000000000001", undefined]
+    ]);
+  });
 });
