@@ -69,7 +69,7 @@ export function trackSiteSearch(
  */
 export function trackSpaPageView(): void {
   if (!analyticsEnabled()) return;
-  // Omit query string fromm url tracking
+  // Keep the query string out: Matomo would read `q` as a second site search.
   const url = window.location.origin + window.location.pathname;
   window._paq!.push(["setCustomUrl", url]);
   window._paq!.push(["setDocumentTitle", document.title]);
