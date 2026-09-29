@@ -53,6 +53,18 @@ export function track(event: AnalyticsEvent): void {
 }
 
 /**
+ * Record a keyword in Matomo's Site Search report.
+ */
+export function trackSiteSearch(
+  keyword: string,
+  category: string,
+  resultsCount: number,
+): void {
+  if (!analyticsEnabled()) return;
+  window._paq!.push(["trackSiteSearch", keyword, category, resultsCount]);
+}
+
+/**
  * Track a Matomo pageview for the current SPA route.
  */
 export function trackSpaPageView(): void {

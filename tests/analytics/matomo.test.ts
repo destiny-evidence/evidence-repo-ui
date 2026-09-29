@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, onTestFinished, test } from "vitest";
 import {
   track,
+  trackSiteSearch,
   trackSpaPageView,
   initSpaPageviews,
   initMatomo,
@@ -42,6 +43,19 @@ describe("track", () => {
     expect(window._paq).toEqual([
       ["trackEvent", "Filters", "Reset All", undefined, undefined],
     ]);
+  });
+});
+
+describe("trackSiteSearch", () => {
+  test("pushes the trackSiteSearch tuple when analytics is enabled", () => {
+    window._paq = [];
+    trackSiteSearch("phonics", "esea", 0);
+    expect(window._paq).toEqual([["trackSiteSearch", "phonics", "esea", 0]]);
+  });
+
+  test("is a no-op when analytics is disabled", () => {
+    trackSiteSearch("phonics", "esea", 3);
+    expect(window._paq).toBeUndefined();
   });
 });
 

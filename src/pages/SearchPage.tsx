@@ -11,7 +11,7 @@ import {
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
-import { track } from "@/analytics/matomo";
+import { track, trackSiteSearch } from "@/analytics/matomo";
 import { activeFilters, hasActiveSearch } from "@/analytics/searchEvents";
 import {
   backToVisualiseUrl,
@@ -227,8 +227,8 @@ function SearchPageInner({ community }: { community: Community }) {
   // Key off resultsParams (the search the current results were fetched for), not
   // the live params: useSearch keeps prior results on screen while a new query
   // is in flight, so the live identity can run ahead of the count. Paging/sorting
-  // keep the same identity, so they don't re-fire. No query text is sent — only
-  // the result count and a has-results/no-results bucket.
+  // keep the same identity, so they don't re-fire. The query text goes only to
+  // Matomo Site Search, which needs a keyword, so filter-only searches skip it.
   const lastSearchTracked = useRef<string | null>(null);
   useEffect(() => {
     const fetched = results.resultsParams;
@@ -243,6 +243,7 @@ function SearchPageInner({ community }: { community: Community }) {
       name: count === 0 ? "no-results" : "results",
       value: count,
     });
+    if (fetched.q) trackSiteSearch(fetched.q, community.slug, count);
   }, [results.results, results.resultsParams, community.slug]);
 
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
