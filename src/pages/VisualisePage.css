@@ -36,18 +36,12 @@
   margin: 0;
 }
 
-/* Full-bleed two-column row pinned to exactly the viewport below the header and
-   clipped, leaving the footer below the fold so small screens keep its height
-   for the map: the columns stretch to fill it, the map table and panel body
-   scroll internally, and the map is capped (EvidenceMapGrid.css) so nothing
-   visible is clipped. */
+/* Two-column row pinned to exactly the viewport below the header and clipped,
+   leaving the footer below the fold so small screens keep its height for the
+   map: the columns stretch to fill it, the map table and panel body scroll
+   internally, and the map is capped (EvidenceMapGrid.css) so nothing visible is
+   clipped. */
 .evidence-map-view {
-  width: 100vw;
-  position: relative;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
   box-sizing: border-box;
   display: flex;
   height: calc(100vh - var(--header-height));
@@ -67,10 +61,11 @@
 }
 
 /* Two-column only: inset the global Feedback button out from under the docked
-   panel, and drop .app-main's bottom padding so the footer follows the
-   (viewport-height) panel and capped map directly. */
+   panel, and let .app-main go full-bleed with no bottom padding: widening the
+   parent, unlike a 100vw breakout, stays clear of the page's scrollbar. */
 @media (min-width: 961px) {
   body.visualise-has-panel .app-main {
+    max-width: none;
     padding-bottom: 0;
   }
   body.visualise-has-panel .feedback-fab {
@@ -84,8 +79,7 @@
   /* Drop the full-bleed breakout: in stacked flow the page scrolls, so a
      vertical scrollbar appears and 100vw (which counts the scrollbar) overhangs
      by ~half its width each side. app-main's width ≈ the viewport here anyway. */
-  .visualise-page,
-  .evidence-map-view {
+  .visualise-page {
     width: 100%;
     left: auto;
     right: auto;
