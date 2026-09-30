@@ -1377,6 +1377,108 @@ describe("VisualisePage nested-axis state", () => {
   });
 });
 
+describe("VisualisePage remembered axes", () => {
+  const SWAPPED: CrossFacetAxisPair = { row: CROSS_AXES.column, column: CROSS_AXES.row };
+  const lastAxisPair = () => mockUseCrossFacets.mock.calls.at(-1)![1];
+
+  beforeEach(() => {
+    mockUseCommunity.mockReturnValue(mappedCommunity({ slug: "esea" }));
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: SCHEMES,
+      loading: false,
+      error: null,
+    });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  // Applies the swapped pair, then follows the navigation as the router would.
+  function chooseSwappedAxes() {
+    const { container, rerender, unmount } = render(<VisualisePage />);
+    const panel = within(container.querySelector<HTMLElement>(".map-config-panel")!);
+    fireEvent.change(panel.getByLabelText("Rows (y)"), {
+      target: { value: "scheme:theme" },
+    });
+    fireEvent.change(panel.getByLabelText("Columns (x)"), {
+      target: { value: "scheme:level" },
+    });
+    fireEvent.click(panel.getByRole("button", { name: "Show results" }));
+    const url: string = mockNavigate.mock.calls.at(-1)![0];
+    mockUseUrlParams.mockReturnValue(url.slice(url.indexOf("?")));
+    rerender(<VisualisePage />);
+    unmount();
+    mockUseUrlParams.mockReturnValue("");
+  }
+
+  test("a map opened without axes in the URL uses the last ones applied", () => {
+    chooseSwappedAxes();
+    mockUseUrlParams.mockReturnValue("?q=phonics");
+    render(<VisualisePage />);
+    expect(lastAxisPair()).toEqual(SWAPPED);
+  });
+
+  test("axes in the URL win over the remembered ones", () => {
+    chooseSwappedAxes();
+    mockUseUrlParams.mockReturnValue("?row=scheme%3Alevel&column=scheme%3Atheme");
+    render(<VisualisePage />);
+    expect(lastAxisPair()).toEqual(CROSS_AXES);
+  });
+
+  test("are remembered per community", () => {
+    chooseSwappedAxes();
+    mockUseCommunity.mockReturnValue(mappedCommunity({ slug: "other" }));
+    render(<VisualisePage />);
+    expect(lastAxisPair()).toEqual(CROSS_AXES);
+  });
+
+  test("axes that arrive in the URL are remembered too", () => {
+    mockUseUrlParams.mockReturnValue("?row=scheme%3Atheme&column=scheme%3Alevel");
+    const { unmount } = render(<VisualisePage />);
+    unmount();
+    mockUseUrlParams.mockReturnValue("?q=phonics");
+    render(<VisualisePage />);
+    expect(lastAxisPair()).toEqual(SWAPPED);
+  });
+
+  test("unreadable storage falls back to the defaults", () => {
+    chooseSwappedAxes();
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    render(<VisualisePage />);
+    expect(lastAxisPair()).toEqual(CROSS_AXES);
+  });
+
+  test.each(["not json", "{}", '{"row":"scheme:theme"}'])(
+    "a malformed remembered value (%s) falls back to the defaults",
+    (stored) => {
+      sessionStorage.setItem("evidence-map-axes:esea", stored);
+      render(<VisualisePage />);
+      expect(lastAxisPair()).toEqual(CROSS_AXES);
+    },
+  );
+
+  test("unwritable storage still applies the chosen axes", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    const { container } = render(<VisualisePage />);
+    const panel = within(container.querySelector<HTMLElement>(".map-config-panel")!);
+    fireEvent.change(panel.getByLabelText("Rows (y)"), {
+      target: { value: "scheme:theme" },
+    });
+    fireEvent.change(panel.getByLabelText("Columns (x)"), {
+      target: { value: "scheme:level" },
+    });
+    fireEvent.click(panel.getByRole("button", { name: "Show results" }));
+    expect(mockNavigate).toHaveBeenLastCalledWith(
+      expect.stringContaining("row=scheme%3Atheme"),
+    );
+  });
+});
+
 describe("VisualisePage default years", () => {
   const lastParams = () => mockUseCrossFacets.mock.calls.at(-1)![0];
 

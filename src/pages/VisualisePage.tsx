@@ -74,13 +74,45 @@ function fromCrossFacetAxis(axis: CrossFacetAxis): EvidenceMapAxis {
     : { kind: "scheme", schemeUri: axis.schemeUri };
 }
 
+// Per tab and community, so the axes survive a trip through Search, which
+// rewrites the URL without them. Written whenever the map shows a pair.
+const rememberedAxesKey = (slug: string) => `evidence-map-axes:${slug}`;
+
+// Unreadable or malformed storage counts as nothing remembered.
+function readRememberedAxes(slug: string): EvidenceMapAxes | null {
+  try {
+    const raw = sessionStorage.getItem(rememberedAxesKey(slug));
+    if (raw === null) return null;
+    const { row, column } = JSON.parse(raw);
+    if (typeof row !== "string" || typeof column !== "string") return null;
+    return { row: parseAxis(row), column: parseAxis(column) };
+  } catch {
+    return null;
+  }
+}
+
+function writeRememberedAxes(slug: string, axes: EvidenceMapAxes): void {
+  try {
+    sessionStorage.setItem(
+      rememberedAxesKey(slug),
+      JSON.stringify({ row: axisToken(axes.row), column: axisToken(axes.column) }),
+    );
+  } catch {
+    // The axes then last only as long as the URL carries them.
+  }
+}
+
 // The map's axes come from the URL when present (so a link reproduces the view),
-// otherwise the community defaults.
-function resolveAxes(search: string, defaults: EvidenceMapAxes): EvidenceMapAxes {
+// then the last ones shown, then the community defaults.
+function resolveAxes(
+  search: string,
+  slug: string,
+  defaults: EvidenceMapAxes,
+): EvidenceMapAxes {
   const params = new URLSearchParams(search);
   const row = params.get(ROW_PARAM);
   const column = params.get(COLUMN_PARAM);
-  if (!row || !column) return defaults;
+  if (!row || !column) return readRememberedAxes(slug) ?? defaults;
   return { row: parseAxis(row), column: parseAxis(column) };
 }
 
@@ -152,7 +184,10 @@ function EvidenceMapView({
       ? withDefaults(parsed, community.searchDefaults)
       : parsed;
   }, [search, community.searchDefaults]);
-  const axes = useMemo(() => resolveAxes(search, defaults), [search, defaults]);
+  const axes = useMemo(
+    () => resolveAxes(search, community.slug, defaults),
+    [search, community.slug, defaults],
+  );
 
   const vocab = useVocabulary(community.vocabularyUrl);
 
@@ -361,6 +396,7 @@ function EvidenceMapView({
     if (current !== canonical) {
       navigate(`/${community.slug}/visualise?${canonical}`, { mode: "replace" });
     }
+    writeRememberedAxes(community.slug, axes);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canonical, community.slug]);
 
