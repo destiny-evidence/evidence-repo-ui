@@ -36,9 +36,9 @@
   margin: 0;
 }
 
-/* Full-bleed two-column row pinned to exactly the viewport between the header
-   and footer and clipped, so the page never scrolls (sub-pixel rounding
-   included): the columns stretch to fill it, the map table and panel body
+/* Full-bleed two-column row pinned to exactly the viewport below the header and
+   clipped, leaving the footer below the fold so small screens keep its height
+   for the map: the columns stretch to fill it, the map table and panel body
    scroll internally, and the map is capped (EvidenceMapGrid.css) so nothing
    visible is clipped. */
 .evidence-map-view {
@@ -50,7 +50,7 @@
   margin-right: -50vw;
   box-sizing: border-box;
   display: flex;
-  height: calc(100vh - var(--header-height) - var(--footer-height));
+  height: calc(100vh - var(--header-height));
   overflow: hidden;
 }
 
@@ -67,8 +67,8 @@
 }
 
 /* Two-column only: inset the global Feedback button out from under the docked
-   panel, and drop .app-main's bottom padding so the (viewport-height) panel and
-   the capped map fit the viewport with no page scroll. */
+   panel, and drop .app-main's bottom padding so the footer follows the
+   (viewport-height) panel and capped map directly. */
 @media (min-width: 961px) {
   body.visualise-has-panel .app-main {
     padding-bottom: 0;
