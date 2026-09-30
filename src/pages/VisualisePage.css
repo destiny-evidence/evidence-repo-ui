@@ -21,6 +21,10 @@
   margin: 0 0 var(--spacing-lg);
 }
 
+.visualise-page__query {
+  color: var(--color-text-secondary);
+}
+
 /* Inside the map column the flex gap owns the spacing, so the title doesn't
    double up its own bottom margin. */
 .evidence-map-view__main .visualise-page__title {

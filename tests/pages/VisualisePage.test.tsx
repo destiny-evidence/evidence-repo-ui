@@ -310,9 +310,9 @@ describe("VisualisePage map", () => {
       error: null,
     });
     const { container } = render(<VisualisePage />);
-    // The corner reports what's on the map, not what matched the filters.
+    // The corner reports what's on the map out of what matched.
     expect(container.querySelector(".evidence-map__total")?.textContent).toBe(
-      "20 unique results",
+      "20 of 20 unique results",
     );
     // Column/row labels resolved via the vocabulary.
     expect(screen.getByRole("columnheader", { name: "Literacy" })).toBeInTheDocument();
@@ -323,7 +323,7 @@ describe("VisualisePage map", () => {
     ).toBeInTheDocument();
   });
 
-  test("corner counts the mapped subset, not everything matching the filters", () => {
+  test("corner counts the mapped subset out of everything the map is drawn from", () => {
     mockUseCrossFacets.mockReturnValue({
       result: crossFacetResult(
         1332,
@@ -335,7 +335,7 @@ describe("VisualisePage map", () => {
     });
     const { container } = render(<VisualisePage />);
     expect(container.querySelector(".evidence-map__total")?.textContent).toBe(
-      "1,332 unique results",
+      "1,332 of 1,961 unique results",
     );
   });
 
@@ -509,12 +509,12 @@ describe("VisualisePage map", () => {
     });
     const { container } = render(<VisualisePage />);
     expect(screen.getByText(/none have a value for both/i)).toBeInTheDocument();
-    // The note counts what matched the filters; the corner what's on the map.
+    // The note counts what matched the filters; the corner what's on the map of it.
     expect(
       container.querySelector(".evidence-map-view__note-count")?.textContent,
     ).toBe("7");
     expect(container.querySelector(".evidence-map__total")?.textContent).toBe(
-      "0 unique results",
+      "0 of 7 unique results",
     );
     // Not the over-filtered warning — loosening filters wouldn't help.
     expect(container.querySelector(".evidence-map-view__banner")).toBeNull();
@@ -1476,6 +1476,43 @@ describe("VisualisePage remembered axes", () => {
     expect(mockNavigate).toHaveBeenLastCalledWith(
       expect.stringContaining("row=scheme%3Atheme"),
     );
+  });
+});
+
+describe("VisualisePage title", () => {
+  beforeEach(() => mockUseCommunity.mockReturnValue(mappedCommunity()));
+  const title = () => screen.getByRole("heading", { level: 1 }).textContent;
+
+  test("names the search the map is drawn from", () => {
+    mockUseUrlParams.mockReturnValue("?q=phonics");
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(1, [["level:primary", "theme:literacy", 1]]),
+      resultAxes: CROSS_AXES,
+      resultParams: parseSearchParams("?q=phonics"),
+      loading: false,
+      error: null,
+    });
+    render(<VisualisePage />);
+    expect(title()).toBe("Evidence map · “phonics”");
+  });
+
+  test("is plain when only filters narrow the map", () => {
+    mockUseUrlParams.mockReturnValue("?country=KE");
+    render(<VisualisePage />);
+    expect(title()).toBe("Evidence map");
+  });
+
+  test("names the search on screen while the next one is fetched", () => {
+    mockUseUrlParams.mockReturnValue("?q=new");
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(1, [["level:primary", "theme:literacy", 1]]),
+      resultAxes: CROSS_AXES,
+      resultParams: parseSearchParams("?q=old"),
+      loading: true,
+      error: null,
+    });
+    render(<VisualisePage />);
+    expect(title()).toBe("Evidence map · “old”");
   });
 });
 

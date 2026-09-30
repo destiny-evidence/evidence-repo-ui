@@ -593,6 +593,9 @@ function EvidenceMapView({
   // it doesn't mislead in the over-filtered or no-coverage states.
   const showHint =
     result !== null && result.cells.length > 0 && hasGrid && !oversized;
+  const mappedOfSearch = result
+    ? `${formatTotal(result.totals.mapped)} of ${formatTotal(result.totals.search)}`
+    : undefined;
 
   return (
     <div class="evidence-map-view">
@@ -603,6 +606,9 @@ function EvidenceMapView({
           tabIndex={-1}
         >
           Evidence map
+          {trackedParams.q && (
+            <span class="visualise-page__query">{` · “${trackedParams.q}”`}</span>
+          )}
         </h1>
         <div class="evidence-map-view__toolbar">
           <ViewToggle value={view} onChange={handleViewChange} />
@@ -690,7 +696,7 @@ function EvidenceMapView({
                 countNoun={noun}
                 rowAxisLabel={rowAxis.title}
                 columnAxisLabel={columnAxis.title}
-                total={formatTotal(result.totals.mapped)}
+                total={mappedOfSearch}
                 updating={mapUpdating}
                 rowBands={rowBands}
                 columnBands={columnBands}
@@ -718,7 +724,7 @@ function EvidenceMapView({
               // Data exists but the vocabulary hasn't supplied categories yet.
               <p class="evidence-map-view__total">
                 <span class="evidence-map-view__total-count">
-                  {formatTotal(result.totals.mapped)}
+                  {mappedOfSearch}
                 </span>{" "}
                 unique {noun}
               </p>
