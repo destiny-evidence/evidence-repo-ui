@@ -8,6 +8,7 @@ import {
   buildSearchUrl,
   toUnpaginatedSearchQuery,
   sortKey,
+  withDefaults,
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
@@ -127,10 +128,10 @@ function formatResultsSummary(total: { count: number; is_lower_bound: boolean })
 // The URL a visitor with no search of their own lands on
 function landingUrl(community: Community): string | null {
   if (!community.searchDefaults) return null;
-  const url = buildSearchUrl(community.slug, {
-    ...parseSearchParams(""),
-    ...community.searchDefaults,
-  });
+  const url = buildSearchUrl(
+    community.slug,
+    withDefaults(parseSearchParams(""), community.searchDefaults),
+  );
   return url === `/${community.slug}` ? null : url;
 }
 

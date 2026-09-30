@@ -1,5 +1,6 @@
 import { parseYear } from "@/utils/year";
 import type { SearchFilters } from "@/services/apiClient";
+import type { SearchDefaults } from "@/types/models";
 
 export type SortOption = "newest" | "oldest";
 
@@ -115,6 +116,26 @@ export function buildSearchUrl(
 ): string {
   const qs = toQueryString(params);
   return qs ? `/${communitySlug}?${qs}` : `/${communitySlug}`;
+}
+
+// `path` with the scope Search and Visualise share: the query, filters and
+// years, but not sort or page, which are Search's own.
+export function scopedUrl(path: string, params: SearchParams): string {
+  const qs = toQueryString({ ...params, sort: undefined, page: 1 });
+  return qs ? `${path}?${qs}` : path;
+}
+
+// The community's defaults for fields `params` leaves unset: what a bare visit starts from.
+export function withDefaults(
+  params: SearchParams,
+  defaults: SearchDefaults | undefined,
+): SearchParams {
+  const out = { ...params };
+  for (const [key, value] of Object.entries(defaults ?? {})) {
+    const k = key as keyof SearchDefaults;
+    if (out[k] === undefined) out[k] = value;
+  }
+  return out;
 }
 
 // Maps a SearchParams + community annotations to the query/filters shape the

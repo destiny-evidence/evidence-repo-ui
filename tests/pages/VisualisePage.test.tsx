@@ -1377,6 +1377,31 @@ describe("VisualisePage nested-axis state", () => {
   });
 });
 
+describe("VisualisePage default years", () => {
+  const lastParams = () => mockUseCrossFacets.mock.calls.at(-1)![0];
+
+  test("a bare map starts from the community's default years, as a bare Search does", () => {
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({ slug: "c", searchDefaults: { endYear: 2030 } }),
+    );
+    render(<VisualisePage />);
+    expect(lastParams().endYear).toBe(2030);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      expect.stringContaining("end_year=2030"),
+      { mode: "replace" },
+    );
+  });
+
+  test("a map URL with only its axes is not seeded, so a cleared default stays cleared", () => {
+    mockUseCommunity.mockReturnValue(
+      mappedCommunity({ slug: "c", searchDefaults: { endYear: 2030 } }),
+    );
+    mockUseUrlParams.mockReturnValue("?row=scheme%3Alevel&column=scheme%3Atheme");
+    render(<VisualisePage />);
+    expect(lastParams().endYear).toBeUndefined();
+  });
+});
+
 describe("VisualisePage analytics", () => {
   // An empty queue is what `track()` reads as "analytics enabled".
   beforeEach(() => {

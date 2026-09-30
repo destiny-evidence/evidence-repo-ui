@@ -7,6 +7,8 @@ import { FeedbackFAB } from "@/components/feedback/FeedbackFAB";
 import { ResourcesMenu } from "./ResourcesMenu";
 import { SiteFrame } from "./SiteFrame";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
+import { useUrlParams } from "@/hooks/useUrlParams";
+import { parseSearchParams, scopedUrl } from "@/services/searchParams";
 import "./AppShell.css";
 
 function usePathname(): string {
@@ -31,6 +33,7 @@ export function AppShell({ children }: AppShellProps) {
   const { username, logout } = useAuth();
   const community = useCommunity();
   const pathname = usePathname();
+  const search = useUrlParams();
   const searchActive =
     community != null &&
     (pathname === `/${community.slug}` ||
@@ -40,6 +43,15 @@ export function AppShell({ children }: AppShellProps) {
   // Within a community the brand goes to its root; off one (an unknown slug)
   // it goes to the home page, which lists the communities.
   const brandHref = community ? `/${community.slug}` : "/";
+  // Moving between Search and Visualise keeps the search; from anywhere else
+  // the tabs start fresh.
+  const carriesSearch =
+    (community != null && pathname === `/${community.slug}`) || visualiseActive;
+  const scope = carriesSearch ? parseSearchParams(search) : null;
+  const searchPath = community ? `/${community.slug}` : "/";
+  const searchHref = scope ? scopedUrl(searchPath, scope) : searchPath;
+  const visualisePath = `${searchPath}/visualise`;
+  const visualiseHref = scope ? scopedUrl(visualisePath, scope) : visualisePath;
   const trackTab = (name: string) => () =>
     track({ category: "Navigation", action: "Tab Clicked", name });
   return (
@@ -61,7 +73,7 @@ export function AppShell({ children }: AppShellProps) {
           <nav class="app-nav" aria-label="Primary">
             <a
               class={`app-nav__link${searchActive ? " active" : ""}`}
-              href={`/${community.slug}`}
+              href={searchHref}
               onClick={trackTab("Search")}
             >
               Search
@@ -69,7 +81,7 @@ export function AppShell({ children }: AppShellProps) {
             {community.features.evidenceMap && (
               <a
                 class={`app-nav__link${visualiseActive ? " active" : ""}`}
-                href={`/${community.slug}/visualise`}
+                href={visualiseHref}
                 onClick={trackTab("Visualise")}
               >
                 Visualise

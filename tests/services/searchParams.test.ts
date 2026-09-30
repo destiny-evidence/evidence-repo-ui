@@ -4,6 +4,8 @@ import {
   toQueryString,
   buildSearchUrl,
   toUnpaginatedSearchQuery,
+  scopedUrl,
+  withDefaults,
 } from "@/services/searchParams";
 import { makeSearchParams } from "../fixtures";
 
@@ -348,5 +350,48 @@ describe("toUnpaginatedSearchQuery", () => {
       sort: ["-publication_year"],
       countryCodes: ["DE"],
     });
+  });
+});
+
+describe("scopedUrl", () => {
+  test("carries the query, filters and years, but not sort or page", () => {
+    const params = makeSearchParams({
+      q: "mental health",
+      conceptFilters: [["u1", "u2"]],
+      countryCodes: ["KE"],
+      startYear: 2015,
+      endYear: 2020,
+      sort: "newest",
+      page: 3,
+    });
+    expect(scopedUrl("/esea/visualise", params)).toBe(
+      "/esea/visualise?q=mental+health&concept=u1%2Cu2&country=KE&start_year=2015&end_year=2020",
+    );
+  });
+
+  test("an empty scope gives the bare path", () => {
+    expect(
+      scopedUrl("/esea/visualise", makeSearchParams({ sort: "oldest", page: 2 })),
+    ).toBe("/esea/visualise");
+  });
+});
+
+describe("withDefaults", () => {
+  const DEFAULTS = { endYear: 2030 };
+
+  test("fills in a default the params leave unset", () => {
+    expect(withDefaults(makeSearchParams({ q: "x" }), DEFAULTS)).toEqual(
+      makeSearchParams({ q: "x", endYear: 2030 }),
+    );
+  });
+
+  test("keeps a value the params set", () => {
+    const params = makeSearchParams({ q: "x", endYear: 2020 });
+    expect(withDefaults(params, DEFAULTS)).toEqual(params);
+  });
+
+  test("a community without defaults changes nothing", () => {
+    const params = makeSearchParams({ q: "x", endYear: 2030 });
+    expect(withDefaults(params, undefined)).toEqual(params);
   });
 });

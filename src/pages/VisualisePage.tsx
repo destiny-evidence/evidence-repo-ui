@@ -7,6 +7,7 @@ import {
   parseSearchParams,
   toQueryString,
   buildSearchUrl,
+  withDefaults,
   type SearchParams,
 } from "@/services/searchParams";
 import { navigate, stampHistoryState } from "@/services/navigation";
@@ -144,7 +145,13 @@ function EvidenceMapView({
   defaults: EvidenceMapAxes;
 }) {
   const search = useUrlParams();
-  const params = useMemo(() => parseSearchParams(search), [search]);
+  // Like a bare Search, a bare map starts from the community's default filters.
+  const params = useMemo(() => {
+    const parsed = parseSearchParams(search);
+    return search.replace(/^\?/, "") === ""
+      ? withDefaults(parsed, community.searchDefaults)
+      : parsed;
+  }, [search, community.searchDefaults]);
   const axes = useMemo(() => resolveAxes(search, defaults), [search, defaults]);
 
   const vocab = useVocabulary(community.vocabularyUrl);
