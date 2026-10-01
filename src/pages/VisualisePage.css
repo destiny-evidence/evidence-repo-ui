@@ -36,15 +36,16 @@
   margin: 0;
 }
 
-/* Two-column row pinned to exactly the viewport below the header and clipped,
-   leaving the footer below the fold so small screens keep its height for the
-   map: the columns stretch to fill it, the map table and panel body scroll
-   internally, and the map is capped (EvidenceMapGrid.css) so nothing visible is
-   clipped. */
+/* Two-column row sized to the map, between the viewport left by the header and
+   footer and the full viewport below the header, then clipped: a map too big
+   for the first pushes the footer below the fold. The columns stretch to fill
+   it, the map table and panel body scroll internally, and the map is capped
+   (EvidenceMapGrid.css) so nothing visible is clipped. */
 .evidence-map-view {
   box-sizing: border-box;
   display: flex;
-  height: calc(100vh - var(--header-height));
+  min-height: calc(100vh - var(--header-height) - var(--footer-height));
+  max-height: calc(100vh - var(--header-height));
   overflow: hidden;
 }
 
@@ -87,7 +88,8 @@
   }
   .evidence-map-view {
     display: block;
-    height: auto;
+    min-height: 0;
+    max-height: none;
     overflow: visible;
   }
   .evidence-map-view__main {
