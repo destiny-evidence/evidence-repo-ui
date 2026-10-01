@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   activeFilters,
   hasActiveSearch,
-  hasFiltersBeyondDefaults,
+  siteSearchCategory,
 } from "@/analytics/searchEvents";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
@@ -153,28 +153,30 @@ describe("hasActiveSearch", () => {
   });
 });
 
-describe("hasFiltersBeyondDefaults", () => {
-  test("false with no filters, whatever the query", () => {
-    expect(hasFiltersBeyondDefaults(makeSearchParams({ q: "phonics" }))).toBe(false);
+describe("siteSearchCategory", () => {
+  const esea = { slug: "esea" };
+
+  test("is the community slug with no filters, whatever the query", () => {
+    expect(siteSearchCategory(esea, makeSearchParams({ q: "phonics" }))).toBe("esea");
   });
 
-  test("true for any concept, country or year filter", () => {
-    expect(hasFiltersBeyondDefaults(makeSearchParams({ conceptFilters: [["x"]] }))).toBe(
-      true,
-    );
-    expect(hasFiltersBeyondDefaults(makeSearchParams({ countryCodes: ["DE"] }))).toBe(true);
-    expect(hasFiltersBeyondDefaults(makeSearchParams({ startYear: 2000 }))).toBe(true);
-    expect(hasFiltersBeyondDefaults(makeSearchParams({ endYear: 2020 }))).toBe(true);
+  test("marks any concept, country or year filter as filtered", () => {
+    for (const filters of [
+      { conceptFilters: [["x"]] },
+      { countryCodes: ["DE"] },
+      { startYear: 2000 },
+      { endYear: 2020 },
+    ]) {
+      expect(siteSearchCategory(esea, makeSearchParams(filters))).toBe("esea · filtered");
+    }
   });
 
   test("ignores an end year that matches the community default", () => {
-    const defaults = { endYear: 2027 };
-    expect(hasFiltersBeyondDefaults(makeSearchParams({ endYear: 2027 }), defaults)).toBe(
-      false,
+    const destiny = { slug: "destiny", searchDefaults: { endYear: 2027 } };
+    expect(siteSearchCategory(destiny, makeSearchParams({ endYear: 2027 }))).toBe("destiny");
+    expect(siteSearchCategory(destiny, makeSearchParams({}))).toBe("destiny");
+    expect(siteSearchCategory(destiny, makeSearchParams({ endYear: 2020 }))).toBe(
+      "destiny · filtered",
     );
-    expect(hasFiltersBeyondDefaults(makeSearchParams({ endYear: 2020 }), defaults)).toBe(
-      true,
-    );
-    expect(hasFiltersBeyondDefaults(makeSearchParams({}), defaults)).toBe(false);
   });
 });

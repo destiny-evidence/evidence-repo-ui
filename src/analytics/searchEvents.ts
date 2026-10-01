@@ -9,7 +9,7 @@ import {
 } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
 import type { SearchParams } from "@/services/searchParams";
-import type { SearchDefaults } from "@/types/models";
+import type { Community } from "@/types/models";
 
 // True when the user has actually searched or filtered — as opposed to a plain
 // browse landing (no query, no filters), which is already a pageview and would
@@ -24,18 +24,18 @@ export function hasActiveSearch(params: SearchParams): boolean {
   );
 }
 
-// True when the search narrows past the community's own defaults, which every
-// search there carries.
-export function hasFiltersBeyondDefaults(
+// "· filtered" separates keywords that found nothing from ones the filters
+// emptied. A community's own default filters don't count.
+export function siteSearchCategory(
+  community: Pick<Community, "slug" | "searchDefaults">,
   params: SearchParams,
-  defaults: SearchDefaults = {},
-): boolean {
-  return (
+): string {
+  const filtered =
     params.conceptFilters.length > 0 ||
     params.countryCodes.length > 0 ||
     params.startYear !== undefined ||
-    (params.endYear !== undefined && params.endYear !== defaults.endYear)
-  );
+    (params.endYear !== undefined && params.endYear !== community.searchDefaults?.endYear);
+  return filtered ? `${community.slug} · filtered` : community.slug;
 }
 
 // Concept values carry their whole branch, root first, so a nested concept says

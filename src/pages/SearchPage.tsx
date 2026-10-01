@@ -15,7 +15,7 @@ import { track, trackSiteSearch } from "@/analytics/matomo";
 import {
   activeFilters,
   hasActiveSearch,
-  hasFiltersBeyondDefaults,
+  siteSearchCategory,
 } from "@/analytics/searchEvents";
 import {
   backToVisualiseUrl,
@@ -227,15 +227,9 @@ function SearchPageInner({ community }: { community: Community }) {
     resetExport();
   }, [resetExport, selectionIdentity]);
 
-  // One "Search Performed" per distinct search (query + filters), not per fetch.
-  // Key off resultsParams (the search the current results were fetched for), not
-  // the live params: useSearch keeps prior results on screen while a new query
-  // is in flight, so the live identity can run ahead of the count. Paging/sorting
-  // keep the same identity, so they don't re-fire; clearing back to browse
-  // forgets it, so running the same search again counts. The query text goes
-  // only to Matomo Site Search, which needs a keyword, so filter-only searches
-  // skip it. Its "· filtered" category tells a keyword that found nothing apart
-  // from one the filters emptied.
+  // Once per distinct search (query + filters): paging and sorting don't re-fire,
+  // and clearing back to browse resets it. Keyed off resultsParams, not the live
+  // params, because useSearch keeps old results on screen while a new search loads.
   const lastSearchTracked = useRef<string | null>(null);
   useEffect(() => {
     const fetched = results.resultsParams;
@@ -254,13 +248,8 @@ function SearchPageInner({ community }: { community: Community }) {
       name: count === 0 ? "no-results" : "results",
       value: count,
     });
-    if (fetched.q) {
-      const category = hasFiltersBeyondDefaults(fetched, community.searchDefaults)
-        ? `${community.slug} · filtered`
-        : community.slug;
-      trackSiteSearch(fetched.q, category, count);
-    }
-  }, [results.results, results.resultsParams, community.slug, community.searchDefaults]);
+    if (fetched.q) trackSiteSearch(fetched.q, siteSearchCategory(community, fetched), count);
+  }, [results.results, results.resultsParams, community]);
 
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
   // shared cache, so the Refine button is almost always ready by the time
