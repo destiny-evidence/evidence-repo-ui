@@ -279,8 +279,8 @@ function EvidenceMapView({
 
   // Flag the docked configure panel on <body> so the global Feedback button can
   // inset itself out from under it (CSS handles the responsive un-inset). The
-  // region itself is pinned to the viewport (see VisualisePage.css), so the
-  // page doesn't scroll and the sticky header can't rubber-band over the panel.
+  // region itself is bounded by the viewport (see VisualisePage.css), so the
+  // page scrolls at most a footer's height.
   useEffect(() => {
     document.body.classList.add("visualise-has-panel");
     return () => document.body.classList.remove("visualise-has-panel");
