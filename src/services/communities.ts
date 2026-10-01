@@ -198,7 +198,8 @@ const COMMUNITIES: Community[] = [
     slug: "destiny",
     name: "DESTINY",
     listed: true,
-    defaultAnnotations: ["domain-inclusion/destiny-high-recall"],
+    // Dev preview only: dev's DESTINY corpus is the prototype load. Never merge.
+    defaultAnnotations: ["domain-inclusion/destiny-prototype"],
     vocabularyUrl: requireEnv(
       "VITE_DESTINY_VOCABULARY_URL",
       import.meta.env.VITE_DESTINY_VOCABULARY_URL,
