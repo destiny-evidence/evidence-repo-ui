@@ -442,6 +442,49 @@ describe("SearchPage", () => {
       expect(searchHits().filter((e) => e[0] === "trackSiteSearch")).toHaveLength(1);
     });
 
+    test("marks a keyword searched with filters as filtered", async () => {
+      history.replaceState(null, "", "/esea?q=phonics&start_year=2026");
+      mockBoth({ results: makeResult(0, []) });
+      renderSearchPage();
+      await waitFor(() => expect(searchHits()).toHaveLength(2));
+
+      expect(searchHits()).toContainEqual(["trackSiteSearch", "phonics", "esea · filtered", 0]);
+    });
+
+    test("doesn't count the community's default filters as filtered", async () => {
+      const endYear = new Date().getFullYear() + 1;
+      history.replaceState(null, "", `/destiny?q=phonics&end_year=${endYear}`);
+      mockBoth({ results: makeResult(12, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      expect(searchHits()).toContainEqual(["trackSiteSearch", "phonics", "destiny", 12]);
+    });
+
+    test("records the same search again after clearing back to browse", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: makeResult(47, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(searchHits()).toHaveLength(2));
+
+      const searchbox = screen.getByRole("searchbox");
+      const submit = screen.getByRole("button", { name: /search/i });
+      fireEvent.input(searchbox, { target: { value: "" } });
+      fireEvent.click(submit);
+      await waitFor(() => expect(mockSearch.mock.calls.at(-1)?.[0]).toBeUndefined());
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.input(searchbox, { target: { value: "phonics" } });
+      fireEvent.click(submit);
+
+      await waitFor(() =>
+        expect(searchHits().filter((e) => e[0] === "trackSiteSearch")).toEqual([
+          ["trackSiteSearch", "phonics", "esea", 47],
+          ["trackSiteSearch", "phonics", "esea", 47],
+        ]),
+      );
+    });
+
     test("a filter-only search sends no site search keyword", async () => {
       history.replaceState(null, "", "/esea?start_year=2015");
       mockBoth({ results: makeResult(120, ["r1"]) });

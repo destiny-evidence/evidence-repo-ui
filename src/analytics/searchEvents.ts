@@ -9,6 +9,7 @@ import {
 } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
 import type { SearchParams } from "@/services/searchParams";
+import type { SearchDefaults } from "@/types/models";
 
 // True when the user has actually searched or filtered — as opposed to a plain
 // browse landing (no query, no filters), which is already a pageview and would
@@ -20,6 +21,20 @@ export function hasActiveSearch(params: SearchParams): boolean {
     params.countryCodes.length > 0 ||
     params.startYear !== undefined ||
     params.endYear !== undefined
+  );
+}
+
+// True when the search narrows past the community's own defaults, which every
+// search there carries.
+export function hasFiltersBeyondDefaults(
+  params: SearchParams,
+  defaults: SearchDefaults = {},
+): boolean {
+  return (
+    params.conceptFilters.length > 0 ||
+    params.countryCodes.length > 0 ||
+    params.startYear !== undefined ||
+    (params.endYear !== undefined && params.endYear !== defaults.endYear)
   );
 }
 

@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { activeFilters, hasActiveSearch } from "@/analytics/searchEvents";
+import {
+  activeFilters,
+  hasActiveSearch,
+  hasFiltersBeyondDefaults,
+} from "@/analytics/searchEvents";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { makeSearchParams } from "../fixtures";
@@ -146,5 +150,31 @@ describe("hasActiveSearch", () => {
     );
     expect(hasActiveSearch(makeSearchParams({ startYear: 2000 }))).toBe(true);
     expect(hasActiveSearch(makeSearchParams({ endYear: 2020 }))).toBe(true);
+  });
+});
+
+describe("hasFiltersBeyondDefaults", () => {
+  test("false with no filters, whatever the query", () => {
+    expect(hasFiltersBeyondDefaults(makeSearchParams({ q: "phonics" }))).toBe(false);
+  });
+
+  test("true for any concept, country or year filter", () => {
+    expect(hasFiltersBeyondDefaults(makeSearchParams({ conceptFilters: [["x"]] }))).toBe(
+      true,
+    );
+    expect(hasFiltersBeyondDefaults(makeSearchParams({ countryCodes: ["DE"] }))).toBe(true);
+    expect(hasFiltersBeyondDefaults(makeSearchParams({ startYear: 2000 }))).toBe(true);
+    expect(hasFiltersBeyondDefaults(makeSearchParams({ endYear: 2020 }))).toBe(true);
+  });
+
+  test("ignores an end year that matches the community default", () => {
+    const defaults = { endYear: 2027 };
+    expect(hasFiltersBeyondDefaults(makeSearchParams({ endYear: 2027 }), defaults)).toBe(
+      false,
+    );
+    expect(hasFiltersBeyondDefaults(makeSearchParams({ endYear: 2020 }), defaults)).toBe(
+      true,
+    );
+    expect(hasFiltersBeyondDefaults(makeSearchParams({}), defaults)).toBe(false);
   });
 });
