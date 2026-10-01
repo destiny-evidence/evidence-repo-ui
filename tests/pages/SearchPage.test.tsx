@@ -391,6 +391,112 @@ describe("SearchPage", () => {
     window._paq = undefined;
   });
 
+  describe("search tracking", () => {
+    const searchHits = () =>
+      (window._paq ?? []).filter(
+        (e) =>
+          e[0] === "trackSiteSearch" ||
+          (e[0] === "trackEvent" && e[1] === "Search" && e[2] === "Performed"),
+      );
+
+    beforeEach(() => {
+      window._paq = [];
+      return () => {
+        window._paq = undefined;
+      };
+    });
+
+    test("records the keyword, community and result count", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: makeResult(47, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      expect(searchHits()).toEqual([
+        ["trackEvent", "Search", "Performed", "results", 47],
+        ["trackSiteSearch", "phonics", "esea", 47],
+      ]);
+    });
+
+    test("records a zero-result keyword with a count of 0", async () => {
+      history.replaceState(null, "", "/esea?q=xyzzy");
+      mockBoth({ results: makeResult(0, []) });
+      renderSearchPage();
+      await waitFor(() => expect(searchHits()).toHaveLength(2));
+
+      expect(searchHits()).toContainEqual(["trackSiteSearch", "xyzzy", "esea", 0]);
+    });
+
+    test("paging the same search doesn't record it again", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: makeResult(47, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.click(screen.getAllByRole("button", { name: "Page 2" })[0]);
+      await waitFor(() =>
+        expect(mockSearch.mock.calls.some(([, opts]) => opts?.page === 2)).toBe(true),
+      );
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      expect(searchHits().filter((e) => e[0] === "trackSiteSearch")).toHaveLength(1);
+    });
+
+    test("marks a keyword searched with filters as filtered", async () => {
+      history.replaceState(null, "", "/esea?q=phonics&start_year=2026");
+      mockBoth({ results: makeResult(0, []) });
+      renderSearchPage();
+      await waitFor(() => expect(searchHits()).toHaveLength(2));
+
+      expect(searchHits()).toContainEqual(["trackSiteSearch", "phonics", "esea · filtered", 0]);
+    });
+
+    test("doesn't count the community's default filters as filtered", async () => {
+      const endYear = new Date().getFullYear() + 1;
+      history.replaceState(null, "", `/destiny?q=phonics&end_year=${endYear}`);
+      mockBoth({ results: makeResult(12, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      expect(searchHits()).toContainEqual(["trackSiteSearch", "phonics", "destiny", 12]);
+    });
+
+    test("records the same search again after clearing back to browse", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: makeResult(47, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(searchHits()).toHaveLength(2));
+
+      const searchbox = screen.getByRole("searchbox");
+      const submit = screen.getByRole("button", { name: /search/i });
+      fireEvent.input(searchbox, { target: { value: "" } });
+      fireEvent.click(submit);
+      await waitFor(() => expect(mockSearch.mock.calls.at(-1)?.[0]).toBeUndefined());
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.input(searchbox, { target: { value: "phonics" } });
+      fireEvent.click(submit);
+
+      await waitFor(() =>
+        expect(searchHits().filter((e) => e[0] === "trackSiteSearch")).toEqual([
+          ["trackSiteSearch", "phonics", "esea", 47],
+          ["trackSiteSearch", "phonics", "esea", 47],
+        ]),
+      );
+    });
+
+    test("a filter-only search sends no site search keyword", async () => {
+      history.replaceState(null, "", "/esea?start_year=2015");
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(searchHits()).toHaveLength(1));
+
+      expect(searchHits()).toEqual([
+        ["trackEvent", "Search", "Performed", "results", 120],
+      ]);
+    });
+  });
+
   test("filter events emit for a filter arriving via the URL (deep link)", async () => {
     // A concept filter present in the URL — a shared link, bookmark, or map
     // jump-in — is counted for the search it runs on, not only when picked in
