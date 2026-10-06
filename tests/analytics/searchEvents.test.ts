@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { activeFilters, hasActiveSearch } from "@/analytics/searchEvents";
+import {
+  activeFilters,
+  hasActiveSearch,
+  siteSearchCategory,
+} from "@/analytics/searchEvents";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { makeSearchParams } from "../fixtures";
@@ -146,5 +150,33 @@ describe("hasActiveSearch", () => {
     );
     expect(hasActiveSearch(makeSearchParams({ startYear: 2000 }))).toBe(true);
     expect(hasActiveSearch(makeSearchParams({ endYear: 2020 }))).toBe(true);
+  });
+});
+
+describe("siteSearchCategory", () => {
+  const esea = { slug: "esea" };
+
+  test("is the community slug with no filters, whatever the query", () => {
+    expect(siteSearchCategory(esea, makeSearchParams({ q: "phonics" }))).toBe("esea");
+  });
+
+  test("marks any concept, country or year filter as filtered", () => {
+    for (const filters of [
+      { conceptFilters: [["x"]] },
+      { countryCodes: ["DE"] },
+      { startYear: 2000 },
+      { endYear: 2020 },
+    ]) {
+      expect(siteSearchCategory(esea, makeSearchParams(filters))).toBe("esea · filtered");
+    }
+  });
+
+  test("ignores an end year that matches the community default", () => {
+    const destiny = { slug: "destiny", searchDefaults: { endYear: 2027 } };
+    expect(siteSearchCategory(destiny, makeSearchParams({ endYear: 2027 }))).toBe("destiny");
+    expect(siteSearchCategory(destiny, makeSearchParams({}))).toBe("destiny");
+    expect(siteSearchCategory(destiny, makeSearchParams({ endYear: 2020 }))).toBe(
+      "destiny · filtered",
+    );
   });
 });

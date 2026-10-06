@@ -53,11 +53,23 @@ export function track(event: AnalyticsEvent): void {
 }
 
 /**
+ * Record a keyword in Matomo's Site Search report.
+ */
+export function trackSiteSearch(
+  keyword: string,
+  category: string,
+  resultsCount: number,
+): void {
+  if (!analyticsEnabled()) return;
+  window._paq!.push(["trackSiteSearch", keyword, category, resultsCount]);
+}
+
+/**
  * Track a Matomo pageview for the current SPA route.
  */
 export function trackSpaPageView(): void {
   if (!analyticsEnabled()) return;
-  // Omit query string fromm url tracking
+  // Keep the query string out: Matomo would read `q` as a second site search.
   const url = window.location.origin + window.location.pathname;
   window._paq!.push(["setCustomUrl", url]);
   window._paq!.push(["setDocumentTitle", document.title]);

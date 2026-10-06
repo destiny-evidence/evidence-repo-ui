@@ -11,8 +11,12 @@ import {
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
-import { track } from "@/analytics/matomo";
-import { activeFilters, hasActiveSearch } from "@/analytics/searchEvents";
+import { track, trackSiteSearch } from "@/analytics/matomo";
+import {
+  activeFilters,
+  hasActiveSearch,
+  siteSearchCategory,
+} from "@/analytics/searchEvents";
 import {
   backToVisualiseUrl,
   mapExpansionFromState,
@@ -223,16 +227,17 @@ function SearchPageInner({ community }: { community: Community }) {
     resetExport();
   }, [resetExport, selectionIdentity]);
 
-  // One "Search Performed" per distinct search (query + filters), not per fetch.
-  // Key off resultsParams (the search the current results were fetched for), not
-  // the live params: useSearch keeps prior results on screen while a new query
-  // is in flight, so the live identity can run ahead of the count. Paging/sorting
-  // keep the same identity, so they don't re-fire. No query text is sent — only
-  // the result count and a has-results/no-results bucket.
+  // Once per distinct search (query + filters): paging and sorting don't re-fire,
+  // and clearing back to browse resets it. Keyed off resultsParams, not the live
+  // params, because useSearch keeps old results on screen while a new search loads.
   const lastSearchTracked = useRef<string | null>(null);
   useEffect(() => {
     const fetched = results.resultsParams;
-    if (!results.results || !fetched || !hasActiveSearch(fetched)) return;
+    if (!results.results || !fetched) return;
+    if (!hasActiveSearch(fetched)) {
+      lastSearchTracked.current = null;
+      return;
+    }
     const identity = `${community.slug}?${toQueryString({ ...fetched, page: 1, sort: undefined })}`;
     if (lastSearchTracked.current === identity) return;
     lastSearchTracked.current = identity;
@@ -243,7 +248,8 @@ function SearchPageInner({ community }: { community: Community }) {
       name: count === 0 ? "no-results" : "results",
       value: count,
     });
-  }, [results.results, results.resultsParams, community.slug]);
+    if (fetched.q) trackSiteSearch(fetched.q, siteSearchCategory(community, fetched), count);
+  }, [results.results, results.resultsParams, community]);
 
   // Kick off the vocabulary fetch on page mount (not on drawer open) via the
   // shared cache, so the Refine button is almost always ready by the time
@@ -273,7 +279,9 @@ function SearchPageInner({ community }: { community: Community }) {
   const lastFiltersTracked = useRef<string | null>(null);
   useEffect(() => {
     const fetched = results.resultsParams;
-    if (!results.results || !fetched || !hasActiveSearch(fetched) || vocab.loading) {
+    if (!results.results || !fetched || vocab.loading) return;
+    if (!hasActiveSearch(fetched)) {
+      lastFiltersTracked.current = null;
       return;
     }
     const identity = `${community.slug}?${toQueryString({ ...fetched, page: 1, sort: undefined })}`;
