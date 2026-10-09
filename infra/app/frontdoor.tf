@@ -8,7 +8,15 @@ data "azurerm_cdn_frontdoor_profile" "shared" {
 data "azurerm_subscription" "current" {
 }
 
+data "azurerm_cdn_frontdoor_endpoint" "shared" {
+  count               = local.is_production ? 0 : 1
+  name                = "fde-${var.environment}"
+  profile_name        = var.shared_frontdoor_profile_name
+  resource_group_name = var.shared_resource_group_name
+}
+
 resource "azurerm_cdn_frontdoor_endpoint" "this" {
+  count                    = local.is_production ? 1 : 0
   name                     = "fde-${local.name}"
   cdn_frontdoor_profile_id = data.azurerm_cdn_frontdoor_profile.shared.id
 }
@@ -38,14 +46,14 @@ resource "azurerm_cdn_frontdoor_origin" "frontend" {
 # SPA catch-all route
 resource "azurerm_cdn_frontdoor_route" "frontend" {
   name                          = "rt-frontend-${local.name}"
-  cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.this.id
+  cdn_frontdoor_endpoint_id     = local.frontdoor_endpoint.id
   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.frontend.id
   cdn_frontdoor_origin_ids      = [azurerm_cdn_frontdoor_origin.frontend.id]
 
   supported_protocols    = ["Http", "Https"]
   patterns_to_match      = ["/*"]
   forwarding_protocol    = "HttpsOnly"
-  link_to_default_domain = true
+  link_to_default_domain = local.is_production
   https_redirect_enabled = true
 
   cdn_frontdoor_custom_domain_ids = [azurerm_cdn_frontdoor_custom_domain.this.id]
@@ -198,7 +206,7 @@ resource "dnsimple_zone_record" "cname" {
   zone_name = var.custom_domain
   name      = local.dns_record_name
   type      = "CNAME"
-  value     = azurerm_cdn_frontdoor_endpoint.this.host_name
+  value     = local.frontdoor_endpoint.host_name
   ttl       = 3600
 }
 
