@@ -3,3 +3,19 @@
   align-items: center;
   gap: var(--spacing-sm);
 }
+
+/* Pads the hit area to 32px; the negative margin keeps the layout unchanged. */
+.sel-header__check {
+  display: block;
+  padding: var(--spacing-sm);
+  margin: calc(-1 * var(--spacing-sm));
+  cursor: pointer;
+}
+
+.sel-header__check .ui-checkbox {
+  display: block;
+}
+
+.sel-header__check:has(:disabled) {
+  cursor: default;
+}
