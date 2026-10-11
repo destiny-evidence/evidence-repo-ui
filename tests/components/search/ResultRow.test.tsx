@@ -466,6 +466,21 @@ describe("ResultRow", () => {
       expect(rowLink).not.toContainElement(box);
     });
 
+    test("clicking the gutter around the checkbox toggles selection", () => {
+      const onToggle = vi.fn();
+      render(
+        <ResultRow
+          communitySlug="esea"
+          reference={makeRef()}
+          selectable
+          onToggle={onToggle}
+        />,
+      );
+      const box = screen.getByRole("checkbox", { name: /select on phonics/i });
+      fireEvent.click(box.closest("label")!);
+      expect(onToggle).toHaveBeenCalledOnce();
+    });
+
     test("reflects selected state on the checkbox and the row", () => {
       const { container } = render(
         <ResultRow communitySlug="esea" reference={makeRef()} selectable selected />,

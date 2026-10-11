@@ -40,15 +40,17 @@ export function SelectionHeader({
   return (
     <div class="sel-header">
       <Tooltip text={label}>
-        <input
-          ref={boxRef}
-          type="checkbox"
-          class="ui-checkbox"
-          checked={checked}
-          disabled={disabled}
-          aria-label={`${label} references`}
-          onChange={onToggle}
-        />
+        <label class="sel-header__check">
+          <input
+            ref={boxRef}
+            type="checkbox"
+            class="ui-checkbox"
+            checked={checked}
+            disabled={disabled}
+            aria-label={`${label} references`}
+            onChange={onToggle}
+          />
+        </label>
       </Tooltip>
       {countLabel && (
         <span class="sel-header__count" role="status" aria-live="polite">

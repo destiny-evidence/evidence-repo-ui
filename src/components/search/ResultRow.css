@@ -39,13 +39,20 @@
   background: var(--color-accent-light);
 }
 
-/* The checkbox raises above the stretched-link overlay (like .doi-link) so a
-   tick toggles selection instead of navigating to the record. */
+/* Raised above the stretched-link overlay. Negative margins grow the 
+   hit area over the row padding and gap without widening the column. */
 .row-check {
   position: relative;
   z-index: 2;
-  align-self: start;
-  margin: 3px 0 0;
+  grid-row: 1 / span 2;
+  display: block;
+  margin: -18px -20px -18px calc(-1 * var(--spacing-md));
+  padding: 21px 20px 18px var(--spacing-md);
+  cursor: pointer;
+}
+
+.row-check .ui-checkbox {
+  display: block;
 }
 
 .result-row:last-of-type {

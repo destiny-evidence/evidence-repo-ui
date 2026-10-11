@@ -179,16 +179,18 @@ export function ResultRow({
       }`}
     >
       {selectable && (
-        <input
-          type="checkbox"
-          class="ui-checkbox row-check"
-          checked={selected}
-          aria-label={selected ? `Deselect ${title}` : `Select ${title}`}
-          onChange={() => onToggle?.()}
-          // Raised above the stretched-link overlay (see CSS); stop the click
-          // from bubbling to the row so it never navigates to the record.
-          onClick={(e) => e.stopPropagation()}
-        />
+        // The label fills the left gutter so near-misses select rather than
+        // open the record. Raised above the stretched-link overlay (see CSS);
+        // stop the click from bubbling to the row so it never navigates.
+        <label class="row-check" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            class="ui-checkbox"
+            checked={selected}
+            aria-label={selected ? `Deselect ${title}` : `Select ${title}`}
+            onChange={() => onToggle?.()}
+          />
+        </label>
       )}
       <a
         class="row-link"
