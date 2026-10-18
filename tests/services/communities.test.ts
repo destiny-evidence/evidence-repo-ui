@@ -13,11 +13,14 @@ import type { Community } from "@/types/models";
 // Single source for the required variables: the stub, the missing-variable
 // cases, and the URL assertions all derive from these entries.
 const ENV = {
-  VITE_ESEA_VOCABULARY_URL: "https://vocab.example/esea-v1",
+  VITE_ESEA_VOCABULARY_URL:
+    "https://vocab.example/published/esea-id/1.0/vocabulary.jsonld",
   VITE_ESEA_CONTEXT_URL: "https://vocab.example/esea-ctx",
-  VITE_HPV_VOCABULARY_URL: "https://vocab.example/hpv-v1",
+  VITE_HPV_VOCABULARY_URL:
+    "https://vocab.example/published/hpv-id/1.0/vocabulary.jsonld",
   VITE_HPV_CONTEXT_URL: "https://vocab.example/hpv-ctx",
-  VITE_DESTINY_VOCABULARY_URL: "https://vocab.example/dst-v1",
+  VITE_DESTINY_VOCABULARY_URL:
+    "https://vocab.example/published/dst-id/1.0/vocabulary.jsonld",
   VITE_DESTINY_CONTEXT_URL: "https://vocab.example/dst-ctx",
 } as const;
 
@@ -41,6 +44,17 @@ describe("communities env validation", () => {
     vi.stubEnv(name, "");
     await expect(import("@/services/communities")).rejects.toThrow(name);
   });
+
+  it.each([
+    "VITE_ESEA_VOCABULARY_URL",
+    "VITE_HPV_VOCABULARY_URL",
+    "VITE_DESTINY_VOCABULARY_URL",
+  ])("throws when %s is not a published vocabulary URL", async (name) => {
+    vi.stubEnv(name, "https://vocab.example/vocabulary.jsonld");
+    await expect(import("@/services/communities")).rejects.toThrow(
+      "https://vocab.example/vocabulary.jsonld",
+    );
+  });
 });
 
 describe("community registry", () => {
@@ -62,6 +76,7 @@ describe("community registry", () => {
       slug: "esea",
       name: "Education",
       vocabularyUrl: ENV.VITE_ESEA_VOCABULARY_URL,
+      vocabularyIds: ["esea-id"],
       contextUrl: ENV.VITE_ESEA_CONTEXT_URL,
       countNoun: "investigations",
       corpusDescriptor: "education research",
@@ -70,6 +85,7 @@ describe("community registry", () => {
       slug: "hpv",
       name: "HPV Vaccine Delivery",
       vocabularyUrl: ENV.VITE_HPV_VOCABULARY_URL,
+      vocabularyIds: ["hpv-id"],
       contextUrl: ENV.VITE_HPV_CONTEXT_URL,
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
@@ -78,6 +94,7 @@ describe("community registry", () => {
       slug: "destiny",
       name: "DESTINY",
       vocabularyUrl: ENV.VITE_DESTINY_VOCABULARY_URL,
+      vocabularyIds: ["dst-id"],
       contextUrl: ENV.VITE_DESTINY_CONTEXT_URL,
       countNoun: "investigations",
       corpusDescriptor: "climate and health research",

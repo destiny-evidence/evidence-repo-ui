@@ -3,6 +3,7 @@ import {
   buildVocabularyData,
   fetchVocabulary,
   getCachedVocabulary,
+  publishedVocabularyId,
   _resetVocabularyCache,
 } from "@/services/vocabulary/vocabularyService";
 
@@ -68,6 +69,27 @@ const SAMPLE_VOCABULARY = {
     },
   ],
 };
+
+describe("publishedVocabularyId", () => {
+  it.each([
+    "https://vocab.example/published/019d3e6a-04d6-76e9-9f7a-b8b26c1e0976/2.3/vocabulary.jsonld",
+    "https://vocab.staging.example/published/019d3e6a-04d6-76e9-9f7a-b8b26c1e0976/0.0.1/vocabulary.ttl",
+  ])("returns the published ID of %s", (url) => {
+    expect(publishedVocabularyId(url)).toBe(
+      "019d3e6a-04d6-76e9-9f7a-b8b26c1e0976",
+    );
+  });
+
+  it.each([
+    "not a url",
+    "https://missing.published.segment/vocabulary.jsonld",
+    "https://missing.version/published/019d3e6a/vocabulary.jsonld",
+    "https://not.vocabulary.file/published/019d3e6a/2.3/context.jsonld",
+    "https://published.not.at.root/prefix/published/019d3e6a/2.3/vocabulary.jsonld",
+  ])("throws naming %s when it is not a published vocabulary URL", (url) => {
+    expect(() => publishedVocabularyId(url)).toThrow(url);
+  });
+});
 
 describe("buildVocabularyData", () => {
   it("extracts labels for skos:Concept entries only", () => {
