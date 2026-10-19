@@ -38,29 +38,24 @@ export function getInvestigation(
 }
 
 /**
- * Return the highest-priority enhancement of the given type on a
- * reference, or null.
+ * Return the highest-priority of `candidates`, or null.
  *
  * Search-result references arrive with enhancements from the canonical
  * reference (`enhancement.reference_id === reference.id`) alongside any
  * deduplicated duplicates. Canonical data wins even when a duplicate
  * was created more recently. Within the chosen bucket the most recent
  * enhancement by `created_at` wins. We only fall back to the duplicate
- * bucket when the canonical reference has no enhancement of this type
- * at all.
+ * bucket when no candidate belongs to the canonical reference.
  */
-export function extractLatestEnhancement<T extends EnhancementContent>(
+function latestPreferringCanonical<E extends Enhancement>(
   reference: Reference,
-  enhancementType: T["enhancement_type"],
-): (Enhancement & { content: T }) | null {
-  type Narrowed = Enhancement & { content: T };
-  const canonical: Narrowed[] = [];
-  const duplicate: Narrowed[] = [];
-  for (const e of reference.enhancements ?? []) {
-    if (e.content.enhancement_type !== enhancementType) continue;
-    const narrowed = e as Narrowed;
-    if (e.reference_id === reference.id) canonical.push(narrowed);
-    else duplicate.push(narrowed);
+  candidates: readonly E[],
+): E | null {
+  const canonical: E[] = [];
+  const duplicate: E[] = [];
+  for (const e of candidates) {
+    if (e.reference_id === reference.id) canonical.push(e);
+    else duplicate.push(e);
   }
   const bucket = canonical.length ? canonical : duplicate;
   if (bucket.length === 0) return null;
@@ -68,6 +63,21 @@ export function extractLatestEnhancement<T extends EnhancementContent>(
   return bucket.reduce((best, e) =>
     (e.created_at ?? "") > (best.created_at ?? "") ? e : best,
   );
+}
+
+/**
+ * Return the highest-priority enhancement of the given type on a
+ * reference, or null. See latestPreferringCanonical for the ordering.
+ */
+export function extractLatestEnhancement<T extends EnhancementContent>(
+  reference: Reference,
+  enhancementType: T["enhancement_type"],
+): (Enhancement & { content: T }) | null {
+  type Narrowed = Enhancement & { content: T };
+  const candidates = (reference.enhancements ?? []).filter(
+    (e): e is Narrowed => e.content.enhancement_type === enhancementType,
+  );
+  return latestPreferringCanonical(reference, candidates);
 }
 
 export function extractBibliographic(
