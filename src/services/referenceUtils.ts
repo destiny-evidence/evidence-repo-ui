@@ -67,11 +67,10 @@ function latestPreferringCanonical<E extends Enhancement>(
 }
 
 /**
- * Return the highest-priority enhancement of the given type on a
- * reference, or null. See latestPreferringCanonical for the ordering.
- * Linked data is read with extractLinkedDataEnhancement instead.
+ * Return the highest-priority community agnostic enhancement 
+ * of the given type on a reference, or null. 
  */
-export function extractLatestEnhancement<
+export function extractLatestCommunityAgnosticEnhancement<
   T extends Exclude<EnhancementContent, LinkedDataEnhancement>,
 >(
   reference: Reference,
@@ -88,7 +87,7 @@ export function extractBibliographic(
   reference: Reference,
 ): BibliographicMetadataEnhancement | null {
   return (
-    extractLatestEnhancement<BibliographicMetadataEnhancement>(
+    extractLatestCommunityAgnosticEnhancement<BibliographicMetadataEnhancement>(
       reference,
       "bibliographic",
     )?.content ?? null
@@ -107,7 +106,7 @@ function isFromVocabulary(
 }
 
 // The highest-priority linked-data enhancement coded against one of
-// `vocabularyIds`. Most callers want the content only — see extractLinkedData.
+// `vocabularyIds`.
 export function extractLinkedDataEnhancement(
   reference: Reference,
   vocabularyIds: readonly string[],

@@ -3,7 +3,7 @@ import {
   extractAbstract,
   extractBibliographic,
   extractFindingsAndEstimatesCount,
-  extractLatestEnhancement,
+  extractLatestCommunityAgnosticEnhancement,
   extractLinkedData,
   extractLinkedDataEnhancement,
   extractDoi,
@@ -73,14 +73,14 @@ function bibEnh(overrides: Partial<Enhancement> = {}): Enhancement {
   };
 }
 
-describe("extractLatestEnhancement", () => {
+describe("extractLatestCommunityAgnosticEnhancement", () => {
   test("returns null when the reference has no enhancements", () => {
-    expect(extractLatestEnhancement(makeRef(null), "bibliographic")).toBeNull();
+    expect(extractLatestCommunityAgnosticEnhancement(makeRef(null), "bibliographic")).toBeNull();
   });
 
   test("returns null when no enhancement of that type exists", () => {
     const ref = makeRef([bibEnh()]);
-    expect(extractLatestEnhancement(ref, "abstract")).toBeNull();
+    expect(extractLatestCommunityAgnosticEnhancement(ref, "abstract")).toBeNull();
   });
 
   test("prefers canonical (reference_id === reference.id) over newer duplicates", () => {
@@ -95,14 +95,14 @@ describe("extractLatestEnhancement", () => {
       created_at: "2025-01-01T00:00:00Z",
     });
     const ref = makeRef([duplicate, canonical]);
-    expect(extractLatestEnhancement(ref, "bibliographic")?.id).toBe("bib-canon");
+    expect(extractLatestCommunityAgnosticEnhancement(ref, "bibliographic")?.id).toBe("bib-canon");
   });
 
   test("within a bucket, picks the enhancement with the latest created_at", () => {
     const older = bibEnh({ id: "bib-old", created_at: "2024-01-01T00:00:00Z" });
     const newer = bibEnh({ id: "bib-new", created_at: "2024-06-01T00:00:00Z" });
     const ref = makeRef([older, newer]);
-    expect(extractLatestEnhancement(ref, "bibliographic")?.id).toBe("bib-new");
+    expect(extractLatestCommunityAgnosticEnhancement(ref, "bibliographic")?.id).toBe("bib-new");
   });
 
   test("falls back to the duplicate bucket when no canonical exists", () => {
@@ -111,12 +111,12 @@ describe("extractLatestEnhancement", () => {
       reference_id: "other-ref",
     });
     const ref = makeRef([dup]);
-    expect(extractLatestEnhancement(ref, "bibliographic")?.id).toBe("bib-dup");
+    expect(extractLatestCommunityAgnosticEnhancement(ref, "bibliographic")?.id).toBe("bib-dup");
   });
 });
 
 // extractBibliographic is a thin shape adapter over
-// `extractLatestEnhancement` — the dedup, null handling and recency
+// `extractLatestCommunityAgnosticEnhancement` — the dedup, null handling and recency
 // sort are covered by its tests above, so its test asserts only the
 // shape difference: content vs full Enhancement.
 
