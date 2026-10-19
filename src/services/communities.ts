@@ -18,14 +18,21 @@ function requireEnv(name: string, value: string | undefined): string {
   return value;
 }
 
+// `extraIds` is a comma-separated list of further published vocabulary IDs,
+// e.g. test vocabularies coded against in staging.
 function vocabulary(
   urlEnvName: string,
   url: string | undefined,
+  extraIds: string | undefined,
 ): Pick<Community, "vocabularyUrl" | "vocabularyIds"> {
   const vocabularyUrl = requireEnv(urlEnvName, url);
+  const extras = (extraIds ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
   return {
     vocabularyUrl,
-    vocabularyIds: [publishedVocabularyId(vocabularyUrl)],
+    vocabularyIds: [publishedVocabularyId(vocabularyUrl), ...extras],
   };
 }
 
@@ -86,6 +93,7 @@ const COMMUNITIES: Community[] = [
     ...vocabulary(
       "VITE_ESEA_VOCABULARY_URL",
       import.meta.env.VITE_ESEA_VOCABULARY_URL,
+      import.meta.env.VITE_ESEA_EXTRA_VOCABULARY_IDS,
     ),
     contextUrl: requireEnv(
       "VITE_ESEA_CONTEXT_URL",
@@ -133,6 +141,7 @@ const COMMUNITIES: Community[] = [
     ...vocabulary(
       "VITE_HPV_VOCABULARY_URL",
       import.meta.env.VITE_HPV_VOCABULARY_URL,
+      import.meta.env.VITE_HPV_EXTRA_VOCABULARY_IDS,
     ),
     contextUrl: requireEnv(
       "VITE_HPV_CONTEXT_URL",
@@ -214,6 +223,7 @@ const COMMUNITIES: Community[] = [
     ...vocabulary(
       "VITE_DESTINY_VOCABULARY_URL",
       import.meta.env.VITE_DESTINY_VOCABULARY_URL,
+      import.meta.env.VITE_DESTINY_EXTRA_VOCABULARY_IDS,
     ),
     contextUrl: requireEnv(
       "VITE_DESTINY_CONTEXT_URL",

@@ -208,6 +208,30 @@ resource "github_actions_environment_variable" "vite_destiny_context_url" {
   value         = var.destiny_context_url
 }
 
+resource "github_actions_environment_variable" "vite_esea_extra_vocabulary_ids" {
+  count         = var.esea_extra_vocabulary_ids != "" ? 1 : 0
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_ESEA_EXTRA_VOCABULARY_IDS"
+  value         = var.esea_extra_vocabulary_ids
+}
+
+resource "github_actions_environment_variable" "vite_hpv_extra_vocabulary_ids" {
+  count         = var.hpv_extra_vocabulary_ids != "" ? 1 : 0
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_HPV_EXTRA_VOCABULARY_IDS"
+  value         = var.hpv_extra_vocabulary_ids
+}
+
+resource "github_actions_environment_variable" "vite_destiny_extra_vocabulary_ids" {
+  count         = var.destiny_extra_vocabulary_ids != "" ? 1 : 0
+  repository    = github_repository_environment.environment.repository
+  environment   = github_repository_environment.environment.environment
+  variable_name = "VITE_DESTINY_EXTRA_VOCABULARY_IDS"
+  value         = var.destiny_extra_vocabulary_ids
+}
+
 resource "github_actions_environment_variable" "frontdoor_resource_group" {
   repository    = github_repository_environment.environment.repository
   environment   = github_repository_environment.environment.environment

@@ -57,6 +57,36 @@ describe("communities env validation", () => {
   });
 });
 
+describe("community extra vocabulary IDs", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    stubValidEnv();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it.each([
+    { slug: "esea", name: "VITE_ESEA_EXTRA_VOCABULARY_IDS", ownId: "esea-id" },
+    { slug: "hpv", name: "VITE_HPV_EXTRA_VOCABULARY_IDS", ownId: "hpv-id" },
+    { slug: "destiny", name: "VITE_DESTINY_EXTRA_VOCABULARY_IDS", ownId: "dst-id" },
+  ])("appends $name to $slug's vocabulary IDs", async ({ slug, name, ownId }) => {
+    vi.stubEnv(name, " test-a, ,test-b ,");
+    const mod = await import("@/services/communities");
+    expect(mod.findCommunity(slug)?.vocabularyIds).toEqual([
+      ownId,
+      "test-a",
+      "test-b",
+    ]);
+  });
+
+  it("uses only the vocabulary URL's ID when no extras are set", async () => {
+    const mod = await import("@/services/communities");
+    expect(mod.findCommunity("esea")?.vocabularyIds).toEqual(["esea-id"]);
+  });
+});
+
 describe("community registry", () => {
   let mod: typeof import("@/services/communities");
 
