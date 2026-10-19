@@ -169,13 +169,11 @@ export function extractAbstract(
 }
 
 // Counts are read straight from raw JSON-LD so badges render on first paint
-// without waiting on vocabulary resolution. Returns null when the reference
-// has no linked-data enhancement, preserving the `—` fallback path.
+// without waiting on vocabulary resolution. Returns null when there is no
+// linked-data enhancement, preserving the `—` fallback path.
 export function extractFindingsAndEstimatesCount(
-  reference: Reference,
-  vocabularyIds: readonly string[],
+  ld: LinkedDataEnhancement | null,
 ): { findings: number; estimates: number } | null {
-  const ld = extractLinkedData(reference, vocabularyIds);
   if (!ld) return null;
   const investigation = getInvestigation(ld.data);
   const findings = ensureArray(investigation["hasFinding"]).filter(isDict);

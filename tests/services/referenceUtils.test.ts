@@ -12,7 +12,7 @@ import {
   formatPagination,
   getInvestigation,
 } from "@/services/referenceUtils";
-import { makeCommunity, makeReference } from "../fixtures";
+import { linkedDataEnh } from "../fixtures";
 import type {
   Reference,
   Enhancement,
@@ -522,48 +522,43 @@ describe("getInvestigation", () => {
 });
 
 describe("extractFindingsAndEstimatesCount", () => {
-  const { vocabularyIds } = makeCommunity();
+  function linkedData(investigation: Record<string, unknown>) {
+    return linkedDataEnh("ref-1", { investigation })
+      .content as LinkedDataEnhancement;
+  }
 
-  test("returns null when the reference has no linked-data enhancement", () => {
-    expect(
-      extractFindingsAndEstimatesCount(makeReference({}), vocabularyIds),
-    ).toBeNull();
+  test("returns null when there is no linked-data enhancement", () => {
+    expect(extractFindingsAndEstimatesCount(null)).toBeNull();
   });
 
   test("counts a bare-dict single finding and its bare-dict estimate", () => {
-    const ref = makeReference({
-      investigation: {
-        hasFinding: { hasEffectEstimate: { pointEstimate: 0.3 } },
-      },
+    const ld = linkedData({
+      hasFinding: { hasEffectEstimate: { pointEstimate: 0.3 } },
     });
-    expect(extractFindingsAndEstimatesCount(ref, vocabularyIds)).toEqual({
+    expect(extractFindingsAndEstimatesCount(ld)).toEqual({
       findings: 1,
       estimates: 1,
     });
   });
 
   test("counts array-form findings and estimates unchanged", () => {
-    const ref = makeReference({
-      investigation: {
-        hasFinding: [
-          { hasEffectEstimate: [{}, {}] },
-          { hasEffectEstimate: [{}] },
-        ],
-      },
+    const ld = linkedData({
+      hasFinding: [
+        { hasEffectEstimate: [{}, {}] },
+        { hasEffectEstimate: [{}] },
+      ],
     });
-    expect(extractFindingsAndEstimatesCount(ref, vocabularyIds)).toEqual({
+    expect(extractFindingsAndEstimatesCount(ld)).toEqual({
       findings: 2,
       estimates: 3,
     });
   });
 
   test("ignores non-dict entries in a findings array", () => {
-    const ref = makeReference({
-      investigation: {
-        hasFinding: [{ hasEffectEstimate: {} }, "stray"],
-      },
+    const ld = linkedData({
+      hasFinding: [{ hasEffectEstimate: {} }, "stray"],
     });
-    expect(extractFindingsAndEstimatesCount(ref, vocabularyIds)).toEqual({
+    expect(extractFindingsAndEstimatesCount(ld)).toEqual({
       findings: 1,
       estimates: 1,
     });
