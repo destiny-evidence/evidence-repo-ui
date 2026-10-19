@@ -6,12 +6,14 @@ import {
   abstractEnh,
   bibliographicEnh,
   linkedDataEnh,
+  makeCommunity,
   makeReference,
   makeVocabResult,
   rawEnh,
 } from "../../fixtures";
 
 const CODING = rawSourcePatterns([[/(^|[^a-z])eef([^a-z]|$)/, "EEF"]]);
+const VOCABULARY_IDS = makeCommunity().vocabularyIds;
 
 const vocabState = {
   labels: null as Map<string, string> | null,
@@ -68,7 +70,7 @@ function makeRef(opts: Parameters<typeof makeReference>[0] = {}) {
 
 describe("ResultRow", () => {
   test("renders title, authors, venue, year", () => {
-    render(<ResultRow communitySlug="esea" reference={makeRef()} />);
+    render(<ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={makeRef()} />);
     expect(screen.getByText("On phonics instruction")).toBeInTheDocument();
     expect(screen.getByText(/Smith, J\./)).toBeInTheDocument();
     expect(screen.getByText(/Journal of Education/)).toBeInTheDocument();
@@ -76,12 +78,12 @@ describe("ResultRow", () => {
   });
 
   test("renders abstract snippet", () => {
-    render(<ResultRow communitySlug="esea" reference={makeRef()} />);
+    render(<ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={makeRef()} />);
     expect(screen.getByText(/abstract body text/)).toBeInTheDocument();
   });
 
   test("primary content (title, authors, venue, abstract) is all wrapped in the row anchor", () => {
-    render(<ResultRow communitySlug="esea" reference={makeRef()} />);
+    render(<ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={makeRef()} />);
     const rowLink = screen.getByRole("link", {
       name: /on phonics instruction/i,
     });
@@ -99,7 +101,7 @@ describe("ResultRow", () => {
 
   test("row anchor carries the stretched-link class so CSS can extend its hit area", () => {
     const { container } = render(
-      <ResultRow communitySlug="esea" reference={makeRef()} />,
+      <ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={makeRef()} />,
     );
     const link = container.querySelector(".row-link");
     expect(link).not.toBeNull();
@@ -107,7 +109,7 @@ describe("ResultRow", () => {
   });
 
   test("DOI link is a sibling to the row anchor, with href = doi.org/<doi>", () => {
-    render(<ResultRow communitySlug="esea" reference={makeRef()} />);
+    render(<ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={makeRef()} />);
     const doi = screen.getByRole("link", { name: /^doi/i });
     expect(doi).toHaveAttribute("href", "https://doi.org/10.1000/abc");
     expect(doi).toHaveAttribute("target", "_blank");
@@ -116,7 +118,7 @@ describe("ResultRow", () => {
   test("DOI link is not rendered when no DOI identifier present", () => {
     render(
       <ResultRow
-        communitySlug="esea"
+        communitySlug="esea" vocabularyIds={VOCABULARY_IDS}
         reference={makeRef({ doi: undefined })}
       />,
     );
@@ -125,7 +127,7 @@ describe("ResultRow", () => {
 
   test("falls back to — for findings/estimates badges when reference has no linked-data", () => {
     const { container } = render(
-      <ResultRow communitySlug="esea" reference={makeRef()} />,
+      <ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={makeRef()} />,
     );
     const nums = container.querySelectorAll(".stat-num");
     expect(nums).toHaveLength(2);
@@ -148,7 +150,7 @@ describe("ResultRow", () => {
       },
     });
     const { container } = render(
-      <ResultRow communitySlug="esea" reference={ref} />,
+      <ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={ref} />,
     );
     const nums = container.querySelectorAll(".stat-num");
     expect(nums[0]).toHaveTextContent("2"); // 2 findings
@@ -162,7 +164,7 @@ describe("ResultRow", () => {
       investigation: { hasFinding: [{ hasEffectEstimate: [{}] }] },
     });
     const { container } = render(
-      <ResultRow communitySlug="esea" reference={ref} />,
+      <ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={ref} />,
     );
     const nums = container.querySelectorAll(".stat-num");
     expect(nums[0]).toHaveTextContent("1");
@@ -192,7 +194,7 @@ describe("ResultRow", () => {
       },
     });
     const { container } = render(
-      <ResultRow communitySlug="esea" reference={ref} />,
+      <ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={ref} />,
     );
     const pills = container.querySelector(".row-pills");
     expect(pills).not.toBeNull();
@@ -214,7 +216,7 @@ describe("ResultRow", () => {
       },
     });
     const { container } = render(
-      <ResultRow communitySlug="esea" reference={ref} />,
+      <ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={ref} />,
     );
     const pills = container.querySelector(".row-pills");
     expect(pills).not.toBeNull();
@@ -239,7 +241,7 @@ describe("ResultRow", () => {
 
     const ref = makeRef({ investigation: { hasFinding: findings } });
     const { container } = render(
-      <ResultRow communitySlug="esea" reference={ref} />,
+      <ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={ref} />,
     );
     const pills = container.querySelector(".row-pills");
     expect(pills).not.toBeNull();
@@ -269,7 +271,7 @@ describe("ResultRow", () => {
 
     const ref = makeRef({ investigation: { hasFinding: findings } });
     const { container } = render(
-      <ResultRow communitySlug="esea" reference={ref} />,
+      <ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={ref} />,
     );
     const pills = container.querySelector(".row-pills");
     const tagEls = pills!.querySelectorAll(
@@ -282,7 +284,7 @@ describe("ResultRow", () => {
   test("does not render coding institution when no raw enhancement is present", () => {
     render(
       <ResultRow
-        communitySlug="esea"
+        communitySlug="esea" vocabularyIds={VOCABULARY_IDS}
         reference={makeRef()}
         codingInstitution={CODING}
       />,
@@ -305,7 +307,7 @@ describe("ResultRow", () => {
         },
       ],
     });
-    render(<ResultRow communitySlug="hpv" reference={ref} />);
+    render(<ResultRow communitySlug="hpv" vocabularyIds={VOCABULARY_IDS} reference={ref} />);
     expect(screen.queryByTestId("coder-text")).toBeNull();
   });
 
@@ -326,7 +328,7 @@ describe("ResultRow", () => {
     });
     const { container } = render(
       <ResultRow
-        communitySlug="esea"
+        communitySlug="esea" vocabularyIds={VOCABULARY_IDS}
         reference={ref}
         codingInstitution={CODING}
       />,
@@ -339,7 +341,7 @@ describe("ResultRow", () => {
 
   test("renders without throwing when bibliographic missing; row-anchor falls back to id", () => {
     const ref = makeRef({ enhancements: [] });
-    render(<ResultRow communitySlug="esea" reference={ref} />);
+    render(<ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={ref} />);
     const rowLink = screen.getByRole("link", { name: new RegExp(REF_ID, "i") });
     expect(rowLink).toHaveAttribute("href", `/esea/references/${REF_ID}`);
   });
@@ -348,7 +350,7 @@ describe("ResultRow", () => {
     const ref = makeRef({
       abstract: "Abstract This paper aims to investigate &gt;8 hours.",
     });
-    render(<ResultRow communitySlug="esea" reference={ref} />);
+    render(<ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={ref} />);
     expect(
       screen.getByText("This paper aims to investigate >8 hours."),
     ).toBeInTheDocument();
@@ -373,7 +375,7 @@ describe("ResultRow", () => {
         }),
       ],
     });
-    render(<ResultRow communitySlug="esea" reference={ref} />);
+    render(<ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={ref} />);
     expect(screen.getByText(/FULL INTACT ABSTRACT BODY/)).toBeInTheDocument();
     expect(screen.queryByText("TRUNCATED TAIL")).toBeNull();
   });
@@ -381,7 +383,7 @@ describe("ResultRow", () => {
   test("omits the findings/estimates stat-badges when findingsAndEstimates is false", () => {
     const { container } = render(
       <ResultRow
-        communitySlug="hpv"
+        communitySlug="hpv" vocabularyIds={VOCABULARY_IDS}
         reference={makeRef()}
         findingsAndEstimates={false}
       />,
@@ -403,7 +405,7 @@ describe("ResultRow", () => {
     const ref = makeRef({ investigation: { hasAppliedConcept: [study] } });
     render(
       <ResultRow
-        communitySlug="hpv"
+        communitySlug="hpv" vocabularyIds={VOCABULARY_IDS}
         reference={ref}
         findingsAndEstimates={false}
       />,
@@ -431,7 +433,7 @@ describe("ResultRow", () => {
     });
     render(
       <ResultRow
-        communitySlug="hpv"
+        communitySlug="hpv" vocabularyIds={VOCABULARY_IDS}
         reference={ref}
         findingsAndEstimates={false}
         pillExcludedSchemes={["https://vocab.aliveevidence.org/hpv/Country"]}
@@ -443,7 +445,7 @@ describe("ResultRow", () => {
 
   describe("selection", () => {
     test("no checkbox unless selectable", () => {
-      render(<ResultRow communitySlug="esea" reference={makeRef()} />);
+      render(<ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={makeRef()} />);
       expect(screen.queryByRole("checkbox")).toBeNull();
     });
 
@@ -451,7 +453,7 @@ describe("ResultRow", () => {
       const onToggle = vi.fn();
       render(
         <ResultRow
-          communitySlug="esea"
+          communitySlug="esea" vocabularyIds={VOCABULARY_IDS}
           reference={makeRef()}
           selectable
           onToggle={onToggle}
@@ -470,7 +472,7 @@ describe("ResultRow", () => {
       const onToggle = vi.fn();
       render(
         <ResultRow
-          communitySlug="esea"
+          communitySlug="esea" vocabularyIds={VOCABULARY_IDS}
           reference={makeRef()}
           selectable
           onToggle={onToggle}
@@ -483,7 +485,7 @@ describe("ResultRow", () => {
 
     test("reflects selected state on the checkbox and the row", () => {
       const { container } = render(
-        <ResultRow communitySlug="esea" reference={makeRef()} selectable selected />,
+        <ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={makeRef()} selectable selected />,
       );
       expect(
         screen.getByRole("checkbox", { name: /deselect on phonics/i }),
@@ -514,7 +516,7 @@ describe("ResultRow", () => {
       });
       render(
         <ResultRow
-          communitySlug="esea"
+          communitySlug="esea" vocabularyIds={VOCABULARY_IDS}
           reference={ref}
           codingInstitution={CODING_BOTH}
         />,
@@ -533,7 +535,7 @@ describe("ResultRow", () => {
       });
       render(
         <ResultRow
-          communitySlug="esea"
+          communitySlug="esea" vocabularyIds={VOCABULARY_IDS}
           reference={ref}
           codingInstitution={CODING_BOTH}
         />,
@@ -553,7 +555,7 @@ describe("ResultRow", () => {
       });
       render(
         <ResultRow
-          communitySlug="esea"
+          communitySlug="esea" vocabularyIds={VOCABULARY_IDS}
           reference={ref}
           codingInstitution={CODING_BOTH}
         />,

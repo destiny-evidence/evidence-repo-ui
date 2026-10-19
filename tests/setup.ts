@@ -4,17 +4,17 @@ import "@testing-library/jest-dom/vitest";
 
 vi.stubEnv(
   "VITE_ESEA_VOCABULARY_URL",
-  "https://test.example/published/esea/1.0/vocabulary.jsonld",
+  "https://test.example/published/test-vocab/1.0/vocabulary.jsonld",
 );
 vi.stubEnv("VITE_ESEA_CONTEXT_URL", "https://test.example/context");
 vi.stubEnv(
   "VITE_HPV_VOCABULARY_URL",
-  "https://test.example/published/hpv/1.0/vocabulary.jsonld",
+  "https://test.example/published/test-vocab/2.0/vocabulary.jsonld",
 );
 vi.stubEnv("VITE_HPV_CONTEXT_URL", "https://test.example/hpv-context");
 vi.stubEnv(
   "VITE_DESTINY_VOCABULARY_URL",
-  "https://test.example/published/destiny/1.0/vocabulary.jsonld",
+  "https://test.example/published/test-vocab/3.0/vocabulary.jsonld",
 );
 vi.stubEnv("VITE_DESTINY_CONTEXT_URL", "https://test.example/dest-context");
 vi.stubEnv("VITE_KEYCLOAK_URL", "https://kc.test.example");

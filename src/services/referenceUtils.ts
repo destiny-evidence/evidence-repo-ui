@@ -13,6 +13,7 @@ import {
   decodeHtmlEntities,
   stripAbstractLabelPrefix,
 } from "@/services/textUtils";
+import { publishedVocabularyId } from "@/services/vocabulary/vocabularyService";
 
 export function isDict(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -68,8 +69,11 @@ function latestPreferringCanonical<E extends Enhancement>(
 /**
  * Return the highest-priority enhancement of the given type on a
  * reference, or null. See latestPreferringCanonical for the ordering.
+ * Linked data is read with extractLinkedDataEnhancement instead.
  */
-export function extractLatestEnhancement<T extends EnhancementContent>(
+export function extractLatestEnhancement<
+  T extends Exclude<EnhancementContent, LinkedDataEnhancement>,
+>(
   reference: Reference,
   enhancementType: T["enhancement_type"],
 ): (Enhancement & { content: T }) | null {
@@ -91,20 +95,37 @@ export function extractBibliographic(
   );
 }
 
-// Most callers want the content only — see extractLinkedData.
+function isFromVocabulary(
+  content: LinkedDataEnhancement,
+  vocabularyIds: readonly string[],
+): boolean {
+  try {
+    return vocabularyIds.includes(publishedVocabularyId(content.vocabulary_uri));
+  } catch {
+    return false;
+  }
+}
+
+// The highest-priority linked-data enhancement coded against one of
+// `vocabularyIds`. Most callers want the content only — see extractLinkedData.
 export function extractLinkedDataEnhancement(
   reference: Reference,
+  vocabularyIds: readonly string[],
 ): (Enhancement & { content: LinkedDataEnhancement }) | null {
-  return extractLatestEnhancement<LinkedDataEnhancement>(
-    reference,
-    "linked_data",
+  type Narrowed = Enhancement & { content: LinkedDataEnhancement };
+  const candidates = (reference.enhancements ?? []).filter(
+    (e): e is Narrowed =>
+      e.content.enhancement_type === "linked_data" &&
+      isFromVocabulary(e.content, vocabularyIds),
   );
+  return latestPreferringCanonical(reference, candidates);
 }
 
 export function extractLinkedData(
   reference: Reference,
+  vocabularyIds: readonly string[],
 ): LinkedDataEnhancement | null {
-  return extractLinkedDataEnhancement(reference)?.content ?? null;
+  return extractLinkedDataEnhancement(reference, vocabularyIds)?.content ?? null;
 }
 
 // Entity decoding + label-prefix strip only. Mojibake from upstream parsers
@@ -152,8 +173,9 @@ export function extractAbstract(
 // has no linked-data enhancement, preserving the `—` fallback path.
 export function extractFindingsAndEstimatesCount(
   reference: Reference,
+  vocabularyIds: readonly string[],
 ): { findings: number; estimates: number } | null {
-  const ld = extractLinkedData(reference);
+  const ld = extractLinkedData(reference, vocabularyIds);
   if (!ld) return null;
   const investigation = getInvestigation(ld.data);
   const findings = ensureArray(investigation["hasFinding"]).filter(isDict);

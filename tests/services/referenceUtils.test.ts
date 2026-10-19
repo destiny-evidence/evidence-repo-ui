@@ -12,7 +12,7 @@ import {
   formatPagination,
   getInvestigation,
 } from "@/services/referenceUtils";
-import { makeReference } from "../fixtures";
+import { makeCommunity, makeReference } from "../fixtures";
 import type {
   Reference,
   Enhancement,
@@ -80,7 +80,7 @@ describe("extractLatestEnhancement", () => {
 
   test("returns null when no enhancement of that type exists", () => {
     const ref = makeRef([bibEnh()]);
-    expect(extractLatestEnhancement(ref, "linked_data")).toBeNull();
+    expect(extractLatestEnhancement(ref, "abstract")).toBeNull();
   });
 
   test("prefers canonical (reference_id === reference.id) over newer duplicates", () => {
@@ -115,10 +115,10 @@ describe("extractLatestEnhancement", () => {
   });
 });
 
-// The three wrappers below are thin shape adapters over
+// extractBibliographic is a thin shape adapter over
 // `extractLatestEnhancement` — the dedup, null handling and recency
-// sort are covered by its tests above. Each wrapper test below asserts
-// only the shape difference: content vs full Enhancement.
+// sort are covered by its tests above, so its test asserts only the
+// shape difference: content vs full Enhancement.
 
 describe("extractBibliographic", () => {
   test("returns the bibliographic content (not the wrapper)", () => {
@@ -128,28 +128,104 @@ describe("extractBibliographic", () => {
   });
 });
 
+const COMMUNITY_VOCAB = "community-vocab";
+const OTHER_VOCAB = "other-vocab";
+
+function ldEnh(
+  vocabularyUri: string,
+  overrides: Partial<Enhancement> = {},
+): Enhancement {
+  const content: LinkedDataEnhancement = {
+    enhancement_type: "linked_data",
+    vocabulary_uri: vocabularyUri,
+    data: { key: "value" },
+  };
+  return { ...makeEnhancement(content), ...overrides };
+}
+
+function vocabUri(id: string, version = "1.0"): string {
+  return `https://vocab.example/published/${id}/${version}/vocabulary.jsonld`;
+}
+
 describe("extractLinkedData", () => {
   test("returns the linked_data content (not the wrapper)", () => {
-    const ld: LinkedDataEnhancement = {
-      enhancement_type: "linked_data",
-      vocabulary_uri: "http://example.com",
-      data: { key: "value" },
-    };
-    const ref = makeRef([makeEnhancement(ld)]);
-    expect(extractLinkedData(ref)).toBe(ld);
+    const wrapper = ldEnh(vocabUri(COMMUNITY_VOCAB));
+    const ref = makeRef([wrapper]);
+    expect(extractLinkedData(ref, [COMMUNITY_VOCAB])).toBe(wrapper.content);
   });
 });
 
 describe("extractLinkedDataEnhancement", () => {
   test("returns the wrapping Enhancement (not just the content)", () => {
-    const ld: LinkedDataEnhancement = {
-      enhancement_type: "linked_data",
-      vocabulary_uri: "http://example.com",
-      data: { key: "value" },
-    };
-    const wrapper = makeEnhancement(ld);
+    const wrapper = ldEnh(vocabUri(COMMUNITY_VOCAB));
     const ref = makeRef([wrapper]);
-    expect(extractLinkedDataEnhancement(ref)).toBe(wrapper);
+    expect(extractLinkedDataEnhancement(ref, [COMMUNITY_VOCAB])).toBe(wrapper);
+  });
+
+  test("picks the community's vocabulary over a newer one from another vocabulary", () => {
+    const own = ldEnh(vocabUri(COMMUNITY_VOCAB), {
+      id: "own",
+      created_at: "2024-01-01T00:00:00Z",
+    });
+    const other = ldEnh(vocabUri(OTHER_VOCAB), {
+      id: "other",
+      created_at: "2025-01-01T00:00:00Z",
+    });
+    const ref = makeRef([own, other]);
+    expect(extractLinkedDataEnhancement(ref, [COMMUNITY_VOCAB])?.id).toBe("own");
+  });
+
+  test("picks the newest across versions of the community's vocabulary", () => {
+    const older = ldEnh(vocabUri(COMMUNITY_VOCAB, "1.0"), {
+      id: "v1",
+      created_at: "2024-01-01T00:00:00Z",
+    });
+    const newer = ldEnh(vocabUri(COMMUNITY_VOCAB, "2.0"), {
+      id: "v2",
+      created_at: "2025-01-01T00:00:00Z",
+    });
+    const ref = makeRef([newer, older]);
+    expect(extractLinkedDataEnhancement(ref, [COMMUNITY_VOCAB])?.id).toBe("v2");
+  });
+
+  test("matches any of the community's vocabulary IDs", () => {
+    const wrapper = ldEnh(vocabUri(OTHER_VOCAB));
+    const ref = makeRef([wrapper]);
+    expect(
+      extractLinkedDataEnhancement(ref, [COMMUNITY_VOCAB, OTHER_VOCAB]),
+    ).toBe(wrapper);
+  });
+
+  test("returns null when only other vocabularies are present", () => {
+    const ref = makeRef([ldEnh(vocabUri(OTHER_VOCAB))]);
+    expect(extractLinkedDataEnhancement(ref, [COMMUNITY_VOCAB])).toBeNull();
+  });
+
+  test("skips an enhancement whose vocabulary URI is not a published vocabulary", () => {
+    const own = ldEnh(vocabUri(COMMUNITY_VOCAB), {
+      id: "own",
+      created_at: "2024-01-01T00:00:00Z",
+    });
+    const malformed = ldEnh("https://vocab.example/vocabulary.jsonld", {
+      id: "malformed",
+      created_at: "2025-01-01T00:00:00Z",
+    });
+    const ref = makeRef([own, malformed]);
+    expect(extractLinkedDataEnhancement(ref, [COMMUNITY_VOCAB])?.id).toBe("own");
+  });
+
+  test("prefers canonical over a newer duplicate within the community's vocabulary", () => {
+    const canonical = ldEnh(vocabUri(COMMUNITY_VOCAB), {
+      id: "canon",
+      created_at: "2024-01-01T00:00:00Z",
+    });
+    const duplicate = ldEnh(vocabUri(COMMUNITY_VOCAB), {
+      id: "dup",
+      reference_id: "other-ref",
+      created_at: "2025-01-01T00:00:00Z",
+    });
+    const ref = makeRef([duplicate, canonical]);
+    expect(extractLinkedDataEnhancement(ref, [COMMUNITY_VOCAB])?.id).toBe("canon");
   });
 });
 
@@ -446,8 +522,12 @@ describe("getInvestigation", () => {
 });
 
 describe("extractFindingsAndEstimatesCount", () => {
+  const { vocabularyIds } = makeCommunity();
+
   test("returns null when the reference has no linked-data enhancement", () => {
-    expect(extractFindingsAndEstimatesCount(makeReference({}))).toBeNull();
+    expect(
+      extractFindingsAndEstimatesCount(makeReference({}), vocabularyIds),
+    ).toBeNull();
   });
 
   test("counts a bare-dict single finding and its bare-dict estimate", () => {
@@ -456,7 +536,7 @@ describe("extractFindingsAndEstimatesCount", () => {
         hasFinding: { hasEffectEstimate: { pointEstimate: 0.3 } },
       },
     });
-    expect(extractFindingsAndEstimatesCount(ref)).toEqual({
+    expect(extractFindingsAndEstimatesCount(ref, vocabularyIds)).toEqual({
       findings: 1,
       estimates: 1,
     });
@@ -471,7 +551,7 @@ describe("extractFindingsAndEstimatesCount", () => {
         ],
       },
     });
-    expect(extractFindingsAndEstimatesCount(ref)).toEqual({
+    expect(extractFindingsAndEstimatesCount(ref, vocabularyIds)).toEqual({
       findings: 2,
       estimates: 3,
     });
@@ -483,7 +563,7 @@ describe("extractFindingsAndEstimatesCount", () => {
         hasFinding: [{ hasEffectEstimate: {} }, "stray"],
       },
     });
-    expect(extractFindingsAndEstimatesCount(ref)).toEqual({
+    expect(extractFindingsAndEstimatesCount(ref, vocabularyIds)).toEqual({
       findings: 1,
       estimates: 1,
     });

@@ -128,13 +128,14 @@ function appendSheet<R extends object>(
 export async function buildAllRows(
   references: ReferenceSource,
   vocab: ConceptResolver,
+  vocabularyIds: readonly string[],
   codingInstitution?: CodingInstitutionConfig,
 ): Promise<BuiltRows> {
   const investigation: InvestigationRow[] = [];
   const arms: ArmRow[] = [];
   const outcomes: OutcomeRow[] = [];
   for await (const reference of references) {
-    const linked = extractLinkedDataEnhancement(reference);
+    const linked = extractLinkedDataEnhancement(reference, vocabularyIds);
     const bibliographic = extractBibliographic(reference);
     const referenceId = String(reference.id);
     const inv: Investigation = linked ? getInvestigation(linked.content.data) : {};
@@ -163,9 +164,15 @@ export async function buildAllRows(
 async function buildEducationWorkbook(
   references: ReferenceSource,
   vocab: ConceptResolver,
+  vocabularyIds: readonly string[],
   codingInstitution?: CodingInstitutionConfig,
 ): Promise<XLSX.WorkBook> {
-  const rows = await buildAllRows(references, vocab, codingInstitution);
+  const rows = await buildAllRows(
+    references,
+    vocab,
+    vocabularyIds,
+    codingInstitution,
+  );
   const wb = XLSX.utils.book_new();
   appendSheet(wb, SHEET_NAMES.investigation, SHEET_HEADERS.investigation, rows.investigation);
   appendSheet(wb, SHEET_NAMES.arms, SHEET_HEADERS.arms, rows.arms);
@@ -182,11 +189,13 @@ async function buildEducationWorkbook(
 async function buildReferenceConceptWorkbook(
   references: ReferenceSource,
   vocab: ConceptResolver,
+  vocabularyIds: readonly string[],
   options: ReferenceConceptRowOptions,
 ): Promise<XLSX.WorkBook> {
   const { headers, rows } = await buildReferenceConceptRows(
     references,
     vocab,
+    vocabularyIds,
     options,
   );
   const wb = XLSX.utils.book_new();
@@ -196,6 +205,8 @@ async function buildReferenceConceptWorkbook(
 
 export interface WorkbookOptions {
   variant: ExportVariant;
+  // Published vocabulary IDs whose linked data is exported.
+  vocabularyIds: readonly string[];
   codingInstitution?: CodingInstitutionConfig;
   pinnedFilters?: PinnedFilter[];
   identifierColumns?: readonly IdentifierColumn[];
@@ -220,12 +231,22 @@ export async function generateWorkbook(
 ): Promise<XLSX.WorkBook> {
   switch (options.variant) {
     case "esea":
-      return buildEducationWorkbook(references, vocab, options.codingInstitution);
+      return buildEducationWorkbook(
+        references,
+        vocab,
+        options.vocabularyIds,
+        options.codingInstitution,
+      );
     case "reference-concepts":
-      return buildReferenceConceptWorkbook(references, vocab, {
-        pinnedFilters: options.pinnedFilters,
-        identifierColumns: options.identifierColumns,
-      });
+      return buildReferenceConceptWorkbook(
+        references,
+        vocab,
+        options.vocabularyIds,
+        {
+          pinnedFilters: options.pinnedFilters,
+          identifierColumns: options.identifierColumns,
+        },
+      );
     default: {
       const unhandled: never = options.variant;
       throw new Error(`Unknown export variant: ${String(unhandled)}`);
