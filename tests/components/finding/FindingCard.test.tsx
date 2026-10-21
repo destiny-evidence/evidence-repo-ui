@@ -48,6 +48,22 @@ describe("FindingCard", () => {
     expect(screen.queryByText("Outcome")).toBeNull();
   });
 
+  test.each([
+    [
+      "the description when there is no name",
+      ["Conditional cash transfer"],
+      "Conditional cash transfer",
+    ],
+    ["a dash when there is neither", undefined, "—"],
+  ])("comparison row shows %s", (_, descriptions, expected) => {
+    const { container } = renderCard({
+      finding: { intervention: { id: "_:int", descriptions } },
+    });
+    const value = container.querySelector(".comparison-row__condition-value");
+    expect(value?.textContent).toBe(expected);
+    expect(value?.getAttribute("title")).toBe(expected);
+  });
+
   test("shows back-reference when isShared is true", () => {
     renderCard({ isShared: true });
     expect(

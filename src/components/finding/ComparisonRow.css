@@ -21,6 +21,16 @@
   overflow-wrap: anywhere;
 }
 
+/* Phones get no clamp: the three-column row leaves about 11 characters a line. */
+@media (min-width: 601px) {
+  .comparison-row__condition-value--clamped {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
 .comparison-row__vs {
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
