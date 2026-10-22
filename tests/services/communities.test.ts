@@ -24,8 +24,15 @@ const ENV = {
   VITE_DESTINY_CONTEXT_URL: "https://vocab.example/dst-ctx",
 } as const;
 
+const EXTRA_VOCABULARY_ID_VARS = [
+  "VITE_ESEA_EXTRA_VOCABULARY_IDS",
+  "VITE_HPV_EXTRA_VOCABULARY_IDS",
+  "VITE_DESTINY_EXTRA_VOCABULARY_IDS",
+] as const;
+
 function stubValidEnv() {
   for (const [name, value] of Object.entries(ENV)) vi.stubEnv(name, value);
+  for (const name of EXTRA_VOCABULARY_ID_VARS) vi.stubEnv(name, "");
 }
 
 // communities.ts reads env at module scope, so each case here needs the module
