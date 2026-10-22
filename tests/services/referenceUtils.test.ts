@@ -227,6 +227,20 @@ describe("extractLinkedDataEnhancement", () => {
     const ref = makeRef([duplicate, canonical]);
     expect(extractLinkedDataEnhancement(ref, [COMMUNITY_VOCAB])?.id).toBe("canon");
   });
+
+  test("falls back to a duplicate in the community's vocabulary when the canonical is in another", () => {
+    const canonical = ldEnh(vocabUri(OTHER_VOCAB), {
+      id: "canon",
+      created_at: "2025-01-01T00:00:00Z",
+    });
+    const duplicate = ldEnh(vocabUri(COMMUNITY_VOCAB), {
+      id: "dup",
+      reference_id: "other-ref",
+      created_at: "2024-01-01T00:00:00Z",
+    });
+    const ref = makeRef([canonical, duplicate]);
+    expect(extractLinkedDataEnhancement(ref, [COMMUNITY_VOCAB])?.id).toBe("dup");
+  });
 });
 
 describe("extractDoi", () => {
