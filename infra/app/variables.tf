@@ -172,6 +172,24 @@ variable "destiny_context_url" {
   default     = "https://vocab.evidence-repository.org/published/01a0899b-90a8-714e-87c0-7b00fff5a29f/1.0/context.jsonld"
 }
 
+variable "esea_extra_vocabulary_ids" {
+  description = "Comma-separated published vocabulary IDs, beyond the one in esea_vocabulary_url, whose linked data the ESEA community displays (e.g. staging test vocabularies)"
+  type        = string
+  default     = ""
+}
+
+variable "hpv_extra_vocabulary_ids" {
+  description = "Comma-separated published vocabulary IDs, beyond the one in hpv_vocabulary_url, whose linked data the HPV community displays (e.g. staging test vocabularies)"
+  type        = string
+  default     = ""
+}
+
+variable "destiny_extra_vocabulary_ids" {
+  description = "Comma-separated published vocabulary IDs, beyond the one in destiny_vocabulary_url, whose linked data the DESTINY community displays (e.g. staging test vocabularies)"
+  type        = string
+  default     = ""
+}
+
 
 
 variable "ci_slack_webhook_url" {

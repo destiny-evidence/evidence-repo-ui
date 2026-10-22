@@ -100,6 +100,29 @@ function toExtension(vocabularyUrl: string, ext: "jsonld" | "ttl"): string {
   return url.toString();
 }
 
+const PUBLISHED_VOCABULARY_PATH = /^\/published\/([^/]+)\/[^/]+\/vocabulary\.\w+$/;
+
+/**
+ * The ID a published vocabulary is minted under, from a
+ * `/published/{id}/{version}/vocabulary.{ext}` URL.
+ */
+export function publishedVocabularyId(vocabularyUrl: string): string {
+  let pathname: string;
+  try {
+    pathname = new URL(vocabularyUrl).pathname;
+  } catch {
+    throw new Error(`Vocabulary URL ${vocabularyUrl} is not a valid URL.`);
+  }
+  const match = PUBLISHED_VOCABULARY_PATH.exec(pathname);
+  if (!match) {
+    throw new Error(
+      `Vocabulary URL ${vocabularyUrl} does not match ` +
+        "/published/{id}/{version}/vocabulary.{ext}.",
+    );
+  }
+  return match[1];
+}
+
 function extractRefId(ref: JsonLdRef | undefined): string | undefined {
   if (!ref) return undefined;
   if (typeof ref === "string") return ref;

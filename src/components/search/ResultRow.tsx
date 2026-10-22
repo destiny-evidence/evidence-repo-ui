@@ -26,6 +26,8 @@ import { NewTabLinkIcon } from "../common/icons";
 
 interface ResultRowProps {
   communitySlug: string;
+  // Published vocabulary IDs for the community we wish the row to render.
+  vocabularyIds: readonly string[];
   reference: Reference;
   // 1-based rank in the results list, tracked when the row is opened. Omitted
   // when rendered outside a ranked list, so no position is reported.
@@ -86,6 +88,7 @@ function aggregatePillConcepts(
 
 export function ResultRow({
   communitySlug,
+  vocabularyIds,
   reference,
   position,
   codingInstitution: codingConfig,
@@ -98,10 +101,13 @@ export function ResultRow({
   const bib = extractBibliographic(reference);
   const doi = extractDoi(reference.identifiers);
   const abstract = extractAbstract(reference)?.abstract ?? null;
-  const counts = extractFindingsAndEstimatesCount(reference);
 
-  const linkedDataEnhancement = extractLinkedDataEnhancement(reference);
+  const linkedDataEnhancement = extractLinkedDataEnhancement(
+    reference,
+    vocabularyIds,
+  );
   const linkedData = linkedDataEnhancement?.content ?? null;
+  const counts = extractFindingsAndEstimatesCount(linkedData);
   const rawContext = linkedData?.data?.["@context"];
   const contextUrl = typeof rawContext === "string" ? rawContext : undefined;
 

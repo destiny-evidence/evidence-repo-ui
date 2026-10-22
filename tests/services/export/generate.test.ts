@@ -9,6 +9,8 @@ import {
 import type { ConceptResolver } from "@/services/export/types.ts";
 import type { Authorship, Reference } from "@/types/models";
 
+const VOCAB_ID = "esea-vocab";
+
 const MINIMAL_VOCAB: ConceptResolver = {
   prefixes: new Map([["esea", "https://vocab.esea.education/"]]),
   labels: new Map([
@@ -64,7 +66,7 @@ function syntheticReference(id: string): Reference {
         created_at: "2024-01-02T00:00:00Z",
         content: {
           enhancement_type: "linked_data",
-          vocabulary_uri: "https://vocab.esea.education/v1",
+          vocabulary_uri: `https://vocab.example/published/${VOCAB_ID}/1.0/vocabulary.jsonld`,
           data: {
             hasInvestigation: {
               documentType: {
@@ -107,7 +109,7 @@ describe("generateWorkbook", () => {
     const wb = await generateWorkbook(
       [syntheticReference("ref-1")],
       MINIMAL_VOCAB,
-      { variant: "esea" },
+      { variant: "esea", vocabularyIds: [VOCAB_ID] },
     );
     expect(wb.SheetNames).toEqual([
       "Investigation Details",
@@ -128,7 +130,7 @@ describe("generateWorkbook", () => {
     const wb = await generateWorkbook(
       [uncoded, syntheticReference("ref-coded")],
       MINIMAL_VOCAB,
-      { variant: "esea" },
+      { variant: "esea", vocabularyIds: [VOCAB_ID] },
     );
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
       wb.Sheets["Investigation Details"]!,
@@ -159,17 +161,43 @@ describe("generateWorkbook", () => {
       yield syntheticReference("ref-1");
       yield syntheticReference("ref-2");
     }
-    const wb = await generateWorkbook(gen(), MINIMAL_VOCAB, { variant: "esea" });
+    const wb = await generateWorkbook(gen(), MINIMAL_VOCAB, { variant: "esea", vocabularyIds: [VOCAB_ID] });
     const inv = wb.Sheets["Investigation Details"]!;
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(inv);
     expect(rows.map((r) => r.reference_id)).toEqual(["ref-1", "ref-2"]);
+  });
+
+  test("exports the community's coding when a newer one exists for another vocabulary", async () => {
+    const ref = syntheticReference("ref-1");
+    const own = ref.enhancements!.find(
+      (e) => e.content.enhancement_type === "linked_data",
+    )!;
+    const otherUri =
+      "https://vocab.example/published/other-vocab/1.0/vocabulary.jsonld";
+    ref.enhancements!.push({
+      ...own,
+      id: "ld-other",
+      created_at: "2025-01-01T00:00:00Z",
+      content: { ...own.content, vocabulary_uri: otherUri } as typeof own.content,
+    });
+
+    const wb = await generateWorkbook([ref], MINIMAL_VOCAB, {
+      variant: "esea",
+      vocabularyIds: [VOCAB_ID],
+    });
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+      wb.Sheets["Investigation Details"]!,
+    );
+    expect(rows[0]!.vocabulary).toBe(
+      `https://vocab.example/published/${VOCAB_ID}/1.0/vocabulary.jsonld`,
+    );
   });
 
   test("the reference-concepts variant produces a single record-level sheet", async () => {
     const wb = await generateWorkbook(
       [syntheticReference("ref-1")],
       MINIMAL_VOCAB,
-      { variant: "reference-concepts" },
+      { variant: "reference-concepts", vocabularyIds: [VOCAB_ID] },
     );
     expect(wb.SheetNames).toEqual(["References"]);
     const sheet = wb.Sheets["References"]!;
@@ -189,7 +217,7 @@ describe("generateWorkbook", () => {
     }).data.hasInvestigation;
     inv.hasFinding = (inv.hasFinding as unknown[])[0];
 
-    const wb = await generateWorkbook([ref], MINIMAL_VOCAB, { variant: "esea" });
+    const wb = await generateWorkbook([ref], MINIMAL_VOCAB, { variant: "esea", vocabularyIds: [VOCAB_ID] });
     const outcomes = XLSX.utils.sheet_to_json<Record<string, unknown>>(
       wb.Sheets["Outcomes"]!,
     );
@@ -203,7 +231,7 @@ describe("workbookToArrayBuffer", () => {
     const wb = await generateWorkbook(
       [syntheticReference("ref-1")],
       MINIMAL_VOCAB,
-      { variant: "esea" },
+      { variant: "esea", vocabularyIds: [VOCAB_ID] },
     );
     const buf = workbookToArrayBuffer(wb);
     expect(buf).toBeInstanceOf(ArrayBuffer);
