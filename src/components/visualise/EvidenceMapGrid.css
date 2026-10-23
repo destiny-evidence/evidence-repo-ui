@@ -87,10 +87,14 @@
    <html lang>); failing that the column grows to its max-width — never an
    arbitrary mid-word break. */
 .evidence-map__col-head-label {
-  display: block;
   white-space: normal;
   -webkit-hyphens: auto;
   hyphens: auto;
+}
+
+/* Scoped so a clamped label keeps lg-line-clamp's display whatever the stylesheet order. */
+.evidence-map__col-head-label:not(.lg-line-clamp) {
+  display: block;
 }
 
 .evidence-map__row-head {
