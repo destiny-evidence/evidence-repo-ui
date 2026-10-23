@@ -35,6 +35,8 @@ type PanelProps = ComponentProps<typeof MapConfigPanel>;
 const baseProps: PanelProps = {
   schemes: SCHEMES,
   loading: false,
+  hidden: false,
+  onHide: () => {},
   appliedAxes: AXES,
   defaultAxes: AXES,
   appliedConceptFilters: [],

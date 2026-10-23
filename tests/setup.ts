@@ -28,6 +28,10 @@ vi.stubEnv(
 // jsdom's window.scrollTo is a placeholder that logs "Not implemented" per call.
 vi.stubGlobal("scrollTo", () => {});
 
+// jsdom has no matchMedia. Default to a wide, tall screen; tests spy on it to
+// simulate a small one.
+vi.stubGlobal("matchMedia", (media: string) => ({ matches: false, media }));
+
 const defaultTokenParsed = () => ({
   name: "Test User",
   preferred_username: "testuser",
@@ -57,6 +61,7 @@ vi.mock("@/auth/keycloak", () => {
 
 beforeEach(async () => {
   sessionStorage.clear();
+  localStorage.clear();
   const { keycloak } = await import("@/auth/keycloak");
   keycloak.authenticated = true;
   keycloak.token = "test-token";

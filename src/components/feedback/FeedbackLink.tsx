@@ -1,15 +1,14 @@
 import { NewTabLink } from "@/components/common/NewTabLink";
 import { FEEDBACK_FORM_URL } from "@/config";
-import "./FeedbackFAB.css";
 
-export function FeedbackFAB() {
+export function FeedbackLink() {
   if (!FEEDBACK_FORM_URL) return null;
   return (
     <NewTabLink
-      class="feedback-fab"
+      class="app-nav__link"
       href={FEEDBACK_FORM_URL}
       aria-label="Send feedback (opens form in a new tab)"
-      event={{ category: "Feedback", action: "FAB Clicked" }}
+      event={{ category: "Feedback", action: "Nav Clicked" }}
       icon={false}
     >
       Feedback
