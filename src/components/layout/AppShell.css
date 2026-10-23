@@ -170,7 +170,6 @@
   align-items: center;
 }
 
-/* Styled as a nav link, so it reads as the nav folded away. */
 .app-header__menu-toggle {
   display: none;
   align-items: center;

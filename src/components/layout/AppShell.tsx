@@ -63,10 +63,6 @@ export function AppShell({ children }: AppShellProps) {
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
-      // An open Resources dropdown takes this Escape; the next closes the menu.
-      if (menuWrapRef.current?.querySelector('.app-header__menu [aria-expanded="true"]')) {
-        return;
-      }
       setMenuOpen(false);
       menuToggleRef.current?.focus();
     }
@@ -104,6 +100,11 @@ export function AppShell({ children }: AppShellProps) {
           <div
             id={menuId}
             class={`app-header__menu${menuOpen ? " is-open" : ""}`}
+            // A link to the current path (Search from a query) leaves the
+            // pathname unchanged, so the effect above wouldn't close the menu.
+            onClick={(e) =>
+              (e.target as Element).closest("a") && setMenuOpen(false)
+            }
           >
             {(community || FEEDBACK_FORM_URL) && (
               <nav class="app-nav" aria-label="Primary">
@@ -133,8 +134,7 @@ export function AppShell({ children }: AppShellProps) {
                 <FeedbackLink />
               </nav>
             )}
-            {/* The menu's flat stand-in for the Resources dropdown, so the menu
-                never resizes; CSS shows one or the other. */}
+            {/* Flat stand-in for the Resources dropdown; CSS shows one or the other. */}
             {resources.length > 0 && (
               <div class="app-header__menu-resources">
                 <span class="app-header__menu-label">Resources</span>
