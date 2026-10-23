@@ -25,9 +25,10 @@
   --lines: 3;
 }
 
-/* Phones get no clamp: the three-column row leaves about 11 characters a line. */
+/* Phones show names in full: the three-column row leaves about 11 characters a line.
+   A description standing in for a name stays clamped, as it repeats in full below. */
 @media (max-width: 600px) {
-  .comparison-row__condition-value--clamped {
+  .comparison-row__condition-value--name {
     --lines: none;
   }
 }
