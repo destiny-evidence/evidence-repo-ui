@@ -1,7 +1,7 @@
 .drawer {
   position: fixed;
   inset: 0;
-  /* Above AppShell header (100) and FeedbackFAB (200) — a modal must
+  /* Above the AppShell header (100) — a modal must
      cover everything else on the page. */
   z-index: 1000;
 }

@@ -47,7 +47,10 @@ import { formatTotal } from "@/utils/searchTotal";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
 import { ViewToggle, type MapView } from "@/components/visualise/ViewToggle";
 import { CellSizeSelect } from "@/components/visualise/CellSizeSelect";
-import { MapConfigPanel } from "@/components/visualise/MapConfigPanel";
+import {
+  MapConfigPanel,
+  MapConfigRail,
+} from "@/components/visualise/MapConfigPanel";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import { DEFAULT_EXPANDED_FILTERS } from "@/components/filters/filterOrder";
 import { WarningIcon } from "@/components/common/icons";
@@ -63,6 +66,25 @@ interface VisualisePageProps {
 
 const ROW_PARAM = "row";
 const COLUMN_PARAM = "column";
+
+const PANEL_OPEN_KEY = "evidence-map-panel-open";
+// Mirrors the dense-layout media query in VisualisePage.css.
+const DENSE_MAP_QUERY = "(max-width: 1280px), (max-height: 800px)";
+
+// The user's last open/hide choice, else open only on wide screens.
+function initialPanelOpen(): boolean {
+  try {
+    const stored = localStorage.getItem(PANEL_OPEN_KEY);
+    if (stored !== null) return stored === "true";
+  } catch {
+    // Storage blocked: fall through to the screen-size default.
+  }
+  return !window.matchMedia("(max-width: 1440px)").matches;
+}
+
+function initialCellSize(): CellSize {
+  return window.matchMedia(DENSE_MAP_QUERY).matches ? "small" : DEFAULT_CELL_SIZE;
+}
 
 // Inverse of toCrossFacetAxis — recover the config axis from the pair the hook
 // reports a result was fetched for. (This page only ever produces the COUNTRIES
@@ -181,7 +203,11 @@ function EvidenceMapView({
   const [view, setView] = useState<MapView>("bubble");
   // Presentation only, so it stays out of the URL (like `view`): the canonical
   // query feeds the shareable link, the panel's key and the cell deep-links.
-  const [cellSize, setCellSize] = useState<CellSize>(DEFAULT_CELL_SIZE);
+  const [cellSize, setCellSize] = useState<CellSize>(initialCellSize);
+  const [panelOpen, setPanelOpen] = useState(initialPanelOpen);
+  const railRef = useRef<HTMLButtonElement>(null);
+  const hideRef = useRef<HTMLButtonElement>(null);
+  const panelToggled = useRef(false);
 
   function handleViewChange(next: MapView) {
     track({ category: "EvidenceMap", action: "View Toggled", name: next });
@@ -192,6 +218,28 @@ function EvidenceMapView({
     track({ category: "EvidenceMap", action: "Cell Size Changed", name: next });
     setCellSize(next);
   }
+
+  function handlePanelToggle(open: boolean) {
+    track({
+      category: "EvidenceMap",
+      action: "Panel Toggled",
+      name: open ? "open" : "hidden",
+    });
+    panelToggled.current = true;
+    setPanelOpen(open);
+    try {
+      localStorage.setItem(PANEL_OPEN_KEY, String(open));
+    } catch {
+      // Storage blocked: the choice lasts this visit only.
+    }
+  }
+
+  // Move focus to the control that replaced the one just clicked, which unmounted
+  // (the rail) or hid (the Hide button).
+  useEffect(() => {
+    if (!panelToggled.current) return;
+    (panelOpen ? hideRef : railRef).current?.focus();
+  }, [panelOpen]);
 
   // Resolve labels against the axes `result` was fetched for, not the URL's:
   // during an axis change the URL (and `axes`) flips immediately but `result`
@@ -277,10 +325,8 @@ function EvidenceMapView({
     [nestedAxes, columnAxis.tree, columnExpandedKeys],
   );
 
-  // Flag the docked configure panel on <body> so the global Feedback button can
-  // inset itself out from under it (CSS handles the responsive un-inset). The
-  // region itself is bounded by the viewport (see VisualisePage.css), so the
-  // page scrolls at most a footer's height.
+  // Flag the docked configure panel on <body> so .app-main can go full-bleed
+  // (see VisualisePage.css).
   useEffect(() => {
     document.body.classList.add("visualise-has-panel");
     return () => document.body.classList.remove("visualise-has-panel");
@@ -704,7 +750,17 @@ function EvidenceMapView({
         params={params}
         countNoun={noun}
         onApply={handleApply}
+        hidden={!panelOpen}
+        onHide={() => handlePanelToggle(false)}
+        hideButtonRef={hideRef}
       />
+      {!panelOpen && (
+        <MapConfigRail
+          filterCount={activeFilters(params, filterableSchemes).values.length}
+          onOpen={() => handlePanelToggle(true)}
+          buttonRef={railRef}
+        />
+      )}
     </div>
   );
 }

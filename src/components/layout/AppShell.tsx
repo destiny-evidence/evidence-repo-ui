@@ -3,10 +3,11 @@ import { useEffect, useState } from "preact/hooks";
 import { track } from "@/analytics/matomo";
 import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
-import { FeedbackFAB } from "@/components/feedback/FeedbackFAB";
+import { FeedbackLink } from "@/components/feedback/FeedbackLink";
 import { ResourcesMenu } from "./ResourcesMenu";
 import { SiteFrame } from "./SiteFrame";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
+import { FEEDBACK_FORM_URL } from "@/config";
 import "./AppShell.css";
 
 function usePathname(): string {
@@ -57,27 +58,33 @@ export function AppShell({ children }: AppShellProps) {
             )}
           </span>
         </a>
-        {community && (
+        {(community || FEEDBACK_FORM_URL) && (
           <nav class="app-nav" aria-label="Primary">
-            <a
-              class={`app-nav__link${searchActive ? " active" : ""}`}
-              href={`/${community.slug}`}
-              onClick={trackTab("Search")}
-            >
-              Search
-            </a>
-            {community.features.evidenceMap && (
-              <a
-                class={`app-nav__link${visualiseActive ? " active" : ""}`}
-                href={`/${community.slug}/visualise`}
-                onClick={trackTab("Visualise")}
-              >
-                Visualise
-              </a>
+            {community && (
+              <>
+                <a
+                  class={`app-nav__link${searchActive ? " active" : ""}`}
+                  href={`/${community.slug}`}
+                  onClick={trackTab("Search")}
+                >
+                  Search
+                </a>
+                {community.features.evidenceMap && (
+                  <a
+                    class={`app-nav__link${visualiseActive ? " active" : ""}`}
+                    href={`/${community.slug}/visualise`}
+                    onClick={trackTab("Visualise")}
+                  >
+                    Visualise
+                  </a>
+                )}
+                {community.externalResources &&
+                  community.externalResources.length > 0 && (
+                    <ResourcesMenu resources={community.externalResources} />
+                  )}
+              </>
             )}
-            {community.externalResources && community.externalResources.length > 0 && (
-              <ResourcesMenu resources={community.externalResources} />
-            )}
+            <FeedbackLink />
           </nav>
         )}
         <div class="app-header__user">
@@ -88,7 +95,6 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
       <main class="app-main">{children}</main>
-      <FeedbackFAB />
     </SiteFrame>
   );
 }
