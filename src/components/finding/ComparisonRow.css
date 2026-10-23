@@ -19,9 +19,6 @@
   font-size: var(--font-size-base);
   font-weight: 500;
   overflow-wrap: anywhere;
-}
-
-.comparison-row__condition-value--clamped {
   --lines: 3;
 }
 

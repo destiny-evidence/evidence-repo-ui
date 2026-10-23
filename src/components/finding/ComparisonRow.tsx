@@ -26,7 +26,7 @@ export function ComparisonRow({ intervention, control }: ComparisonRowProps) {
         <div class="comparison-row__condition">
           <h3 class="comparison-row__condition-label lg-section-label">Intervention</h3>
           <span
-            class={`comparison-row__condition-value comparison-row__condition-value--clamped lg-line-clamp${
+            class={`comparison-row__condition-value lg-line-clamp${
               name ? " comparison-row__condition-value--name" : ""
             }`}
             title={interventionText}
