@@ -1,31 +1,136 @@
-/* Docked full-height to the right of the map region: size containment lets the
-   map alone size the region, the panel stretches to it, and its body scrolls
-   internally, keeping Reset / Show results pinned. The region clips, so there's
-   no fixed/sticky element for the header to rubber-band over. */
-.map-config-panel {
+/* Docked down the right of the map region. Size containment lets the map alone
+   size the region, and the dock stretches to it. */
+.map-config-panel,
+.map-config-rail {
   flex: none;
   contain: size;
-  width: var(--map-panel-width);
-  display: flex;
-  flex-direction: column;
   background: var(--color-bg-surface);
   border-left: 1px solid var(--color-border);
 }
 
-/* Below the two-column threshold the panel un-docks and flows under the map. */
-@media (max-width: 960px) {
-  .map-config-panel {
-    contain: none;
-    width: auto;
-    border-left: none;
-    border-top: 1px solid var(--color-border);
-  }
+.map-config-panel {
+  width: var(--map-panel-width);
+}
+
+/* Pinned under the header and filling the viewport below it, but never past
+   the region: as the footer scrolls into view the frame rides up with the
+   region's end, keeping Reset / Show results above it. The panel body scrolls
+   internally. */
+.map-config-panel__frame,
+.map-config-rail__button {
+  position: sticky;
+  top: var(--header-height);
+  height: calc(100vh - var(--header-height));
+  max-height: 100%;
+  box-sizing: border-box;
+}
+
+.map-config-panel__frame {
+  display: flex;
+  flex-direction: column;
 }
 
 .map-config-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
   padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-inset);
+}
+
+.map-config-panel__hide {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin: calc(-1 * var(--spacing-xs)) 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.map-config-panel__hide:hover {
+  background: var(--color-bg-surface);
+  border-color: var(--color-border);
+  color: var(--color-accent);
+}
+
+.map-config-panel__hide:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.map-config-rail {
+  width: var(--map-rail-width);
+}
+
+/* Fills the visible rail, so the whole rail is the open target. */
+.map-config-rail__button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.map-config-rail__button:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.map-config-rail__button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.map-config-rail__icon {
+  position: relative;
+  display: inline-flex;
+  padding: var(--spacing-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+}
+
+.map-config-rail__count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: var(--color-text-navy);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.map-config-rail__label {
+  writing-mode: vertical-rl;
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .map-config-panel__heading,

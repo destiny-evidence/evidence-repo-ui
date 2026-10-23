@@ -1,4 +1,6 @@
+import type { ComponentChildren, Ref } from "preact";
 import { useMemo, useState } from "preact/hooks";
+import { ChevronRightIcon, FilterIcon } from "@/components/common/icons";
 import { Select } from "@/components/common/Select";
 import {
   FilterCardList,
@@ -20,7 +22,17 @@ import {
 import type { EvidenceMapAxis, EvidenceMapAxes } from "@/types/models";
 import "./MapConfigPanel.css";
 
-interface MapConfigPanelProps extends MapConfigPanelInnerProps {
+const PANEL_ID = "map-config-panel";
+
+// Folding the panel hides it rather than unmounting it, so an unapplied draft
+// survives a Hide and reopen.
+interface PanelChromeProps {
+  hidden: boolean;
+  onHide: () => void;
+  hideButtonRef?: Ref<HTMLButtonElement>;
+}
+
+interface MapConfigPanelProps extends MapConfigPanelInnerProps, PanelChromeProps {
   loading: boolean;
 }
 
@@ -73,18 +85,87 @@ function axesEqual(a: EvidenceMapAxes, b: EvidenceMapAxes): boolean {
  * no "Show results": the draft can only recognise the URL's concept filters
  * once the schemes naming them are here, so an early commit would wipe them.
  */
-function MapConfigPanelLoading() {
+function MapConfigPanelLoading(chrome: PanelChromeProps) {
   return (
-    <aside class="map-config-panel" aria-label="Configure the evidence map">
-      <header class="map-config-panel__header">
-        <h2 class="map-config-panel__heading">Configure map</h2>
-      </header>
+    <PanelFrame {...chrome}>
       <div class="map-config-panel__body">
         <p class="map-config-panel__status" role="status">
           Loading filters…
         </p>
       </div>
+    </PanelFrame>
+  );
+}
+
+function PanelFrame({
+  hidden,
+  onHide,
+  hideButtonRef,
+  children,
+}: PanelChromeProps & { children: ComponentChildren }) {
+  return (
+    <aside
+      id={PANEL_ID}
+      class="map-config-panel"
+      aria-label="Configure the evidence map"
+      hidden={hidden}
+    >
+      <div class="map-config-panel__frame">
+        <header class="map-config-panel__header">
+          <h2 class="map-config-panel__heading">Configure map</h2>
+          <button
+            type="button"
+            class="map-config-panel__hide"
+            onClick={onHide}
+            ref={hideButtonRef}
+          >
+            <ChevronRightIcon />
+            Hide panel
+          </button>
+        </header>
+        {children}
+      </div>
     </aside>
+  );
+}
+
+/**
+ * The slim rail the panel folds into. The whole rail opens the panel, and a
+ * count pill keeps applied filters visible while it is folded.
+ */
+export function MapConfigRail({
+  filterCount,
+  onOpen,
+  buttonRef,
+}: {
+  filterCount: number;
+  onOpen: () => void;
+  buttonRef?: Ref<HTMLButtonElement>;
+}) {
+  return (
+    <div class="map-config-rail">
+      <button
+        type="button"
+        class="map-config-rail__button"
+        aria-expanded="false"
+        aria-controls={PANEL_ID}
+        aria-label={
+          filterCount > 0
+            ? `Configure map, ${filterCount} ${filterCount === 1 ? "filter" : "filters"} applied`
+            : "Configure map"
+        }
+        onClick={onOpen}
+        ref={buttonRef}
+      >
+        <span class="map-config-rail__icon">
+          <FilterIcon />
+          {filterCount > 0 && (
+            <span class="map-config-rail__count">{filterCount}</span>
+          )}
+        </span>
+        <span class="map-config-rail__label">Configure map</span>
+      </button>
+    </div>
   );
 }
 
@@ -98,9 +179,20 @@ function MapConfigPanelLoading() {
  * failed still leaves the axes and the year/country cards usable — applied
  * concept filters then ride along unchanged.
  */
-export function MapConfigPanel({ loading, ...rest }: MapConfigPanelProps) {
-  if (loading) return <MapConfigPanelLoading />;
-  return <MapConfigPanelInner {...rest} />;
+export function MapConfigPanel({
+  loading,
+  hidden,
+  onHide,
+  hideButtonRef,
+  ...rest
+}: MapConfigPanelProps) {
+  const chrome = { hidden, onHide, hideButtonRef };
+  if (loading) return <MapConfigPanelLoading {...chrome} />;
+  return (
+    <PanelFrame {...chrome}>
+      <MapConfigPanelInner {...rest} />
+    </PanelFrame>
+  );
 }
 
 function MapConfigPanelInner({
@@ -159,11 +251,7 @@ function MapConfigPanelInner({
   }
 
   return (
-    <aside class="map-config-panel" aria-label="Configure the evidence map">
-      <header class="map-config-panel__header">
-        <h2 class="map-config-panel__heading">Configure map</h2>
-      </header>
-
+    <>
       <div class="map-config-panel__body">
         <div class="map-config-panel__axes">
           <AxisSelect
@@ -199,7 +287,7 @@ function MapConfigPanelInner({
         onApply={handleApply}
         applyDisabled={!canApply}
       />
-    </aside>
+    </>
   );
 }
 

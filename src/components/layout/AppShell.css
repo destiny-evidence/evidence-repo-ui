@@ -33,17 +33,17 @@
   font-size: 15px;
 }
 
+/* Stacked, so the brand stays narrow whatever the community's name. */
 .app-header__brand-text {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
+  line-height: 1.25;
   color: var(--color-text-primary);
 }
 
-.app-header__brand-sep,
 .app-header__brand-community {
   color: var(--color-text-tertiary);
   font-weight: 400;
@@ -156,4 +156,158 @@
   max-width: var(--content-max-width);
   margin: 0 auto;
   padding-bottom: 64px;
+}
+
+/* ── Narrow-screen menu ──────────────────────────────────────── */
+/* Wide screens lay the menu's contents straight into the header; the toggle
+   only shows below the breakpoint. */
+.app-header__menu-wrap {
+  display: contents;
+}
+
+.app-header__menu {
+  display: flex;
+  align-items: center;
+}
+
+.app-header__menu-toggle {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color 0.12s;
+}
+
+.app-header__menu-toggle:hover,
+.app-header__menu-toggle[aria-expanded="true"] {
+  color: var(--color-accent);
+}
+
+.app-header__menu-resources {
+  display: none;
+}
+
+.app-header__menu-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Below this the centred nav runs into the brand (measured with every nav item
+   shown: ~830px). */
+@media (max-width: 860px) {
+  .app-header {
+    padding: 0 16px;
+    gap: var(--spacing-md);
+  }
+
+  .app-header__menu-toggle {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .app-header__menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 16px;
+    z-index: 150;
+    min-width: 240px;
+    max-height: calc(100vh - var(--header-height) - 16px);
+    overflow-y: auto;
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--spacing-sm);
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .app-header__menu.is-open {
+    display: flex;
+  }
+
+  .app-nav {
+    position: static;
+    transform: none;
+    flex-direction: column;
+    gap: 0;
+    height: auto;
+  }
+
+  .app-nav__resources {
+    display: none;
+  }
+
+  .app-header__menu-resources {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .app-header__menu-label {
+    padding: 6px 12px 4px;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-mono-caps);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-tertiary);
+  }
+
+  .app-header__menu-resource {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-small);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+  }
+
+  .app-header__menu-resource:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .app-header__menu-resource .new-tab-link__icon path {
+    stroke-width: 1;
+  }
+
+  .app-nav__link {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 10px 12px;
+    border-bottom: none;
+    border-left: 2px solid transparent;
+    border-radius: var(--radius-sm);
+  }
+
+  .app-nav__link:hover {
+    background: var(--color-bg-hover);
+  }
+
+  .app-nav__link.active {
+    border-left-color: var(--color-accent);
+  }
+
+  .app-header__user {
+    justify-content: space-between;
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm) 12px var(--spacing-xs);
+    border-top: 1px solid var(--color-border);
+  }
 }

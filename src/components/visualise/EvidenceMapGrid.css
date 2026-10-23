@@ -7,11 +7,6 @@
      border). */
   align-items: flex-start;
   gap: var(--spacing-md);
-  /* Take only the room the table needs (no grow → no whitespace under a short
-     table), but shrink within the bounded map column when space is tight so the
-     scroll table can shrink and the legend below stays visible. */
-  flex: 0 1 auto;
-  min-height: 0;
 }
 
 /* Dim while a new result is loading (the prior grid stays up), and in the
@@ -24,11 +19,7 @@
 
 .evidence-map__scroll {
   overflow: auto;
-  /* Fills the grid's available height and scrolls internally; with .evidence-map
-     content-sized it equals the table's natural height (no whitespace), and it
-     shrinks when the column is too short. 70vh caps a huge table on a tall page. */
-  flex: 1 1 auto;
-  min-height: 0;
+  /* The table's natural height, capped so a huge table scrolls internally. */
   max-height: 70vh;
   /* Hug the table width up to the column width; a wider table scrolls
      horizontally rather than stretching the box past the viewport. */
@@ -66,7 +57,6 @@
 
 .evidence-map__col-head,
 .evidence-map__row-head {
-  padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-small);
   font-weight: 500;
   color: var(--color-text-secondary);
@@ -74,6 +64,7 @@
 }
 
 .evidence-map__col-head {
+  padding: var(--map-col-head-padding);
   text-align: center;
   vertical-align: bottom;
   /* Floor keeps short labels from cramping; ceiling lets a long single word
@@ -99,6 +90,7 @@
 
 .evidence-map__row-head {
   left: 0;
+  padding: var(--map-row-head-padding);
   text-align: left;
   white-space: nowrap;
   border-right: 1px solid var(--color-border);
@@ -230,7 +222,7 @@
   left: 0;
   /* Above the column headers it covers on a horizontal scroll. */
   z-index: 3;
-  padding: var(--spacing-md);
+  padding: var(--map-corner-padding);
   /* Top, not bottom: the corner spans the column-header tiers, so it grows with
      the cell-size step while its content does not, and a bottom-aligned block
      sinks further from the total the larger the step gets. */
@@ -391,9 +383,6 @@
 
 /* ── Legend ── */
 .evidence-map__legend {
-  /* Never shrink: when the grid is squeezed the scroll table absorbs it, so the
-     legend always stays visible just below the table. */
-  flex: none;
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);

@@ -67,3 +67,45 @@ describe("AppShell nav analytics", () => {
     ]);
   });
 });
+
+describe("AppShell narrow-screen menu", () => {
+  beforeEach(() => {
+    mockUseCommunity.mockReset();
+    mockUseCommunity.mockReturnValue(
+      makeCommunity({
+        externalResources: [
+          { title: "Protocol", description: "The protocol", href: "https://x.test/p" },
+        ],
+      }),
+    );
+  });
+
+  const menuButton = () => screen.getByRole("button", { name: "Menu" });
+
+  test("the menu button opens the menu, and an outside click closes it", () => {
+    renderShell();
+    fireEvent.click(menuButton());
+    expect(menuButton()).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(screen.getByText("child"));
+    expect(menuButton()).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("Escape closes the menu and returns focus to its button", () => {
+    renderShell();
+    fireEvent.click(menuButton());
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(menuButton()).toHaveAttribute("aria-expanded", "false");
+    expect(menuButton()).toHaveFocus();
+  });
+
+  test("a link to the current path still closes the menu", () => {
+    history.replaceState(null, "", "/test");
+    renderShell();
+    fireEvent.click(menuButton());
+
+    fireEvent.click(screen.getByRole("link", { name: /^search$/i }));
+    expect(menuButton()).toHaveAttribute("aria-expanded", "false");
+  });
+});
