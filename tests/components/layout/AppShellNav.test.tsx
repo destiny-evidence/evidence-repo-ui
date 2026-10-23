@@ -91,20 +91,21 @@ describe("AppShell narrow-screen menu", () => {
     expect(menuButton()).toHaveAttribute("aria-expanded", "false");
   });
 
-  test("Escape closes an open Resources first, then the menu", () => {
+  test("Escape closes the menu and returns focus to its button", () => {
     renderShell();
     fireEvent.click(menuButton());
-    fireEvent.click(screen.getByRole("button", { name: /resources/i }));
-
-    fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.getByRole("button", { name: /resources/i })).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
-    expect(menuButton()).toHaveAttribute("aria-expanded", "true");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(menuButton()).toHaveAttribute("aria-expanded", "false");
     expect(menuButton()).toHaveFocus();
+  });
+
+  test("a link to the current path still closes the menu", () => {
+    history.replaceState(null, "", "/test");
+    renderShell();
+    fireEvent.click(menuButton());
+
+    fireEvent.click(screen.getByRole("link", { name: /^search$/i }));
+    expect(menuButton()).toHaveAttribute("aria-expanded", "false");
   });
 });

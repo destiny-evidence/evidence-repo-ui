@@ -7,9 +7,6 @@
      border). */
   align-items: flex-start;
   gap: var(--spacing-md);
-  /* Take only the room the table needs (no grow → no whitespace under a short
-     table). */
-  flex: 0 1 auto;
 }
 
 /* Dim while a new result is loading (the prior grid stays up), and in the
@@ -402,9 +399,7 @@
 }
 
 /* ── Legend ── */
-/* In page flow directly under the table; the page scrolls to reach it. */
 .evidence-map__legend {
-  flex: none;
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);

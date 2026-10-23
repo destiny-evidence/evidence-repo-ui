@@ -71,7 +71,6 @@ const PANEL_OPEN_KEY = "evidence-map-panel-open";
 // Mirrors the dense-layout media query in VisualisePage.css.
 const DENSE_MAP_QUERY = "(max-width: 1280px), (max-height: 800px)";
 
-// The user's last open/hide choice, else open only on wide screens.
 function initialPanelOpen(): boolean {
   try {
     const stored = localStorage.getItem(PANEL_OPEN_KEY);
@@ -756,7 +755,13 @@ function EvidenceMapView({
       />
       {!panelOpen && (
         <MapConfigRail
-          filterCount={activeFilters(params, filterableSchemes).values.length}
+          filterCount={
+            params.conceptFilters.flat().length +
+            params.countryCodes.length +
+            (params.startYear !== undefined || params.endYear !== undefined
+              ? 1
+              : 0)
+          }
           onOpen={() => handlePanelToggle(true)}
           buttonRef={railRef}
         />
