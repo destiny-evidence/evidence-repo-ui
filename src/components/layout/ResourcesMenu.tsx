@@ -37,7 +37,7 @@ export function ResourcesMenu({ resources }: ResourcesMenuProps) {
   }, [open]);
 
   return (
-    <div class="app-nav__item" ref={containerRef}>
+    <div class="app-nav__item app-nav__resources" ref={containerRef}>
       <button
         ref={buttonRef}
         type="button"

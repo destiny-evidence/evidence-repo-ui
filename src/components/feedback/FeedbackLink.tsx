@@ -9,7 +9,6 @@ export function FeedbackLink() {
       href={FEEDBACK_FORM_URL}
       aria-label="Send feedback (opens form in a new tab)"
       event={{ category: "Feedback", action: "Nav Clicked" }}
-      icon={false}
     >
       Feedback
     </NewTabLink>

@@ -67,3 +67,44 @@ describe("AppShell nav analytics", () => {
     ]);
   });
 });
+
+describe("AppShell narrow-screen menu", () => {
+  beforeEach(() => {
+    mockUseCommunity.mockReset();
+    mockUseCommunity.mockReturnValue(
+      makeCommunity({
+        externalResources: [
+          { title: "Protocol", description: "The protocol", href: "https://x.test/p" },
+        ],
+      }),
+    );
+  });
+
+  const menuButton = () => screen.getByRole("button", { name: "Menu" });
+
+  test("the menu button opens the menu, and an outside click closes it", () => {
+    renderShell();
+    fireEvent.click(menuButton());
+    expect(menuButton()).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(screen.getByText("child"));
+    expect(menuButton()).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("Escape closes an open Resources first, then the menu", () => {
+    renderShell();
+    fireEvent.click(menuButton());
+    fireEvent.click(screen.getByRole("button", { name: /resources/i }));
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByRole("button", { name: /resources/i })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(menuButton()).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(menuButton()).toHaveAttribute("aria-expanded", "false");
+    expect(menuButton()).toHaveFocus();
+  });
+});

@@ -86,6 +86,26 @@ export function ChevronRightIcon({ size = "1em" }: { size?: number | string } = 
   );
 }
 
+/** Three bars — the narrow-screen header menu button. */
+export function MenuIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.75"
+      stroke-linecap="round"
+      width={size}
+      height={size}
+      aria-hidden="true"
+    >
+      <path d="M3 5h14" />
+      <path d="M3 10h14" />
+      <path d="M3 15h14" />
+    </svg>
+  );
+}
+
 /**
  * Chevron pointing down — used to indicate an expanded disclosure.
  * Sizes to the surrounding text by default so it tracks the header.
