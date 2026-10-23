@@ -19,6 +19,15 @@
   font-size: var(--font-size-base);
   font-weight: 500;
   overflow-wrap: anywhere;
+  --lines: 3;
+}
+
+/* Phones show names in full: the three-column row leaves about 11 characters a line.
+   A description standing in for a name stays clamped, as it repeats in full below. */
+@media (max-width: 600px) {
+  .comparison-row__condition-value--name {
+    --lines: none;
+  }
 }
 
 .comparison-row__vs {

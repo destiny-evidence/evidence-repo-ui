@@ -17,13 +17,21 @@ interface ComparisonRowProps {
 export function ComparisonRow({ intervention, control }: ComparisonRowProps) {
   if (!intervention && !control) return null;
 
+  const name = intervention?.name?.trim();
+  const interventionText = name || intervention?.descriptions?.[0]?.trim();
+
   return (
     <div class="comparison-row">
       {intervention && (
         <div class="comparison-row__condition">
           <h3 class="comparison-row__condition-label lg-section-label">Intervention</h3>
-          <span class="comparison-row__condition-value">
-            {intervention.name?.trim() || "—"}
+          <span
+            class={`comparison-row__condition-value lg-line-clamp${
+              name ? " comparison-row__condition-value--name" : ""
+            }`}
+            title={interventionText}
+          >
+            {interventionText || "—"}
           </span>
         </div>
       )}

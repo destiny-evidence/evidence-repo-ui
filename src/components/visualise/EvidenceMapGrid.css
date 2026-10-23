@@ -87,10 +87,14 @@
    <html lang>); failing that the column grows to its max-width — never an
    arbitrary mid-word break. */
 .evidence-map__col-head-label {
-  display: block;
   white-space: normal;
   -webkit-hyphens: auto;
   hyphens: auto;
+}
+
+/* Scoped so a clamped label keeps lg-line-clamp's display whatever the stylesheet order. */
+.evidence-map__col-head-label:not(.lg-line-clamp) {
+  display: block;
 }
 
 .evidence-map__row-head {
@@ -182,13 +186,8 @@
   min-width: 0;
 }
 
-/* Clamp visible text; the tooltip retains the complete label. */
 .evidence-map__col-head--tiered .evidence-map__col-head-label,
 .evidence-map__row-head--tiered .evidence-map__row-head-label {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
   white-space: normal;
 }
 

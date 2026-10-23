@@ -210,7 +210,7 @@ export function ResultRow({
             {pagination}
           </div>
         )}
-        {abstract && <div class="row-abstract">{abstract}</div>}
+        {abstract && <div class="row-abstract lg-line-clamp">{abstract}</div>}
       </a>
       <div class="row-right">
         {doi && (

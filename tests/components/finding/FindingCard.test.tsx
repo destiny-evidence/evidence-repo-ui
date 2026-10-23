@@ -48,6 +48,34 @@ describe("FindingCard", () => {
     expect(screen.queryByText("Outcome")).toBeNull();
   });
 
+  test.each([
+    [
+      "the name when there is one",
+      { name: "Peer tutoring", descriptions: ["Pupils tutor each other"] },
+      "Peer tutoring",
+      "Peer tutoring",
+      true,
+    ],
+    [
+      "the description when there is no name",
+      { descriptions: ["Conditional cash transfer"] },
+      "Conditional cash transfer",
+      "Conditional cash transfer",
+      false,
+    ],
+    ["a dash and no tooltip when there is neither", {}, "—", null, false],
+  ])("comparison row shows %s", (_, intervention, expected, title, isName) => {
+    const { container } = renderCard({
+      finding: { intervention: { id: "_:int", ...intervention } },
+    });
+    const value = container.querySelector(".comparison-row__condition-value");
+    expect(value?.textContent).toBe(expected);
+    expect(value?.getAttribute("title")).toBe(title);
+    expect(
+      value?.classList.contains("comparison-row__condition-value--name"),
+    ).toBe(isName);
+  });
+
   test("shows back-reference when isShared is true", () => {
     renderCard({ isShared: true });
     expect(
