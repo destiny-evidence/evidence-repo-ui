@@ -182,13 +182,8 @@
   min-width: 0;
 }
 
-/* Clamp visible text; the tooltip retains the complete label. */
 .evidence-map__col-head--tiered .evidence-map__col-head-label,
 .evidence-map__row-head--tiered .evidence-map__row-head-label {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
   white-space: normal;
 }
 

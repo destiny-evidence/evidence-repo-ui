@@ -175,6 +175,14 @@ body {
   font-size: var(--font-size-sm);
 }
 
+/* Clamp to --lines lines, 2 unless set. */
+.lg-line-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--lines, 2);
+  overflow: hidden;
+}
+
 /* State modifier for retracted content (investigation card, findings). */
 .lg-retracted {
   opacity: 0.5;

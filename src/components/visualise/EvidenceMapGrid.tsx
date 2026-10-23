@@ -477,9 +477,10 @@ function TieredHeaderContent({
           buttonRef={(el) => registerFocusTarget(cell.key, el)}
         />
       )}
+      {/* Clamp visible text; the tooltip retains the complete label. */}
       <HeaderLabel
         label={cell.label}
-        labelClass={labelClass}
+        labelClass={`${labelClass} lg-line-clamp`}
         tooltip={tieredHeaderTooltip(cell, countNoun, clickable)}
         ariaLabel={headerAriaLabel(cell.label, countNoun)}
         onClick={clickable ? onClick : undefined}
