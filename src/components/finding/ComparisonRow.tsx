@@ -18,7 +18,7 @@ export function ComparisonRow({ intervention, control }: ComparisonRowProps) {
   if (!intervention && !control) return null;
 
   const interventionText =
-    intervention?.name?.trim() || intervention?.descriptions?.[0]?.trim() || "—";
+    intervention?.name?.trim() || intervention?.descriptions?.[0]?.trim();
 
   return (
     <div class="comparison-row">
@@ -29,7 +29,7 @@ export function ComparisonRow({ intervention, control }: ComparisonRowProps) {
             class="comparison-row__condition-value comparison-row__condition-value--clamped"
             title={interventionText}
           >
-            {interventionText}
+            {interventionText || "—"}
           </span>
         </div>
       )}
