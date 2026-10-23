@@ -57,25 +57,14 @@
 
 .evidence-map__col-head,
 .evidence-map__row-head {
-  padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-small);
   font-weight: 500;
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-border);
 }
 
-/* Tighter headers on small screens (see VisualisePage.css). Before the tiered
-   rules, which keep their own block padding. */
-@media (max-width: 1280px), (max-height: 800px) {
-  .evidence-map__col-head {
-    padding: 6px 10px;
-  }
-  .evidence-map__row-head {
-    padding: 4px 12px;
-  }
-}
-
 .evidence-map__col-head {
+  padding: var(--map-col-head-padding);
   text-align: center;
   vertical-align: bottom;
   /* Floor keeps short labels from cramping; ceiling lets a long single word
@@ -97,6 +86,7 @@
 
 .evidence-map__row-head {
   left: 0;
+  padding: var(--map-row-head-padding);
   text-align: left;
   white-space: nowrap;
   border-right: 1px solid var(--color-border);
@@ -233,7 +223,7 @@
   left: 0;
   /* Above the column headers it covers on a horizontal scroll. */
   z-index: 3;
-  padding: var(--spacing-md);
+  padding: var(--map-corner-padding);
   /* Top, not bottom: the corner spans the column-header tiers, so it grows with
      the cell-size step while its content does not, and a bottom-aligned block
      sinks further from the total the larger the step gets. */
@@ -241,12 +231,6 @@
   text-align: left;
   border-bottom: 1px solid var(--color-border);
   border-right: 1px solid var(--color-border);
-}
-
-@media (max-width: 1280px), (max-height: 800px) {
-  .evidence-map__corner {
-    padding: 8px 12px;
-  }
 }
 
 .evidence-map__total {

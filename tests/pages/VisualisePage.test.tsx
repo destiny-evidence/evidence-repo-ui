@@ -1735,7 +1735,10 @@ describe("VisualisePage on small screens", () => {
     });
   });
 
-  afterEach(() => matchMedia?.mockRestore());
+  afterEach(() => {
+    matchMedia?.mockRestore();
+    document.documentElement.style.removeProperty("--map-dense");
+  });
 
   test("folds the panel to its rail below 1440px; rail and Hide panel toggle it and remember the choice", () => {
     screenMatches("(max-width: 1440px)");
@@ -1785,7 +1788,8 @@ describe("VisualisePage on small screens", () => {
   });
 
   test("defaults to small cells on a small screen, still overridable", () => {
-    screenMatches("(max-width: 1280px), (max-height: 800px)");
+    // jsdom loads no stylesheets, so stand in for variables.css's media query.
+    document.documentElement.style.setProperty("--map-dense", "1");
     const { container } = render(<VisualisePage />);
     const geometry = () =>
       container

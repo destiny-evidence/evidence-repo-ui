@@ -68,8 +68,6 @@ const ROW_PARAM = "row";
 const COLUMN_PARAM = "column";
 
 const PANEL_OPEN_KEY = "evidence-map-panel-open";
-// Mirrors the dense-layout media query in VisualisePage.css.
-const DENSE_MAP_QUERY = "(max-width: 1280px), (max-height: 800px)";
 
 function initialPanelOpen(): boolean {
   try {
@@ -81,8 +79,12 @@ function initialPanelOpen(): boolean {
   return !window.matchMedia("(max-width: 1440px)").matches;
 }
 
+// Small screens default to Small cells; variables.css decides what's small.
 function initialCellSize(): CellSize {
-  return window.matchMedia(DENSE_MAP_QUERY).matches ? "small" : DEFAULT_CELL_SIZE;
+  const dense = getComputedStyle(document.documentElement)
+    .getPropertyValue("--map-dense")
+    .trim();
+  return dense === "1" ? "small" : DEFAULT_CELL_SIZE;
 }
 
 // Inverse of toCrossFacetAxis — recover the config axis from the pair the hook

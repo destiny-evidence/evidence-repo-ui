@@ -53,7 +53,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  padding: 32px;
+  padding: var(--map-gutter);
 }
 
 /* Let .app-main go full-bleed with no bottom padding: widening the parent,
@@ -72,14 +72,6 @@ body.visualise-has-panel .app-main {
     left: auto;
     right: auto;
     margin-inline: 0;
-  }
-}
-
-/* Denser map on small screens; the matching default cell size is set in
-   VisualisePage.tsx (DENSE_MAP_QUERY). */
-@media (max-width: 1280px), (max-height: 800px) {
-  .evidence-map-view__main {
-    padding: 16px;
   }
 }
 
