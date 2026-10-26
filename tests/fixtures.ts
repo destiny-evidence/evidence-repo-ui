@@ -54,7 +54,8 @@ export function makeCommunity(
     name: "Test Community",
     listed: false,
     defaultAnnotations: [],
-    vocabularyUrl: "https://vocab.example/v1",
+    vocabularyUrl: "https://vocab.example/published/test-vocab/1.0/vocabulary.jsonld",
+    vocabularyIds: ["test-vocab"],
     contextUrl: "https://vocab.example/ctx",
     filterExcludedSchemes: [],
     pillExcludedSchemes: [],
@@ -296,7 +297,7 @@ export function linkedDataEnh(
 ): Enhancement {
   const content: LinkedDataEnhancement = {
     enhancement_type: "linked_data",
-    vocabulary_uri: "https://vocab.example/v1",
+    vocabulary_uri: "https://vocab.example/published/test-vocab/1.0/vocabulary.jsonld",
     data: {
       "@context": "https://vocab.example/context.jsonld",
       "@type": "LinkedDataEnhancement",

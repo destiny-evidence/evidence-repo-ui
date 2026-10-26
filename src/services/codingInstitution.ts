@@ -4,7 +4,7 @@ import type {
   OtherEnhancement,
   Reference,
 } from "@/types/models";
-import { extractLatestEnhancement } from "@/services/referenceUtils";
+import { extractLatestCommunityAgnosticEnhancement } from "@/services/referenceUtils";
 
 // Derives the coder label by matching tokens (first match wins) in a
 // reference's raw-enhancement `source`. Patterns use non-letter boundaries
@@ -24,7 +24,10 @@ export function rawSourcePatterns(
   return {
     // Temporary: roll back once references are deduplicated.
     fromReference(reference: Reference): string | null {
-      const raw = extractLatestEnhancement<OtherEnhancement>(reference, "raw");
+      const raw = extractLatestCommunityAgnosticEnhancement<OtherEnhancement>(
+        reference,
+        "raw",
+      );
       return resolve(raw?.source);
     },
 

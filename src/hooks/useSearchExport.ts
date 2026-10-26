@@ -43,6 +43,7 @@ export interface StartExportOptions {
   resolveReferenceIds?: (signal: AbortSignal) => Promise<string[]>;
   // Excel only:
   vocabularyUrl?: string;
+  vocabularyIds?: readonly string[];
   contextUrl?: string;
   variant?: ExportVariant;
   codingInstitution?: CodingInstitutionConfig;
@@ -82,6 +83,7 @@ async function downloadForFormat(
         options.filename,
         {
           variant: options.variant,
+          vocabularyIds: options.vocabularyIds!,
           codingInstitution: options.codingInstitution,
           pinnedFilters: options.pinnedFilters,
           identifierColumns: options.identifierColumns,

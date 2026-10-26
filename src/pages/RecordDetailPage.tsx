@@ -37,7 +37,9 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
 
   const { reference, loading: refLoading, error: refError } = useReference(id);
   const bibliographic = reference ? extractBibliographic(reference) : null;
-  const linkedData = reference ? extractLinkedData(reference) : null;
+  const linkedData = reference
+    ? extractLinkedData(reference, community?.vocabularyIds ?? [])
+    : null;
 
   const {
     labels,
@@ -123,7 +125,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
   if (!reference) return <NotFoundPage />;
 
   const doi = extractDoi(reference.identifiers);
-  const lde = extractLinkedDataEnhancement(reference);
+  const lde = extractLinkedDataEnhancement(reference, community.vocabularyIds);
   const codingInstitution = lde
     ? (community.codingInstitution?.fromLinkedData(reference, lde) ?? null)
     : null;

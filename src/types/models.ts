@@ -84,6 +84,9 @@ export interface Community {
   listed: boolean;
   defaultAnnotations: string[];
   vocabularyUrl: string;
+  // Published vocabulary IDs whose linked data this community displays: the
+  // one in vocabularyUrl plus any extras.
+  vocabularyIds: readonly string[];
   contextUrl: string;
   filterExcludedSchemes: string[];
   // Concept schemes whose concepts are dropped from result-card pills.

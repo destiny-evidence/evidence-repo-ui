@@ -506,6 +506,7 @@ function SearchPageInner({ community }: { community: Community }) {
         resultCount,
         ...source,
         vocabularyUrl: community.vocabularyUrl,
+        vocabularyIds: community.vocabularyIds,
         contextUrl: community.contextUrl,
         variant: community.exportVariant,
         codingInstitution: community.codingInstitution,
@@ -773,6 +774,7 @@ function SearchPageInner({ community }: { community: Community }) {
             <ResultRow
               key={ref.id}
               communitySlug={community.slug}
+              vocabularyIds={community.vocabularyIds}
               reference={ref}
               // 1-based rank across pages, for click-through-by-position.
               position={(resultsPage - 1) * RESULTS_PER_PAGE + index + 1}

@@ -61,6 +61,8 @@ function makeBibContent(
 
 const NS = "https://vocab.aliveevidence.org/hpv/";
 const PREFIXES = new Map([["hpv", NS]]);
+const VOCAB_ID = "hpv-vocab";
+const VOCABULARY_IDS = [VOCAB_ID];
 
 const LABELS = new Map([
   [`${NS}c1`, "Nurse"],
@@ -110,7 +112,7 @@ function hpvRef(id: string, conceptCuries: string[]): Reference {
       makeEnh(
         {
           enhancement_type: "linked_data",
-          vocabulary_uri: `${NS}v1`,
+          vocabulary_uri: `https://vocab.example/published/${VOCAB_ID}/1.0/vocabulary.jsonld`,
           data: {
             hasInvestigation: {
               hasAppliedConcept: conceptCuries.map((c) => ({ "@id": c })),
@@ -153,7 +155,7 @@ const OPEN_ALEX_COLUMN: IdentifierColumn = {
 
 describe("buildReferenceConceptRows", () => {
   test("derives one scheme column per scheme, alphabetical, no Other codes when empty", async () => {
-    const { headers } = await buildReferenceConceptRows([], VOCAB);
+    const { headers } = await buildReferenceConceptRows([], VOCAB, VOCABULARY_IDS);
     expect(headers).toEqual([
       ...BIB_HEADERS,
       "Country",
@@ -164,7 +166,7 @@ describe("buildReferenceConceptRows", () => {
   });
 
   test("orders scheme columns by pinnedFilters, then alphabetically", async () => {
-    const { headers } = await buildReferenceConceptRows([], VOCAB, {
+    const { headers } = await buildReferenceConceptRows([], VOCAB, VOCABULARY_IDS, {
       pinnedFilters: [`${NS}TargetPopulation`, "year"],
     });
     expect(headers).toEqual([
@@ -176,7 +178,7 @@ describe("buildReferenceConceptRows", () => {
   });
 
   test("includes geo schemes as columns", async () => {
-    const { headers } = await buildReferenceConceptRows([], VOCAB);
+    const { headers } = await buildReferenceConceptRows([], VOCAB, VOCABULARY_IDS);
     expect(headers).toContain("Country");
   });
 
@@ -184,6 +186,7 @@ describe("buildReferenceConceptRows", () => {
     const { headers, rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", [])],
       VOCAB,
+      VOCABULARY_IDS,
       { identifierColumns: [DOI_COLUMN, EPPI_COLUMN] },
     );
     expect(headers.slice(0, 8)).toEqual(bibHeaders("DOI", "EPPI ItemId"));
@@ -210,6 +213,7 @@ describe("buildReferenceConceptRows", () => {
     const { headers, rows } = await buildReferenceConceptRows(
       [withOpenAlex, hpvRef("ref-2", [])],
       VOCAB,
+      VOCABULARY_IDS,
       { identifierColumns: [OPEN_ALEX_COLUMN] },
     );
     expect(headers.slice(0, 7)).toEqual(bibHeaders("OpenAlex ID"));
@@ -221,6 +225,7 @@ describe("buildReferenceConceptRows", () => {
     const { headers, rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", [])],
       VOCAB,
+      VOCABULARY_IDS,
     );
     expect(headers.slice(0, 6)).toEqual(BIB_HEADERS);
     expect(rows[0]!["DOI"]).toBeUndefined();
@@ -228,7 +233,7 @@ describe("buildReferenceConceptRows", () => {
   });
 
   test("writes identifier columns between Journal and Abstract, in configured order", async () => {
-    const { headers } = await buildReferenceConceptRows([], VOCAB, {
+    const { headers } = await buildReferenceConceptRows([], VOCAB, VOCABULARY_IDS, {
       identifierColumns: [OPEN_ALEX_COLUMN, EPPI_COLUMN],
     });
     expect(headers.slice(0, 8)).toEqual(
@@ -240,6 +245,7 @@ describe("buildReferenceConceptRows", () => {
     const { headers, rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", [])],
       VOCAB,
+      VOCABULARY_IDS,
       { identifierColumns: [DOI_COLUMN] },
     );
     expect(headers.filter((h) => h === "DOI")).toHaveLength(1);
@@ -250,6 +256,7 @@ describe("buildReferenceConceptRows", () => {
     const { rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", ["hpv:c1", "hpv:c2", "hpv:c3", "hpv:c4"])],
       VOCAB,
+      VOCABULARY_IDS,
     );
     const row = rows[0]!;
     expect(row["Delivery Actor"]).toBe("Nurse; Pharmacist");
@@ -258,7 +265,7 @@ describe("buildReferenceConceptRows", () => {
   });
 
   test("leaves scheme cells blank for a reference with no applied concepts", async () => {
-    const { rows } = await buildReferenceConceptRows([hpvRef("ref-1", [])], VOCAB);
+    const { rows } = await buildReferenceConceptRows([hpvRef("ref-1", [])], VOCAB, VOCABULARY_IDS);
     const row = rows[0]!;
     expect(row["Delivery Actor"]).toBeUndefined();
     expect(row["Target Population"]).toBeUndefined();
@@ -274,7 +281,7 @@ describe("buildReferenceConceptRows", () => {
         }),
       ],
     });
-    const { rows } = await buildReferenceConceptRows([bibOnly], VOCAB);
+    const { rows } = await buildReferenceConceptRows([bibOnly], VOCAB, VOCABULARY_IDS);
     expect(rows).toHaveLength(1);
     expect(rows[0]!["Reference ID"]).toBe("ref-bib-only");
     expect(rows[0]!["Title"]).toBe("Bib only");
@@ -286,10 +293,29 @@ describe("buildReferenceConceptRows", () => {
       yield hpvRef("ref-1", ["hpv:c1"]);
       yield hpvRef("ref-2", ["hpv:c3"]);
     }
-    const { rows } = await buildReferenceConceptRows(gen(), VOCAB);
+    const { rows } = await buildReferenceConceptRows(gen(), VOCAB, VOCABULARY_IDS);
     expect(rows.map((r) => r["Reference ID"])).toEqual(["ref-1", "ref-2"]);
     expect(rows[0]!["Delivery Actor"]).toBe("Nurse");
     expect(rows[1]!["Target Population"]).toBe("Adolescent girls");
+  });
+
+  test("exports the community's coding when a newer one exists for another vocabulary", async () => {
+    const ref = hpvRef("ref-1", ["hpv:c1"]);
+    const other = hpvRef("ref-1", ["hpv:c2"]).enhancements!.find(
+      (e) => e.content.enhancement_type === "linked_data",
+    )!;
+    ref.enhancements!.push({
+      ...other,
+      id: "ld-other",
+      created_at: "2025-01-01T00:00:00Z",
+      content: {
+        ...other.content,
+        vocabulary_uri:
+          "https://vocab.example/published/other-vocab/1.0/vocabulary.jsonld",
+      } as typeof other.content,
+    });
+    const { rows } = await buildReferenceConceptRows([ref], VOCAB, VOCABULARY_IDS);
+    expect(rows[0]!["Delivery Actor"]).toBe("Nurse");
   });
 
   test("routes concepts with no scheme column into Other codes", async () => {
@@ -301,6 +327,7 @@ describe("buildReferenceConceptRows", () => {
     const { headers, rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", ["hpv:c1", "hpv:c9", "hpv:c8"])],
       vocab,
+      VOCABULARY_IDS,
     );
     expect(headers).toContain("Other codes");
     const row = rows[0]!;
@@ -313,10 +340,11 @@ describe("buildReferenceConceptRows", () => {
       { uri: `${NS}DeliveryActorA`, label: "Delivery Actor Scheme", topConcepts: [] },
       { uri: `${NS}DeliveryActorB`, label: "Delivery Actor Scheme", topConcepts: [] },
     ];
-    const { headers } = await buildReferenceConceptRows([], {
-      ...VOCAB,
-      schemes: collidingSchemes,
-    });
+    const { headers } = await buildReferenceConceptRows(
+      [],
+      { ...VOCAB, schemes: collidingSchemes },
+      VOCABULARY_IDS,
+    );
     expect(headers).toEqual([
       ...BIB_HEADERS,
       "Delivery Actor",
@@ -333,6 +361,7 @@ describe("buildReferenceConceptRows", () => {
           { uri: `${NS}Eppi`, label: "EPPI ItemId", topConcepts: [] },
         ],
       },
+      VOCABULARY_IDS,
       { identifierColumns: [EPPI_COLUMN] },
     );
     expect(headers).toEqual([
@@ -355,6 +384,7 @@ describe("buildReferenceConceptRows", () => {
     const { rows } = await buildReferenceConceptRows(
       [hpvRef("ref-1", curies)],
       { ...VOCAB, labels, inScheme },
+      VOCABULARY_IDS,
     );
     const cell = rows[0]!["Delivery Actor"] as string;
     expect(cell).toHaveLength(32767);

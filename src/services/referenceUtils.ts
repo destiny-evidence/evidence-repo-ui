@@ -13,6 +13,7 @@ import {
   decodeHtmlEntities,
   stripAbstractLabelPrefix,
 } from "@/services/textUtils";
+import { publishedVocabularyId } from "@/services/vocabulary/vocabularyService";
 
 export function isDict(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -38,29 +39,24 @@ export function getInvestigation(
 }
 
 /**
- * Return the highest-priority enhancement of the given type on a
- * reference, or null.
+ * Return the highest-priority of `candidates`, or null.
  *
  * Search-result references arrive with enhancements from the canonical
  * reference (`enhancement.reference_id === reference.id`) alongside any
  * deduplicated duplicates. Canonical data wins even when a duplicate
  * was created more recently. Within the chosen bucket the most recent
  * enhancement by `created_at` wins. We only fall back to the duplicate
- * bucket when the canonical reference has no enhancement of this type
- * at all.
+ * bucket when no candidate belongs to the canonical reference.
  */
-export function extractLatestEnhancement<T extends EnhancementContent>(
+function latestPreferringCanonical<E extends Enhancement>(
   reference: Reference,
-  enhancementType: T["enhancement_type"],
-): (Enhancement & { content: T }) | null {
-  type Narrowed = Enhancement & { content: T };
-  const canonical: Narrowed[] = [];
-  const duplicate: Narrowed[] = [];
-  for (const e of reference.enhancements ?? []) {
-    if (e.content.enhancement_type !== enhancementType) continue;
-    const narrowed = e as Narrowed;
-    if (e.reference_id === reference.id) canonical.push(narrowed);
-    else duplicate.push(narrowed);
+  candidates: readonly E[],
+): E | null {
+  const canonical: E[] = [];
+  const duplicate: E[] = [];
+  for (const e of candidates) {
+    if (e.reference_id === reference.id) canonical.push(e);
+    else duplicate.push(e);
   }
   const bucket = canonical.length ? canonical : duplicate;
   if (bucket.length === 0) return null;
@@ -70,31 +66,65 @@ export function extractLatestEnhancement<T extends EnhancementContent>(
   );
 }
 
+/**
+ * Return the highest-priority community agnostic enhancement 
+ * of the given type on a reference, or null. 
+ */
+export function extractLatestCommunityAgnosticEnhancement<
+  T extends Exclude<EnhancementContent, LinkedDataEnhancement>,
+>(
+  reference: Reference,
+  enhancementType: T["enhancement_type"],
+): (Enhancement & { content: T }) | null {
+  type Narrowed = Enhancement & { content: T };
+  const candidates = (reference.enhancements ?? []).filter(
+    (e): e is Narrowed => e.content.enhancement_type === enhancementType,
+  );
+  return latestPreferringCanonical(reference, candidates);
+}
+
 export function extractBibliographic(
   reference: Reference,
 ): BibliographicMetadataEnhancement | null {
   return (
-    extractLatestEnhancement<BibliographicMetadataEnhancement>(
+    extractLatestCommunityAgnosticEnhancement<BibliographicMetadataEnhancement>(
       reference,
       "bibliographic",
     )?.content ?? null
   );
 }
 
-// Most callers want the content only — see extractLinkedData.
+function isFromVocabulary(
+  content: LinkedDataEnhancement,
+  vocabularyIds: readonly string[],
+): boolean {
+  try {
+    return vocabularyIds.includes(publishedVocabularyId(content.vocabulary_uri));
+  } catch {
+    return false;
+  }
+}
+
+// The highest-priority linked-data enhancement coded against one of
+// `vocabularyIds`.
 export function extractLinkedDataEnhancement(
   reference: Reference,
+  vocabularyIds: readonly string[],
 ): (Enhancement & { content: LinkedDataEnhancement }) | null {
-  return extractLatestEnhancement<LinkedDataEnhancement>(
-    reference,
-    "linked_data",
+  type Narrowed = Enhancement & { content: LinkedDataEnhancement };
+  const candidates = (reference.enhancements ?? []).filter(
+    (e): e is Narrowed =>
+      e.content.enhancement_type === "linked_data" &&
+      isFromVocabulary(e.content, vocabularyIds),
   );
+  return latestPreferringCanonical(reference, candidates);
 }
 
 export function extractLinkedData(
   reference: Reference,
+  vocabularyIds: readonly string[],
 ): LinkedDataEnhancement | null {
-  return extractLinkedDataEnhancement(reference)?.content ?? null;
+  return extractLinkedDataEnhancement(reference, vocabularyIds)?.content ?? null;
 }
 
 // Entity decoding + label-prefix strip only. Mojibake from upstream parsers
@@ -138,12 +168,11 @@ export function extractAbstract(
 }
 
 // Counts are read straight from raw JSON-LD so badges render on first paint
-// without waiting on vocabulary resolution. Returns null when the reference
-// has no linked-data enhancement, preserving the `—` fallback path.
+// without waiting on vocabulary resolution. Returns null when there is no
+// linked-data enhancement, preserving the `—` fallback path.
 export function extractFindingsAndEstimatesCount(
-  reference: Reference,
+  ld: LinkedDataEnhancement | null,
 ): { findings: number; estimates: number } | null {
-  const ld = extractLinkedData(reference);
   if (!ld) return null;
   const investigation = getInvestigation(ld.data);
   const findings = ensureArray(investigation["hasFinding"]).filter(isDict);

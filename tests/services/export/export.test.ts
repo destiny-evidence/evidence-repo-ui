@@ -26,6 +26,8 @@ const VOCAB_URL = "https://vocab.example.org/v1";
 const VOCAB_JSONLD_URL = "https://vocab.example.org/v1.jsonld";
 const CONTEXT_URL = "https://vocab.example.org/context.jsonld";
 const JSONL_URL = "https://signed.example.com/refs.jsonl?sig=abc";
+// The published ID the committed JSONL fixtures are coded against.
+const VOCAB_ID = "019d9463-2780-7243-b4de-e547386f2a90";
 
 const VOCAB_JSONLD_BODY = JSON.stringify({
   "@graph": [
@@ -52,7 +54,7 @@ const JSONL_BODY =
         created_at: "2024-01-02T00:00:00Z",
         content: {
           enhancement_type: "linked_data",
-          vocabulary_uri: "https://vocab.esea.education/v1",
+          vocabulary_uri: `https://vocab.example.org/published/${VOCAB_ID}/1.1/vocabulary.ttl`,
           data: {
             hasInvestigation: {
               hasFinding: [
@@ -193,7 +195,7 @@ describe("exportReferencesToExcel", () => {
 
   test("triggers a download with the given filename and xlsx MIME type", async () => {
     const { captured } = installSpies();
-    await exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea" });
+    await exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea", vocabularyIds: [VOCAB_ID] });
 
     expect(captured.filename).toBe("out.xlsx");
     expect(captured.blob).not.toBeNull();
@@ -215,7 +217,7 @@ describe("exportReferencesToExcel", () => {
       "https://vocab.example.org/v1/",
     ]) {
       const { fetchSpy } = installSpies();
-      await exportReferencesToExcel(JSONL_URL, input, CONTEXT_URL, "out.xlsx", { variant: "esea" });
+      await exportReferencesToExcel(JSONL_URL, input, CONTEXT_URL, "out.xlsx", { variant: "esea", vocabularyIds: [VOCAB_ID] });
       const vocabCalls = fetchSpy.mock.calls
         .map((c) => (typeof c[0] === "string" ? c[0] : c[0]!.toString()))
         .filter((u) => u.includes("vocab") && !u.includes("context"));
@@ -227,7 +229,7 @@ describe("exportReferencesToExcel", () => {
 
   test("fetches the vocabulary, context, and JSONL", async () => {
     const { fetchSpy } = installSpies();
-    await exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea" });
+    await exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea", vocabularyIds: [VOCAB_ID] });
     const urls = fetchSpy.mock.calls.map((c) =>
       typeof c[0] === "string" ? c[0] : c[0]!.toString(),
     );
@@ -241,7 +243,7 @@ describe("exportReferencesToExcel", () => {
       vocabBody: { status: 404, statusText: "Not Found", body: "nope" },
     });
     await expect(
-      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea" }),
+      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea", vocabularyIds: [VOCAB_ID] }),
     ).rejects.toThrow(/Failed to fetch vocabulary: 404/);
   });
 
@@ -250,7 +252,7 @@ describe("exportReferencesToExcel", () => {
       contextBody: { status: 404, statusText: "Not Found", body: "nope" },
     });
     await expect(
-      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea" }),
+      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea", vocabularyIds: [VOCAB_ID] }),
     ).rejects.toThrow(/Failed to fetch context: 404/);
   });
 
@@ -259,7 +261,7 @@ describe("exportReferencesToExcel", () => {
       jsonlBody: { status: 500, statusText: "Server Error", body: "" },
     });
     await expect(
-      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea" }),
+      exportReferencesToExcel(JSONL_URL, VOCAB_URL, CONTEXT_URL, "out.xlsx", { variant: "esea", vocabularyIds: [VOCAB_ID] }),
     ).rejects.toThrow(/HTTP 500/);
   });
 
@@ -270,7 +272,7 @@ describe("exportReferencesToExcel", () => {
       VOCAB_URL,
       CONTEXT_URL,
       "chunked.xlsx",
-      { variant: "esea" },
+      { variant: "esea", vocabularyIds: [VOCAB_ID] },
     );
     expect(captured.filename).toBe("chunked.xlsx");
     expect(captured.blob!.size).toBeGreaterThan(0);
@@ -350,7 +352,7 @@ describe.each([
       VOCAB_URL,
       CONTEXT_URL,
       `${stem}.xlsx`,
-      { variant: "esea", codingInstitution: CODING },
+      { variant: "esea", vocabularyIds: [VOCAB_ID], codingInstitution: CODING },
     );
 
     expect(captured.blobBytes).not.toBeNull();

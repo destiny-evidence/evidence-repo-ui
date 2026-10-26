@@ -6,6 +6,7 @@ import type {
   IdentifierColumn,
 } from "@/types/models";
 import { rawSourcePatterns } from "@/services/codingInstitution";
+import { publishedVocabularyId } from "@/services/vocabulary/vocabularyService";
 
 function requireEnv(name: string, value: string | undefined): string {
   if (typeof value !== "string" || value === "") {
@@ -15,6 +16,24 @@ function requireEnv(name: string, value: string | undefined): string {
     );
   }
   return value;
+}
+
+// `extraIds` is a comma-separated list of further published vocabulary IDs,
+// e.g. test vocabularies coded against in staging.
+function vocabulary(
+  urlEnvName: string,
+  url: string | undefined,
+  extraIds: string | undefined,
+): Pick<Community, "vocabularyUrl" | "vocabularyIds"> {
+  const vocabularyUrl = requireEnv(urlEnvName, url);
+  const extras = (extraIds ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return {
+    vocabularyUrl,
+    vocabularyIds: [publishedVocabularyId(vocabularyUrl), ...extras],
+  };
 }
 
 export const DEFAULT_FEATURES: CommunityFeatures = {
@@ -71,9 +90,10 @@ const COMMUNITIES: Community[] = [
     name: "Education",
     listed: false,
     defaultAnnotations: ["domain-inclusion/jacobs-education"],
-    vocabularyUrl: requireEnv(
+    ...vocabulary(
       "VITE_ESEA_VOCABULARY_URL",
       import.meta.env.VITE_ESEA_VOCABULARY_URL,
+      import.meta.env.VITE_ESEA_EXTRA_VOCABULARY_IDS,
     ),
     contextUrl: requireEnv(
       "VITE_ESEA_CONTEXT_URL",
@@ -118,9 +138,10 @@ const COMMUNITIES: Community[] = [
     name: "HPV Vaccine Delivery",
     listed: true,
     defaultAnnotations: ["domain-inclusion/hpv"],
-    vocabularyUrl: requireEnv(
+    ...vocabulary(
       "VITE_HPV_VOCABULARY_URL",
       import.meta.env.VITE_HPV_VOCABULARY_URL,
+      import.meta.env.VITE_HPV_EXTRA_VOCABULARY_IDS,
     ),
     contextUrl: requireEnv(
       "VITE_HPV_CONTEXT_URL",
@@ -199,9 +220,10 @@ const COMMUNITIES: Community[] = [
     name: "DESTINY",
     listed: true,
     defaultAnnotations: ["domain-inclusion/destiny-high-recall"],
-    vocabularyUrl: requireEnv(
+    ...vocabulary(
       "VITE_DESTINY_VOCABULARY_URL",
       import.meta.env.VITE_DESTINY_VOCABULARY_URL,
+      import.meta.env.VITE_DESTINY_EXTRA_VOCABULARY_IDS,
     ),
     contextUrl: requireEnv(
       "VITE_DESTINY_CONTEXT_URL",

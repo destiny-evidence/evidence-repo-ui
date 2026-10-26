@@ -92,6 +92,7 @@ function buildSchemeColumns(
 function buildReferenceConceptRow(
   reference: Reference,
   vocab: ConceptResolver,
+  vocabularyIds: readonly string[],
   inScheme: Map<string, string>,
   schemeHeaderByUri: Map<string, string>,
   identifierColumns: readonly IdentifierColumn[],
@@ -113,7 +114,7 @@ function buildReferenceConceptRow(
     row[column.header] = extractIdentifier(reference.identifiers, column);
   }
 
-  const linked = extractLinkedDataEnhancement(reference);
+  const linked = extractLinkedDataEnhancement(reference, vocabularyIds);
   if (linked) {
     const appliedConcepts = parseAppliedConcepts(
       getInvestigation(linked.content.data),
@@ -146,6 +147,7 @@ function buildReferenceConceptRow(
 export async function buildReferenceConceptRows(
   references: ReferenceSource,
   vocab: ConceptResolver,
+  vocabularyIds: readonly string[],
   { pinnedFilters, identifierColumns = [] }: ReferenceConceptRowOptions = {},
 ): Promise<{ headers: string[]; rows: SheetRow[] }> {
   const bibHeaders = bibliographicHeaders(identifierColumns);
@@ -165,6 +167,7 @@ export async function buildReferenceConceptRows(
       buildReferenceConceptRow(
         reference,
         vocab,
+        vocabularyIds,
         inScheme,
         schemeHeaderByUri,
         identifierColumns,

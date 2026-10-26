@@ -13,16 +13,26 @@ import type { Community } from "@/types/models";
 // Single source for the required variables: the stub, the missing-variable
 // cases, and the URL assertions all derive from these entries.
 const ENV = {
-  VITE_ESEA_VOCABULARY_URL: "https://vocab.example/esea-v1",
+  VITE_ESEA_VOCABULARY_URL:
+    "https://vocab.example/published/esea-id/1.0/vocabulary.jsonld",
   VITE_ESEA_CONTEXT_URL: "https://vocab.example/esea-ctx",
-  VITE_HPV_VOCABULARY_URL: "https://vocab.example/hpv-v1",
+  VITE_HPV_VOCABULARY_URL:
+    "https://vocab.example/published/hpv-id/1.0/vocabulary.jsonld",
   VITE_HPV_CONTEXT_URL: "https://vocab.example/hpv-ctx",
-  VITE_DESTINY_VOCABULARY_URL: "https://vocab.example/dst-v1",
+  VITE_DESTINY_VOCABULARY_URL:
+    "https://vocab.example/published/dst-id/1.0/vocabulary.jsonld",
   VITE_DESTINY_CONTEXT_URL: "https://vocab.example/dst-ctx",
 } as const;
 
+const EXTRA_VOCABULARY_ID_VARS = [
+  "VITE_ESEA_EXTRA_VOCABULARY_IDS",
+  "VITE_HPV_EXTRA_VOCABULARY_IDS",
+  "VITE_DESTINY_EXTRA_VOCABULARY_IDS",
+] as const;
+
 function stubValidEnv() {
   for (const [name, value] of Object.entries(ENV)) vi.stubEnv(name, value);
+  for (const name of EXTRA_VOCABULARY_ID_VARS) vi.stubEnv(name, "");
 }
 
 // communities.ts reads env at module scope, so each case here needs the module
@@ -40,6 +50,47 @@ describe("communities env validation", () => {
   it.each(Object.keys(ENV))("throws when %s is missing", async (name) => {
     vi.stubEnv(name, "");
     await expect(import("@/services/communities")).rejects.toThrow(name);
+  });
+
+  it.each([
+    "VITE_ESEA_VOCABULARY_URL",
+    "VITE_HPV_VOCABULARY_URL",
+    "VITE_DESTINY_VOCABULARY_URL",
+  ])("throws when %s is not a published vocabulary URL", async (name) => {
+    vi.stubEnv(name, "https://vocab.example/vocabulary.jsonld");
+    await expect(import("@/services/communities")).rejects.toThrow(
+      "https://vocab.example/vocabulary.jsonld",
+    );
+  });
+});
+
+describe("community extra vocabulary IDs", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    stubValidEnv();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it.each([
+    { slug: "esea", name: "VITE_ESEA_EXTRA_VOCABULARY_IDS", ownId: "esea-id" },
+    { slug: "hpv", name: "VITE_HPV_EXTRA_VOCABULARY_IDS", ownId: "hpv-id" },
+    { slug: "destiny", name: "VITE_DESTINY_EXTRA_VOCABULARY_IDS", ownId: "dst-id" },
+  ])("appends $name to $slug's vocabulary IDs", async ({ slug, name, ownId }) => {
+    vi.stubEnv(name, " test-a, ,test-b ,");
+    const mod = await import("@/services/communities");
+    expect(mod.findCommunity(slug)?.vocabularyIds).toEqual([
+      ownId,
+      "test-a",
+      "test-b",
+    ]);
+  });
+
+  it("uses only the vocabulary URL's ID when no extras are set", async () => {
+    const mod = await import("@/services/communities");
+    expect(mod.findCommunity("esea")?.vocabularyIds).toEqual(["esea-id"]);
   });
 });
 
@@ -62,6 +113,7 @@ describe("community registry", () => {
       slug: "esea",
       name: "Education",
       vocabularyUrl: ENV.VITE_ESEA_VOCABULARY_URL,
+      vocabularyIds: ["esea-id"],
       contextUrl: ENV.VITE_ESEA_CONTEXT_URL,
       countNoun: "investigations",
       corpusDescriptor: "education research",
@@ -70,6 +122,7 @@ describe("community registry", () => {
       slug: "hpv",
       name: "HPV Vaccine Delivery",
       vocabularyUrl: ENV.VITE_HPV_VOCABULARY_URL,
+      vocabularyIds: ["hpv-id"],
       contextUrl: ENV.VITE_HPV_CONTEXT_URL,
       countNoun: "references",
       corpusDescriptor: "HPV vaccine delivery research",
@@ -78,6 +131,7 @@ describe("community registry", () => {
       slug: "destiny",
       name: "DESTINY",
       vocabularyUrl: ENV.VITE_DESTINY_VOCABULARY_URL,
+      vocabularyIds: ["dst-id"],
       contextUrl: ENV.VITE_DESTINY_CONTEXT_URL,
       countNoun: "investigations",
       corpusDescriptor: "climate and health research",
