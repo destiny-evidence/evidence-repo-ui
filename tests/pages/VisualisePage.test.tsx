@@ -1633,6 +1633,35 @@ describe("VisualisePage analytics", () => {
   });
 });
 
+describe("VisualisePage source", () => {
+  function renderAt(search: string) {
+    mockUseUrlParams.mockReturnValue(search);
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(5, [["level:primary", "theme:literacy", 5]]),
+      resultAxes: CROSS_AXES,
+      resultParams: parseSearchParams(search),
+      loading: false,
+      error: null,
+    });
+    return render(<VisualisePage />);
+  }
+
+  beforeEach(() => mockUseCommunity.mockReturnValue(mappedCommunity()));
+
+  test("Back to search reopens Search with the map's query and filters", () => {
+    renderAt("?q=phonics&country=KE&row=scheme%3Alevel&column=scheme%3Atheme");
+    expect(screen.getByRole("link", { name: /back to search/i })).toHaveAttribute(
+      "href",
+      "/test?q=phonics&country=KE",
+    );
+  });
+
+  test("the whole repository with no filters offers no Back to search", () => {
+    renderAt("?row=scheme%3Alevel&column=scheme%3Atheme");
+    expect(screen.queryByRole("link", { name: /back to search/i })).toBeNull();
+  });
+});
+
 describe("VisualisePage config panel hydration", () => {
   const FILTERED =
     "?concept=level%3Asecondary&row=scheme%3Alevel&column=scheme%3Atheme";

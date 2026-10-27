@@ -41,6 +41,7 @@ import { RefineButton } from "@/components/search/RefineButton";
 import { VisualiseMenu } from "@/components/search/VisualiseMenu";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
+import { BackLink } from "@/components/common/BackLink";
 import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
 import { orderFilterItems } from "@/components/filters/filterOrder";
 import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
@@ -633,16 +634,13 @@ function SearchPageInner({ community }: { community: Community }) {
           : ""}
       </span>
       {visualiseBackUrl && (
-        <a
+        <BackLink
           class="search-page__back"
           href={visualiseBackUrl}
           onClick={handleBackClick}
         >
-          <span class="search-page__back-arrow" aria-hidden="true">
-            ←
-          </span>
           Back to Visualise
-        </a>
+        </BackLink>
       )}
       <section class="search-hero">
         <h1 class="search-hero__title">Search the evidence</h1>

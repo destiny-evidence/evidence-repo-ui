@@ -44,7 +44,11 @@ import type {
   EvidenceMapAxis,
 } from "@/types/models";
 import { track } from "@/analytics/matomo";
-import { activeFilters, conceptPathName } from "@/analytics/searchEvents";
+import {
+  activeFilters,
+  conceptPathName,
+  hasActiveSearch,
+} from "@/analytics/searchEvents";
 import { indexConceptPaths } from "@/components/filters/conceptSchemeFilterState";
 import { formatTotal } from "@/utils/searchTotal";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
@@ -57,6 +61,7 @@ import {
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import { DEFAULT_EXPANDED_FILTERS } from "@/components/filters/filterOrder";
 import { WarningIcon } from "@/components/common/icons";
+import { BackLink } from "@/components/common/BackLink";
 import { MapCoverageNote } from "@/components/visualise/MapCoverageNote";
 import { NotFoundPage } from "./NotFoundPage";
 import "./VisualisePage.css";
@@ -592,6 +597,11 @@ function EvidenceMapView({
   return (
     <div class="evidence-map-view">
       <div class="evidence-map-view__main">
+        {hasActiveSearch(params) && (
+          <BackLink href={buildSearchUrl(community.slug, { ...params, page: 1 })}>
+            Back to search
+          </BackLink>
+        )}
         <h1
           class="visualise-page__title"
           id={MAP_TITLE_ID}
