@@ -120,3 +120,31 @@
 .map-scope-menu__panel .export-menu__label {
   display: block;
 }
+
+.map-filters-menu__groups {
+  margin: 0;
+}
+
+.map-filters-menu__group {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 6px;
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-small);
+}
+
+.map-filters-menu__group dt {
+  color: var(--color-text-secondary);
+}
+
+.map-filters-menu__group dd {
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.map-filters-menu__none {
+  margin: 0 6px var(--spacing-sm);
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+}

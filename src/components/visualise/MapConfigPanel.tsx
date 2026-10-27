@@ -18,6 +18,7 @@ import { MapAxisFields } from "./MapAxisFields";
 import "./MapConfigPanel.css";
 
 const PANEL_ID = "map-config-panel";
+export const PANEL_FILTERS_HEADING_ID = "map-config-panel-filters";
 
 // Folding the panel hides it rather than unmounting it, so an unapplied draft
 // survives a Hide and reopen.
@@ -215,7 +216,13 @@ function MapConfigPanelInner({
         </div>
 
         <section class="map-config-panel__section">
-          <h3 class="map-config-panel__section-title">Filters</h3>
+          <h3
+            class="map-config-panel__section-title"
+            id={PANEL_FILTERS_HEADING_ID}
+            tabIndex={-1}
+          >
+            Filters
+          </h3>
           <FilterCardList
             draft={draft}
             showCountryFacetFilter={showCountryFacetFilter}

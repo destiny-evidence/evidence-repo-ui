@@ -59,7 +59,9 @@ import { CellSizeSelect } from "@/components/visualise/CellSizeSelect";
 import {
   MapConfigPanel,
   MapConfigRail,
+  PANEL_FILTERS_HEADING_ID,
 } from "@/components/visualise/MapConfigPanel";
+import { MapFiltersMenu } from "@/components/visualise/MapFiltersMenu";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import { DEFAULT_EXPANDED_FILTERS } from "@/components/filters/filterOrder";
 import { WarningIcon } from "@/components/common/icons";
@@ -208,6 +210,7 @@ function EvidenceMapView({
   const railRef = useRef<HTMLButtonElement>(null);
   const hideRef = useRef<HTMLButtonElement>(null);
   const panelToggled = useRef(false);
+  const focusPanelFilters = useRef(false);
 
   function handleViewChange(next: MapView) {
     track({ category: "EvidenceMap", action: "View Toggled", name: next });
@@ -238,8 +241,22 @@ function EvidenceMapView({
   // (the rail) or hid (the Hide button).
   useEffect(() => {
     if (!panelToggled.current) return;
+    if (panelOpen && focusPanelFilters.current) {
+      focusPanelFilters.current = false;
+      document.getElementById(PANEL_FILTERS_HEADING_ID)?.focus();
+      return;
+    }
     (panelOpen ? hideRef : railRef).current?.focus();
   }, [panelOpen]);
+
+  function handleEditFilters() {
+    if (panelOpen) {
+      document.getElementById(PANEL_FILTERS_HEADING_ID)?.focus();
+      return;
+    }
+    focusPanelFilters.current = true;
+    handlePanelToggle(true);
+  }
 
   // Resolve labels against the axes `result` was fetched for, not the URL's:
   // during an axis change the URL (and `axes`) flips immediately but `result`
@@ -588,6 +605,10 @@ function EvidenceMapView({
   }
 
   const noun = community.copy.countNoun;
+  const filterCount =
+    params.conceptFilters.flat().length +
+    params.countryCodes.length +
+    (params.startYear !== undefined || params.endYear !== undefined ? 1 : 0);
   // Scheme axes draw their categories from the vocabulary, so a greyed grid can
   // render even when no cells come back (the no-coverage state).
   const hasGrid =
@@ -645,6 +666,12 @@ function EvidenceMapView({
               countMatches={countMatches}
               onApply={handleQueryChange}
               onMapRepository={handleMapRepository}
+            />
+            <MapFiltersMenu
+              params={params}
+              count={filterCount}
+              schemes={vocab.schemes ?? []}
+              onEditInPanel={handleEditFilters}
             />
           </div>
         </div>
@@ -797,13 +824,7 @@ function EvidenceMapView({
       />
       {!panelOpen && (
         <MapConfigRail
-          filterCount={
-            params.conceptFilters.flat().length +
-            params.countryCodes.length +
-            (params.startYear !== undefined || params.endYear !== undefined
-              ? 1
-              : 0)
-          }
+          filterCount={filterCount}
           onOpen={() => handlePanelToggle(true)}
           buttonRef={railRef}
         />
