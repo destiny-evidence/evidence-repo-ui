@@ -1,5 +1,11 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/preact";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/preact";
 import { VisualisePage } from "@/pages/VisualisePage";
 import { parseSearchParams, type SearchParams } from "@/services/searchParams";
 import { makeCommunity } from "../fixtures";
@@ -23,6 +29,7 @@ const {
   mockUseUrlParams,
   mockUseSearchFacets,
   mockNavigate,
+  mockSearchReferences,
 } = vi.hoisted(() => ({
   mockUseCommunity: vi.fn(),
   mockUseCrossFacets: vi.fn(),
@@ -34,6 +41,7 @@ const {
     error: null,
   })),
   mockNavigate: vi.fn(),
+  mockSearchReferences: vi.fn(),
 }));
 
 vi.mock("@/community/CommunityContext", () => ({
@@ -46,6 +54,9 @@ vi.mock("@/hooks/useUrlParams", () => ({ useUrlParams: mockUseUrlParams }));
 // these tests don't fire real facet-count fetches.
 vi.mock("@/hooks/useSearchFacets", () => ({
   useSearchFacets: mockUseSearchFacets,
+}));
+vi.mock("@/services/apiClient", () => ({
+  searchReferences: mockSearchReferences,
 }));
 vi.mock("@/services/navigation", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/navigation")>();
@@ -1659,6 +1670,36 @@ describe("VisualisePage source", () => {
   test("the whole repository with no filters offers no Back to search", () => {
     renderAt("?row=scheme%3Alevel&column=scheme%3Atheme");
     expect(screen.queryByRole("link", { name: /back to search/i })).toBeNull();
+  });
+
+  test("an edited search keeps the map's filters and axes", async () => {
+    mockSearchReferences.mockResolvedValue({ total: { count: 3, is_lower_bound: false } });
+    renderAt("?q=phonics&country=KE&row=scheme%3Alevel&column=scheme%3Atheme");
+    mockNavigate.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: /search.*phonics/i }));
+    const field = screen.getByLabelText("Search to map");
+    fireEvent.input(field, { target: { value: "reading" } });
+    fireEvent.keyDown(field, { key: "Enter" });
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/test/visualise?q=reading&country=KE&row=scheme%3Alevel&column=scheme%3Atheme",
+      ),
+    );
+    expect(mockSearchReferences).toHaveBeenCalledWith(
+      "reading",
+      expect.objectContaining({ countryCodes: ["KE"] }),
+    );
+  });
+
+  test("Map whole repository drops the query and filters but keeps the axes", () => {
+    renderAt("?q=phonics&country=KE&row=scheme%3Alevel&column=scheme%3Atheme");
+    mockNavigate.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: /search.*phonics/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Map whole repository" }));
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
+    );
   });
 });
 

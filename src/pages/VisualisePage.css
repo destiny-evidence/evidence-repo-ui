@@ -27,6 +27,21 @@
   margin-bottom: 0;
 }
 
+.evidence-map-view__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-lg);
+}
+
+.evidence-map-view__scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
 .visualise-page__notice {
   font-family: var(--font-display);
   font-style: italic;

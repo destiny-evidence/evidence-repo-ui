@@ -6,8 +6,10 @@ import { useVocabulary } from "@/hooks/useVocabulary";
 import {
   parseSearchParams,
   buildSearchUrl,
+  toUnpaginatedSearchQuery,
   type SearchParams,
 } from "@/services/searchParams";
+import { searchReferences } from "@/services/apiClient";
 import { navigate, stampHistoryState } from "@/services/navigation";
 import {
   axisToken,
@@ -63,6 +65,7 @@ import { DEFAULT_EXPANDED_FILTERS } from "@/components/filters/filterOrder";
 import { WarningIcon } from "@/components/common/icons";
 import { BackLink } from "@/components/common/BackLink";
 import { MapCoverageNote } from "@/components/visualise/MapCoverageNote";
+import { MapSourceMenu } from "@/components/visualise/MapSourceMenu";
 import { NotFoundPage } from "./NotFoundPage";
 import "./VisualisePage.css";
 
@@ -545,6 +548,30 @@ function EvidenceMapView({
     };
   }
 
+  async function countMatches(q: string): Promise<number> {
+    const { query, filters } = toUnpaginatedSearchQuery(
+      { ...params, q },
+      community.defaultAnnotations,
+    );
+    return (await searchReferences(query, filters)).total.count;
+  }
+
+  function handleQueryChange(q: string) {
+    track({
+      category: "EvidenceMap",
+      action: "Source Changed",
+      name: q ? "search" : "repository",
+    });
+    navigate(buildVisualiseUrl(community.slug, { ...params, q }, axes));
+  }
+
+  function handleMapRepository() {
+    track({ category: "EvidenceMap", action: "Source Changed", name: "reset" });
+    navigate(
+      buildVisualiseUrl(community.slug, parseSearchParams(""), axes),
+    );
+  }
+
   // The over-filtered banner's inline shortcut — the panel's "Reset all" applied
   // in one click: default axes, no filters.
   function handleResetAll() {
@@ -602,13 +629,25 @@ function EvidenceMapView({
             Back to search
           </BackLink>
         )}
-        <h1
-          class="visualise-page__title"
-          id={MAP_TITLE_ID}
-          tabIndex={-1}
-        >
-          Evidence map
-        </h1>
+        <div class="evidence-map-view__heading">
+          <h1
+            class="visualise-page__title"
+            id={MAP_TITLE_ID}
+            tabIndex={-1}
+          >
+            Evidence map
+          </h1>
+          <div class="evidence-map-view__scope">
+            <MapSourceMenu
+              query={params.q}
+              scoped={hasActiveSearch(params)}
+              countNoun={noun}
+              countMatches={countMatches}
+              onApply={handleQueryChange}
+              onMapRepository={handleMapRepository}
+            />
+          </div>
+        </div>
         <div class="evidence-map-view__toolbar">
           <ViewToggle value={view} onChange={handleViewChange} />
           {nestedAxes && (
