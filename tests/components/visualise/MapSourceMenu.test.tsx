@@ -65,6 +65,29 @@ describe("MapSourceMenu", () => {
     expect(field()).toBeInTheDocument();
   });
 
+  test("a check cancelled by Escape doesn't apply", async () => {
+    let resolve!: (count: number) => void;
+    const { countMatches, onApply } = setup();
+    countMatches.mockReturnValue(new Promise<number>((r) => (resolve = r)));
+    fireEvent.click(trigger());
+    typeAndEnter("reading");
+    fireEvent.keyDown(field(), { key: "Enter" });
+    fireEvent.keyDown(document, { key: "Escape" });
+    resolve(5);
+    await new Promise((r) => setTimeout(r));
+
+    expect(countMatches).toHaveBeenCalledTimes(1);
+    expect(onApply).not.toHaveBeenCalled();
+  });
+
+  test("returns focus to the trigger once applied", async () => {
+    const { onApply } = setup();
+    fireEvent.click(trigger());
+    typeAndEnter("reading");
+    await waitFor(() => expect(onApply).toHaveBeenCalled());
+    expect(trigger()).toHaveFocus();
+  });
+
   test("Escape discards the edit", () => {
     setup();
     fireEvent.click(trigger());

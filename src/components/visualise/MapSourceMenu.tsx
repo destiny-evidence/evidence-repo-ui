@@ -35,6 +35,8 @@ export function MapSourceMenu({
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const fieldRef = useRef<HTMLTextAreaElement>(null);
+  // Bumped on every close, so a check still in flight knows it was cancelled.
+  const attempt = useRef(0);
   const panelId = useId();
   const fieldId = useId();
   const hintId = useId();
@@ -42,6 +44,7 @@ export function MapSourceMenu({
   useDismiss(open, setOpen, containerRef, buttonRef);
 
   useEffect(() => {
+    if (!open) attempt.current++;
     const field = fieldRef.current;
     if (!open || !field) return;
     field.focus();
@@ -56,23 +59,34 @@ export function MapSourceMenu({
     setOpen(!open);
   }
 
+  // Close onto the trigger, since the focused field goes with the panel.
+  function close() {
+    setOpen(false);
+    buttonRef.current?.focus();
+  }
+
   async function submit() {
+    if (status === "checking") return;
     const next = draft.trim();
     if (next === query) {
-      setOpen(false);
+      close();
       return;
     }
+    const current = attempt.current;
     setStatus("checking");
+    let count: number;
     try {
-      if ((await countMatches(next)) === 0) {
-        setStatus("empty");
-        return;
-      }
+      count = await countMatches(next);
     } catch {
-      setStatus("error");
+      if (current === attempt.current) setStatus("error");
       return;
     }
-    setOpen(false);
+    if (current !== attempt.current) return;
+    if (count === 0) {
+      setStatus("empty");
+      return;
+    }
+    close();
     onApply(next);
   }
 
@@ -160,7 +174,7 @@ export function MapSourceMenu({
                 type="button"
                 class="map-scope-menu__link"
                 onClick={() => {
-                  setOpen(false);
+                  close();
                   onMapRepository();
                 }}
               >
@@ -169,7 +183,7 @@ export function MapSourceMenu({
             )}
             <button
               type="button"
-              class="map-scope-menu__primary"
+              class="export-menu__action map-scope-menu__primary"
               disabled={status === "checking"}
               onClick={() => void submit()}
             >

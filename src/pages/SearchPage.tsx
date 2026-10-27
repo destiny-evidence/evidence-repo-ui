@@ -747,6 +747,7 @@ function SearchPageInner({ community }: { community: Community }) {
                 {mapAxes && results.results && (
                   <VisualiseMenu
                     total={results.results.total}
+                    loading={results.loading}
                     scoped={hasActiveSearch(params)}
                     countNoun={community.copy.countNoun}
                     defaultAxes={mapAxes}

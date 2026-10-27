@@ -14,11 +14,12 @@ const AXES: EvidenceMapAxes = {
   column: { kind: "scheme", schemeUri: DOCUMENT_TYPE_SCHEME.uri },
 };
 
-function setup({ count = 342, scoped = true } = {}) {
+function setup({ count = 342, scoped = true, loading = false } = {}) {
   const onVisualise = vi.fn();
   render(
     <VisualiseMenu
       total={{ count, is_lower_bound: false }}
+      loading={loading}
       scoped={scoped}
       countNoun="investigations"
       defaultAxes={AXES}
@@ -73,8 +74,11 @@ describe("VisualiseMenu", () => {
     expect(panel).not.toBeVisible();
   });
 
-  test("won't open with no results", () => {
-    setup({ count: 0 });
+  test.each([
+    ["no results", { count: 0 }],
+    ["a new search loading", { loading: true }],
+  ])("won't open with %s", (_, props) => {
+    setup(props);
     const button = trigger();
     fireEvent.click(button);
     expect(button).toHaveAttribute("aria-expanded", "false");

@@ -11,6 +11,8 @@ import "./VisualiseMenu.css";
 
 interface VisualiseMenuProps {
   total: SearchResultTotal;
+  // A new search is loading, so `total` still belongs to the previous one.
+  loading: boolean;
   // Whether a query or filters narrow the results, or it's the whole repository.
   scoped: boolean;
   countNoun: string;
@@ -26,6 +28,7 @@ interface VisualiseMenuProps {
  */
 export function VisualiseMenu({
   total,
+  loading,
   scoped,
   countNoun,
   defaultAxes,
@@ -38,13 +41,15 @@ export function VisualiseMenu({
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
-  const disabled = total.count === 0;
+  const disabled = loading || total.count === 0;
 
   useDismiss(open, setOpen, containerRef, buttonRef);
 
   return (
     <div class="export-menu" ref={containerRef}>
-      <Tooltip text={disabled ? "No results to map" : undefined}>
+      <Tooltip
+        text={!loading && total.count === 0 ? "No results to map" : undefined}
+      >
         <button
           ref={buttonRef}
           type="button"

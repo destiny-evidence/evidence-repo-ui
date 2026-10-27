@@ -36,19 +36,9 @@
 }
 
 .map-scope-menu__primary {
+  width: auto;
+  margin-top: 0;
   padding: 7px 14px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  color: var(--color-bg-surface);
-  font-family: var(--font-body);
-  font-size: var(--font-size-small);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.map-scope-menu__primary:hover:not(:disabled) {
-  background: var(--color-accent-hover);
 }
 
 .map-scope-menu__primary:disabled {
@@ -56,8 +46,7 @@
   cursor: default;
 }
 
-.map-scope-menu__link:focus-visible,
-.map-scope-menu__primary:focus-visible {
+.map-scope-menu__link:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
