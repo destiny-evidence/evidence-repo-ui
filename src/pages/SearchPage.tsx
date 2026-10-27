@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import { useAuth } from "@/auth/AuthContext";
-import type { Community } from "@/types/models";
+import type { Community, EvidenceMapAxes } from "@/types/models";
 import {
   parseSearchParams,
   toQueryString,
@@ -19,6 +19,7 @@ import {
 } from "@/analytics/searchEvents";
 import {
   backToVisualiseUrl,
+  buildVisualiseUrl,
   mapExpansionFromState,
   mapExpansionState,
 } from "@/services/evidenceMap";
@@ -37,6 +38,7 @@ import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
 import { ExportMenu, type ExportScope } from "@/components/search/ExportMenu";
 import { RefineButton } from "@/components/search/RefineButton";
+import { VisualiseMenu } from "@/components/search/VisualiseMenu";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
 import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
@@ -344,6 +346,19 @@ function SearchPageInner({ community }: { community: Community }) {
       }),
     );
     setDrawerOpen(false);
+  }
+
+  const mapAxes = community.features.evidenceMap
+    ? community.defaultEvidenceMapAxes
+    : undefined;
+
+  function handleVisualise(axes: EvidenceMapAxes) {
+    track({
+      category: "EvidenceMap",
+      action: "Visualised From Search",
+      name: hasActiveSearch(params) ? "search" : "repository",
+    });
+    navigate(buildVisualiseUrl(community.slug, params, axes));
   }
 
   // Hide the bar on the initial browse-mode load so the skeleton owns the
@@ -731,6 +746,17 @@ function SearchPageInner({ community }: { community: Community }) {
             </span>
             {(refine || results.results) && (
               <span class="search-results__meta-right">
+                {mapAxes && results.results && (
+                  <VisualiseMenu
+                    total={results.results.total}
+                    scoped={hasActiveSearch(params)}
+                    countNoun={community.copy.countNoun}
+                    defaultAxes={mapAxes}
+                    schemes={filterableSchemes}
+                    includeCountries={community.features.countryFacetFilter}
+                    onVisualise={handleVisualise}
+                  />
+                )}
                 {refine && (
                   <RefineButton
                     count={refine.count}

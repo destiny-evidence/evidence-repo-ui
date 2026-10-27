@@ -5,7 +5,6 @@ import { useCrossFacets } from "@/hooks/useCrossFacets";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import {
   parseSearchParams,
-  toQueryString,
   buildSearchUrl,
   type SearchParams,
 } from "@/services/searchParams";
@@ -30,6 +29,10 @@ import {
   type AxisCategory,
   type CellSize,
   exceedsEvidenceMapRenderLimits,
+  mapQueryString,
+  buildVisualiseUrl,
+  ROW_PARAM,
+  COLUMN_PARAM,
 } from "@/services/evidenceMap";
 import {
   type CrossFacetAxis,
@@ -63,9 +66,6 @@ const MAP_TITLE_ID = "evidence-map-title";
 interface VisualisePageProps {
   path?: string;
 }
-
-const ROW_PARAM = "row";
-const COLUMN_PARAM = "column";
 
 const PANEL_OPEN_KEY = "evidence-map-panel-open";
 
@@ -123,15 +123,6 @@ const PAIR_SEPARATOR = " × ";
 // The axis pair as analytics reports it
 function axisPairTitle(row: ResolvedAxis, column: ResolvedAxis): string {
   return `${row.title}${PAIR_SEPARATOR}${column.title}`;
-}
-
-// Canonical query string: the filter params followed by the explicit axes, so
-// the default view is rewritten into a self-contained, shareable URL on load.
-function canonicalSearch(params: SearchParams, axes: EvidenceMapAxes): string {
-  const qs = new URLSearchParams(toQueryString(params));
-  qs.set(ROW_PARAM, axisToken(axes.row));
-  qs.set(COLUMN_PARAM, axisToken(axes.column));
-  return qs.toString();
 }
 
 export function VisualisePage(_props: VisualisePageProps) {
@@ -389,12 +380,12 @@ function EvidenceMapView({
 
   // Rewrite the URL into canonical form (filters + explicit default axes) so a
   // freshly-loaded map is linkable. Replace, not push, so Back skips it.
-  const canonical = canonicalSearch(params, axes);
+  const canonical = mapQueryString(params, axes);
   const hasResultSnapshot = resultAxes !== null || resultParams !== null;
   const resultIsStale =
     result !== null &&
     hasResultSnapshot &&
-    canonicalSearch(resultParams ?? params, displayAxes) !== canonical;
+    mapQueryString(resultParams ?? params, displayAxes) !== canonical;
   const mapUpdating = loading || resultIsStale;
   useEffect(() => {
     const current = search.startsWith("?") ? search.slice(1) : search;
@@ -411,7 +402,7 @@ function EvidenceMapView({
   const lastViewTracked = useRef<string | null>(null);
   useEffect(() => {
     if (!result || vocab.loading) return;
-    const identity = canonicalSearch(trackedParams, displayAxes);
+    const identity = mapQueryString(trackedParams, displayAxes);
     if (lastViewTracked.current === identity) return;
     lastViewTracked.current = identity;
 
@@ -486,7 +477,7 @@ function EvidenceMapView({
       page: 1,
     };
     navigate(
-      `/${community.slug}/visualise?${canonicalSearch(nextParams, nextAxes)}`,
+      buildVisualiseUrl(community.slug, nextParams, nextAxes),
     );
   }
 
