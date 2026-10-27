@@ -1,7 +1,6 @@
 import type { ComponentChildren, Ref } from "preact";
-import { useMemo, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import { ChevronRightIcon, FilterIcon } from "@/components/common/icons";
-import { Select } from "@/components/common/Select";
 import {
   FilterCardList,
   type FilterCardOptions,
@@ -13,13 +12,9 @@ import {
   type FilterDraftInputs,
 } from "@/components/filters/useFilterDraft";
 import { track } from "@/analytics/matomo";
-import { axisToken, localName, parseAxis, toCrossFacetAxis } from "@/services/evidenceMap";
-import { AXIS_COUNTRIES } from "@/services/crossFacets";
-import {
-  schemeDisplayLabel,
-  type ConceptScheme,
-} from "@/services/vocabulary/vocabularyService";
-import type { EvidenceMapAxis, EvidenceMapAxes } from "@/types/models";
+import { axisToken, toCrossFacetAxis } from "@/services/evidenceMap";
+import type { EvidenceMapAxes } from "@/types/models";
+import { MapAxisFields } from "./MapAxisFields";
 import "./MapConfigPanel.css";
 
 const PANEL_ID = "map-config-panel";
@@ -43,34 +38,6 @@ interface MapConfigPanelInnerProps extends FilterDraftInputs, FilterCardOptions 
   // Community defaults — what "Reset all" restores the axes to.
   defaultAxes: EvidenceMapAxes;
   onApply: (next: { axes: EvidenceMapAxes; filters: AppliedFilters }) => void;
-}
-
-interface AxisOption {
-  value: string;
-  label: string;
-}
-
-// Concept schemes + Countries, plus any drafted axis whose scheme isn't in the
-// list yet (so each <select> always has its current value), sorted by label.
-function buildAxisOptions(
-  schemes: ConceptScheme[],
-  drafted: EvidenceMapAxis[],
-  includeCountries: boolean,
-): AxisOption[] {
-  const byValue = new Map<string, string>();
-  for (const scheme of schemes) {
-    byValue.set(scheme.uri, schemeDisplayLabel(scheme.label));
-  }
-  // Only offer Countries where the facet is populated; against an empty
-  // country facet the cross-facet query for that axis fails.
-  if (includeCountries) byValue.set(AXIS_COUNTRIES, "Countries");
-  for (const axis of drafted) {
-    const token = axisToken(axis);
-    if (!byValue.has(token)) byValue.set(token, localName(token));
-  }
-  return [...byValue]
-    .map(([value, label]) => ({ value, label }))
-    .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function axesEqual(a: EvidenceMapAxes, b: EvidenceMapAxes): boolean {
@@ -204,10 +171,7 @@ function MapConfigPanelInner({
   onApply,
   ...cardOptions
 }: MapConfigPanelInnerProps) {
-  const [rowDraft, setRowDraft] = useState<EvidenceMapAxis>(appliedAxes.row);
-  const [columnDraft, setColumnDraft] = useState<EvidenceMapAxis>(
-    appliedAxes.column,
-  );
+  const [draftAxes, setDraftAxes] = useState<EvidenceMapAxes>(appliedAxes);
 
   const draft = useFilterDraft({
     schemes,
@@ -217,18 +181,11 @@ function MapConfigPanelInner({
     appliedEndYear,
     params,
     axes: {
-      row: toCrossFacetAxis(rowDraft),
-      column: toCrossFacetAxis(columnDraft),
+      row: toCrossFacetAxis(draftAxes.row),
+      column: toCrossFacetAxis(draftAxes.column),
     },
   });
 
-  const options = useMemo(
-    () =>
-      buildAxisOptions(schemes ?? [], [rowDraft, columnDraft], showCountryFacetFilter),
-    [schemes, rowDraft, columnDraft, showCountryFacetFilter],
-  );
-
-  const draftAxes: EvidenceMapAxes = { row: rowDraft, column: columnDraft };
   const axesDirty = !axesEqual(draftAxes, appliedAxes);
   const canApply = (axesDirty || draft.dirty) && draft.yearValidation.ok;
 
@@ -236,8 +193,7 @@ function MapConfigPanelInner({
     // Named apart from the over-filtered banner's one-click reset: this one only
     // clears the draft, so it needn't end in a committed view.
     track({ category: "EvidenceMap", action: "Reset All", name: "panel" });
-    setRowDraft(defaultAxes.row);
-    setColumnDraft(defaultAxes.column);
+    setDraftAxes(defaultAxes);
     draft.reset();
   }
 
@@ -250,21 +206,11 @@ function MapConfigPanelInner({
     <>
       <div class="map-config-panel__body">
         <div class="map-config-panel__axes">
-          <AxisSelect
-            label="Columns (x)"
-            icon="↔"
-            value={axisToken(columnDraft)}
-            options={options}
-            disabledValue={axisToken(rowDraft)}
-            onChange={(token) => setColumnDraft(parseAxis(token))}
-          />
-          <AxisSelect
-            label="Rows (y)"
-            icon="↕"
-            value={axisToken(rowDraft)}
-            options={options}
-            disabledValue={axisToken(columnDraft)}
-            onChange={(token) => setRowDraft(parseAxis(token))}
+          <MapAxisFields
+            axes={draftAxes}
+            schemes={schemes ?? []}
+            includeCountries={showCountryFacetFilter}
+            onChange={setDraftAxes}
           />
         </div>
 
@@ -284,39 +230,5 @@ function MapConfigPanelInner({
         applyDisabled={!canApply}
       />
     </>
-  );
-}
-
-interface AxisSelectProps {
-  label: string;
-  // Direction glyph mirroring the grid's axis legend (↕ rows, ↔ columns).
-  icon: string;
-  value: string;
-  options: AxisOption[];
-  // The value chosen on the other axis — disabled here to avoid a same-axis map.
-  disabledValue: string;
-  onChange: (token: string) => void;
-}
-
-function AxisSelect({
-  label,
-  icon,
-  value,
-  options,
-  disabledValue,
-  onChange,
-}: AxisSelectProps) {
-  return (
-    <Select
-      label={label}
-      labelIcon={icon}
-      layout="stacked"
-      value={value}
-      options={options.map((option) => ({
-        ...option,
-        disabled: option.value === disabledValue && option.value !== value,
-      }))}
-      onChange={onChange}
-    />
   );
 }
