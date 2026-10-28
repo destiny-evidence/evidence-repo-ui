@@ -12,18 +12,16 @@ beforeEach(cleanup);
 
 function setup({
   query = "phonics",
-  scoped = true,
   matches = 12,
-}: { query?: string; scoped?: boolean; matches?: number } = {}) {
+}: { query?: string; matches?: number } = {}) {
   const props = {
     countMatches: vi.fn().mockResolvedValue(matches),
     onApply: vi.fn(),
-    onMapRepository: vi.fn(),
   };
   render(
     <MapSourceMenu
       query={query}
-      scoped={scoped}
+      placeholder="Search titles and abstracts"
       countNoun="investigations"
       {...props}
     />,
@@ -40,12 +38,12 @@ function typeAndEnter(value: string) {
 }
 
 describe("MapSourceMenu", () => {
-  test("names the search, or the whole repository", () => {
+  test("names the search, or None without one", () => {
     setup();
     expect(trigger()).toHaveTextContent("Search“phonics”");
     cleanup();
-    setup({ query: "", scoped: false });
-    expect(trigger()).toHaveTextContent("SourceWhole repository");
+    setup({ query: "" });
+    expect(trigger()).toHaveTextContent("SearchNone");
   });
 
   test("Enter applies a query that has matches", async () => {
@@ -103,17 +101,5 @@ describe("MapSourceMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
     expect(field().value).toBe("");
     expect(onApply).not.toHaveBeenCalled();
-  });
-
-  test("Map whole repository is offered only when something narrows the map", () => {
-    const { onMapRepository } = setup();
-    fireEvent.click(trigger());
-    fireEvent.click(screen.getByRole("button", { name: "Map whole repository" }));
-    expect(onMapRepository).toHaveBeenCalled();
-
-    cleanup();
-    setup({ query: "", scoped: false });
-    fireEvent.click(trigger());
-    expect(screen.queryByRole("button", { name: "Map whole repository" })).toBeNull();
   });
 });

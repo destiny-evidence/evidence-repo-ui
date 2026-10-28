@@ -7,8 +7,5 @@
 }
 
 .visualise-menu__axes {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
   padding: 0 6px;
 }

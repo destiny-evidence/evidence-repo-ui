@@ -82,9 +82,6 @@ export function VisualiseMenu({
               {scoped
                 ? "All results for this search"
                 : `All ${countNoun} in the repository`}
-              <span class="export-menu__option-reason">
-                To map fewer, refine the search first.
-              </span>
             </span>
             <span class="export-menu__ext">{formatTotal(total)}</span>
           </div>

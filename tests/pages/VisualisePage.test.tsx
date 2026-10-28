@@ -1691,16 +1691,6 @@ describe("VisualisePage source", () => {
       expect.objectContaining({ countryCodes: ["KE"] }),
     );
   });
-
-  test("Map whole repository drops the query and filters but keeps the axes", () => {
-    renderAt("?q=phonics&country=KE&row=scheme%3Alevel&column=scheme%3Atheme");
-    mockNavigate.mockClear();
-    fireEvent.click(screen.getByRole("button", { name: /search.*phonics/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Map whole repository" }));
-    expect(mockNavigate).toHaveBeenCalledWith(
-      "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
-    );
-  });
 });
 
 describe("VisualisePage config panel hydration", () => {

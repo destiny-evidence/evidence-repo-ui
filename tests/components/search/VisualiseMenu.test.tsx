@@ -44,7 +44,6 @@ describe("VisualiseMenu", () => {
     const panel = openPanel();
     expect(within(panel).getByText("All results for this search")).toBeInTheDocument();
     expect(within(panel).getByText("342")).toBeInTheDocument();
-    expect(within(panel).getByText(/refine the search first/i)).toBeInTheDocument();
   });
 
   test("describes the whole repository when nothing narrows it", () => {

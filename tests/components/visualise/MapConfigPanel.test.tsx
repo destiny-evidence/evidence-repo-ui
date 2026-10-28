@@ -107,6 +107,14 @@ describe("MapConfigPanel", () => {
     expect(columnSelect().value).toBe(OUTCOME_SCHEME_FIXTURE.uri);
   });
 
+  test("Swap axes swaps the axes", () => {
+    renderPanel();
+    expect(rowSelect().value).toBe(OUTCOME_SCHEME_FIXTURE.uri);
+    fireEvent.click(screen.getByRole("button", { name: "Swap axes" }));
+    expect(rowSelect().value).toBe(DOCUMENT_TYPE_SCHEME.uri);
+    expect(columnSelect().value).toBe(OUTCOME_SCHEME_FIXTURE.uri);
+  });
+
   test("Show results is disabled until something changes", () => {
     renderPanel();
     expect(showResults().disabled).toBe(true);

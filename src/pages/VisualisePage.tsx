@@ -582,13 +582,6 @@ function EvidenceMapView({
     navigate(buildVisualiseUrl(community.slug, { ...params, q }, axes));
   }
 
-  function handleMapRepository() {
-    track({ category: "EvidenceMap", action: "Source Changed", name: "reset" });
-    navigate(
-      buildVisualiseUrl(community.slug, parseSearchParams(""), axes),
-    );
-  }
-
   // The over-filtered banner's inline shortcut — the panel's "Reset all" applied
   // in one click: default axes, no filters.
   function handleResetAll() {
@@ -661,11 +654,10 @@ function EvidenceMapView({
           <div class="evidence-map-view__scope">
             <MapSourceMenu
               query={params.q}
-              scoped={hasActiveSearch(params)}
+              placeholder={community.copy.searchPlaceholder}
               countNoun={noun}
               countMatches={countMatches}
               onApply={handleQueryChange}
-              onMapRepository={handleMapRepository}
             />
             <MapFiltersMenu
               params={params}

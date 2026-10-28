@@ -1,18 +1,17 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
 import { useDismiss } from "@/hooks/useDismiss";
 import { ChevronDownIcon } from "@/components/common/icons";
+import { SearchHint } from "@/components/search/SearchHint";
 import "@/components/search/ExportMenu.css";
 import "./MapScopeMenus.css";
 
 interface MapSourceMenuProps {
   query: string;
-  // A query or filters narrow the map, so mapping the whole repository is a change.
-  scoped: boolean;
+  placeholder: string;
   countNoun: string;
   // Resolves to how many results a query would map under the current filters.
   countMatches: (query: string) => Promise<number>;
   onApply: (query: string) => void;
-  onMapRepository: () => void;
 }
 
 type Status = "idle" | "checking" | "empty" | "error";
@@ -23,11 +22,10 @@ type Status = "idle" | "checking" | "empty" | "error";
  */
 export function MapSourceMenu({
   query,
-  scoped,
+  placeholder,
   countNoun,
   countMatches,
   onApply,
-  onMapRepository,
 }: MapSourceMenuProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(query);
@@ -100,11 +98,9 @@ export function MapSourceMenu({
         aria-controls={panelId}
         onClick={toggle}
       >
-        <span class="map-source-button__label">
-          {query ? "Search" : "Source"}
-        </span>
+        <span class="map-source-button__label">Search</span>
         <span class="map-source-button__value">
-          {query ? `“${query}”` : "Whole repository"}
+          {query ? `“${query}”` : "None"}
         </span>
         <span
           class={`export-button__caret${open ? " is-open" : ""}`}
@@ -130,7 +126,7 @@ export function MapSourceMenu({
             class="map-source-menu__field"
             rows={2}
             value={draft}
-            placeholder="Leave empty to map the whole repository"
+            placeholder={placeholder}
             aria-describedby={hintId}
             onInput={(e) => {
               setDraft((e.target as HTMLTextAreaElement).value);
@@ -143,9 +139,7 @@ export function MapSourceMenu({
               }
             }}
           />
-          <p class="map-source-menu__hint" id={hintId}>
-            Enter to update · Boolean operators supported
-          </p>
+          <SearchHint id={hintId} class="map-source-menu__hint" />
           {status === "empty" && (
             <p class="map-source-menu__error" role="alert">
               No {countNoun} match. Try a broader query or remove a filter.
@@ -167,18 +161,6 @@ export function MapSourceMenu({
                 }}
               >
                 Clear
-              </button>
-            )}
-            {scoped && (
-              <button
-                type="button"
-                class="map-scope-menu__link"
-                onClick={() => {
-                  close();
-                  onMapRepository();
-                }}
-              >
-                Map whole repository
               </button>
             )}
             <button

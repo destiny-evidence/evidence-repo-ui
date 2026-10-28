@@ -1,5 +1,6 @@
 import { useMemo } from "preact/hooks";
 import { Select } from "@/components/common/Select";
+import { Tooltip } from "@/components/common/Tooltip";
 import { axisToken, localName, parseAxis } from "@/services/evidenceMap";
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
 import {
@@ -7,6 +8,7 @@ import {
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 import type { EvidenceMapAxis, EvidenceMapAxes } from "@/types/models";
+import "./MapAxisFields.css";
 
 interface AxisOption {
   value: string;
@@ -44,8 +46,8 @@ interface MapAxisFieldsProps {
 }
 
 /**
- * The Columns (x) and Rows (y) selects. Picking the other axis's field swaps
- * the two rather than producing a same-axis map.
+ * The Columns (x) and Rows (y) selects, with a button to swap them. Picking the
+ * other axis's field also swaps the two rather than producing a same-axis map.
  */
 export function MapAxisFields({
   axes,
@@ -58,24 +60,22 @@ export function MapAxisFields({
     [schemes, axes.row, axes.column, includeCountries],
   );
 
+  function swap() {
+    onChange({ row: axes.column, column: axes.row });
+  }
+
   function pickRow(token: string) {
-    onChange(
-      token === axisToken(axes.column)
-        ? { row: axes.column, column: axes.row }
-        : { ...axes, row: parseAxis(token) },
-    );
+    if (token === axisToken(axes.column)) swap();
+    else onChange({ ...axes, row: parseAxis(token) });
   }
 
   function pickColumn(token: string) {
-    onChange(
-      token === axisToken(axes.row)
-        ? { row: axes.column, column: axes.row }
-        : { ...axes, column: parseAxis(token) },
-    );
+    if (token === axisToken(axes.row)) swap();
+    else onChange({ ...axes, column: parseAxis(token) });
   }
 
   return (
-    <>
+    <div class="map-axis-fields">
       <Select
         label="Columns (x)"
         labelIcon="↔"
@@ -92,6 +92,21 @@ export function MapAxisFields({
         options={options}
         onChange={pickRow}
       />
-    </>
+      <span class="map-axis-fields__arm map-axis-fields__arm--top" />
+      <span class="map-axis-fields__arm map-axis-fields__arm--mid" />
+      <span class="map-axis-fields__arm map-axis-fields__arm--bottom" />
+      <Tooltip text="Swap axes">
+        <button
+          type="button"
+          class="map-axis-fields__swap"
+          aria-label="Swap axes"
+          onClick={swap}
+        >
+          <span class="map-axis-fields__swap-icon" aria-hidden="true">
+            ⇅
+          </span>
+        </button>
+      </Tooltip>
+    </div>
   );
 }
