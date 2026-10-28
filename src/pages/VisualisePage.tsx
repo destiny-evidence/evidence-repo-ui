@@ -49,7 +49,6 @@ import { track } from "@/analytics/matomo";
 import {
   activeFilters,
   conceptPathName,
-  hasActiveSearch,
 } from "@/analytics/searchEvents";
 import { indexConceptPaths } from "@/components/filters/conceptSchemeFilterState";
 import { formatTotal } from "@/utils/searchTotal";
@@ -65,7 +64,6 @@ import { MapFiltersMenu } from "@/components/visualise/MapFiltersMenu";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import { DEFAULT_EXPANDED_FILTERS } from "@/components/filters/filterOrder";
 import { WarningIcon } from "@/components/common/icons";
-import { BackLink } from "@/components/common/BackLink";
 import { MapCoverageNote } from "@/components/visualise/MapCoverageNote";
 import { MapSourceMenu } from "@/components/visualise/MapSourceMenu";
 import { NotFoundPage } from "./NotFoundPage";
@@ -638,11 +636,6 @@ function EvidenceMapView({
   return (
     <div class="evidence-map-view">
       <div class="evidence-map-view__main">
-        {hasActiveSearch(params) && (
-          <BackLink href={buildSearchUrl(community.slug, { ...params, page: 1 })}>
-            Back to search
-          </BackLink>
-        )}
         <div class="evidence-map-view__heading">
           <h1
             class="visualise-page__title"
@@ -682,11 +675,15 @@ function EvidenceMapView({
             </button>
           )}
           <CellSizeSelect value={cellSize} onChange={handleCellSizeChange} />
-          {showHint && (
-            <p class="evidence-map-view__hint">
-              Click a cell to view matching {noun}
-            </p>
-          )}
+          <p class="evidence-map-view__hint">
+            {showHint && <span>Click a cell to view matching {noun}</span>}
+            <a
+              class="evidence-map-view__view-all"
+              href={buildSearchUrl(community.slug, { ...params, page: 1 })}
+            >
+              View {noun} <span aria-hidden="true">→</span>
+            </a>
+          </p>
         </div>
 
         {error ? (

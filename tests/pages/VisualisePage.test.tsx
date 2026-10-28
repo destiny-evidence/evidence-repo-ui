@@ -1659,17 +1659,12 @@ describe("VisualisePage source", () => {
 
   beforeEach(() => mockUseCommunity.mockReturnValue(mappedCommunity()));
 
-  test("Back to search reopens Search with the map's query and filters", () => {
+  test("View results opens Search with the map's query and filters", () => {
     renderAt("?q=phonics&country=KE&row=scheme%3Alevel&column=scheme%3Atheme");
-    expect(screen.getByRole("link", { name: /back to search/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /^view results/i })).toHaveAttribute(
       "href",
       "/test?q=phonics&country=KE",
     );
-  });
-
-  test("the whole repository with no filters offers no Back to search", () => {
-    renderAt("?row=scheme%3Alevel&column=scheme%3Atheme");
-    expect(screen.queryByRole("link", { name: /back to search/i })).toBeNull();
   });
 
   test("an edited search keeps the map's filters and axes", async () => {
