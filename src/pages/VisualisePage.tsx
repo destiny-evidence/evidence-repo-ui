@@ -574,8 +574,8 @@ function EvidenceMapView({
   function handleQueryChange(q: string) {
     track({
       category: "EvidenceMap",
-      action: "Source Changed",
-      name: q ? "search" : "repository",
+      action: "Search Changed",
+      name: q ? "updated" : "cleared",
     });
     navigate(buildVisualiseUrl(community.slug, { ...params, q }, axes));
   }

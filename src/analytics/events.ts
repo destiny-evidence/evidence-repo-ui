@@ -36,8 +36,8 @@ export type AnalyticsEvent =
   | { category: "EvidenceMap"; action: "Panel Toggled"; name: string }
   // name: search (a query or filters) | repository — from Search's Visualise menu
   | { category: "EvidenceMap"; action: "Visualised From Search"; name: string }
-  // name: search (a new query) | repository (query cleared)
-  | { category: "EvidenceMap"; action: "Source Changed"; name: string }
+  // name: updated (a new query) | cleared — from the map's Search popover
+  | { category: "EvidenceMap"; action: "Search Changed"; name: string }
   // name: `${rowValue} x ${columnValue}` — the cell's two axis values
   | { category: "EvidenceMap"; action: "Cell Clicked"; name: string }
   // name: axis value clicked in the header
