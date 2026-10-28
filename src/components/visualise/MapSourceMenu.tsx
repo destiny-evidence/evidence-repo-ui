@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
 import { useDismiss } from "@/hooks/useDismiss";
+import { useKeepInViewport } from "@/hooks/useKeepInViewport";
 import { ChevronDownIcon } from "@/components/common/icons";
 import { SearchHint } from "@/components/search/SearchHint";
 import "@/components/search/ExportMenu.css";
@@ -32,6 +33,7 @@ export function MapSourceMenu({
   const [status, setStatus] = useState<Status>("idle");
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const fieldRef = useRef<HTMLTextAreaElement>(null);
   // Bumped on every close, so a check still in flight knows it was cancelled.
   const attempt = useRef(0);
@@ -40,6 +42,7 @@ export function MapSourceMenu({
   const hintId = useId();
 
   useDismiss(open, setOpen, containerRef, buttonRef);
+  useKeepInViewport(open, panelRef);
 
   useEffect(() => {
     if (!open) attempt.current++;
@@ -112,6 +115,7 @@ export function MapSourceMenu({
 
       {open && (
         <div
+          ref={panelRef}
           class="export-menu__panel map-scope-menu__panel"
           id={panelId}
           role="group"

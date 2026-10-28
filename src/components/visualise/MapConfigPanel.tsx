@@ -1,6 +1,6 @@
 import type { ComponentChildren, Ref } from "preact";
 import { useState } from "preact/hooks";
-import { ChevronRightIcon, FilterIcon } from "@/components/common/icons";
+import { FilterIcon } from "@/components/common/icons";
 import {
   FilterCardList,
   type FilterCardOptions,
@@ -82,11 +82,12 @@ function PanelFrame({
           <button
             type="button"
             class="map-config-panel__hide"
+            aria-label="Hide panel"
+            title="Hide panel"
             onClick={onHide}
             ref={hideButtonRef}
           >
-            <ChevronRightIcon />
-            Hide panel
+            ✕
           </button>
         </header>
         {children}

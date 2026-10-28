@@ -636,30 +636,13 @@ function EvidenceMapView({
   return (
     <div class="evidence-map-view">
       <div class="evidence-map-view__main">
-        <div class="evidence-map-view__heading">
-          <h1
-            class="visualise-page__title"
-            id={MAP_TITLE_ID}
-            tabIndex={-1}
-          >
-            Evidence map
-          </h1>
-          <div class="evidence-map-view__scope">
-            <MapSourceMenu
-              query={params.q}
-              placeholder={community.copy.searchPlaceholder}
-              countNoun={noun}
-              countMatches={countMatches}
-              onApply={handleQueryChange}
-            />
-            <MapFiltersMenu
-              params={params}
-              count={filterCount}
-              schemes={vocab.schemes ?? []}
-              onEditInPanel={handleEditFilters}
-            />
-          </div>
-        </div>
+        <h1
+          class="visualise-page__title"
+          id={MAP_TITLE_ID}
+          tabIndex={-1}
+        >
+          Evidence map
+        </h1>
         <div class="evidence-map-view__toolbar">
           <ViewToggle value={view} onChange={handleViewChange} />
           {nestedAxes && (
@@ -675,6 +658,21 @@ function EvidenceMapView({
             </button>
           )}
           <CellSizeSelect value={cellSize} onChange={handleCellSizeChange} />
+          <div class="evidence-map-view__scope">
+            <MapSourceMenu
+              query={params.q}
+              placeholder={community.copy.searchPlaceholder}
+              countNoun={noun}
+              countMatches={countMatches}
+              onApply={handleQueryChange}
+            />
+            <MapFiltersMenu
+              params={params}
+              count={filterCount}
+              schemes={vocab.schemes ?? []}
+              onEditInPanel={handleEditFilters}
+            />
+          </div>
           <p class="evidence-map-view__hint">
             {showHint && <span>Click a cell to view matching {noun}</span>}
             <a

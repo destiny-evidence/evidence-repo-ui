@@ -1813,12 +1813,12 @@ describe("VisualisePage on small screens", () => {
     expect(localStorage.getItem(PANEL_OPEN_KEY)).toBe("false");
   });
 
-  test("Edit in panel opens the folded panel at its filters", () => {
+  test("Configure in panel opens the folded panel at its filters", () => {
     screenMatches("(max-width: 1440px)");
     render(<VisualisePage />);
 
     fireEvent.click(screen.getByRole("button", { name: /^filters/i }));
-    fireEvent.click(screen.getByRole("button", { name: /edit in panel/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure in panel/i }));
 
     expect(screen.getByRole("button", { name: "Show results" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Filters" })).toHaveFocus();

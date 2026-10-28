@@ -48,7 +48,7 @@ describe("MapFiltersMenu", () => {
   test("says when nothing is applied, and points to the panel", () => {
     const { panel, onEditInPanel } = setup(makeSearchParams());
     expect(within(panel).getByText("None applied")).toBeInTheDocument();
-    fireEvent.click(within(panel).getByRole("button", { name: /edit in panel/i }));
+    fireEvent.click(within(panel).getByRole("button", { name: /configure in panel/i }));
     expect(onEditInPanel).toHaveBeenCalled();
     expect(screen.queryByRole("group", { name: "Applied filters" })).toBeNull();
   });

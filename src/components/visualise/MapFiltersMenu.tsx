@@ -1,6 +1,8 @@
 import { useId, useMemo, useRef, useState } from "preact/hooks";
 import { useDismiss } from "@/hooks/useDismiss";
+import { useKeepInViewport } from "@/hooks/useKeepInViewport";
 import { ChevronDownIcon, FilterIcon } from "@/components/common/icons";
+import { TagGroup, type HierarchicalTag } from "@/components/common/TagGroup";
 import {
   indexConceptPaths,
   parseConceptFilters,
@@ -23,7 +25,7 @@ import "./MapScopeMenus.css";
 
 interface FilterGroup {
   name: string;
-  values: string[];
+  values: (string | HierarchicalTag)[];
 }
 
 // The applied filters, grouped the way the panel's cards group them. Concepts
@@ -33,8 +35,14 @@ function filterGroups(
   schemes: ConceptScheme[],
 ): FilterGroup[] {
   const paths = indexConceptPaths(schemes);
-  const conceptLabel = (uri: string) =>
-    paths.get(uri)?.at(-1) ?? localName(uri);
+  // A nested concept carries its parent as a breadcrumb, as on the record page.
+  const conceptTag = (uri: string): HierarchicalTag => {
+    const path = paths.get(uri);
+    return {
+      parent: path && path.length > 1 ? path.at(-2) : undefined,
+      label: path?.at(-1) ?? localName(uri),
+    };
+  };
   const groups: FilterGroup[] = [];
   const placed = new Set<string>();
   const bySchemeUri = parseConceptFilters(params.conceptFilters, schemes);
@@ -45,14 +53,14 @@ function filterGroups(
     uris.forEach((uri) => placed.add(uri));
     groups.push({
       name: schemeDisplayLabel(scheme.label),
-      values: uris.map(conceptLabel),
+      values: uris.map(conceptTag),
     });
   }
   const unplaced = params.conceptFilters
     .flat()
     .filter((uri) => !placed.has(uri));
   if (unplaced.length > 0) {
-    groups.push({ name: "Other", values: unplaced.map(conceptLabel) });
+    groups.push({ name: "Other", values: unplaced.map(conceptTag) });
   }
   if (params.countryCodes.length > 0) {
     groups.push({
@@ -86,6 +94,7 @@ export function MapFiltersMenu({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const groups = useMemo(
     () => filterGroups(params, schemes),
@@ -93,6 +102,7 @@ export function MapFiltersMenu({
   );
 
   useDismiss(open, setOpen, containerRef, buttonRef);
+  useKeepInViewport(open, panelRef);
 
   return (
     <div class="export-menu map-scope-menu" ref={containerRef}>
@@ -117,6 +127,7 @@ export function MapFiltersMenu({
 
       {open && (
         <div
+          ref={panelRef}
           class="export-menu__panel map-scope-menu__panel"
           id={panelId}
           role="group"
@@ -127,8 +138,10 @@ export function MapFiltersMenu({
             <dl class="map-filters-menu__groups">
               {groups.map((group) => (
                 <div class="map-filters-menu__group" key={group.name}>
-                  <dt>{group.name}</dt>
-                  <dd>{group.values.join(", ")}</dd>
+                  <dt class="lg-label">{group.name}</dt>
+                  <dd>
+                    <TagGroup tags={group.values} />
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -144,7 +157,7 @@ export function MapFiltersMenu({
                 onEditInPanel();
               }}
             >
-              Edit in panel <span aria-hidden="true">→</span>
+              Configure in panel <span aria-hidden="true">→</span>
             </button>
           </div>
         </div>
