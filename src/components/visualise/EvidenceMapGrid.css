@@ -384,8 +384,9 @@
 /* ── Legend ── */
 .evidence-map__legend {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm) var(--spacing-lg);
   padding: 0 var(--spacing-sm);
 }
 

@@ -71,16 +71,12 @@
   align-items: center;
 }
 
-.app-nav__link {
-  display: inline-flex;
+/* The narrow-screen menu button shares the nav links' look. */
+.app-nav__link,
+.app-header__menu-toggle {
   align-items: center;
-  gap: 5px;
-  height: 100%;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  padding: 0;
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: var(--font-size-xs);
@@ -93,8 +89,19 @@
 }
 
 .app-nav__link:hover,
-.app-nav__link[aria-expanded="true"] {
+.app-nav__link[aria-expanded="true"],
+.app-header__menu-toggle:hover,
+.app-header__menu-toggle[aria-expanded="true"] {
   color: var(--color-accent);
+}
+
+.app-nav__link {
+  display: inline-flex;
+  gap: 5px;
+  height: 100%;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0;
 }
 
 .app-nav__link.active {
@@ -172,24 +179,8 @@
 
 .app-header__menu-toggle {
   display: none;
-  align-items: center;
   gap: 8px;
   padding: 8px 0;
-  background: none;
-  border: none;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  transition: color 0.12s;
-}
-
-.app-header__menu-toggle:hover,
-.app-header__menu-toggle[aria-expanded="true"] {
-  color: var(--color-accent);
 }
 
 .app-header__menu-resources {
@@ -280,10 +271,6 @@
     background: var(--color-bg-hover);
     color: var(--color-accent);
     text-decoration: none;
-  }
-
-  .app-header__menu-resource .new-tab-link__icon path {
-    stroke-width: 1;
   }
 
   .app-nav__link {

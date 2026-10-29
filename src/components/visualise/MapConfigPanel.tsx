@@ -85,15 +85,13 @@ function axesEqual(a: EvidenceMapAxes, b: EvidenceMapAxes): boolean {
  * no "Show results": the draft can only recognise the URL's concept filters
  * once the schemes naming them are here, so an early commit would wipe them.
  */
-function MapConfigPanelLoading(chrome: PanelChromeProps) {
+function MapConfigPanelLoading() {
   return (
-    <PanelFrame {...chrome}>
-      <div class="map-config-panel__body">
-        <p class="map-config-panel__status" role="status">
-          Loading filters…
-        </p>
-      </div>
-    </PanelFrame>
+    <div class="map-config-panel__body">
+      <p class="map-config-panel__status" role="status">
+        Loading filters…
+      </p>
+    </div>
   );
 }
 
@@ -186,11 +184,9 @@ export function MapConfigPanel({
   hideButtonRef,
   ...rest
 }: MapConfigPanelProps) {
-  const chrome = { hidden, onHide, hideButtonRef };
-  if (loading) return <MapConfigPanelLoading {...chrome} />;
   return (
-    <PanelFrame {...chrome}>
-      <MapConfigPanelInner {...rest} />
+    <PanelFrame hidden={hidden} onHide={onHide} hideButtonRef={hideButtonRef}>
+      {loading ? <MapConfigPanelLoading /> : <MapConfigPanelInner {...rest} />}
     </PanelFrame>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { useDismiss } from "@/hooks/useDismiss";
 import { ChevronDownIcon } from "@/components/common/icons";
 import { Tooltip } from "@/components/common/Tooltip";
 import type { ExportStatus } from "@/hooks/useSearchExport";
@@ -48,8 +49,7 @@ function busyLabel(status: ExportStatus): string | null {
  * Export entry point: a trigger button with a dropdown to pick the format
  * (Reference list PDF / RIS / Excel) before exporting. When disabled it mirrors
  * the old single button — a tooltip-explained, non-opening trigger — so the menu
- * only opens once an export is actually possible. Click-outside / Escape /
- * aria-expanded handling follows ResourcesMenu.
+ * only opens once an export is actually possible.
  */
 export function ExportMenu({
   disabled,
@@ -79,26 +79,7 @@ export function ExportMenu({
       ?? scopes.find((s) => s.available)?.value
       ?? scope;
 
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setOpen(false);
-        buttonRef.current?.focus();
-      }
-    }
-    document.addEventListener("click", onDocClick);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
+  useDismiss(open, setOpen, containerRef, buttonRef);
 
   // Collapse the panel if the control becomes unavailable while open.
   useEffect(() => {

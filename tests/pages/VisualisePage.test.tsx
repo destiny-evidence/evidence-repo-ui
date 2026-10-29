@@ -1769,6 +1769,31 @@ describe("VisualisePage on small screens", () => {
     );
   });
 
+  test("the panel keeps focus on Hide panel when the vocabulary arrives", () => {
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: null,
+      loading: true,
+      error: null,
+    });
+    const { rerender } = render(<VisualisePage />);
+    screen.getByRole("button", { name: "Hide panel" }).focus();
+
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: SCHEMES,
+      loading: false,
+      error: null,
+    });
+    rerender(<VisualisePage />);
+
+    expect(screen.getByRole("button", { name: "Hide panel" })).toHaveFocus();
+  });
+
   test("a remembered choice beats the screen-size default", () => {
     localStorage.setItem(PANEL_OPEN_KEY, "false");
     render(<VisualisePage />);

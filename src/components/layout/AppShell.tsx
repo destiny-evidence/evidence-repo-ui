@@ -1,10 +1,11 @@
 import type { ComponentChildren } from "preact";
 import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { useDismiss } from "@/hooks/useDismiss";
 import { track } from "@/analytics/matomo";
 import { useAuth } from "@/auth/AuthContext";
 import { useCommunity } from "@/community/CommunityContext";
 import { FeedbackLink } from "@/components/feedback/FeedbackLink";
-import { MenuIcon } from "@/components/common/icons";
+import { MenuIcon, NewTabLinkIcon } from "@/components/common/icons";
 import { NewTabLink } from "@/components/common/NewTabLink";
 import { ResourcesMenu } from "./ResourcesMenu";
 import { SiteFrame } from "./SiteFrame";
@@ -56,23 +57,7 @@ export function AppShell({ children }: AppShellProps) {
 
   useEffect(() => setMenuOpen(false), [pathname]);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    function onDocClick(e: MouseEvent) {
-      if (!menuWrapRef.current?.contains(e.target as Node)) setMenuOpen(false);
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Escape") return;
-      setMenuOpen(false);
-      menuToggleRef.current?.focus();
-    }
-    document.addEventListener("click", onDocClick);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [menuOpen]);
+  useDismiss(menuOpen, setMenuOpen, menuWrapRef, menuToggleRef);
   return (
     <SiteFrame>
       <header class="app-header">
@@ -143,6 +128,7 @@ export function AppShell({ children }: AppShellProps) {
                     key={r.href}
                     class="app-header__menu-resource"
                     href={r.href}
+                    icon={<NewTabLinkIcon strokeWidth={1} />}
                     event={{
                       category: "Resources",
                       action: "Link Clicked",

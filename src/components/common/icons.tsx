@@ -150,7 +150,10 @@ export function DownloadIcon({ size = 16 }: { size?: number }) {
 }
 
 /** Arrow pointing to upper-right — marks a link that opens in a new tab. */
-export function NewTabLinkIcon({ size = 11 }: { size?: number }) {
+export function NewTabLinkIcon({
+  size = 11,
+  strokeWidth = 1.5,
+}: { size?: number; strokeWidth?: number }) {
   return (
     <svg
       viewBox="0 0 12 12"
@@ -162,7 +165,7 @@ export function NewTabLinkIcon({ size = 11 }: { size?: number }) {
     >
       <path
         d="M3.5 1.5h7v7M10.5 1.5L1.5 10.5"
-        stroke-width="1.5"
+        stroke-width={strokeWidth}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
