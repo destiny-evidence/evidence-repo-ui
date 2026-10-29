@@ -1705,3 +1705,126 @@ describe("VisualisePage config panel hydration", () => {
     ).toBe(true);
   });
 });
+
+describe("VisualisePage on small screens", () => {
+  const PANEL_OPEN_KEY = "evidence-map-panel-open";
+  let matchMedia: { mockRestore(): void } | undefined;
+
+  function screenMatches(...queries: string[]) {
+    matchMedia = vi
+      .spyOn(window, "matchMedia")
+      .mockImplementation(
+        (media) => ({ matches: queries.includes(media), media }) as MediaQueryList,
+      );
+  }
+
+  beforeEach(() => {
+    mockUseCommunity.mockReturnValue(mappedCommunity());
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(9, [["level:primary", "theme:literacy", 6]]),
+      loading: false,
+      error: null,
+    });
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: SCHEMES,
+      loading: false,
+      error: null,
+    });
+  });
+
+  afterEach(() => {
+    matchMedia?.mockRestore();
+    document.documentElement.style.removeProperty("--map-dense");
+  });
+
+  test("folds the panel to its rail below 1440px; rail and Hide panel toggle it and remember the choice", () => {
+    screenMatches("(max-width: 1440px)");
+    render(<VisualisePage />);
+
+    expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Configure map" }));
+
+    expect(screen.getByRole("button", { name: "Show results" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Hide panel" })).toHaveFocus();
+    expect(localStorage.getItem(PANEL_OPEN_KEY)).toBe("true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Hide panel" }));
+
+    expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Configure map" })).toHaveFocus();
+    expect(localStorage.getItem(PANEL_OPEN_KEY)).toBe("false");
+  });
+
+  test("keeps an unapplied draft across Hide and reopen", () => {
+    render(<VisualisePage />);
+    fireEvent.click(screen.getByLabelText("Secondary"));
+    fireEvent.click(screen.getByRole("button", { name: "Hide panel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Configure map" }));
+
+    expect((screen.getByLabelText("Secondary") as HTMLInputElement).checked).toBe(
+      true,
+    );
+  });
+
+  test("the panel keeps focus on Hide panel when the vocabulary arrives", () => {
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: null,
+      loading: true,
+      error: null,
+    });
+    const { rerender } = render(<VisualisePage />);
+    screen.getByRole("button", { name: "Hide panel" }).focus();
+
+    mockUseVocabulary.mockReturnValue({
+      labels: LABELS,
+      broader: null,
+      definitions: null,
+      schemes: SCHEMES,
+      loading: false,
+      error: null,
+    });
+    rerender(<VisualisePage />);
+
+    expect(screen.getByRole("button", { name: "Hide panel" })).toHaveFocus();
+  });
+
+  test("a remembered choice beats the screen-size default", () => {
+    localStorage.setItem(PANEL_OPEN_KEY, "false");
+    render(<VisualisePage />);
+    expect(screen.getByRole("button", { name: "Configure map" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
+  });
+
+  test("the rail counts each applied filter value", () => {
+    localStorage.setItem(PANEL_OPEN_KEY, "false");
+    mockUseUrlParams.mockReturnValue(
+      "?concept=level%3Asecondary&country=KE,NG&row=scheme%3Alevel&column=scheme%3Atheme",
+    );
+    render(<VisualisePage />);
+    expect(
+      screen.getByRole("button", { name: "Configure map, 3 filters applied" }),
+    ).toHaveTextContent("3");
+  });
+
+  test("defaults to small cells on a small screen, still overridable", () => {
+    // jsdom loads no stylesheets, so stand in for variables.css's media query.
+    document.documentElement.style.setProperty("--map-dense", "1");
+    const { container } = render(<VisualisePage />);
+    const geometry = () =>
+      container
+        .querySelector<HTMLElement>(".evidence-map")!
+        .style.getPropertyValue("--evidence-map-cell-height");
+
+    expect(geometry()).toBe(`${CELL_SIZES.small.cellHeight}px`);
+    fireEvent.change(screen.getByLabelText("Cell size"), {
+      target: { value: "large" },
+    });
+    expect(geometry()).toBe(`${CELL_SIZES.large.cellHeight}px`);
+  });
+});

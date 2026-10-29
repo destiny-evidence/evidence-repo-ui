@@ -98,12 +98,29 @@
   /* Fixed rather than content-sized so the docked evidence map can subtract it. */
   --footer-height: 56px;
   --content-max-width: 920px;
-  /* Docked evidence-map configure panel; shared by the map layout and the
-     Feedback button's inset on that page. */
+  /* Docked evidence-map configure panel, and the rail it folds into. */
   --map-panel-width: 360px;
+  --map-rail-width: 52px;
+  /* Evidence-map density. --map-dense is read by VisualisePage.tsx to default
+     to Small cells, so this media query is the only place it's decided. */
+  --map-dense: 0;
+  --map-gutter: 32px;
+  --map-col-head-padding: var(--spacing-sm) var(--spacing-md);
+  --map-row-head-padding: var(--spacing-sm) var(--spacing-md);
+  --map-corner-padding: var(--spacing-md);
 
   /* ── Legacy ── */
   --color-text: var(--color-text-primary);
+}
+
+@media (max-width: 1280px), (max-height: 800px) {
+  :root {
+    --map-dense: 1;
+    --map-gutter: 16px;
+    --map-col-head-padding: 6px 10px;
+    --map-row-head-padding: 4px 12px;
+    --map-corner-padding: 8px 12px;
+  }
 }
 
 body {

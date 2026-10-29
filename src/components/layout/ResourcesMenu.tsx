@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { useId, useRef, useState } from "preact/hooks";
+import { useDismiss } from "@/hooks/useDismiss";
 import { NewTabLink } from "@/components/common/NewTabLink";
 import { ChevronDownIcon } from "@/components/common/icons";
 import type { ExternalResource } from "@/types/models";
@@ -15,29 +16,10 @@ export function ResourcesMenu({ resources }: ResourcesMenuProps) {
   const buttonId = useId();
   const panelId = useId();
 
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setOpen(false);
-        buttonRef.current?.focus();
-      }
-    }
-    document.addEventListener("click", onDocClick);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
+  useDismiss(open, setOpen, containerRef, buttonRef);
 
   return (
-    <div class="app-nav__item" ref={containerRef}>
+    <div class="app-nav__item app-nav__resources" ref={containerRef}>
       <button
         ref={buttonRef}
         type="button"

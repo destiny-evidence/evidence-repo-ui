@@ -32,6 +32,8 @@ export type AnalyticsEvent =
   | { category: "EvidenceMap"; action: "View Toggled"; name: string }
   // name: small | medium | large | xlarge
   | { category: "EvidenceMap"; action: "Cell Size Changed"; name: string }
+  // name: open | hidden — the configure panel's rail / Hide button
+  | { category: "EvidenceMap"; action: "Panel Toggled"; name: string }
   // name: `${rowValue} x ${columnValue}` — the cell's two axis values
   | { category: "EvidenceMap"; action: "Cell Clicked"; name: string }
   // name: axis value clicked in the header
@@ -71,7 +73,7 @@ export type AnalyticsEvent =
   | { category: "Export"; action: "Error"; name: string; value: number }
   // name: resource title
   | { category: "Resources"; action: "Link Clicked"; name: string }
-  | { category: "Feedback"; action: "FAB Clicked" }
+  | { category: "Feedback"; action: "Nav Clicked" }
   // name: Search | Visualise
   | { category: "Navigation"; action: "Tab Clicked"; name: string }
   // value: references the summary was asked for

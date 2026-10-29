@@ -86,6 +86,26 @@ export function ChevronRightIcon({ size = "1em" }: { size?: number | string } = 
   );
 }
 
+/** Three bars — the narrow-screen header menu button. */
+export function MenuIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.75"
+      stroke-linecap="round"
+      width={size}
+      height={size}
+      aria-hidden="true"
+    >
+      <path d="M3 5h14" />
+      <path d="M3 10h14" />
+      <path d="M3 15h14" />
+    </svg>
+  );
+}
+
 /**
  * Chevron pointing down — used to indicate an expanded disclosure.
  * Sizes to the surrounding text by default so it tracks the header.
@@ -130,7 +150,10 @@ export function DownloadIcon({ size = 16 }: { size?: number }) {
 }
 
 /** Arrow pointing to upper-right — marks a link that opens in a new tab. */
-export function NewTabLinkIcon({ size = 11 }: { size?: number }) {
+export function NewTabLinkIcon({
+  size = 11,
+  strokeWidth = 1.5,
+}: { size?: number; strokeWidth?: number }) {
   return (
     <svg
       viewBox="0 0 12 12"
@@ -142,7 +165,7 @@ export function NewTabLinkIcon({ size = 11 }: { size?: number }) {
     >
       <path
         d="M3.5 1.5h7v7M10.5 1.5L1.5 10.5"
-        stroke-width="1.5"
+        stroke-width={strokeWidth}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
