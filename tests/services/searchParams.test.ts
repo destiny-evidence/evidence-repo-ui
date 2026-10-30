@@ -357,7 +357,6 @@ describe("toUnpaginatedSearchQuery", () => {
     const out = toUnpaginatedSearchQuery(p, ["dom-x"]);
     expect(out.query).toBe("phonics");
     expect(out.filters.wbRegionIds).toEqual(["SAS", "SSF"]);
-    expect(toUnpaginatedSearchQuery(makeSearchParams(), ["dom-x"]).filters.wbRegionIds).toBeUndefined();
   });
 
   test("concept filters travel as structured filter, not embedded in query", () => {
@@ -401,7 +400,9 @@ describe("toUnpaginatedSearchQuery", () => {
       endYear: 2024,
       annotation: ["dom-x"],
       sort: ["-publication_year"],
+      conceptFilters: [],
       countryCodes: ["DE"],
+      wbRegionIds: [],
     });
   });
 });

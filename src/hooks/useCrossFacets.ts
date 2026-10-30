@@ -6,28 +6,8 @@ import {
   axisPairToParams,
   type CrossFacetAxisPair,
 } from "@/services/crossFacets";
-import type { SearchParams } from "@/services/searchParams";
+import { toSearchFilters, type SearchParams } from "@/services/searchParams";
 import type { ReferenceCrossFacetResult } from "@/types/models";
-
-function paramsKey(
-  params: SearchParams,
-  axes: CrossFacetAxisPair,
-  slug: string,
-  annotations: string[],
-): string {
-  return [
-    `q=${params.q}`,
-    `start=${params.startYear ?? ""}`,
-    `end=${params.endYear ?? ""}`,
-    `slug=${slug}`,
-    `ann=${JSON.stringify(annotations)}`,
-    `countries=${JSON.stringify(params.countryCodes)}`,
-    `regions=${JSON.stringify(params.wbRegionIds)}`,
-    `concepts=${JSON.stringify(params.conceptFilters)}`,
-    `row=${JSON.stringify(axes.row)}`,
-    `column=${JSON.stringify(axes.column)}`,
-  ].join("&");
-}
 
 export function useCrossFacets(
   params: SearchParams,
@@ -43,12 +23,8 @@ export function useCrossFacets(
   error: Error | null;
 } {
   const community = useCommunity();
-  const key = paramsKey(
-    params,
-    axes,
-    community?.slug ?? "",
-    community?.defaultAnnotations ?? [],
-  );
+  const filters = toSearchFilters(params, community?.defaultAnnotations);
+  const key = JSON.stringify([community?.slug, params.q, filters, axes.row, axes.column]);
   // result and the query it came from move together so they can't drift apart
   // mid-fetch.
   const [data, setData] = useState<{
@@ -68,14 +44,7 @@ export function useCrossFacets(
 
     crossFacets(
       params.q || undefined,
-      {
-        startYear: params.startYear,
-        endYear: params.endYear,
-        annotation: community.defaultAnnotations,
-        conceptFilters: params.conceptFilters,
-        countryCodes: params.countryCodes,
-        wbRegionIds: params.wbRegionIds,
-      },
+      filters,
       axisPairToParams(axes, toTurtleUrl(community.vocabularyUrl)),
     )
       .then((r) => {

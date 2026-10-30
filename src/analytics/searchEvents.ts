@@ -8,21 +8,14 @@ import {
 } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
 import { wbRegionName } from "@/utils/wbRegion";
-import type { SearchParams } from "@/services/searchParams";
+import { hasFilters, type SearchParams } from "@/services/searchParams";
 import type { Community } from "@/types/models";
 
 // True when the user has actually searched or filtered — as opposed to a plain
 // browse landing (no query, no filters), which is already a pageview and would
 // otherwise dominate the "Search Performed" metric.
 export function hasActiveSearch(params: SearchParams): boolean {
-  return (
-    params.q !== "" ||
-    params.conceptFilters.length > 0 ||
-    params.countryCodes.length > 0 ||
-    params.wbRegionIds.length > 0 ||
-    params.startYear !== undefined ||
-    params.endYear !== undefined
-  );
+  return params.q !== "" || hasFilters(params);
 }
 
 // "· filtered" separates keywords that found nothing from ones the filters
@@ -31,13 +24,9 @@ export function siteSearchCategory(
   community: Pick<Community, "slug" | "searchDefaults">,
   params: SearchParams,
 ): string {
-  const filtered =
-    params.conceptFilters.length > 0 ||
-    params.countryCodes.length > 0 ||
-    params.wbRegionIds.length > 0 ||
-    params.startYear !== undefined ||
-    (params.endYear !== undefined && params.endYear !== community.searchDefaults?.endYear);
-  return filtered ? `${community.slug} · filtered` : community.slug;
+  const endYear =
+    params.endYear === community.searchDefaults?.endYear ? undefined : params.endYear;
+  return hasFilters({ ...params, endYear }) ? `${community.slug} · filtered` : community.slug;
 }
 
 // Concept values carry their whole branch, root first, so a nested concept says

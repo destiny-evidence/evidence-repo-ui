@@ -61,6 +61,9 @@ type SharedFilterFields =
   | "countryCodes"
   | "wbRegionIds";
 
+// The filters every search-style endpoint accepts: everything but page and sort.
+export type SharedSearchFilters = Pick<SearchFilters, SharedFilterFields>;
+
 function buildSharedSearchParams(
   query: string | undefined,
   filters: Pick<SearchFilters, SharedFilterFields>,

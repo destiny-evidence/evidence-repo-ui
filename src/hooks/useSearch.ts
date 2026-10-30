@@ -1,32 +1,12 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
 import { searchReferences, type SearchFilters } from "@/services/apiClient";
-import { effectiveSortBackend } from "@/services/searchParams";
+import {
+  effectiveSortBackend,
+  toSearchFilters,
+  type SearchParams,
+} from "@/services/searchParams";
 import { useCommunity } from "@/community/CommunityContext";
 import type { SearchResult } from "@/types/models";
-import type { SearchParams } from "@/services/searchParams";
-
-function paramsKey(
-  params: SearchParams,
-  slug: string,
-  annotations: string[],
-): string {
-  // JSON.stringify is unambiguous for arbitrary string arrays — two distinct
-  // inputs can never collapse to the same key even if annotations contain commas,
-  // quotes, or other delimiters. Ad hoc joins are brittle here.
-  // Intentionally order-sensitive: ["a","b"] and ["b","a"] are different keys.
-  return [
-    `q=${params.q}`,
-    `page=${params.page}`,
-    `start=${params.startYear ?? ""}`,
-    `end=${params.endYear ?? ""}`,
-    `sort=${params.sort ?? ""}`,
-    `slug=${slug}`,
-    `ann=${JSON.stringify(annotations)}`,
-    `countries=${JSON.stringify(params.countryCodes)}`,
-    `regions=${JSON.stringify(params.wbRegionIds)}`,
-    `concepts=${JSON.stringify(params.conceptFilters)}`,
-  ].join("&");
-}
 
 export function useSearch(params: SearchParams): {
   results: SearchResult | null;
@@ -39,11 +19,18 @@ export function useSearch(params: SearchParams): {
   retry: () => void;
 } {
   const community = useCommunity();
-  const key = paramsKey(
-    params,
-    community?.slug ?? "",
-    community?.defaultAnnotations ?? [],
-  );
+  const sharedFilters = toSearchFilters(params, community?.defaultAnnotations);
+  // JSON.stringify is unambiguous for arbitrary string arrays — two distinct
+  // inputs can never collapse to the same key even if annotations contain commas,
+  // quotes, or other delimiters. Ad hoc joins are brittle here.
+  // Intentionally order-sensitive: ["a","b"] and ["b","a"] are different keys.
+  const key = JSON.stringify([
+    community?.slug,
+    params.q,
+    params.page,
+    params.sort,
+    sharedFilters,
+  ]);
   const [results, setResults] = useState<SearchResult | null>(null);
   const [resultsParams, setResultsParams] = useState<SearchParams | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,15 +50,7 @@ export function useSearch(params: SearchParams): {
     setError(null);
     setLoading(true);
 
-    const filters: SearchFilters = {
-      page: params.page,
-      startYear: params.startYear,
-      endYear: params.endYear,
-      annotation: community.defaultAnnotations,
-      conceptFilters: params.conceptFilters,
-      countryCodes: params.countryCodes,
-      wbRegionIds: params.wbRegionIds,
-    };
+    const filters: SearchFilters = { page: params.page, ...sharedFilters };
     const sort = effectiveSortBackend(params);
     if (sort !== undefined) filters.sort = sort;
 
