@@ -1,5 +1,6 @@
 import { parseYear } from "@/utils/year";
-import type { SearchFilters } from "@/services/apiClient";
+import type { SearchFilters, SharedSearchFilters } from "@/services/apiClient";
+import { isWbRegionId } from "@/utils/wbRegion";
 
 export type SortOption = "newest" | "oldest";
 
@@ -36,6 +37,7 @@ export interface SearchParams {
   // (one scheme's selected concepts), arrays are AND'd (across schemes).
   conceptFilters: readonly (readonly string[])[];
   countryCodes: readonly string[];
+  wbRegionIds: readonly string[];
 }
 
 // Unknown values fall back to undefined (relevance).
@@ -49,6 +51,23 @@ function parseDecimalInt(raw: string | null): number | undefined {
   if (raw === null || !/^\d+$/.test(raw)) return undefined;
   const n = Number(raw);
   return Number.isSafeInteger(n) ? n : undefined;
+}
+
+// Comma-separated and repeated params flatten into one OR'd list. Upper-casing
+// mirrors the backend's normalisation, so hand-edited lower-case codes still match.
+function parseCodeList(
+  params: URLSearchParams,
+  name: string,
+  accept: (code: string) => boolean,
+): string[] {
+  const codes: string[] = [];
+  for (const raw of params.getAll(name)) {
+    for (const piece of raw.split(",")) {
+      const code = piece.trim().toUpperCase();
+      if (accept(code)) codes.push(code);
+    }
+  }
+  return codes;
 }
 
 export function parseSearchParams(search: string): SearchParams {
@@ -67,15 +86,9 @@ export function parseSearchParams(search: string): SearchParams {
     if (uris.length > 0) conceptFilters.push(uris);
   }
 
-  // Upper-case + strip mirrors the backend's normalisation, so hand-edited
-  // URLs with lower-case codes still match the right rows.
-  const countryCodes: string[] = [];
-  for (const raw of params.getAll("country")) {
-    for (const piece of raw.split(",")) {
-      const code = piece.trim().toUpperCase();
-      if (/^[A-Z]{2}$/.test(code)) countryCodes.push(code);
-    }
-  }
+  const countryCodes = parseCodeList(params, "country", (c) => /^[A-Z]{2}$/.test(c));
+  // Unknown region IDs are dropped rather than forwarded: the backend rejects them.
+  const wbRegionIds = parseCodeList(params, "country_wb_region", isWbRegionId);
 
   const pageRaw = parseDecimalInt(params.get("page"));
   const page = pageRaw !== undefined && pageRaw >= 1 ? pageRaw : 1;
@@ -89,7 +102,16 @@ export function parseSearchParams(search: string): SearchParams {
 
   const sort = parseSort(params.get("sort"));
 
-  return { q, page, startYear, endYear, sort, conceptFilters, countryCodes };
+  return {
+    q,
+    page,
+    startYear,
+    endYear,
+    sort,
+    conceptFilters,
+    countryCodes,
+    wbRegionIds,
+  };
 }
 
 export function toQueryString(params: SearchParams): string {
@@ -100,6 +122,9 @@ export function toQueryString(params: SearchParams): string {
   }
   if (params.countryCodes.length > 0) {
     out.append("country", params.countryCodes.join(","));
+  }
+  if (params.wbRegionIds.length > 0) {
+    out.append("country_wb_region", params.wbRegionIds.join(","));
   }
   if (params.startYear !== undefined)
     out.set("start_year", String(params.startYear));
@@ -117,6 +142,39 @@ export function buildSearchUrl(
   return qs ? `/${communitySlug}?${qs}` : `/${communitySlug}`;
 }
 
+// True when anything beyond the free-text query narrows the search.
+export function hasFilters(
+  params: Pick<
+    SearchParams,
+    "conceptFilters" | "countryCodes" | "wbRegionIds" | "startYear" | "endYear"
+  >,
+): boolean {
+  return (
+    params.conceptFilters.length > 0 ||
+    params.countryCodes.length > 0 ||
+    params.wbRegionIds.length > 0 ||
+    params.startYear !== undefined ||
+    params.endYear !== undefined
+  );
+}
+
+// The API filters for a search, shared by every search-style request. Hooks key
+// their refetch on this object, so a field added here is forwarded and refetched
+// everywhere at once.
+export function toSearchFilters(
+  params: SearchParams,
+  annotations: string[] | undefined,
+): SharedSearchFilters {
+  return {
+    startYear: params.startYear,
+    endYear: params.endYear,
+    annotation: annotations,
+    conceptFilters: params.conceptFilters,
+    countryCodes: params.countryCodes,
+    wbRegionIds: params.wbRegionIds,
+  };
+}
+
 // Maps a SearchParams + community annotations to the query/filters shape the
 // whole-result-set endpoints expect (export, reference-id search) — i.e. minus
 // pagination. Substitutes "*" for an empty browse-mode query so the backend's
@@ -125,18 +183,8 @@ export function toUnpaginatedSearchQuery(
   params: SearchParams,
   annotations: string[] | undefined,
 ): { query: string; filters: Omit<SearchFilters, "page"> } {
-  const filters: Omit<SearchFilters, "page"> = {
-    startYear: params.startYear,
-    endYear: params.endYear,
-    annotation: annotations,
-  };
+  const filters: Omit<SearchFilters, "page"> = toSearchFilters(params, annotations);
   const sort = effectiveSortBackend(params);
   if (sort !== undefined) filters.sort = sort;
-  if (params.conceptFilters.length > 0) {
-    filters.conceptFilters = params.conceptFilters;
-  }
-  if (params.countryCodes.length > 0) {
-    filters.countryCodes = params.countryCodes;
-  }
   return { query: params.q.trim() || "*", filters };
 }

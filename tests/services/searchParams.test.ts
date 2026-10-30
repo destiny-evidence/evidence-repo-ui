@@ -17,6 +17,7 @@ describe("parseSearchParams", () => {
       sort: undefined,
       conceptFilters: [],
       countryCodes: [],
+      wbRegionIds: [],
     });
   });
 
@@ -30,6 +31,7 @@ describe("parseSearchParams", () => {
       sort: "newest",
       conceptFilters: [],
       countryCodes: [],
+      wbRegionIds: [],
     });
   });
 
@@ -186,6 +188,32 @@ describe("parseSearchParams country codes", () => {
   });
 });
 
+describe("parseSearchParams World Bank regions", () => {
+  test("single country_wb_region= param → one id", () => {
+    expect(parseSearchParams("?country_wb_region=SAS").wbRegionIds).toEqual(["SAS"]);
+  });
+
+  test("comma-separated and repeated params flatten into one OR'd list", () => {
+    expect(
+      parseSearchParams("?country_wb_region=SAS,SSF&country_wb_region=EAS").wbRegionIds,
+    ).toEqual(["SAS", "SSF", "EAS"]);
+  });
+
+  test("upper-cases lower-case ids from hand-edited URLs", () => {
+    expect(parseSearchParams("?country_wb_region=sas, ssf").wbRegionIds).toEqual([
+      "SAS",
+      "SSF",
+    ]);
+  });
+
+  test("drops unknown or malformed ids", () => {
+    expect(
+      parseSearchParams("?country_wb_region=XXX,EU,,SA,SAS").wbRegionIds,
+    ).toEqual(["SAS"]);
+    expect(parseSearchParams("?country_wb_region=xyz").wbRegionIds).toEqual([]);
+  });
+});
+
 describe("toQueryString", () => {
   test("omits defaults", () => {
     expect(toQueryString(makeSearchParams())).toBe("");
@@ -235,7 +263,17 @@ describe("toQueryString", () => {
     expect(toQueryString(p)).toBe("country=DE%2CFR");
   });
 
-  test("q comes before concept=, country=, and tail params", () => {
+  test("emits a single comma-joined country_wb_region= param (OR semantics)", () => {
+    const p = makeSearchParams({ wbRegionIds: ["SAS", "SSF"] });
+    expect(toQueryString(p)).toBe("country_wb_region=SAS%2CSSF");
+  });
+
+  test("country_wb_region= round-trips through parse", () => {
+    const p = makeSearchParams({ wbRegionIds: ["SAS", "SSF"] });
+    expect(parseSearchParams(toQueryString(p)).wbRegionIds).toEqual(["SAS", "SSF"]);
+  });
+
+  test("q comes before concept=, country=, country_wb_region=, and tail params", () => {
     const p = makeSearchParams({
       q: "phonics",
       page: 3,
@@ -243,9 +281,18 @@ describe("toQueryString", () => {
       sort: "newest",
       conceptFilters: [["https://x/A"]],
       countryCodes: ["DE"],
+      wbRegionIds: ["SAS"],
     });
     const keyOrder = Array.from(new URLSearchParams(toQueryString(p)).keys());
-    expect(keyOrder).toEqual(["q", "concept", "country", "start_year", "sort", "page"]);
+    expect(keyOrder).toEqual([
+      "q",
+      "concept",
+      "country",
+      "country_wb_region",
+      "start_year",
+      "sort",
+      "page",
+    ]);
   });
 
   test("round-trips structured concept filters through parse → serialise → parse", () => {
@@ -305,6 +352,13 @@ describe("toUnpaginatedSearchQuery", () => {
     expect(out.filters.countryCodes).toEqual(["DE"]);
   });
 
+  test("World Bank region filters travel as structured filter", () => {
+    const p = makeSearchParams({ q: "phonics", wbRegionIds: ["SAS", "SSF"] });
+    const out = toUnpaginatedSearchQuery(p, ["dom-x"]);
+    expect(out.query).toBe("phonics");
+    expect(out.filters.wbRegionIds).toEqual(["SAS", "SSF"]);
+  });
+
   test("concept filters travel as structured filter, not embedded in query", () => {
     const p = makeSearchParams({
       q: "phonics",
@@ -346,7 +400,9 @@ describe("toUnpaginatedSearchQuery", () => {
       endYear: 2024,
       annotation: ["dom-x"],
       sort: ["-publication_year"],
+      conceptFilters: [],
       countryCodes: ["DE"],
+      wbRegionIds: [],
     });
   });
 });

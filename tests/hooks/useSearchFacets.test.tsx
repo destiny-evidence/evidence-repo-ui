@@ -31,13 +31,22 @@ function countryResult(...pairs: [string, number][]): ReferenceFacetResult {
   return { countries: pairs.map(([country, count]) => ({ country, count })) };
 }
 
+function regionResult(...pairs: [string, number][]): ReferenceFacetResult {
+  return {
+    country_wb_regions: pairs.map(([country_wb_region, count]) => ({
+      country_wb_region,
+      count,
+    })),
+  };
+}
+
 beforeEach(() => {
   mockFacets.mockReset();
   window.history.replaceState(null, "", "/");
 });
 
 describe("useSearchFacets", () => {
-  test("fetches on mount with q + community annotations + both facet types", async () => {
+  test("fetches on mount with q + community annotations + all facet types", async () => {
     mockFacets.mockResolvedValue(result(["ex:A", 12]));
     const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
       wrapper: withCommunityPath("/esea"),
@@ -51,7 +60,7 @@ describe("useSearchFacets", () => {
         annotation: ["domain-inclusion/jacobs-education"],
         conceptFilters: [],
       }),
-      ["concepts", "countries"],
+      ["concepts", "countries", "country_wb_regions"],
       expect.objectContaining({
         vocabularyUrl: expect.stringMatching(/\.ttl$/),
       }),
@@ -92,6 +101,34 @@ describe("useSearchFacets", () => {
     await waitFor(() => expect(hook.current.counts).not.toBeNull());
     expect(hook.current.counts?.countries.get("DE")).toBe(50);
     expect(hook.current.counts?.concepts.size).toBe(0);
+  });
+
+  test("parses World Bank region buckets into counts.wbRegions", async () => {
+    mockFacets.mockResolvedValue(regionResult(["SAS", 40], ["SSF", 25]));
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(hook.current.counts).not.toBeNull());
+    expect(hook.current.counts?.wbRegions.get("SAS")).toBe(40);
+    expect(hook.current.counts?.wbRegions.get("SSF")).toBe(25);
+    expect(hook.current.counts?.countries.size).toBe(0);
+  });
+
+  test("forwards wbRegionIds and refetches when the selection changes", async () => {
+    mockFacets.mockResolvedValue(result());
+    const { rerender } = renderHook(({ p }) => useSearchFacets(p), {
+      wrapper: withCommunityPath("/esea"),
+      initialProps: { p: baseParams },
+    });
+    await waitFor(() => expect(mockFacets).toHaveBeenCalledTimes(1));
+    rerender({ p: { ...baseParams, wbRegionIds: ["SAS"] } });
+    await waitFor(() => expect(mockFacets).toHaveBeenCalledTimes(2));
+    expect(mockFacets).toHaveBeenLastCalledWith(
+      "phonics",
+      expect.objectContaining({ wbRegionIds: ["SAS"] }),
+      ["concepts", "countries", "country_wb_regions"],
+      expect.anything(),
+    );
   });
 
   test("does NOT refetch when only page changes", async () => {

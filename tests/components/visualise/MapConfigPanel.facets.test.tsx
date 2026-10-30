@@ -66,7 +66,11 @@ describe("map panel facet requests", () => {
     expect(params.has("concept")).toBe(false);
     expect(params.get("q")).toBe("climate");
     expect(params.getAll("annotation")).toEqual(["domain-inclusion/test"]);
-    expect(params.getAll("facet")).toEqual(["concepts", "countries"]);
+    expect(params.getAll("facet")).toEqual([
+      "concepts",
+      "countries",
+      "country_wb_regions",
+    ]);
   });
 
   test.each([
