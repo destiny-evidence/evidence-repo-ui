@@ -3,6 +3,7 @@ import {
   activeFilters,
   hasActiveSearch,
   siteSearchCategory,
+  withoutDefaults,
 } from "@/analytics/searchEvents";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
@@ -178,5 +179,19 @@ describe("siteSearchCategory", () => {
     expect(siteSearchCategory(destiny, makeSearchParams({ endYear: 2020 }))).toBe(
       "destiny · filtered",
     );
+  });
+});
+
+describe("withoutDefaults", () => {
+  const destiny = { searchDefaults: { endYear: 2027 } };
+
+  test("drops an end year that is only the community default", () => {
+    expect(withoutDefaults(destiny, makeSearchParams({ endYear: 2027 })).endYear).toBeUndefined();
+  });
+
+  test("keeps a year range the user set", () => {
+    for (const filters of [{ endYear: 2020 }, { startYear: 2000, endYear: 2027 }]) {
+      expect(withoutDefaults(destiny, makeSearchParams(filters)).endYear).toBe(filters.endYear);
+    }
   });
 });

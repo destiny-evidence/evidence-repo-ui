@@ -16,7 +16,7 @@ const AXES: EvidenceMapAxes = {
 
 function setup({ count = 342, scoped = true, loading = false } = {}) {
   const onVisualise = vi.fn();
-  render(
+  const menu = (loading: boolean) => (
     <VisualiseMenu
       total={{ count, is_lower_bound: false }}
       loading={loading}
@@ -26,9 +26,10 @@ function setup({ count = 342, scoped = true, loading = false } = {}) {
       schemes={[OUTCOME_SCHEME_FIXTURE, DOCUMENT_TYPE_SCHEME]}
       includeCountries
       onVisualise={onVisualise}
-    />,
+    />
   );
-  return { onVisualise };
+  const { rerender } = render(menu(loading));
+  return { onVisualise, startLoading: () => rerender(menu(true)) };
 }
 
 const trigger = () => screen.getByRole("button", { name: /^visualise$/i, expanded: false });
@@ -71,6 +72,13 @@ describe("VisualiseMenu", () => {
     const panel = openPanel();
     fireEvent.keyDown(document, { key: "Escape" });
     expect(panel).not.toBeVisible();
+  });
+
+  test("closes when a new search starts loading", () => {
+    const { startLoading } = setup();
+    const panel = openPanel();
+    startLoading();
+    expect(panel).not.toBeInTheDocument();
   });
 
   test.each([

@@ -35,7 +35,8 @@ export function MapSourceMenu({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const fieldRef = useRef<HTMLTextAreaElement>(null);
-  // Bumped on every close, so a check still in flight knows it was cancelled.
+  // Bumped on every close, edit and unmount, so a check still in flight knows
+  // it's stale.
   const attempt = useRef(0);
   const panelId = useId();
   const fieldId = useId();
@@ -51,6 +52,19 @@ export function MapSourceMenu({
     field.focus();
     field.setSelectionRange(field.value.length, field.value.length);
   }, [open]);
+
+  useEffect(
+    () => () => {
+      attempt.current++;
+    },
+    [],
+  );
+
+  function edit(value: string) {
+    attempt.current++;
+    setDraft(value);
+    setStatus("idle");
+  }
 
   function toggle() {
     if (!open) {
@@ -132,10 +146,7 @@ export function MapSourceMenu({
             value={draft}
             placeholder={placeholder}
             aria-describedby={hintId}
-            onInput={(e) => {
-              setDraft((e.target as HTMLTextAreaElement).value);
-              setStatus("idle");
-            }}
+            onInput={(e) => edit((e.target as HTMLTextAreaElement).value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.isComposing) {
                 e.preventDefault();
@@ -159,10 +170,7 @@ export function MapSourceMenu({
               <button
                 type="button"
                 class="map-scope-menu__link"
-                onClick={() => {
-                  setDraft("");
-                  setStatus("idle");
-                }}
+                onClick={() => edit("")}
               >
                 Clear
               </button>

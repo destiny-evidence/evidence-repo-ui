@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "preact/hooks";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
 import { useDismiss } from "@/hooks/useDismiss";
 import { ChevronDownIcon } from "@/components/common/icons";
 import { Tooltip } from "@/components/common/Tooltip";
@@ -44,6 +44,11 @@ export function VisualiseMenu({
   const disabled = loading || total.count === 0;
 
   useDismiss(open, setOpen, containerRef, buttonRef);
+
+  // Collapse the panel if the control becomes unavailable while open.
+  useEffect(() => {
+    if (disabled && open) setOpen(false);
+  }, [disabled, open]);
 
   return (
     <div class="export-menu" ref={containerRef}>

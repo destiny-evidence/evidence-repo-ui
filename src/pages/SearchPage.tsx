@@ -16,6 +16,7 @@ import {
   activeFilters,
   hasActiveSearch,
   siteSearchCategory,
+  withoutDefaults,
 } from "@/analytics/searchEvents";
 import {
   backToVisualiseUrl,
@@ -357,7 +358,9 @@ function SearchPageInner({ community }: { community: Community }) {
     track({
       category: "EvidenceMap",
       action: "Visualised From Search",
-      name: hasActiveSearch(params) ? "search" : "repository",
+      name: hasActiveSearch(withoutDefaults(community, params))
+        ? "search"
+        : "repository",
     });
     navigate(buildVisualiseUrl(community.slug, params, axes));
   }

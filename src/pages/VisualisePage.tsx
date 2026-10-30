@@ -49,6 +49,7 @@ import { track } from "@/analytics/matomo";
 import {
   activeFilters,
   conceptPathName,
+  withoutDefaults,
 } from "@/analytics/searchEvents";
 import { indexConceptPaths } from "@/components/filters/conceptSchemeFilterState";
 import { formatTotal } from "@/utils/searchTotal";
@@ -241,15 +242,20 @@ function EvidenceMapView({
     if (!panelToggled.current) return;
     if (panelOpen && focusPanelFilters.current) {
       focusPanelFilters.current = false;
-      document.getElementById(PANEL_FILTERS_HEADING_ID)?.focus();
+      focusFiltersHeading();
       return;
     }
     (panelOpen ? hideRef : railRef).current?.focus();
   }, [panelOpen]);
 
+  // The heading is missing while the vocabulary loads, so fall back to Hide.
+  function focusFiltersHeading() {
+    (document.getElementById(PANEL_FILTERS_HEADING_ID) ?? hideRef.current)?.focus();
+  }
+
   function handleEditFilters() {
     if (panelOpen) {
-      document.getElementById(PANEL_FILTERS_HEADING_ID)?.focus();
+      focusFiltersHeading();
       return;
     }
     focusPanelFilters.current = true;
@@ -435,7 +441,10 @@ function EvidenceMapView({
       name: axisPairTitle(rowAxis, columnAxis),
     });
 
-    const { values, categories } = activeFilters(trackedParams, filterableSchemes);
+    const { values, categories } = activeFilters(
+      withoutDefaults(community, trackedParams),
+      filterableSchemes,
+    );
     for (const value of values) {
       track({ category: "EvidenceMap", action: "Filter Applied", name: value });
     }

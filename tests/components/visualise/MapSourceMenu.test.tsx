@@ -78,6 +78,30 @@ describe("MapSourceMenu", () => {
     expect(onApply).not.toHaveBeenCalled();
   });
 
+  test("a check overtaken by an edit doesn't apply", async () => {
+    let resolveFirst!: (count: number) => void;
+    const { countMatches, onApply } = setup();
+    countMatches.mockReturnValueOnce(new Promise<number>((r) => (resolveFirst = r)));
+    fireEvent.click(trigger());
+    typeAndEnter("heat");
+    typeAndEnter("drought");
+    resolveFirst(5);
+    await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
+    expect(onApply).toHaveBeenCalledWith("drought");
+  });
+
+  test("a check still in flight on unmount doesn't apply", async () => {
+    let resolve!: (count: number) => void;
+    const { countMatches, onApply } = setup();
+    countMatches.mockReturnValue(new Promise<number>((r) => (resolve = r)));
+    fireEvent.click(trigger());
+    typeAndEnter("reading");
+    cleanup();
+    resolve(5);
+    await new Promise((r) => setTimeout(r));
+    expect(onApply).not.toHaveBeenCalled();
+  });
+
   test("returns focus to the trigger once applied", async () => {
     const { onApply } = setup();
     fireEvent.click(trigger());
