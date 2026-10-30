@@ -1,0 +1,138 @@
+/* The map's Search and Filters popovers. They borrow the Export menu's panel,
+   anchored left and nudged back on screen by useKeepInViewport. */
+.map-scope-menu__panel {
+  left: 0;
+  right: auto;
+  width: min(420px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-scope-menu__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) 6px 2px;
+  border-top: 1px solid var(--color-border);
+}
+
+.map-scope-menu__link {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.map-scope-menu__link:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+}
+
+.map-scope-menu__primary {
+  width: auto;
+  margin-top: 0;
+  padding: 7px 14px;
+}
+
+.map-scope-menu__primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.map-scope-menu__link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.map-source-button {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.map-source-button__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.map-source-button__value {
+  min-width: 0;
+  max-width: 30ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+}
+
+.map-source-menu__field {
+  display: block;
+  box-sizing: border-box;
+  width: calc(100% - 12px);
+  margin: 0 6px;
+  padding: 8px 10px;
+  resize: vertical;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: 1.45;
+  color: var(--color-text-primary);
+}
+
+.map-source-menu__field:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(36, 57, 107, 0.08);
+}
+
+.map-source-menu__hint,
+.map-source-menu__error {
+  margin: 0 6px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+}
+
+.map-source-menu__error {
+  color: var(--color-danger);
+}
+
+.map-scope-menu__panel .export-menu__label {
+  display: block;
+}
+
+.map-filters-menu__groups {
+  margin: 0;
+}
+
+.map-filters-menu__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--spacing-sm) 6px;
+  border-top: 1px solid var(--color-border);
+}
+
+.map-filters-menu__group dd {
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.map-filters-menu__group .tag-group {
+  gap: 6px;
+}
+
+.map-filters-menu__none {
+  margin: 0 6px var(--spacing-sm);
+  font-size: var(--font-size-small);
+  color: var(--color-text-tertiary);
+}

@@ -98,18 +98,21 @@ describe("MapConfigPanel", () => {
     expect(labels).toEqual(["Countries", "Document type", "Outcome"]);
   });
 
-  test("disables the other axis's current value to prevent a same-axis map", () => {
+  test("picking the other axis's field swaps the axes", () => {
     renderPanel();
-    // Column is Document type, so that option is disabled in the Row dropdown.
-    const disabled = within(rowSelect()).getByRole("option", {
-      name: "Document type",
-    }) as HTMLOptionElement;
-    expect(disabled.disabled).toBe(true);
-    // The Row's own current value (Outcome) stays selectable.
-    expect(
-      (within(rowSelect()).getByRole("option", { name: "Outcome" }) as HTMLOptionElement)
-        .disabled,
-    ).toBe(false);
+    fireEvent.change(rowSelect(), {
+      target: { value: DOCUMENT_TYPE_SCHEME.uri },
+    });
+    expect(rowSelect().value).toBe(DOCUMENT_TYPE_SCHEME.uri);
+    expect(columnSelect().value).toBe(OUTCOME_SCHEME_FIXTURE.uri);
+  });
+
+  test("Swap axes swaps the axes", () => {
+    renderPanel();
+    expect(rowSelect().value).toBe(OUTCOME_SCHEME_FIXTURE.uri);
+    fireEvent.click(screen.getByRole("button", { name: "Swap axes" }));
+    expect(rowSelect().value).toBe(DOCUMENT_TYPE_SCHEME.uri);
+    expect(columnSelect().value).toBe(OUTCOME_SCHEME_FIXTURE.uri);
   });
 
   test("Show results is disabled until something changes", () => {

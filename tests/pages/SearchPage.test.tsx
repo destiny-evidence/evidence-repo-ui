@@ -1433,4 +1433,39 @@ describe("SearchPage", () => {
       });
     });
   });
+
+  describe("Visualise", () => {
+    test("maps the search's query and filters, dropping page and sort", async () => {
+      history.replaceState(null, "", "/esea?q=phonics&country=KE&sort=newest&page=2");
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("button", { name: /^visualise$/i, expanded: false }));
+      const panel = screen.getByRole("group", { name: /visualise as an evidence map/i });
+      const pushState = vi.spyOn(history, "pushState");
+      fireEvent.click(within(panel).getByRole("button", { name: /^visualise$/i }));
+
+      const url = new URL(String(pushState.mock.calls[0][2]), window.location.origin);
+      pushState.mockRestore();
+      expect(url.pathname).toBe("/esea/visualise");
+      expect(url.searchParams.get("q")).toBe("phonics");
+      expect(url.searchParams.get("country")).toBe("KE");
+      expect(url.searchParams.has("sort")).toBe(false);
+      expect(url.searchParams.has("page")).toBe(false);
+    });
+
+    test("is absent when the community has no evidence map", async () => {
+      const esea = findCommunity("esea")!;
+      communityOverride.current = {
+        ...esea,
+        features: { ...esea.features, evidenceMap: false },
+      };
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      expect(screen.queryByRole("button", { name: /^visualise$/i })).toBeNull();
+    });
+  });
 });

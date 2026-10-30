@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import { useAuth } from "@/auth/AuthContext";
-import type { Community } from "@/types/models";
+import type { Community, EvidenceMapAxes } from "@/types/models";
 import {
   parseSearchParams,
   toQueryString,
@@ -16,9 +16,11 @@ import {
   activeFilters,
   hasActiveSearch,
   siteSearchCategory,
+  withoutDefaults,
 } from "@/analytics/searchEvents";
 import {
   backToVisualiseUrl,
+  buildVisualiseUrl,
   mapExpansionFromState,
   mapExpansionState,
 } from "@/services/evidenceMap";
@@ -37,8 +39,10 @@ import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
 import { ExportMenu, type ExportScope } from "@/components/search/ExportMenu";
 import { RefineButton } from "@/components/search/RefineButton";
+import { VisualiseMenu } from "@/components/search/VisualiseMenu";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
+import { BackLink } from "@/components/common/BackLink";
 import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
 import { orderFilterItems } from "@/components/filters/filterOrder";
 import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
@@ -346,6 +350,21 @@ function SearchPageInner({ community }: { community: Community }) {
     setDrawerOpen(false);
   }
 
+  const mapAxes = community.features.evidenceMap
+    ? community.defaultEvidenceMapAxes
+    : undefined;
+
+  function handleVisualise(axes: EvidenceMapAxes) {
+    track({
+      category: "EvidenceMap",
+      action: "Visualised From Search",
+      name: hasActiveSearch(withoutDefaults(community, params))
+        ? "search"
+        : "repository",
+    });
+    navigate(buildVisualiseUrl(community.slug, params, axes));
+  }
+
   // Hide the bar on the initial browse-mode load so the skeleton owns the
   // full vertical space; show it as soon as there's anything to put in it.
   // Refine living in the meta bar means we also keep the bar visible whenever
@@ -618,16 +637,13 @@ function SearchPageInner({ community }: { community: Community }) {
           : ""}
       </span>
       {visualiseBackUrl && (
-        <a
+        <BackLink
           class="search-page__back"
           href={visualiseBackUrl}
           onClick={handleBackClick}
         >
-          <span class="search-page__back-arrow" aria-hidden="true">
-            ←
-          </span>
           Back to Visualise
-        </a>
+        </BackLink>
       )}
       <section class="search-hero">
         <h1 class="search-hero__title">Search the evidence</h1>
@@ -731,6 +747,18 @@ function SearchPageInner({ community }: { community: Community }) {
             </span>
             {(refine || results.results) && (
               <span class="search-results__meta-right">
+                {mapAxes && results.results && (
+                  <VisualiseMenu
+                    total={results.results.total}
+                    loading={results.loading}
+                    scoped={hasActiveSearch(params)}
+                    countNoun={community.copy.countNoun}
+                    defaultAxes={mapAxes}
+                    schemes={filterableSchemes}
+                    includeCountries={community.features.countryFacetFilter}
+                    onVisualise={handleVisualise}
+                  />
+                )}
                 {refine && (
                   <RefineButton
                     count={refine.count}

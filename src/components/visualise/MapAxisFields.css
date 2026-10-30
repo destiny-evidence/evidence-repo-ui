@@ -1,0 +1,121 @@
+/* The selects' labels and fields become grid rows, so a bracket can join the
+   two fields to the swap button without measuring them. */
+.map-axis-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+
+.map-axis-fields .select {
+  display: contents;
+}
+
+.map-axis-fields .select__label,
+.map-axis-fields .select__control {
+  grid-column: 1;
+}
+
+.map-axis-fields .select__label {
+  margin-bottom: var(--spacing-xs);
+}
+
+.map-axis-fields .select + .select .select__label {
+  margin-top: var(--spacing-sm);
+}
+
+.map-axis-fields__arm {
+  position: relative;
+  grid-column: 2;
+}
+
+.map-axis-fields__arm::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 50%;
+  border: 0 solid var(--color-border);
+  border-right-width: 1px;
+}
+
+.map-axis-fields__arm--top {
+  grid-row: 2;
+}
+
+.map-axis-fields__arm--top::before {
+  top: 50%;
+  bottom: 0;
+  border-top-width: 1px;
+  border-top-right-radius: var(--radius-sm);
+}
+
+.map-axis-fields__arm--mid {
+  grid-row: 3;
+}
+
+.map-axis-fields__arm--mid::before {
+  top: 0;
+  bottom: 0;
+}
+
+.map-axis-fields__arm--bottom {
+  grid-row: 4;
+}
+
+.map-axis-fields__arm--bottom::before {
+  top: 0;
+  bottom: 50%;
+  border-bottom-width: 1px;
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.map-axis-fields > .tooltip {
+  grid-column: 2;
+  grid-row: 2 / 5;
+  align-self: center;
+  justify-self: center;
+}
+
+.map-axis-fields__swap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-bg-surface);
+  font-size: 15px;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+}
+
+.map-axis-fields__swap:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  box-shadow: 0 1px 4px rgba(36, 57, 107, 0.15);
+}
+
+.map-axis-fields__swap:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.map-axis-fields__swap-icon {
+  transition: transform 0.25s;
+}
+
+.map-axis-fields__swap:hover .map-axis-fields__swap-icon {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-axis-fields__swap,
+  .map-axis-fields__swap-icon {
+    transition: none;
+  }
+}

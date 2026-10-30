@@ -1,5 +1,11 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/preact";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/preact";
 import { VisualisePage } from "@/pages/VisualisePage";
 import { parseSearchParams, type SearchParams } from "@/services/searchParams";
 import { makeCommunity } from "../fixtures";
@@ -23,6 +29,7 @@ const {
   mockUseUrlParams,
   mockUseSearchFacets,
   mockNavigate,
+  mockSearchReferences,
 } = vi.hoisted(() => ({
   mockUseCommunity: vi.fn(),
   mockUseCrossFacets: vi.fn(),
@@ -34,6 +41,7 @@ const {
     error: null,
   })),
   mockNavigate: vi.fn(),
+  mockSearchReferences: vi.fn(),
 }));
 
 vi.mock("@/community/CommunityContext", () => ({
@@ -46,6 +54,9 @@ vi.mock("@/hooks/useUrlParams", () => ({ useUrlParams: mockUseUrlParams }));
 // these tests don't fire real facet-count fetches.
 vi.mock("@/hooks/useSearchFacets", () => ({
   useSearchFacets: mockUseSearchFacets,
+}));
+vi.mock("@/services/apiClient", () => ({
+  searchReferences: mockSearchReferences,
 }));
 vi.mock("@/services/navigation", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/navigation")>();
@@ -1633,6 +1644,50 @@ describe("VisualisePage analytics", () => {
   });
 });
 
+describe("VisualisePage source", () => {
+  function renderAt(search: string) {
+    mockUseUrlParams.mockReturnValue(search);
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(5, [["level:primary", "theme:literacy", 5]]),
+      resultAxes: CROSS_AXES,
+      resultParams: parseSearchParams(search),
+      loading: false,
+      error: null,
+    });
+    return render(<VisualisePage />);
+  }
+
+  beforeEach(() => mockUseCommunity.mockReturnValue(mappedCommunity()));
+
+  test("View results opens Search with the map's query and filters", () => {
+    renderAt("?q=phonics&country=KE&row=scheme%3Alevel&column=scheme%3Atheme");
+    expect(screen.getByRole("link", { name: /^view results/i })).toHaveAttribute(
+      "href",
+      "/test?q=phonics&country=KE",
+    );
+  });
+
+  test("an edited search keeps the map's filters and axes", async () => {
+    mockSearchReferences.mockResolvedValue({ total: { count: 3, is_lower_bound: false } });
+    renderAt("?q=phonics&country=KE&row=scheme%3Alevel&column=scheme%3Atheme");
+    mockNavigate.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: /search.*phonics/i }));
+    const field = screen.getByLabelText("Search to map");
+    fireEvent.input(field, { target: { value: "reading" } });
+    fireEvent.keyDown(field, { key: "Enter" });
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/test/visualise?q=reading&country=KE&row=scheme%3Alevel&column=scheme%3Atheme",
+      ),
+    );
+    expect(mockSearchReferences).toHaveBeenCalledWith(
+      "reading",
+      expect.objectContaining({ countryCodes: ["KE"] }),
+    );
+  });
+});
+
 describe("VisualisePage config panel hydration", () => {
   const FILTERED =
     "?concept=level%3Asecondary&row=scheme%3Alevel&column=scheme%3Atheme";
@@ -1756,6 +1811,17 @@ describe("VisualisePage on small screens", () => {
     expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
     expect(screen.getByRole("button", { name: "Configure map" })).toHaveFocus();
     expect(localStorage.getItem(PANEL_OPEN_KEY)).toBe("false");
+  });
+
+  test("Configure in panel opens the folded panel at its filters", () => {
+    screenMatches("(max-width: 1440px)");
+    render(<VisualisePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: /^filters/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure in panel/i }));
+
+    expect(screen.getByRole("button", { name: "Show results" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Filters" })).toHaveFocus();
   });
 
   test("keeps an unapplied draft across Hide and reopen", () => {

@@ -13,6 +13,7 @@ import {
   axisSearchParams,
   backToVisualiseState,
   backToVisualiseUrl,
+  buildVisualiseUrl,
   mapExpansionState,
   mapExpansionFromState,
   buildAxisBands,
@@ -821,6 +822,37 @@ describe("axisSearchParams", () => {
       { key: "level:primary", label: "Primary" },
     );
     expect(base.conceptFilters).toEqual([["scheme-a:x"]]);
+  });
+});
+
+describe("buildVisualiseUrl", () => {
+  test("carries the query, filters and axes but drops page and sort", () => {
+    const url = buildVisualiseUrl(
+      "edu",
+      {
+        q: "phonics",
+        page: 3,
+        startYear: 2015,
+        endYear: undefined,
+        sort: "newest",
+        conceptFilters: [["scheme-a:x"]],
+        countryCodes: ["KE"],
+      },
+      {
+        row: { kind: "scheme", schemeUri: "scheme:level" },
+        column: { kind: "countries" },
+      },
+    );
+    const [path, query] = url.split("?");
+    expect(path).toBe("/edu/visualise");
+    expect(Object.fromEntries(new URLSearchParams(query))).toEqual({
+      q: "phonics",
+      concept: "scheme-a:x",
+      country: "KE",
+      start_year: "2015",
+      row: "scheme:level",
+      column: AXIS_COUNTRIES,
+    });
   });
 });
 

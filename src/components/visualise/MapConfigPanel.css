@@ -43,15 +43,17 @@
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   margin: calc(-1 * var(--spacing-xs)) 0;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: 0;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: none;
-  font-size: var(--font-size-small);
-  font-weight: 500;
-  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1;
+  color: var(--color-text-tertiary);
   cursor: pointer;
 }
 
@@ -150,9 +152,6 @@
 }
 
 .map-config-panel__axes {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
   padding: var(--spacing-md) var(--spacing-lg);
 }
 

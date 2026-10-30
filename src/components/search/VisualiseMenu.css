@@ -1,0 +1,11 @@
+.visualise-menu__panel {
+  width: min(300px, calc(100vw - 32px));
+}
+
+.visualise-menu__scope {
+  color: var(--color-text-primary);
+}
+
+.visualise-menu__axes {
+  padding: 0 6px;
+}
