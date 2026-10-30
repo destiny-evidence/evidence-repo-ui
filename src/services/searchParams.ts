@@ -1,5 +1,6 @@
 import { parseYear } from "@/utils/year";
 import type { SearchFilters } from "@/services/apiClient";
+import { isWbRegionId } from "@/utils/wbRegion";
 
 export type SortOption = "newest" | "oldest";
 
@@ -36,6 +37,7 @@ export interface SearchParams {
   // (one scheme's selected concepts), arrays are AND'd (across schemes).
   conceptFilters: readonly (readonly string[])[];
   countryCodes: readonly string[];
+  wbRegionIds: readonly string[];
 }
 
 // Unknown values fall back to undefined (relevance).
@@ -77,6 +79,15 @@ export function parseSearchParams(search: string): SearchParams {
     }
   }
 
+  // Unknown IDs are dropped rather than forwarded: the backend rejects them.
+  const wbRegionIds: string[] = [];
+  for (const raw of params.getAll("country_wb_region")) {
+    for (const piece of raw.split(",")) {
+      const id = piece.trim().toUpperCase();
+      if (isWbRegionId(id)) wbRegionIds.push(id);
+    }
+  }
+
   const pageRaw = parseDecimalInt(params.get("page"));
   const page = pageRaw !== undefined && pageRaw >= 1 ? pageRaw : 1;
 
@@ -89,7 +100,16 @@ export function parseSearchParams(search: string): SearchParams {
 
   const sort = parseSort(params.get("sort"));
 
-  return { q, page, startYear, endYear, sort, conceptFilters, countryCodes };
+  return {
+    q,
+    page,
+    startYear,
+    endYear,
+    sort,
+    conceptFilters,
+    countryCodes,
+    wbRegionIds,
+  };
 }
 
 export function toQueryString(params: SearchParams): string {
@@ -100,6 +120,9 @@ export function toQueryString(params: SearchParams): string {
   }
   if (params.countryCodes.length > 0) {
     out.append("country", params.countryCodes.join(","));
+  }
+  if (params.wbRegionIds.length > 0) {
+    out.append("country_wb_region", params.wbRegionIds.join(","));
   }
   if (params.startYear !== undefined)
     out.set("start_year", String(params.startYear));
@@ -137,6 +160,9 @@ export function toUnpaginatedSearchQuery(
   }
   if (params.countryCodes.length > 0) {
     filters.countryCodes = params.countryCodes;
+  }
+  if (params.wbRegionIds.length > 0) {
+    filters.wbRegionIds = params.wbRegionIds;
   }
   return { query: params.q.trim() || "*", filters };
 }

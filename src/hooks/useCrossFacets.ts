@@ -22,6 +22,7 @@ function paramsKey(
     `slug=${slug}`,
     `ann=${JSON.stringify(annotations)}`,
     `countries=${JSON.stringify(params.countryCodes)}`,
+    `regions=${JSON.stringify(params.wbRegionIds)}`,
     `concepts=${JSON.stringify(params.conceptFilters)}`,
     `row=${JSON.stringify(axes.row)}`,
     `column=${JSON.stringify(axes.column)}`,
@@ -73,6 +74,7 @@ export function useCrossFacets(
         annotation: community.defaultAnnotations,
         conceptFilters: params.conceptFilters,
         countryCodes: params.countryCodes,
+        wbRegionIds: params.wbRegionIds,
       },
       axisPairToParams(axes, toTurtleUrl(community.vocabularyUrl)),
     )

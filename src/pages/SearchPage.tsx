@@ -358,6 +358,7 @@ function SearchPageInner({ community }: { community: Community }) {
     params.startYear !== undefined ||
     params.endYear !== undefined ||
     params.countryCodes.length > 0 ||
+    params.wbRegionIds.length > 0 ||
     params.conceptFilters.length > 0 ||
     refine?.disabled === false;
 
@@ -367,6 +368,7 @@ function SearchPageInner({ community }: { community: Community }) {
     params.startYear !== undefined ||
     params.endYear !== undefined ||
     params.countryCodes.length > 0 ||
+    params.wbRegionIds.length > 0 ||
     params.conceptFilters.length > 0 ||
     results.error !== null;
 

@@ -8,6 +8,7 @@ import { axisPairToParams, type CrossFacetAxisPair } from "@/services/crossFacet
 export interface FacetCounts {
   concepts: ReadonlyMap<string, number>;
   countries: ReadonlyMap<string, number>;
+  wbRegions: ReadonlyMap<string, number>;
 }
 
 // Omits `page` and `sort` — facet counts are invariant under both.
@@ -24,6 +25,7 @@ function paramsKey(
     `slug=${slug}`,
     `ann=${JSON.stringify(annotations)}`,
     `countries=${JSON.stringify(params.countryCodes)}`,
+    `regions=${JSON.stringify(params.wbRegionIds)}`,
     `concepts=${JSON.stringify(params.conceptFilters)}`,
     `row=${JSON.stringify(axes?.row)}`,
     `column=${JSON.stringify(axes?.column)}`,
@@ -64,8 +66,9 @@ export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair)
         annotation: community.defaultAnnotations,
         conceptFilters: params.conceptFilters,
         countryCodes: params.countryCodes,
+        wbRegionIds: params.wbRegionIds,
       },
-      ["concepts", "countries"],
+      ["concepts", "countries", "country_wb_regions"],
       axes ? axisPairToParams(axes, vocabularyUrl) : { vocabularyUrl },
     )
       .then((r) => {
@@ -78,7 +81,15 @@ export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair)
         for (const { country, count } of r.countries ?? []) {
           countryCounts.set(country, count);
         }
-        setCounts({ concepts: conceptCounts, countries: countryCounts });
+        const wbRegionCounts = new Map<string, number>();
+        for (const { country_wb_region, count } of r.country_wb_regions ?? []) {
+          wbRegionCounts.set(country_wb_region, count);
+        }
+        setCounts({
+          concepts: conceptCounts,
+          countries: countryCounts,
+          wbRegions: wbRegionCounts,
+        });
       })
       .catch((e) => {
         if (cancelled) return;

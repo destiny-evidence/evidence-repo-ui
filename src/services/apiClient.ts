@@ -11,7 +11,7 @@ import type {
   SearchResult,
 } from "@/types/models";
 
-export type FacetType = "concepts" | "countries";
+export type FacetType = "concepts" | "countries" | "country_wb_regions";
 
 export interface SearchFilters {
   page?: number;
@@ -25,6 +25,8 @@ export interface SearchFilters {
   // ISO-3166 alpha-2 codes; comma-joined into a single `country=` param. The
   // facet endpoint accepts only one OR'd country filter, which this satisfies.
   countryCodes?: readonly string[];
+  // World Bank region IDs; comma-joined into a single `country_wb_region=` param.
+  wbRegionIds?: readonly string[];
 }
 
 // Mirrors parseSearchParams: page must be >= 1, years > 0, all safe integers.
@@ -33,12 +35,12 @@ function isPositiveSafeInt(n: number | undefined): n is number {
   return n !== undefined && Number.isSafeInteger(n) && n >= 1;
 }
 
-// concept and country are always serialised together — one `concept=` per
-// scheme, one `country=` for the OR'd codes. Extend here when the backend
-// grows another structured filter (e.g. `country_wb_region=`).
+// The structured filters are always serialised together — one `concept=` per
+// scheme, one `country=` / `country_wb_region=` for the OR'd codes. Extend here
+// when the backend grows another structured filter.
 function appendStructuredFilters(
   params: URLSearchParams,
-  filters: Pick<SearchFilters, "conceptFilters" | "countryCodes">,
+  filters: Pick<SearchFilters, "conceptFilters" | "countryCodes" | "wbRegionIds">,
 ): void {
   for (const group of filters.conceptFilters ?? []) {
     if (group.length > 0) params.append("concept", group.join(","));
@@ -46,9 +48,18 @@ function appendStructuredFilters(
   if (filters.countryCodes?.length) {
     params.append("country", filters.countryCodes.join(","));
   }
+  if (filters.wbRegionIds?.length) {
+    params.append("country_wb_region", filters.wbRegionIds.join(","));
+  }
 }
 
-type SharedFilterFields = "startYear" | "endYear" | "annotation" | "conceptFilters" | "countryCodes";
+type SharedFilterFields =
+  | "startYear"
+  | "endYear"
+  | "annotation"
+  | "conceptFilters"
+  | "countryCodes"
+  | "wbRegionIds";
 
 function buildSharedSearchParams(
   query: string | undefined,

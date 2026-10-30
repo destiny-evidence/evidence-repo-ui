@@ -702,6 +702,7 @@ describe("cellSearchParams", () => {
     sort: "newest",
     conceptFilters: [["scheme-a:x"]],
     countryCodes: ["FR"],
+    wbRegionIds: [],
   };
 
   test("scheme×scheme adds a single-concept group per axis and resets page", () => {
@@ -784,6 +785,7 @@ describe("axisSearchParams", () => {
     sort: "newest",
     conceptFilters: [["scheme-a:x"]],
     countryCodes: ["FR"],
+    wbRegionIds: [],
   };
 
   test("a scheme axis adds a single-concept group and resets page", () => {

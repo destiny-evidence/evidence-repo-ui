@@ -23,6 +23,7 @@ function paramsKey(
     `slug=${slug}`,
     `ann=${JSON.stringify(annotations)}`,
     `countries=${JSON.stringify(params.countryCodes)}`,
+    `regions=${JSON.stringify(params.wbRegionIds)}`,
     `concepts=${JSON.stringify(params.conceptFilters)}`,
   ].join("&");
 }
@@ -69,6 +70,7 @@ export function useSearch(params: SearchParams): {
       annotation: community.defaultAnnotations,
       conceptFilters: params.conceptFilters,
       countryCodes: params.countryCodes,
+      wbRegionIds: params.wbRegionIds,
     };
     const sort = effectiveSortBackend(params);
     if (sort !== undefined) filters.sort = sort;

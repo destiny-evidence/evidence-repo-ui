@@ -2,10 +2,12 @@ import { vi } from "vitest";
 import { api } from "@/api/client";
 import {
   searchReferences,
+  searchReferenceIds,
   searchReferenceFacets,
   crossFacets,
   getReference,
   requestReferenceExport,
+  requestSearchExport,
 } from "@/services/apiClient";
 import type {
   Reference,
@@ -152,6 +154,47 @@ describe("searchReferences", () => {
   });
 });
 
+describe("World Bank region filter forwarding", () => {
+  const filters = { countryCodes: ["DE"], wbRegionIds: ["SAS", "SSF"] };
+
+  function sentParams(mock: typeof mockedGet | typeof mockedPost): URLSearchParams {
+    return new URLSearchParams(mock.mock.calls[0][0].split("?")[1]);
+  }
+
+  test("searchReferences sends one comma-joined country_wb_region= param", async () => {
+    mockedGet.mockResolvedValue({});
+    await searchReferences("phonics", filters);
+    expect(sentParams(mockedGet).getAll("country_wb_region")).toEqual(["SAS,SSF"]);
+    expect(sentParams(mockedGet).get("country")).toBe("DE");
+  });
+
+  test("searchReferenceIds forwards it", async () => {
+    mockedGet.mockResolvedValue({});
+    await searchReferenceIds("phonics", filters);
+    expect(sentParams(mockedGet).get("country_wb_region")).toBe("SAS,SSF");
+  });
+
+  test("searchReferenceFacets forwards it alongside the country_wb_regions facet", async () => {
+    mockedGet.mockResolvedValue({});
+    await searchReferenceFacets("phonics", filters, ["countries", "country_wb_regions"]);
+    const params = sentParams(mockedGet);
+    expect(params.get("country_wb_region")).toBe("SAS,SSF");
+    expect(params.getAll("facet")).toEqual(["countries", "country_wb_regions"]);
+  });
+
+  test("requestSearchExport forwards it", async () => {
+    mockedPost.mockResolvedValue({});
+    await requestSearchExport("phonics", filters);
+    expect(sentParams(mockedPost).get("country_wb_region")).toBe("SAS,SSF");
+  });
+
+  test("omits the param when no regions are selected", async () => {
+    mockedGet.mockResolvedValue({});
+    await searchReferences("phonics", { wbRegionIds: [] });
+    expect(sentParams(mockedGet).has("country_wb_region")).toBe(false);
+  });
+});
+
 describe("searchReferenceFacets", () => {
   const emptyResult: ReferenceFacetResult = { concepts: [] };
   const VOCAB = "https://vocab.example/v1/vocabulary.ttl";
@@ -268,16 +311,21 @@ describe("crossFacets", () => {
     ).toBe("https://vocab.example/v1/vocabulary.ttl");
   });
 
-  test("forwards concept and country filters", async () => {
+  test("forwards concept, country and World Bank region filters", async () => {
     mockedGet.mockResolvedValue(result);
     await crossFacets(
       "phonics",
-      { conceptFilters: [["ex:A"], ["ex:B"]], countryCodes: ["DE", "FR"] },
+      {
+        conceptFilters: [["ex:A"], ["ex:B"]],
+        countryCodes: ["DE", "FR"],
+        wbRegionIds: ["SAS", "SSF"],
+      },
       { axes: ["countries", "country_wb_regions"] },
     );
     const params = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]);
     expect(params.getAll("concept")).toEqual(["ex:A", "ex:B"]);
     expect(params.get("country")).toBe("DE,FR");
+    expect(params.get("country_wb_region")).toBe("SAS,SSF");
   });
 
   test("returns the cells and both totals, dropping the deprecated alias", async () => {

@@ -52,6 +52,7 @@ describe("useSearch", () => {
       annotation: ["domain-inclusion/jacobs-education"],
       conceptFilters: [],
       countryCodes: [],
+      wbRegionIds: [],
     });
   });
 
@@ -292,7 +293,7 @@ describe("useSearch", () => {
     expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  test("threads conceptFilters + countryCodes through as structured filters", async () => {
+  test("threads conceptFilters + countryCodes + wbRegionIds through as structured filters", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const params = makeSearchParams({
       q: "phonics",
@@ -300,6 +301,7 @@ describe("useSearch", () => {
         ["https://vocab.esea.education/EducationLevelScheme/C00002"],
       ],
       countryCodes: ["DE", "FR"],
+      wbRegionIds: ["SAS"],
     });
     renderHook(() => useSearch(params), {
       wrapper: withCommunityPath("/esea"),
@@ -313,6 +315,7 @@ describe("useSearch", () => {
           ["https://vocab.esea.education/EducationLevelScheme/C00002"],
         ],
         countryCodes: ["DE", "FR"],
+        wbRegionIds: ["SAS"],
       }),
     );
   });
