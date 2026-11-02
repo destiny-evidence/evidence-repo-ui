@@ -318,12 +318,6 @@ describe("community registry", () => {
     ]);
   });
 
-  it("collapses HPV and DESTINYs filters", () => {
-    expect(mod.findCommunity("hpv")?.defaultExpandedFilters).toEqual([]);
-    expect(mod.findCommunity("destiny")?.defaultExpandedFilters).toEqual([]);
-    expect(mod.findCommunity("esea")?.defaultExpandedFilters).toBeUndefined();
-  });
-
   it("excludes the HPV geographic schemes from result-card pills, none for other communities", () => {
     expect(mod.findCommunity("esea")?.pillExcludedSchemes).toEqual([]);
     expect(mod.findCommunity("destiny")?.pillExcludedSchemes).toEqual([]);

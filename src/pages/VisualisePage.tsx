@@ -63,7 +63,6 @@ import {
 } from "@/components/visualise/MapConfigPanel";
 import { MapFiltersMenu } from "@/components/visualise/MapFiltersMenu";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
-import { DEFAULT_EXPANDED_FILTERS } from "@/components/filters/filterOrder";
 import { WarningIcon } from "@/components/common/icons";
 import { MapCoverageNote } from "@/components/visualise/MapCoverageNote";
 import { MapSourceMenu } from "@/components/visualise/MapSourceMenu";
@@ -397,15 +396,12 @@ function EvidenceMapView({
   }
 
   const panelExpandedFilters = useMemo(() => {
-    if (!nestedAxes) return community.defaultExpandedFilters;
-    const expanded = new Set(
-      community.defaultExpandedFilters ?? DEFAULT_EXPANDED_FILTERS,
-    );
-    for (const scheme of filterableSchemes) expanded.delete(scheme.uri);
+    if (!nestedAxes) return [];
+    const expanded = new Set<string>();
     if (axes.row.kind === "scheme") expanded.add(axes.row.schemeUri);
     if (axes.column.kind === "scheme") expanded.add(axes.column.schemeUri);
     return [...expanded];
-  }, [nestedAxes, community.defaultExpandedFilters, filterableSchemes, axes]);
+  }, [nestedAxes, axes]);
 
   // Rewrite the URL into canonical form (filters + explicit default axes) so a
   // freshly-loaded map is linkable. Replace, not push, so Back skips it.
@@ -803,7 +799,7 @@ function EvidenceMapView({
         loading={vocab.loading}
         showCountryFacetFilter={community.features.countryFacetFilter}
         pinnedFilters={community.pinnedFilters}
-        defaultExpandedFilters={panelExpandedFilters}
+        expandOnMountFilters={panelExpandedFilters}
         collapsibleConceptFilters={community.features.ancestorClosedCodings}
         appliedAxes={axes}
         defaultAxes={defaults}

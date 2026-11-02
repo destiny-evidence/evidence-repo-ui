@@ -36,7 +36,7 @@ const baseProps: ComponentProps<typeof MapConfigPanel> = {
   appliedStartYear: undefined,
   appliedEndYear: undefined,
   params: makeSearchParams({ q: "climate" }),
-  defaultExpandedFilters: [DOCUMENT_TYPE_SCHEME.uri],
+  expandOnMountFilters: [DOCUMENT_TYPE_SCHEME.uri],
   onApply: vi.fn(),
 };
 
