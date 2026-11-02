@@ -843,7 +843,6 @@ function SearchPageInner({ community }: { community: Community }) {
           countNoun={community.copy.countNoun}
           showCountryFacetFilter={community.features.countryFacetFilter}
           pinnedFilters={community.pinnedFilters}
-          defaultExpandedFilters={community.defaultExpandedFilters}
           collapsibleConceptFilters={community.features.ancestorClosedCodings}
           schemes={vocab.error ? null : filterableSchemes}
           appliedConceptFilters={params.conceptFilters}

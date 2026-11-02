@@ -1342,7 +1342,6 @@ describe("VisualisePage nested-axis state", () => {
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
         features: { evidenceMap: true, ancestorClosedCodings: true },
-        defaultExpandedFilters: ["year", "scheme:topic"],
       }),
     );
     mockUseCrossFacets.mockReturnValue(nestedResultState());
@@ -1357,7 +1356,7 @@ describe("VisualisePage nested-axis state", () => {
     expect(panel().getByRole("button", { name: "Education Topic" }))
       .toHaveAttribute("aria-expanded", "false");
     expect(panel().getByRole("button", { name: "Publication year" }))
-      .toHaveAttribute("aria-expanded", "true");
+      .toHaveAttribute("aria-expanded", "false");
 
     // The flag reaches the panel's concept filters, not just the axis cards.
     expect(panel().getByRole("button", { name: "Child concepts of Primary" }))
