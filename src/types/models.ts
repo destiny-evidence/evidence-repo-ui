@@ -156,9 +156,15 @@ export interface CountryFacetCount {
   count: number;
 }
 
+export interface CountryWbRegionFacetCount {
+  country_wb_region: string;
+  count: number;
+}
+
 export interface ReferenceFacetResult {
   concepts?: ConceptFacetCount[];
   countries?: CountryFacetCount[];
+  country_wb_regions?: CountryWbRegionFacetCount[];
 }
 
 export interface CrossFacetCell {

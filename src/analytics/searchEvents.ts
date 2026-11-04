@@ -8,20 +8,19 @@ import {
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
-import type { SearchParams } from "@/services/searchParams";
+import { wbRegionName } from "@/utils/wbRegion";
+import {
+  hasFilters,
+  type SearchFilterParams,
+  type SearchParams,
+} from "@/services/searchParams";
 import type { Community } from "@/types/models";
 
 // True when the user has actually searched or filtered — as opposed to a plain
 // browse landing (no query, no filters), which is already a pageview and would
 // otherwise dominate the "Search Performed" metric.
 export function hasActiveSearch(params: SearchParams): boolean {
-  return (
-    params.q !== "" ||
-    params.conceptFilters.length > 0 ||
-    params.countryCodes.length > 0 ||
-    params.startYear !== undefined ||
-    params.endYear !== undefined
-  );
+  return params.q !== "" || hasFilters(params);
 }
 
 // Drops a year range that is only the community's default, so it doesn't read
@@ -67,10 +66,10 @@ export function conceptPathName(
 // The filters active in a committed search, at both granularities we track:
 // `values` is the specific selections — each concept's path, each country, and
 // the `start-end` year range — feeding one `Applied` event each; `categories` is
-// the facet each belongs to (the concept scheme, plus "Country" and "Year
-// range"), feeding one `Category Applied` event each.
+// the facet each belongs to (the concept scheme, plus "Country", "World Bank
+// region" and "Year range"), feeding one `Category Applied` event each.
 export function activeFilters(
-  filters: AppliedFilters,
+  filters: SearchFilterParams,
   schemes: ConceptScheme[],
 ): { values: string[]; categories: string[] } {
   const conceptPaths = indexConceptPaths(schemes);
@@ -89,6 +88,10 @@ export function activeFilters(
   if (filters.countryCodes.length > 0) {
     categories.push("Country");
     values.push(...filters.countryCodes.map(countryName));
+  }
+  if (filters.wbRegionIds.length > 0) {
+    categories.push("World Bank region");
+    values.push(...filters.wbRegionIds.map(wbRegionName));
   }
   if (filters.startYear !== undefined || filters.endYear !== undefined) {
     categories.push("Year range");

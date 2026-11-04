@@ -33,6 +33,7 @@ export function makeSearchParams(
     sort: undefined,
     conceptFilters: [],
     countryCodes: [],
+    wbRegionIds: [],
     ...overrides,
   };
 }

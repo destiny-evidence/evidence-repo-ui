@@ -5,7 +5,6 @@ import {
   siteSearchCategory,
   withoutDefaults,
 } from "@/analytics/searchEvents";
-import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { makeSearchParams } from "../fixtures";
 
@@ -49,9 +48,10 @@ const NESTED_SCHEME: ConceptScheme = {
   ],
 };
 
-const EMPTY: AppliedFilters = {
+const EMPTY = {
   conceptFilters: [],
   countryCodes: [],
+  wbRegionIds: [],
   startYear: undefined,
   endYear: undefined,
 };
@@ -69,16 +69,31 @@ describe("activeFilters", () => {
       {
         conceptFilters: [[URI_JOURNAL, URI_THESIS], [URI_STUDY]],
         countryCodes: ["KE", "UG"],
+        wbRegionIds: ["SSF"],
         startYear: 2000,
         endYear: undefined,
       },
       [SCHEME_A, SCHEME_B],
     );
     expect(new Set(values)).toEqual(
-      new Set(["Journal Article", "Thesis", "RCT", "Kenya", "Uganda", "2000-"]),
+      new Set([
+        "Journal Article",
+        "Thesis",
+        "RCT",
+        "Kenya",
+        "Uganda",
+        "Sub-Saharan Africa",
+        "2000-",
+      ]),
     );
     expect(new Set(categories)).toEqual(
-      new Set(["Document type", "Study design", "Country", "Year range"]),
+      new Set([
+        "Document type",
+        "Study design",
+        "Country",
+        "World Bank region",
+        "Year range",
+      ]),
     );
   });
 
@@ -147,6 +162,9 @@ describe("hasActiveSearch", () => {
       true,
     );
     expect(hasActiveSearch(makeSearchParams({ conceptFilters: [["x"]] }))).toBe(
+      true,
+    );
+    expect(hasActiveSearch(makeSearchParams({ wbRegionIds: ["SAS"] }))).toBe(
       true,
     );
     expect(hasActiveSearch(makeSearchParams({ startYear: 2000 }))).toBe(true);

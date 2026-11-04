@@ -703,6 +703,7 @@ describe("cellSearchParams", () => {
     sort: "newest",
     conceptFilters: [["scheme-a:x"]],
     countryCodes: ["FR"],
+    wbRegionIds: [],
   };
 
   test("scheme×scheme adds a single-concept group per axis and resets page", () => {
@@ -785,6 +786,7 @@ describe("axisSearchParams", () => {
     sort: "newest",
     conceptFilters: [["scheme-a:x"]],
     countryCodes: ["FR"],
+    wbRegionIds: [],
   };
 
   test("a scheme axis adds a single-concept group and resets page", () => {
@@ -837,6 +839,7 @@ describe("buildVisualiseUrl", () => {
         sort: "newest",
         conceptFilters: [["scheme-a:x"]],
         countryCodes: ["KE"],
+        wbRegionIds: ["SSF"],
       },
       {
         row: { kind: "scheme", schemeUri: "scheme:level" },
@@ -849,6 +852,7 @@ describe("buildVisualiseUrl", () => {
       q: "phonics",
       concept: "scheme-a:x",
       country: "KE",
+      country_wb_region: "SSF",
       start_year: "2015",
       row: "scheme:level",
       column: AXIS_COUNTRIES,
