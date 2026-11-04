@@ -1,7 +1,6 @@
 import { useId } from "preact/hooks";
-import { NewTabLink } from "@/components/common/NewTabLink";
 import { MagnifierIcon } from "@/components/common/icons";
-import { SEARCH_HELP_URL } from "@/config";
+import { SearchHint } from "./SearchHint";
 import "./SearchBar.css";
 
 interface SearchBarProps {
@@ -46,21 +45,7 @@ export function SearchBar({
             Search
           </button>
         </div>
-        <p class="search-bar-hint">
-          <span id={hintId}>
-            <span class="search-bar-hint__label">Hint:</span> Boolean operators can
-            be used to search
-          </span>
-          {SEARCH_HELP_URL && (
-            <NewTabLink
-              class="search-bar-hint__link"
-              href={SEARCH_HELP_URL}
-              event={{ category: "Search", action: "Help Opened" }}
-            >
-              Learn more about search
-            </NewTabLink>
-          )}
-        </p>
+        <SearchHint id={hintId} class="search-bar-hint" />
       </div>
     </form>
   );

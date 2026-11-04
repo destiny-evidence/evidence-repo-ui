@@ -99,9 +99,6 @@ export interface Community {
   // Filter cards pinned to the top, in order; every remaining scheme follows
   // alphabetically. Absent ⇒ DEFAULT_PINNED_FILTERS (year, then country).
   pinnedFilters?: PinnedFilter[];
-  // Filter cards that start expanded, by slot ("year"/"country") or scheme URI;
-  // absent ⇒ DEFAULT_EXPANDED_FILTERS (year, country).
-  defaultExpandedFilters?: readonly PinnedFilter[];
   // Filters a bare visit to /{slug} lands on; absent ⇒ the unfiltered corpus.
   searchDefaults?: SearchDefaults;
   features: CommunityFeatures;

@@ -5,10 +5,11 @@ import { useCrossFacets } from "@/hooks/useCrossFacets";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import {
   parseSearchParams,
-  toQueryString,
   buildSearchUrl,
+  toUnpaginatedSearchQuery,
   type SearchParams,
 } from "@/services/searchParams";
+import { searchReferences } from "@/services/apiClient";
 import { navigate, stampHistoryState } from "@/services/navigation";
 import {
   axisToken,
@@ -30,6 +31,10 @@ import {
   type AxisCategory,
   type CellSize,
   exceedsEvidenceMapRenderLimits,
+  mapQueryString,
+  buildVisualiseUrl,
+  ROW_PARAM,
+  COLUMN_PARAM,
 } from "@/services/evidenceMap";
 import {
   type CrossFacetAxis,
@@ -41,7 +46,11 @@ import type {
   EvidenceMapAxis,
 } from "@/types/models";
 import { track } from "@/analytics/matomo";
-import { activeFilters, conceptPathName } from "@/analytics/searchEvents";
+import {
+  activeFilters,
+  conceptPathName,
+  withoutDefaults,
+} from "@/analytics/searchEvents";
 import { indexConceptPaths } from "@/components/filters/conceptSchemeFilterState";
 import { formatTotal } from "@/utils/searchTotal";
 import { EvidenceMapGrid } from "@/components/visualise/EvidenceMapGrid";
@@ -50,11 +59,13 @@ import { CellSizeSelect } from "@/components/visualise/CellSizeSelect";
 import {
   MapConfigPanel,
   MapConfigRail,
+  PANEL_FILTERS_HEADING_ID,
 } from "@/components/visualise/MapConfigPanel";
+import { MapFiltersMenu } from "@/components/visualise/MapFiltersMenu";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
-import { DEFAULT_EXPANDED_FILTERS } from "@/components/filters/filterOrder";
 import { WarningIcon } from "@/components/common/icons";
 import { MapCoverageNote } from "@/components/visualise/MapCoverageNote";
+import { MapSourceMenu } from "@/components/visualise/MapSourceMenu";
 import { NotFoundPage } from "./NotFoundPage";
 import "./VisualisePage.css";
 
@@ -63,9 +74,6 @@ const MAP_TITLE_ID = "evidence-map-title";
 interface VisualisePageProps {
   path?: string;
 }
-
-const ROW_PARAM = "row";
-const COLUMN_PARAM = "column";
 
 const PANEL_OPEN_KEY = "evidence-map-panel-open";
 
@@ -123,15 +131,6 @@ const PAIR_SEPARATOR = " × ";
 // The axis pair as analytics reports it
 function axisPairTitle(row: ResolvedAxis, column: ResolvedAxis): string {
   return `${row.title}${PAIR_SEPARATOR}${column.title}`;
-}
-
-// Canonical query string: the filter params followed by the explicit axes, so
-// the default view is rewritten into a self-contained, shareable URL on load.
-function canonicalSearch(params: SearchParams, axes: EvidenceMapAxes): string {
-  const qs = new URLSearchParams(toQueryString(params));
-  qs.set(ROW_PARAM, axisToken(axes.row));
-  qs.set(COLUMN_PARAM, axisToken(axes.column));
-  return qs.toString();
 }
 
 export function VisualisePage(_props: VisualisePageProps) {
@@ -209,6 +208,7 @@ function EvidenceMapView({
   const railRef = useRef<HTMLButtonElement>(null);
   const hideRef = useRef<HTMLButtonElement>(null);
   const panelToggled = useRef(false);
+  const focusPanelFilters = useRef(false);
 
   function handleViewChange(next: MapView) {
     track({ category: "EvidenceMap", action: "View Toggled", name: next });
@@ -239,8 +239,27 @@ function EvidenceMapView({
   // (the rail) or hid (the Hide button).
   useEffect(() => {
     if (!panelToggled.current) return;
+    if (panelOpen && focusPanelFilters.current) {
+      focusPanelFilters.current = false;
+      focusFiltersHeading();
+      return;
+    }
     (panelOpen ? hideRef : railRef).current?.focus();
   }, [panelOpen]);
+
+  // The heading is missing while the vocabulary loads, so fall back to Hide.
+  function focusFiltersHeading() {
+    (document.getElementById(PANEL_FILTERS_HEADING_ID) ?? hideRef.current)?.focus();
+  }
+
+  function handleEditFilters() {
+    if (panelOpen) {
+      focusFiltersHeading();
+      return;
+    }
+    focusPanelFilters.current = true;
+    handlePanelToggle(true);
+  }
 
   // Resolve labels against the axes `result` was fetched for, not the URL's:
   // during an axis change the URL (and `axes`) flips immediately but `result`
@@ -377,24 +396,21 @@ function EvidenceMapView({
   }
 
   const panelExpandedFilters = useMemo(() => {
-    if (!nestedAxes) return community.defaultExpandedFilters;
-    const expanded = new Set(
-      community.defaultExpandedFilters ?? DEFAULT_EXPANDED_FILTERS,
-    );
-    for (const scheme of filterableSchemes) expanded.delete(scheme.uri);
+    if (!nestedAxes) return [];
+    const expanded = new Set<string>();
     if (axes.row.kind === "scheme") expanded.add(axes.row.schemeUri);
     if (axes.column.kind === "scheme") expanded.add(axes.column.schemeUri);
     return [...expanded];
-  }, [nestedAxes, community.defaultExpandedFilters, filterableSchemes, axes]);
+  }, [nestedAxes, axes]);
 
   // Rewrite the URL into canonical form (filters + explicit default axes) so a
   // freshly-loaded map is linkable. Replace, not push, so Back skips it.
-  const canonical = canonicalSearch(params, axes);
+  const canonical = mapQueryString(params, axes);
   const hasResultSnapshot = resultAxes !== null || resultParams !== null;
   const resultIsStale =
     result !== null &&
     hasResultSnapshot &&
-    canonicalSearch(resultParams ?? params, displayAxes) !== canonical;
+    mapQueryString(resultParams ?? params, displayAxes) !== canonical;
   const mapUpdating = loading || resultIsStale;
   useEffect(() => {
     const current = search.startsWith("?") ? search.slice(1) : search;
@@ -411,7 +427,7 @@ function EvidenceMapView({
   const lastViewTracked = useRef<string | null>(null);
   useEffect(() => {
     if (!result || vocab.loading) return;
-    const identity = canonicalSearch(trackedParams, displayAxes);
+    const identity = mapQueryString(trackedParams, displayAxes);
     if (lastViewTracked.current === identity) return;
     lastViewTracked.current = identity;
 
@@ -421,7 +437,10 @@ function EvidenceMapView({
       name: axisPairTitle(rowAxis, columnAxis),
     });
 
-    const { values, categories } = activeFilters(trackedParams, filterableSchemes);
+    const { values, categories } = activeFilters(
+      withoutDefaults(community, trackedParams),
+      filterableSchemes,
+    );
     for (const value of values) {
       track({ category: "EvidenceMap", action: "Filter Applied", name: value });
     }
@@ -486,7 +505,7 @@ function EvidenceMapView({
       page: 1,
     };
     navigate(
-      `/${community.slug}/visualise?${canonicalSearch(nextParams, nextAxes)}`,
+      buildVisualiseUrl(community.slug, nextParams, nextAxes),
     );
   }
 
@@ -549,6 +568,23 @@ function EvidenceMapView({
     };
   }
 
+  async function countMatches(q: string): Promise<number> {
+    const { query, filters } = toUnpaginatedSearchQuery(
+      { ...params, q },
+      community.defaultAnnotations,
+    );
+    return (await searchReferences(query, filters)).total.count;
+  }
+
+  function handleQueryChange(q: string) {
+    track({
+      category: "EvidenceMap",
+      action: "Search Changed",
+      name: q ? "updated" : "cleared",
+    });
+    navigate(buildVisualiseUrl(community.slug, { ...params, q }, axes));
+  }
+
   // The over-filtered banner's inline shortcut — the panel's "Reset all" applied
   // in one click: default axes, no filters.
   function handleResetAll() {
@@ -565,6 +601,10 @@ function EvidenceMapView({
   }
 
   const noun = community.copy.countNoun;
+  const filterCount =
+    params.conceptFilters.flat().length +
+    params.countryCodes.length +
+    (params.startYear !== undefined || params.endYear !== undefined ? 1 : 0);
   // Scheme axes draw their categories from the vocabulary, so a greyed grid can
   // render even when no cells come back (the no-coverage state).
   const hasGrid =
@@ -623,11 +663,30 @@ function EvidenceMapView({
             </button>
           )}
           <CellSizeSelect value={cellSize} onChange={handleCellSizeChange} />
-          {showHint && (
-            <p class="evidence-map-view__hint">
-              Click a cell to view matching {noun}
-            </p>
-          )}
+          <div class="evidence-map-view__scope">
+            <MapSourceMenu
+              query={params.q}
+              placeholder={community.copy.searchPlaceholder}
+              countNoun={noun}
+              countMatches={countMatches}
+              onApply={handleQueryChange}
+            />
+            <MapFiltersMenu
+              params={params}
+              count={filterCount}
+              schemes={vocab.schemes ?? []}
+              onEditInPanel={handleEditFilters}
+            />
+          </div>
+          <p class="evidence-map-view__hint">
+            {showHint && <span>Click a cell to view matching {noun}</span>}
+            <a
+              class="evidence-map-view__view-all"
+              href={buildSearchUrl(community.slug, { ...params, page: 1 })}
+            >
+              View {noun} <span aria-hidden="true">→</span>
+            </a>
+          </p>
         </div>
 
         {error ? (
@@ -740,7 +799,7 @@ function EvidenceMapView({
         loading={vocab.loading}
         showCountryFacetFilter={community.features.countryFacetFilter}
         pinnedFilters={community.pinnedFilters}
-        defaultExpandedFilters={panelExpandedFilters}
+        expandOnMountFilters={panelExpandedFilters}
         collapsibleConceptFilters={community.features.ancestorClosedCodings}
         appliedAxes={axes}
         defaultAxes={defaults}
@@ -757,13 +816,7 @@ function EvidenceMapView({
       />
       {!panelOpen && (
         <MapConfigRail
-          filterCount={
-            params.conceptFilters.flat().length +
-            params.countryCodes.length +
-            (params.startYear !== undefined || params.endYear !== undefined
-              ? 1
-              : 0)
-          }
+          filterCount={filterCount}
           onOpen={() => handlePanelToggle(true)}
           buttonRef={railRef}
         />

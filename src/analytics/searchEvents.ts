@@ -1,3 +1,4 @@
+import type { AppliedFilters } from "@/components/filters/useFilterDraft";
 import {
   indexConceptPaths,
   parseConceptFilters,
@@ -18,15 +19,27 @@ export function hasActiveSearch(params: SearchParams): boolean {
   return params.q !== "" || hasFilters(params);
 }
 
+// Drops a year range that is only the community's default, so it doesn't read
+// as the user's own filter.
+export function withoutDefaults<T extends AppliedFilters>(
+  community: Pick<Community, "searchDefaults">,
+  filters: T,
+): T {
+  const isDefault =
+    filters.startYear === undefined &&
+    filters.endYear !== undefined &&
+    filters.endYear === community.searchDefaults?.endYear;
+  return isDefault ? { ...filters, endYear: undefined } : filters;
+}
+
 // "· filtered" separates keywords that found nothing from ones the filters
 // emptied. A community's own default filters don't count.
 export function siteSearchCategory(
   community: Pick<Community, "slug" | "searchDefaults">,
   params: SearchParams,
 ): string {
-  const endYear =
-    params.endYear === community.searchDefaults?.endYear ? undefined : params.endYear;
-  return hasFilters({ ...params, endYear }) ? `${community.slug} · filtered` : community.slug;
+  const filtered = hasActiveSearch({ ...withoutDefaults(community, params), q: "" });
+  return filtered ? `${community.slug} · filtered` : community.slug;
 }
 
 // Concept values carry their whole branch, root first, so a nested concept says

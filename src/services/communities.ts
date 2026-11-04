@@ -156,7 +156,6 @@ const COMMUNITIES: Community[] = [
       "year",
       ...HPV_GEO_SCHEMES,
     ],
-    defaultExpandedFilters: [],
     features: {
       ...DEFAULT_FEATURES,
       aiSummaries: true,
@@ -248,7 +247,6 @@ const COMMUNITIES: Community[] = [
       DOI_IDENTIFIER,
       { header: "OpenAlex ID", type: "open_alex" },
     ],
-    defaultExpandedFilters: [],
     defaultEvidenceMapAxes: {
       row: {
         kind: "scheme",

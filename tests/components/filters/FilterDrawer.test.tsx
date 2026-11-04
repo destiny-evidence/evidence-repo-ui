@@ -387,22 +387,25 @@ describe("FilterDrawer", () => {
       return screen.getByRole("button", { name });
     }
 
-    test("expands the year and country cards by default", () => {
+    test("collapses every card by default", () => {
       renderDrawer();
-      expect(
-        cardButton(/Publication year/).getAttribute("aria-expanded"),
-      ).toBe("true");
-      expect(cardButton(/Country/).getAttribute("aria-expanded")).toBe("true");
-    });
-
-    test("collapses cards omitted from defaultExpandedFilters", () => {
-      renderDrawer({ defaultExpandedFilters: [] });
       expect(
         cardButton(/Publication year/).getAttribute("aria-expanded"),
       ).toBe("false");
       expect(cardButton(/Country/).getAttribute("aria-expanded")).toBe(
         "false",
       );
+      expect(cardButton(/Document type/).getAttribute("aria-expanded")).toBe(
+        "false",
+      );
+    });
+
+    test("expands cards listed in expandOnMountFilters", () => {
+      renderDrawer({ expandOnMountFilters: ["year", "country"] });
+      expect(
+        cardButton(/Publication year/).getAttribute("aria-expanded"),
+      ).toBe("true");
+      expect(cardButton(/Country/).getAttribute("aria-expanded")).toBe("true");
     });
   });
 
@@ -522,7 +525,7 @@ describe("FilterDrawer", () => {
     });
 
     test("start > end shows inline error and disables Show results", () => {
-      renderDrawer({ schemes: [] });
+      renderDrawer({ schemes: [], expandOnMountFilters: ["year"] });
       fireEvent.input(startYearInput(), { target: { value: "2020" } });
       fireEvent.input(endYearInput(), { target: { value: "2010" } });
 
@@ -536,7 +539,7 @@ describe("FilterDrawer", () => {
     });
 
     test("non-numeric end year flags an error and blocks Show results", () => {
-      renderDrawer({ schemes: [] });
+      renderDrawer({ schemes: [], expandOnMountFilters: ["year"] });
       fireEvent.input(endYearInput(), { target: { value: "abc" } });
 
       expect(screen.getByRole("alert")).toHaveTextContent(

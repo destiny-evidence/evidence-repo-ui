@@ -5,11 +5,7 @@ import { YearRangeFilter } from "./YearRangeFilter";
 import { summary } from "./conceptSchemeFilterState";
 import { summary as countrySummary } from "./countryFilterState";
 import { summary as yearSummary } from "./yearRangeFilterState";
-import {
-  DEFAULT_EXPANDED_FILTERS,
-  orderFilterItems,
-  type FilterItem,
-} from "./filterOrder";
+import { orderFilterItems, type FilterItem } from "./filterOrder";
 import {
   schemeDisplayLabel,
   type ConceptScheme,
@@ -25,8 +21,8 @@ export interface FilterCardOptions {
   showCountryFacetFilter?: boolean;
   // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
   pinnedFilters?: readonly PinnedFilter[];
-  // Filter cards that start expanded; absent ⇒ DEFAULT_EXPANDED_FILTERS.
-  defaultExpandedFilters?: readonly PinnedFilter[];
+  // Filter cards that expand on mount
+  expandOnMountFilters?: readonly PinnedFilter[];
   // Collapse concept-filter children behind their parents; only for
   // communities with ancestor-closed codings.
   collapsibleConceptFilters?: boolean;
@@ -47,14 +43,14 @@ export function FilterCardList({
   countNoun = "results",
   showCountryFacetFilter = true,
   pinnedFilters,
-  defaultExpandedFilters = DEFAULT_EXPANDED_FILTERS,
+  expandOnMountFilters = [],
   collapsibleConceptFilters = false,
 }: FilterCardListProps) {
   const items = orderFilterItems(draft.schemes ?? [], {
     pinned: pinnedFilters,
     showCountryFacetFilter,
   });
-  const expanded = new Set(defaultExpandedFilters);
+  const expanded = new Set(expandOnMountFilters);
 
   return (
     <>
@@ -90,7 +86,7 @@ function renderItem(
           key="year"
           title="Publication year"
           summary={yearSummary(draft.yearDraft)}
-          defaultExpanded={expanded.has("year")}
+          expandOnMount={expanded.has("year")}
         >
           <YearRangeFilter
             state={draft.yearDraft}
@@ -104,7 +100,7 @@ function renderItem(
           key="country"
           title="Country"
           summary={countrySummary(draft.countryDraft)}
-          defaultExpanded={expanded.has("country")}
+          expandOnMount={expanded.has("country")}
         >
           <CountryFilter
             state={draft.countryDraft}
@@ -122,7 +118,7 @@ function renderItem(
           scheme={item.scheme}
           draft={draft}
           countNoun={countNoun}
-          defaultExpanded={expanded.has(item.scheme.uri)}
+          expandOnMount={expanded.has(item.scheme.uri)}
           collapsible={collapsibleConceptFilters}
         />
       );
@@ -133,13 +129,13 @@ function SchemeCard({
   scheme,
   draft,
   countNoun,
-  defaultExpanded,
+  expandOnMount,
   collapsible,
 }: {
   scheme: ConceptScheme;
   draft: FilterDraft;
   countNoun: string;
-  defaultExpanded: boolean;
+  expandOnMount: boolean;
   collapsible: boolean;
 }) {
   const state = draft.conceptStateFor(scheme);
@@ -147,7 +143,7 @@ function SchemeCard({
     <FilterCard
       title={schemeDisplayLabel(scheme.label)}
       summary={summary(state)}
-      defaultExpanded={defaultExpanded}
+      expandOnMount={expandOnMount}
     >
       <ConceptSchemeFilter
         scheme={scheme}

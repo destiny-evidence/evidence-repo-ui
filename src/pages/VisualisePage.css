@@ -27,6 +27,26 @@
   margin-bottom: 0;
 }
 
+.evidence-map-view__scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.evidence-map-view__view-all {
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.evidence-map-view__view-all:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+}
+
 .visualise-page__notice {
   font-family: var(--font-display);
   font-style: italic;
@@ -111,6 +131,10 @@ body.visualise-has-panel .app-main {
 
 /* Pinned to the right of the toolbar — the wireframe's top-right hint. */
 .evidence-map-view__hint {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--spacing-xs) var(--spacing-md);
   margin: 0 0 0 auto;
   font-size: var(--font-size-small);
   color: var(--color-text-tertiary);

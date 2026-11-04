@@ -4,7 +4,7 @@ import type {
   EvidenceMapAxis,
   EvidenceMapRenderLimits,
 } from "@/types/models";
-import type { SearchParams } from "@/services/searchParams";
+import { toQueryString, type SearchParams } from "@/services/searchParams";
 import {
   compareLabels,
   schemeDisplayLabel,
@@ -511,6 +511,31 @@ function applyAxisFilter(
     return { ...base, countryCodes: [...base.countryCodes, category.key] };
   }
   return { ...base, conceptFilters: [...base.conceptFilters, [category.key]] };
+}
+
+export const ROW_PARAM = "row";
+export const COLUMN_PARAM = "column";
+
+// Canonical map query: the search's query and filters, then the explicit axes.
+// Page and sort mean nothing to a map, so they're dropped.
+export function mapQueryString(
+  params: SearchParams,
+  axes: EvidenceMapAxes,
+): string {
+  const qs = new URLSearchParams(
+    toQueryString({ ...params, page: 1, sort: undefined }),
+  );
+  qs.set(ROW_PARAM, axisToken(axes.row));
+  qs.set(COLUMN_PARAM, axisToken(axes.column));
+  return qs.toString();
+}
+
+export function buildVisualiseUrl(
+  communitySlug: string,
+  params: SearchParams,
+  axes: EvidenceMapAxes,
+): string {
+  return `/${communitySlug}/visualise?${mapQueryString(params, axes)}`;
 }
 
 // history.state key set when a cell deep-links into Search; its value is the
