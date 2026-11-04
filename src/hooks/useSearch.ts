@@ -20,10 +20,6 @@ export function useSearch(params: SearchParams): {
 } {
   const community = useCommunity();
   const sharedFilters = toSearchFilters(params, community?.defaultAnnotations);
-  // JSON.stringify is unambiguous for arbitrary string arrays — two distinct
-  // inputs can never collapse to the same key even if annotations contain commas,
-  // quotes, or other delimiters. Ad hoc joins are brittle here.
-  // Intentionally order-sensitive: ["a","b"] and ["b","a"] are different keys.
   const key = JSON.stringify([
     community?.slug,
     params.q,

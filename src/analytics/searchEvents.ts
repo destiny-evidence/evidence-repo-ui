@@ -9,7 +9,11 @@ import {
 } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
 import { wbRegionName } from "@/utils/wbRegion";
-import { hasFilters, type SearchParams } from "@/services/searchParams";
+import {
+  hasFilters,
+  type SearchFilterParams,
+  type SearchParams,
+} from "@/services/searchParams";
 import type { Community } from "@/types/models";
 
 // True when the user has actually searched or filtered — as opposed to a plain
@@ -65,10 +69,7 @@ export function conceptPathName(
 // the facet each belongs to (the concept scheme, plus "Country", "World Bank
 // region" and "Year range"), feeding one `Category Applied` event each.
 export function activeFilters(
-  filters: Pick<
-    SearchParams,
-    "conceptFilters" | "countryCodes" | "wbRegionIds" | "startYear" | "endYear"
-  >,
+  filters: SearchFilterParams,
   schemes: ConceptScheme[],
 ): { values: string[]; categories: string[] } {
   const conceptPaths = indexConceptPaths(schemes);

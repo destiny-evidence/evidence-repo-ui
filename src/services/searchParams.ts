@@ -142,13 +142,13 @@ export function buildSearchUrl(
   return qs ? `/${communitySlug}?${qs}` : `/${communitySlug}`;
 }
 
+export type SearchFilterParams = Pick<
+  SearchParams,
+  "conceptFilters" | "countryCodes" | "wbRegionIds" | "startYear" | "endYear"
+>;
+
 // True when anything beyond the free-text query narrows the search.
-export function hasFilters(
-  params: Pick<
-    SearchParams,
-    "conceptFilters" | "countryCodes" | "wbRegionIds" | "startYear" | "endYear"
-  >,
-): boolean {
+export function hasFilters(params: SearchFilterParams): boolean {
   return (
     params.conceptFilters.length > 0 ||
     params.countryCodes.length > 0 ||
