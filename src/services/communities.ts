@@ -188,12 +188,12 @@ const COMMUNITIES: Community[] = [
       {
         title: "Report v4 October 2026",
         description:
-          "Framework, search criteria, and methodology for the Repository.",
+          "The methods used and results for this repository version.",
         href: "https://aliveevidence.org/wp-content/uploads/2026/10/hpv-repo-report-v4.0-2026-10.pdf",
       },
       {
         title: "Protocol v4 October 2026",
-        description: "Summary of search results from the Repository dataset.",
+        description: "The scope, eligibility criteria and planned methods for maintaining the repository.",
         href: "https://aliveevidence.org/wp-content/uploads/2026/10/hpv-repo-protocol-v4.0-2026-10.pdf",
       },
       {
