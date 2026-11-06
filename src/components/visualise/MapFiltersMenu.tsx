@@ -19,6 +19,7 @@ import {
 } from "@/services/vocabulary/vocabularyService";
 import type { SearchParams } from "@/services/searchParams";
 import { countryName } from "@/utils/country";
+import { wbIncomeGroupName } from "@/utils/wbIncomeGroup";
 import "@/components/search/ExportMenu.css";
 import "@/components/search/RefineButton.css";
 import "./MapScopeMenus.css";
@@ -66,6 +67,12 @@ function filterGroups(
     groups.push({
       name: "Countries",
       values: params.countryCodes.map(countryName),
+    });
+  }
+  if (params.wbIncomeGroupIds.length > 0) {
+    groups.push({
+      name: "World Bank income group",
+      values: params.wbIncomeGroupIds.map(wbIncomeGroupName),
     });
   }
   const years = yearSummary(

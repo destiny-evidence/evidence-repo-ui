@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { orderFilterItems } from "@/components/filters/filterOrder";
+import { facetTypesFor, orderFilterItems } from "@/components/filters/filterOrder";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 
 function scheme(uri: string, label: string): ConceptScheme {
@@ -23,6 +23,20 @@ describe("orderFilterItems", () => {
   test("default order: year, country, then schemes alphabetically by display label", () => {
     const items = orderFilterItems([zebra, apple]);
     expect(kinds(items)).toEqual(["year", "country", "u:apple", "u:zebra"]);
+  });
+
+  test("adds the income group card after country when its filter is enabled", () => {
+    const items = orderFilterItems([apple], { showWbIncomeGroupFilter: true });
+    expect(kinds(items)).toEqual(["year", "country", "wbIncomeGroup", "u:apple"]);
+  });
+
+  test("pins the income group card after a scheme, without repeating it", () => {
+    const items = orderFilterItems([zebra, region], {
+      pinned: ["year", "u:region", "wbIncomeGroup", "wbIncomeGroup"],
+      showCountryFacetFilter: false,
+      showWbIncomeGroupFilter: true,
+    });
+    expect(kinds(items)).toEqual(["year", "u:region", "wbIncomeGroup", "u:zebra"]);
   });
 
   test("omits the country card when the facet filter is hidden", () => {
@@ -66,8 +80,23 @@ describe("orderFilterItems", () => {
     const phase2 = scheme("u:p2", "Phase 2");
     const items = orderFilterItems([phase10, phase2], {
       pinned: [],
+      showCountryFacetFilter: false,
     });
     expect(kinds(items)).toEqual(["u:p2", "u:p10"]);
+  });
+
+  test("appends enabled country and income group cards that aren't pinned", () => {
+    const items = orderFilterItems([zebra, apple], {
+      pinned: ["year"],
+      showWbIncomeGroupFilter: true,
+    });
+    expect(kinds(items)).toEqual([
+      "year",
+      "u:apple",
+      "u:zebra",
+      "country",
+      "wbIncomeGroup",
+    ]);
   });
 
   test("a repeated built-in slot is emitted once", () => {
@@ -75,5 +104,17 @@ describe("orderFilterItems", () => {
       pinned: ["year", "country", "year"],
     });
     expect(kinds(items)).toEqual(["year", "country", "u:apple"]);
+  });
+});
+
+describe("facetTypesFor", () => {
+  test("defaults match orderFilterItems: country card on, income group card off", () => {
+    expect(facetTypesFor()).toEqual(["concepts", "countries", "country_wb_regions"]);
+  });
+
+  test("requests each facet-backed card's counts only when that card is shown", () => {
+    expect(
+      facetTypesFor({ showCountryFacetFilter: false, showWbIncomeGroupFilter: true }),
+    ).toEqual(["concepts", "country_wb_regions", "country_wb_income_groups"]);
   });
 });

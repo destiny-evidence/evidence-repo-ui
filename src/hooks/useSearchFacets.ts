@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { searchReferenceFacets } from "@/services/apiClient";
+import { searchReferenceFacets, type FacetType } from "@/services/apiClient";
 import { useCommunity } from "@/community/CommunityContext";
 import { toTurtleUrl } from "@/services/vocabulary/vocabularyService";
 import { toSearchFilters, type SearchParams } from "@/services/searchParams";
@@ -19,7 +19,11 @@ function countMap<T extends { count: number }>(
   return new Map((buckets ?? []).map((b) => [key(b), b.count]));
 }
 
-export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair): {
+export function useSearchFacets(
+  params: SearchParams,
+  facets: readonly FacetType[],
+  axes?: CrossFacetAxisPair,
+): {
   counts: FacetCounts | null;
   loading: boolean;
   error: Error | null;
@@ -27,7 +31,14 @@ export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair)
   const community = useCommunity();
   const filters = toSearchFilters(params, community?.defaultAnnotations);
   // Omits `page` and `sort` — facet counts are invariant under both.
-  const key = JSON.stringify([community?.slug, params.q, filters, axes?.row, axes?.column]);
+  const key = JSON.stringify([
+    community?.slug,
+    params.q,
+    filters,
+    facets,
+    axes?.row,
+    axes?.column,
+  ]);
   const [counts, setCounts] = useState<FacetCounts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -45,7 +56,7 @@ export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair)
     searchReferenceFacets(
       params.q || undefined,
       filters,
-      ["concepts", "countries", "country_wb_regions", "country_wb_income_groups"],
+      facets,
       axes ? axisPairToParams(axes, vocabularyUrl) : { vocabularyUrl },
     )
       .then((r) => {

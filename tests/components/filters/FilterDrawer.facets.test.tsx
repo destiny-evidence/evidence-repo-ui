@@ -26,6 +26,7 @@ const baseProps: ComponentProps<typeof FilterDrawer> = {
   schemes: [OUTCOME_SCHEME_FIXTURE, DOCUMENT_TYPE_SCHEME],
   appliedConceptFilters: [],
   appliedCountryCodes: [],
+  appliedWbIncomeGroupIds: [],
   appliedStartYear: undefined,
   appliedEndYear: undefined,
   params: makeSearchParams({ q: "climate" }),

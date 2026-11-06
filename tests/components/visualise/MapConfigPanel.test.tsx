@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/preact";
+import { render, screen, fireEvent, within, cleanup } from "@testing-library/preact";
 
 // Inert facet-count fetch across the suite (the panel previews the draft via it).
 vi.mock("@/hooks/useSearchFacets", () => ({
@@ -41,6 +41,7 @@ const baseProps: PanelProps = {
   defaultAxes: AXES,
   appliedConceptFilters: [],
   appliedCountryCodes: [],
+  appliedWbIncomeGroupIds: [],
   appliedStartYear: undefined,
   appliedEndYear: undefined,
   params: makeSearchParams(),
@@ -150,6 +151,7 @@ describe("MapConfigPanel", () => {
       filters: {
         conceptFilters: [[URI_JOURNAL]],
         countryCodes: [],
+        wbIncomeGroupIds: [],
         startYear: undefined,
         endYear: undefined,
       },
@@ -172,6 +174,28 @@ describe("MapConfigPanel", () => {
     ).toBe(false);
     // Back to equal-to-applied → Show results re-greys.
     expect(showResults().disabled).toBe(true);
+  });
+
+  test("the income group card follows the flag and its selection is applied and reset", () => {
+    const onApply = vi.fn();
+    renderPanel({
+      onApply,
+      showWbIncomeGroupFilter: true,
+      expandOnMountFilters: ["wbIncomeGroup"],
+    });
+    fireEvent.click(screen.getByLabelText(/^Low income/));
+    expect(showResults().disabled).toBe(false);
+    fireEvent.click(showResults());
+    expect(onApply.mock.calls[0][0].filters).toMatchObject({ wbIncomeGroupIds: ["LIC"] });
+
+    fireEvent.click(screen.getByLabelText(/^High income/));
+    fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
+    expect((screen.getByLabelText(/^High income/) as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByLabelText(/^Low income/) as HTMLInputElement).checked).toBe(false);
+
+    cleanup();
+    renderPanel();
+    expect(screen.queryByRole("button", { name: /World Bank income group/ })).toBeNull();
   });
 
   test("Reset all restores the community default axes, not the applied axes", () => {

@@ -1,24 +1,28 @@
 import { FilterCard } from "./FilterCard";
 import { ConceptSchemeFilter } from "./ConceptSchemeFilter";
 import { CountryFilter } from "./CountryFilter";
+import { FixedListFilter } from "./FixedListFilter";
 import { YearRangeFilter } from "./YearRangeFilter";
 import { summary } from "./conceptSchemeFilterState";
 import { summary as countrySummary } from "./countryFilterState";
 import { summary as yearSummary } from "./yearRangeFilterState";
-import { orderFilterItems, type FilterItem } from "./filterOrder";
+import {
+  orderFilterItems,
+  type FacetCardOptions,
+  type FilterItem,
+} from "./filterOrder";
 import {
   schemeDisplayLabel,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 import type { PinnedFilter } from "@/types/models";
+import { WB_INCOME_GROUPS } from "@/utils/wbIncomeGroup";
 import type { FilterDraft } from "./useFilterDraft";
 import "./FilterCardList.css";
 
 // Presentation options for the card stack, passed through by its host.
-export interface FilterCardOptions {
+export interface FilterCardOptions extends FacetCardOptions {
   countNoun?: string;
-  // Show the facet-backed country card; off where the `countries` facet is empty.
-  showCountryFacetFilter?: boolean;
   // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
   pinnedFilters?: readonly PinnedFilter[];
   // Filter cards that expand on mount
@@ -33,7 +37,8 @@ interface FilterCardListProps extends FilterCardOptions {
 }
 
 /**
- * The stack of filter cards (publication year, country, one per concept scheme)
+ * The stack of filter cards (publication year, country, World Bank income
+ * group, one per concept scheme)
  * driven by a {@link FilterDraft}. Shared by the search drawer and the
  * evidence-map config panel so both render filters identically. Pinned cards
  * lead; the remaining schemes follow alphabetically.
@@ -41,7 +46,8 @@ interface FilterCardListProps extends FilterCardOptions {
 export function FilterCardList({
   draft,
   countNoun = "results",
-  showCountryFacetFilter = true,
+  showCountryFacetFilter,
+  showWbIncomeGroupFilter,
   pinnedFilters,
   expandOnMountFilters = [],
   collapsibleConceptFilters = false,
@@ -49,6 +55,7 @@ export function FilterCardList({
   const items = orderFilterItems(draft.schemes ?? [], {
     pinned: pinnedFilters,
     showCountryFacetFilter,
+    showWbIncomeGroupFilter,
   });
   const expanded = new Set(expandOnMountFilters);
 
@@ -111,6 +118,24 @@ function renderItem(
           />
         </FilterCard>
       );
+    case "wbIncomeGroup":
+      return (
+        <FilterCard
+          key="wbIncomeGroup"
+          title="World Bank income group"
+          summary={selectionSummary(draft.wbIncomeGroupDraft)}
+          expandOnMount={expanded.has("wbIncomeGroup")}
+        >
+          <FixedListFilter
+            options={WB_INCOME_GROUPS}
+            selected={draft.wbIncomeGroupDraft}
+            counts={draft.facetCounts?.wbIncomeGroups ?? null}
+            countsLoading={draft.facetCountsLoading}
+            countNoun={countNoun}
+            onChange={draft.setWbIncomeGroupDraft}
+          />
+        </FilterCard>
+      );
     case "scheme":
       return (
         <SchemeCard
@@ -123,6 +148,10 @@ function renderItem(
         />
       );
   }
+}
+
+function selectionSummary(selected: ReadonlySet<string>): string {
+  return selected.size === 0 ? "" : `${selected.size} selected`;
 }
 
 function SchemeCard({
