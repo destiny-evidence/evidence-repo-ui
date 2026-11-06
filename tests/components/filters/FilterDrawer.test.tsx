@@ -41,7 +41,7 @@ function setCounts({
   loading?: boolean;
 } = {}) {
   mockUseSearchFacets.mockReturnValue({
-    counts: { concepts, countries, wbIncomeGroups },
+    counts: { concepts, countries, wbRegions: new Map(), wbIncomeGroups },
     loading,
     error: null,
   });
