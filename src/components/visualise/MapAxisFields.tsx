@@ -1,13 +1,20 @@
-import { useMemo } from "preact/hooks";
 import { Select } from "@/components/common/Select";
 import { Tooltip } from "@/components/common/Tooltip";
-import { axisToken, localName, parseAxis } from "@/services/evidenceMap";
-import { AXIS_COUNTRIES } from "@/services/crossFacets";
+import {
+  literalAxisTitle,
+  localName,
+  parseAxis,
+} from "@/services/evidenceMap";
+import { axisToken } from "@/services/crossFacets";
 import {
   schemeDisplayLabel,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
-import type { EvidenceMapAxis, EvidenceMapAxes } from "@/types/models";
+import type {
+  EvidenceMapAxis,
+  EvidenceMapAxes,
+  LiteralAxisToken,
+} from "@/types/models";
 import "./MapAxisFields.css";
 
 interface AxisOption {
@@ -15,23 +22,25 @@ interface AxisOption {
   label: string;
 }
 
-// Concept schemes + Countries, plus any chosen axis whose scheme isn't in the
+// Concept schemes + the offered literal axes, plus any chosen axis not in the
 // list yet (so each <select> always has its current value), sorted by label.
 function buildAxisOptions(
   schemes: ConceptScheme[],
   chosen: EvidenceMapAxis[],
-  includeCountries: boolean,
+  literalAxes: readonly LiteralAxisToken[],
 ): AxisOption[] {
   const byValue = new Map<string, string>();
   for (const scheme of schemes) {
     byValue.set(scheme.uri, schemeDisplayLabel(scheme.label));
   }
-  // Only offer Countries where the facet is populated; against an empty
-  // country facet the cross-facet query for that axis fails.
-  if (includeCountries) byValue.set(AXIS_COUNTRIES, "Countries");
+  for (const token of literalAxes) byValue.set(token, literalAxisTitle(token));
   for (const axis of chosen) {
     const token = axisToken(axis);
-    if (!byValue.has(token)) byValue.set(token, localName(token));
+    if (byValue.has(token)) continue;
+    byValue.set(
+      token,
+      axis.kind === "literal" ? literalAxisTitle(axis.token) : localName(token),
+    );
   }
   return [...byValue]
     .map(([value, label]) => ({ value, label }))
@@ -41,7 +50,7 @@ function buildAxisOptions(
 interface MapAxisFieldsProps {
   axes: EvidenceMapAxes;
   schemes: ConceptScheme[];
-  includeCountries: boolean;
+  literalAxes: readonly LiteralAxisToken[];
   onChange: (axes: EvidenceMapAxes) => void;
 }
 
@@ -52,13 +61,10 @@ interface MapAxisFieldsProps {
 export function MapAxisFields({
   axes,
   schemes,
-  includeCountries,
+  literalAxes,
   onChange,
 }: MapAxisFieldsProps) {
-  const options = useMemo(
-    () => buildAxisOptions(schemes, [axes.row, axes.column], includeCountries),
-    [schemes, axes.row, axes.column, includeCountries],
-  );
+  const options = buildAxisOptions(schemes, [axes.row, axes.column], literalAxes);
 
   function swap() {
     onChange({ row: axes.column, column: axes.row });

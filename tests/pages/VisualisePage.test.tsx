@@ -13,7 +13,7 @@ import type { EvidenceMapAxes, ReferenceCrossFacetResult } from "@/types/models"
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import {
   AXIS_COUNTRIES,
-  type CrossFacetAxisPair,
+  AXIS_INCOME_GROUPS,
 } from "@/services/crossFacets";
 import {
   CELL_SIZES,
@@ -68,12 +68,12 @@ const AXES: EvidenceMapAxes = {
   column: { kind: "scheme", schemeUri: "scheme:theme" },
 };
 
-const CROSS_AXES: CrossFacetAxisPair = {
+const CROSS_AXES: EvidenceMapAxes = {
   row: { kind: "scheme", schemeUri: "scheme:level" },
   column: { kind: "scheme", schemeUri: "scheme:theme" },
 };
 
-const TOPIC_CROSS_AXES: CrossFacetAxisPair = {
+const TOPIC_CROSS_AXES: EvidenceMapAxes = {
   row: CROSS_AXES.row,
   column: { kind: "scheme", schemeUri: "scheme:topic" },
 };
@@ -413,6 +413,63 @@ describe("VisualisePage map", () => {
     );
     // Nothing to restore, so the entry we left is not stamped either.
     expect(history.state).toBeNull();
+  });
+
+  describe("World Bank income groups axis", () => {
+    const INCOME_AXES: EvidenceMapAxes = {
+      row: CROSS_AXES.row,
+      column: { kind: "literal", token: AXIS_INCOME_GROUPS },
+    };
+
+    test("fetches by the URL's axis and renders every group, deep-linking by group", () => {
+      mockUseUrlParams.mockReturnValue(
+        `?row=scheme%3Alevel&column=${AXIS_INCOME_GROUPS}`,
+      );
+      mockUseCrossFacets.mockReturnValue({
+        result: crossFacetResult(6, [["level:primary", "LIC", 6]]),
+        resultAxes: INCOME_AXES,
+        loading: false,
+        error: null,
+      });
+      const { container } = render(<VisualisePage />);
+
+      expect(mockUseCrossFacets.mock.lastCall?.[1]).toEqual(INCOME_AXES);
+      for (const name of [
+        "High income",
+        "Upper middle income",
+        "Lower middle income",
+        "Low income",
+      ]) {
+        expect(screen.getByRole("columnheader", { name })).toBeInTheDocument();
+      }
+
+      fireEvent.click(
+        container.querySelector<HTMLButtonElement>(".evidence-map__cell-button")!,
+      );
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/test?concept=level%3Aprimary&country_wb_income_group=LIC",
+        expect.anything(),
+      );
+    });
+
+    test("labels a result by the axes it was fetched for, not the URL's", () => {
+      // The URL has moved on to Countries while the income group result is
+      // still the one on screen.
+      mockUseUrlParams.mockReturnValue(
+        `?row=scheme%3Alevel&column=${AXIS_COUNTRIES}`,
+      );
+      mockUseCrossFacets.mockReturnValue({
+        result: crossFacetResult(6, [["level:primary", "LIC", 6]]),
+        resultAxes: INCOME_AXES,
+        loading: true,
+        error: null,
+      });
+      render(<VisualisePage />);
+      expect(
+        screen.getByRole("columnheader", { name: "Low income" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("columnheader", { name: "LIC" })).toBeNull();
+    });
   });
 
   test("toggling to the table view shows counts as text", () => {

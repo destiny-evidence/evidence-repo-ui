@@ -3,7 +3,8 @@ import { searchReferenceFacets, type FacetType } from "@/services/apiClient";
 import { useCommunity } from "@/community/CommunityContext";
 import { toTurtleUrl } from "@/services/vocabulary/vocabularyService";
 import { toSearchFilters, type SearchParams } from "@/services/searchParams";
-import { axisPairToParams, type CrossFacetAxisPair } from "@/services/crossFacets";
+import { axisPairToParams } from "@/services/crossFacets";
+import type { EvidenceMapAxes } from "@/types/models";
 
 export interface FacetCounts {
   concepts: ReadonlyMap<string, number>;
@@ -22,7 +23,7 @@ function countMap<T extends { count: number }>(
 export function useSearchFacets(
   params: SearchParams,
   facets: readonly FacetType[],
-  axes?: CrossFacetAxisPair,
+  axes?: EvidenceMapAxes,
 ): {
   counts: FacetCounts | null;
   loading: boolean;

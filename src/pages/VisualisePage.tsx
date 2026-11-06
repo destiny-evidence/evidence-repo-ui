@@ -12,8 +12,6 @@ import {
 import { searchReferences } from "@/services/apiClient";
 import { navigate, stampHistoryState } from "@/services/navigation";
 import {
-  axisToken,
-  toCrossFacetAxis,
   buildAxisBands,
   buildEvidenceMapModel,
   defaultExpandedKeys,
@@ -36,15 +34,8 @@ import {
   ROW_PARAM,
   COLUMN_PARAM,
 } from "@/services/evidenceMap";
-import {
-  type CrossFacetAxis,
-  type CrossFacetAxisPair,
-} from "@/services/crossFacets";
-import type {
-  Community,
-  EvidenceMapAxes,
-  EvidenceMapAxis,
-} from "@/types/models";
+import { axisToken } from "@/services/crossFacets";
+import type { Community, EvidenceMapAxes } from "@/types/models";
 import { track } from "@/analytics/matomo";
 import {
   activeFilters,
@@ -93,15 +84,6 @@ function initialCellSize(): CellSize {
     .getPropertyValue("--map-dense")
     .trim();
   return dense === "1" ? "small" : DEFAULT_CELL_SIZE;
-}
-
-// Inverse of toCrossFacetAxis — recover the config axis from the pair the hook
-// reports a result was fetched for. (This page only ever produces the COUNTRIES
-// literal, so every literal maps back to a countries axis.)
-function fromCrossFacetAxis(axis: CrossFacetAxis): EvidenceMapAxis {
-  return axis.kind === "literal"
-    ? { kind: "countries" }
-    : { kind: "scheme", schemeUri: axis.schemeUri };
 }
 
 // The map's axes come from the URL when present (so a link reproduces the view),
@@ -188,17 +170,9 @@ function EvidenceMapView({
     [vocab.schemes],
   );
 
-  const axisPair = useMemo<CrossFacetAxisPair>(
-    () => ({
-      row: toCrossFacetAxis(axes.row),
-      column: toCrossFacetAxis(axes.column),
-    }),
-    [axes],
-  );
-
   const { result, resultAxes, resultParams, loading, error } = useCrossFacets(
     params,
-    axisPair,
+    axes,
   );
   const [view, setView] = useState<MapView>("bubble");
   // Presentation only, so it stays out of the URL (like `view`): the canonical
@@ -266,19 +240,10 @@ function EvidenceMapView({
   // still holds the previous axes' cells, so pairing those cells with the new
   // axes' label functions would briefly render raw URIs. Falls back to the URL
   // axes before the first result lands.
-  const displayAxes = useMemo<EvidenceMapAxes>(
-    () =>
-      resultAxes
-        ? {
-            row: fromCrossFacetAxis(resultAxes.row),
-            column: fromCrossFacetAxis(resultAxes.column),
-          }
-        : axes,
-    [resultAxes, axes],
-  );
+  const displayAxes = resultAxes ?? axes;
 
   // Header title + per-value label fn per axis — derived from the vocabulary the
-  // same way the filter panel names schemes (and via Intl for a country axis).
+  // same way the filter panel names schemes (and from the literal axis table).
   const rowAxis = useMemo(
     () => resolveMapAxis(displayAxes.row, vocab.schemes, vocab.labels),
     [displayAxes.row, vocab.schemes, vocab.labels],
@@ -496,15 +461,7 @@ function EvidenceMapView({
         ),
       });
     }
-    const nextParams: SearchParams = {
-      ...params,
-      conceptFilters: filters.conceptFilters,
-      countryCodes: filters.countryCodes,
-      wbIncomeGroupIds: filters.wbIncomeGroupIds,
-      startYear: filters.startYear,
-      endYear: filters.endYear,
-      page: 1,
-    };
+    const nextParams: SearchParams = { ...params, ...filters, page: 1 };
     navigate(
       buildVisualiseUrl(community.slug, nextParams, nextAxes),
     );
@@ -543,7 +500,7 @@ function EvidenceMapView({
   }
 
   // Clicked axis values report the same way filters do — the concept's whole
-  // branch. A countries axis has no branch, so it falls back to the label.
+  // branch. A literal axis has no branch, so it falls back to the label.
   function categoryName(category: AxisCategory): string {
     return conceptPathName(conceptPaths, category.key, category.label);
   }

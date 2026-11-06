@@ -5,7 +5,11 @@ import { Tooltip } from "@/components/common/Tooltip";
 import { MapAxisFields } from "@/components/visualise/MapAxisFields";
 import { formatTotal } from "@/utils/searchTotal";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
-import type { EvidenceMapAxes, SearchResultTotal } from "@/types/models";
+import type {
+  EvidenceMapAxes,
+  LiteralAxisToken,
+  SearchResultTotal,
+} from "@/types/models";
 import "./ExportMenu.css";
 import "./VisualiseMenu.css";
 
@@ -18,7 +22,7 @@ interface VisualiseMenuProps {
   countNoun: string;
   defaultAxes: EvidenceMapAxes;
   schemes: ConceptScheme[];
-  includeCountries: boolean;
+  literalAxes: readonly LiteralAxisToken[];
   onVisualise: (axes: EvidenceMapAxes) => void;
 }
 
@@ -33,7 +37,7 @@ export function VisualiseMenu({
   countNoun,
   defaultAxes,
   schemes,
-  includeCountries,
+  literalAxes,
   onVisualise,
 }: VisualiseMenuProps) {
   const [open, setOpen] = useState(false);
@@ -96,7 +100,7 @@ export function VisualiseMenu({
             <MapAxisFields
               axes={axes}
               schemes={schemes}
-              includeCountries={includeCountries}
+              literalAxes={literalAxes}
               onChange={setAxes}
             />
           </div>

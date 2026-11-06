@@ -2,18 +2,16 @@ import { describe, test, expect } from "vitest";
 import {
   AXIS_COUNTRIES,
   AXIS_INCOME_GROUPS,
-  AXIS_REGIONS,
   axisPairToParams,
-  type CrossFacetAxis,
 } from "@/services/crossFacets";
+import type { EvidenceMapAxis } from "@/types/models";
 
 const VOCAB = "https://vocab.example/v1/vocabulary.ttl";
 const SCHEME = "https://vocab.example/scheme/Themes";
 
-const countries: CrossFacetAxis = { kind: "literal", token: AXIS_COUNTRIES };
-const regions: CrossFacetAxis = { kind: "literal", token: AXIS_REGIONS };
-const incomeGroups: CrossFacetAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
-const scheme: CrossFacetAxis = { kind: "scheme", schemeUri: SCHEME };
+const countries: EvidenceMapAxis = { kind: "literal", token: AXIS_COUNTRIES };
+const incomeGroups: EvidenceMapAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
+const scheme: EvidenceMapAxis = { kind: "scheme", schemeUri: SCHEME };
 
 describe("axisPairToParams", () => {
   // row→axes[0], column→axes[1]; a literal resolves to its token, a scheme to its
@@ -21,9 +19,9 @@ describe("axisPairToParams", () => {
   test.each([
     {
       label: "both literal",
-      row: regions,
+      row: incomeGroups,
       column: countries,
-      expected: { axes: ["country_wb_regions", "countries"], vocabularyUrl: VOCAB },
+      expected: { axes: ["country_wb_income_groups", "countries"], vocabularyUrl: VOCAB },
     },
     {
       label: "row scheme",
@@ -33,15 +31,9 @@ describe("axisPairToParams", () => {
     },
     {
       label: "column scheme",
-      row: regions,
+      row: countries,
       column: scheme,
-      expected: { axes: ["country_wb_regions", SCHEME], vocabularyUrl: VOCAB },
-    },
-    {
-      label: "income group literal",
-      row: incomeGroups,
-      column: scheme,
-      expected: { axes: ["country_wb_income_groups", SCHEME], vocabularyUrl: VOCAB },
+      expected: { axes: ["countries", SCHEME], vocabularyUrl: VOCAB },
     },
     {
       label: "both schemes",

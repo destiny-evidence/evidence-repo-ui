@@ -13,7 +13,8 @@ import {
   type FilterDraftInputs,
 } from "@/components/filters/useFilterDraft";
 import { track } from "@/analytics/matomo";
-import { axisToken, toCrossFacetAxis } from "@/services/evidenceMap";
+import { offeredLiteralAxes } from "@/services/evidenceMap";
+import { axisToken } from "@/services/crossFacets";
 import type { EvidenceMapAxes } from "@/types/models";
 import { MapAxisFields } from "./MapAxisFields";
 import "./MapConfigPanel.css";
@@ -33,7 +34,8 @@ interface MapConfigPanelProps extends MapConfigPanelInnerProps, PanelChromeProps
   loading: boolean;
 }
 
-// `schemes` and `showCountryFacetFilter` also drive the axis dropdowns.
+// `schemes`, `showCountryFacetFilter` and `showWbIncomeGroupFilter` also drive
+// the axis dropdowns.
 interface MapConfigPanelInnerProps extends FilterDraftInputs, FilterCardOptions {
   // Currently-applied axes (from the URL) → the initial axis draft.
   appliedAxes: EvidenceMapAxes;
@@ -177,6 +179,10 @@ function MapConfigPanelInner({
   ...cardOptions
 }: MapConfigPanelInnerProps) {
   const [draftAxes, setDraftAxes] = useState<EvidenceMapAxes>(appliedAxes);
+  const literalAxes = offeredLiteralAxes({
+    countryFacetFilter: showCountryFacetFilter,
+    wbIncomeGroupFilter: showWbIncomeGroupFilter,
+  });
 
   const draft = useFilterDraft({
     schemes,
@@ -187,10 +193,7 @@ function MapConfigPanelInner({
     appliedEndYear,
     params,
     facets: facetTypesFor({ showCountryFacetFilter, showWbIncomeGroupFilter }),
-    axes: {
-      row: toCrossFacetAxis(draftAxes.row),
-      column: toCrossFacetAxis(draftAxes.column),
-    },
+    axes: draftAxes,
   });
 
   const axesDirty = !axesEqual(draftAxes, appliedAxes);
@@ -216,7 +219,7 @@ function MapConfigPanelInner({
           <MapAxisFields
             axes={draftAxes}
             schemes={schemes ?? []}
-            includeCountries={showCountryFacetFilter}
+            literalAxes={literalAxes}
             onChange={setDraftAxes}
           />
         </div>

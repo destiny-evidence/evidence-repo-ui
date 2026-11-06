@@ -2,22 +2,22 @@ import { useEffect, useState } from "preact/hooks";
 import { crossFacets } from "@/services/apiClient";
 import { useCommunity } from "@/community/CommunityContext";
 import { toTurtleUrl } from "@/services/vocabulary/vocabularyService";
-import {
-  axisPairToParams,
-  type CrossFacetAxisPair,
-} from "@/services/crossFacets";
+import { axisPairToParams } from "@/services/crossFacets";
 import { toSearchFilters, type SearchParams } from "@/services/searchParams";
-import type { ReferenceCrossFacetResult } from "@/types/models";
+import type {
+  EvidenceMapAxes,
+  ReferenceCrossFacetResult,
+} from "@/types/models";
 
 export function useCrossFacets(
   params: SearchParams,
-  axes: CrossFacetAxisPair,
+  axes: EvidenceMapAxes,
 ): {
   result: ReferenceCrossFacetResult | null;
   // The axes and params the current `result` was fetched for. While a refetch is in flight
   // these stay on the previous axes (with `result`), so a caller resolving cell
   // values never pairs stale cells with the new axes' label functions.
-  resultAxes: CrossFacetAxisPair | null;
+  resultAxes: EvidenceMapAxes | null;
   resultParams: SearchParams | null;
   loading: boolean;
   error: Error | null;
@@ -29,7 +29,7 @@ export function useCrossFacets(
   // mid-fetch.
   const [data, setData] = useState<{
     result: ReferenceCrossFacetResult;
-    axes: CrossFacetAxisPair;
+    axes: EvidenceMapAxes;
     params: SearchParams;
   } | null>(null);
   const [loading, setLoading] = useState(true);

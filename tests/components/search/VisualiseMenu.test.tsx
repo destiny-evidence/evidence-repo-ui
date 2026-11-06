@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, within, cleanup } from "@testing-library/preact";
 import { VisualiseMenu } from "@/components/search/VisualiseMenu";
+import { AXIS_COUNTRIES } from "@/services/crossFacets";
 import type { EvidenceMapAxes } from "@/types/models";
 import {
   DOCUMENT_TYPE_SCHEME,
@@ -24,7 +25,7 @@ function setup({ count = 342, scoped = true, loading = false } = {}) {
       countNoun="investigations"
       defaultAxes={AXES}
       schemes={[OUTCOME_SCHEME_FIXTURE, DOCUMENT_TYPE_SCHEME]}
-      includeCountries
+      literalAxes={[AXIS_COUNTRIES]}
       onVisualise={onVisualise}
     />
   );

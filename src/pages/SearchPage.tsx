@@ -23,6 +23,7 @@ import {
   buildVisualiseUrl,
   mapExpansionFromState,
   mapExpansionState,
+  offeredLiteralAxes,
 } from "@/services/evidenceMap";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useHistoryState } from "@/hooks/useHistoryState";
@@ -355,6 +356,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const mapAxes = community.features.evidenceMap
     ? community.defaultEvidenceMapAxes
     : undefined;
+  const literalAxes = offeredLiteralAxes(community.features);
 
   function handleVisualise(axes: EvidenceMapAxes) {
     track({
@@ -747,7 +749,7 @@ function SearchPageInner({ community }: { community: Community }) {
                     countNoun={community.copy.countNoun}
                     defaultAxes={mapAxes}
                     schemes={filterableSchemes}
-                    includeCountries={community.features.countryFacetFilter}
+                    literalAxes={literalAxes}
                     onVisualise={handleVisualise}
                   />
                 )}
