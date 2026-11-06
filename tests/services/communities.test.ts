@@ -193,6 +193,7 @@ describe("community registry", () => {
       findingsAndEstimates: true,
       exportsEnabled: false,
       countryFacetFilter: true,
+      wbIncomeGroupFilter: false,
       referenceSelection: true,
       ancestorClosedCodings: false,
     });
@@ -212,6 +213,7 @@ describe("community registry", () => {
       findingsAndEstimates: true,
       exportsEnabled: true,
       countryFacetFilter: true,
+      wbIncomeGroupFilter: false,
       ancestorClosedCodings: false,
     },
     {
@@ -220,6 +222,7 @@ describe("community registry", () => {
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
+      wbIncomeGroupFilter: false,
       exportsEnabled: true,
       ancestorClosedCodings: false,
     },
@@ -229,6 +232,7 @@ describe("community registry", () => {
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
+      wbIncomeGroupFilter: true,
       exportsEnabled: true,
       ancestorClosedCodings: true,
     },
@@ -308,6 +312,14 @@ describe("community registry", () => {
         "https://vocab.aliveevidence.org/hpv/WHORegion",
       ]),
     );
+  });
+
+  it("pins DESTINY's income group card below its geographic scheme", () => {
+    expect(mod.findCommunity("destiny")?.pinnedFilters).toEqual([
+      "year",
+      "https://vocab.destiny-evidence.org/geographic-location",
+      "wbIncomeGroup",
+    ]);
   });
 
   it("pins HPV's thematic-focus filters above publication year", () => {

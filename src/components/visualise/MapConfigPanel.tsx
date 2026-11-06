@@ -166,10 +166,12 @@ function MapConfigPanelInner({
   defaultAxes,
   appliedConceptFilters,
   appliedCountryCodes,
+  appliedWbIncomeGroupIds,
   appliedStartYear,
   appliedEndYear,
   params,
   showCountryFacetFilter = true,
+  showWbIncomeGroupFilter = false,
   onApply,
   ...cardOptions
 }: MapConfigPanelInnerProps) {
@@ -179,6 +181,7 @@ function MapConfigPanelInner({
     schemes,
     appliedConceptFilters,
     appliedCountryCodes,
+    appliedWbIncomeGroupIds,
     appliedStartYear,
     appliedEndYear,
     params,
@@ -227,6 +230,7 @@ function MapConfigPanelInner({
           <FilterCardList
             draft={draft}
             showCountryFacetFilter={showCountryFacetFilter}
+            showWbIncomeGroupFilter={showWbIncomeGroupFilter}
             {...cardOptions}
           />
         </section>

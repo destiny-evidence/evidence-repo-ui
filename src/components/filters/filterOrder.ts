@@ -5,19 +5,26 @@ import {
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 
-// One filter card, in render order: the two built-in cards plus one per scheme.
+// One filter card, in render order: the built-in cards plus one per scheme.
 export type FilterItem =
   | { kind: "year" }
   | { kind: "country" }
+  | { kind: "wbIncomeGroup" }
   | { kind: "scheme"; scheme: ConceptScheme };
 
-// Year, then the country facet. Every scheme follows alphabetically.
-export const DEFAULT_PINNED_FILTERS: readonly PinnedFilter[] = ["year", "country"];
+// Year, then the country and income group facets. Every scheme follows alphabetically.
+export const DEFAULT_PINNED_FILTERS: readonly PinnedFilter[] = [
+  "year",
+  "country",
+  "wbIncomeGroup",
+];
 
 interface OrderFilterItemsOptions {
   pinned?: readonly PinnedFilter[];
   // When false the "country" slot renders nothing (facet unavailable).
   showCountryFacetFilter?: boolean;
+  // When false the "wbIncomeGroup" slot renders nothing (facet unavailable).
+  showWbIncomeGroupFilter?: boolean;
 }
 
 /**
@@ -30,6 +37,7 @@ export function orderFilterItems(
   {
     pinned = DEFAULT_PINNED_FILTERS,
     showCountryFacetFilter = true,
+    showWbIncomeGroupFilter = false,
   }: OrderFilterItemsOptions = {},
 ): FilterItem[] {
   const byUri = new Map(schemes.map((s) => [s.uri, s]));
@@ -56,6 +64,11 @@ export function orderFilterItems(
       if (showCountryFacetFilter && !placed.has("country")) {
         placed.add("country");
         items.push({ kind: "country" });
+      }
+    } else if (slot === "wbIncomeGroup") {
+      if (showWbIncomeGroupFilter && !placed.has("wbIncomeGroup")) {
+        placed.add("wbIncomeGroup");
+        items.push({ kind: "wbIncomeGroup" });
       }
     } else pushScheme(slot);
   }

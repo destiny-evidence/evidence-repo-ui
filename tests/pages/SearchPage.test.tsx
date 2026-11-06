@@ -856,19 +856,38 @@ describe("SearchPage", () => {
       expect(screen.queryByRole("button", { name: "Show results" })).toBeNull();
     });
 
-    test("Refine badge sums concept selections and country selections", async () => {
+    test("Refine badge sums concept, country and income group selections", async () => {
       history.replaceState(
         null,
         "",
-        `/esea?concept=${encodeURIComponent(URI_LEARNING)}&country=DE&country=FR`,
+        `/esea?concept=${encodeURIComponent(URI_LEARNING)}&country=DE&country=FR&country_wb_income_group=LIC`,
       );
       mockBoth({ results: makeResult(7, ["r1"]) });
 
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
-      // 1 concept + 2 countries → badge reads 3.
-      expect(screen.getByRole("button", { name: /Refine\s*3/ })).toBeDefined();
+      // 1 concept + 2 countries + 1 income group → badge reads 4.
+      expect(screen.getByRole("button", { name: /Refine\s*4/ })).toBeDefined();
+    });
+
+    test("Refine is offered for a community whose only card is the income group one", async () => {
+      const esea = findCommunity("esea")!;
+      communityOverride.current = {
+        ...esea,
+        pinnedFilters: ["wbIncomeGroup"],
+        features: { ...esea.features, countryFacetFilter: false, wbIncomeGroupFilter: true },
+      };
+      mockVocab.mockReturnValue(vocabWith([]));
+      mockBoth({ results: makeResult(120, ["r1"]) });
+      renderSearchPage();
+      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("button", { name: "Refine" }));
+      expect(
+        screen.getByRole("button", { name: /World Bank income group/ }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Country/ })).toBeNull();
     });
 
     test("Refine is offered when the vocabulary has no filterable schemes", async () => {
