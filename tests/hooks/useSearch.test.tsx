@@ -53,6 +53,7 @@ describe("useSearch", () => {
       conceptFilters: [],
       countryCodes: [],
       wbRegionIds: [],
+      wbIncomeGroupIds: [],
     });
   });
 
@@ -293,7 +294,7 @@ describe("useSearch", () => {
     expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  test("threads conceptFilters + countryCodes + wbRegionIds through as structured filters", async () => {
+  test("threads conceptFilters + countryCodes + wbRegionIds + wbIncomeGroupIds through as structured filters", async () => {
     mockSearch.mockResolvedValue(makeResult(1));
     const params = makeSearchParams({
       q: "phonics",
@@ -302,6 +303,7 @@ describe("useSearch", () => {
       ],
       countryCodes: ["DE", "FR"],
       wbRegionIds: ["SAS"],
+      wbIncomeGroupIds: ["LIC"],
     });
     renderHook(() => useSearch(params), {
       wrapper: withCommunityPath("/esea"),
@@ -316,6 +318,7 @@ describe("useSearch", () => {
         ],
         countryCodes: ["DE", "FR"],
         wbRegionIds: ["SAS"],
+        wbIncomeGroupIds: ["LIC"],
       }),
     );
   });

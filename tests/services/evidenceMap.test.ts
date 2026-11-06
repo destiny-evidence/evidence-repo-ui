@@ -704,6 +704,7 @@ describe("cellSearchParams", () => {
     conceptFilters: [["scheme-a:x"]],
     countryCodes: ["FR"],
     wbRegionIds: [],
+    wbIncomeGroupIds: [],
   };
 
   test("scheme×scheme adds a single-concept group per axis and resets page", () => {
@@ -787,6 +788,7 @@ describe("axisSearchParams", () => {
     conceptFilters: [["scheme-a:x"]],
     countryCodes: ["FR"],
     wbRegionIds: [],
+    wbIncomeGroupIds: [],
   };
 
   test("a scheme axis adds a single-concept group and resets page", () => {
@@ -840,6 +842,7 @@ describe("buildVisualiseUrl", () => {
         conceptFilters: [["scheme-a:x"]],
         countryCodes: ["KE"],
         wbRegionIds: ["SSF"],
+        wbIncomeGroupIds: ["LIC"],
       },
       {
         row: { kind: "scheme", schemeUri: "scheme:level" },
@@ -853,6 +856,7 @@ describe("buildVisualiseUrl", () => {
       concept: "scheme-a:x",
       country: "KE",
       country_wb_region: "SSF",
+      country_wb_income_group: "LIC",
       start_year: "2015",
       row: "scheme:level",
       column: AXIS_COUNTRIES,

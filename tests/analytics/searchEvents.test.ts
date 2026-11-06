@@ -52,6 +52,7 @@ const EMPTY = {
   conceptFilters: [],
   countryCodes: [],
   wbRegionIds: [],
+  wbIncomeGroupIds: [],
   startYear: undefined,
   endYear: undefined,
 };
@@ -70,6 +71,7 @@ describe("activeFilters", () => {
         conceptFilters: [[URI_JOURNAL, URI_THESIS], [URI_STUDY]],
         countryCodes: ["KE", "UG"],
         wbRegionIds: ["SSF"],
+        wbIncomeGroupIds: ["LIC"],
         startYear: 2000,
         endYear: undefined,
       },
@@ -83,6 +85,7 @@ describe("activeFilters", () => {
         "Kenya",
         "Uganda",
         "Sub-Saharan Africa",
+        "Low income",
         "2000-",
       ]),
     );
@@ -92,6 +95,7 @@ describe("activeFilters", () => {
         "Study design",
         "Country",
         "World Bank region",
+        "World Bank income group",
         "Year range",
       ]),
     );
@@ -165,6 +169,9 @@ describe("hasActiveSearch", () => {
       true,
     );
     expect(hasActiveSearch(makeSearchParams({ wbRegionIds: ["SAS"] }))).toBe(
+      true,
+    );
+    expect(hasActiveSearch(makeSearchParams({ wbIncomeGroupIds: ["LIC"] }))).toBe(
       true,
     );
     expect(hasActiveSearch(makeSearchParams({ startYear: 2000 }))).toBe(true);

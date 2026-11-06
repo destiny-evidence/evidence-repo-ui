@@ -11,7 +11,11 @@ import type {
   SearchResult,
 } from "@/types/models";
 
-export type FacetType = "concepts" | "countries" | "country_wb_regions";
+export type FacetType =
+  | "concepts"
+  | "countries"
+  | "country_wb_regions"
+  | "country_wb_income_groups";
 
 export interface SearchFilters {
   page?: number;
@@ -27,6 +31,9 @@ export interface SearchFilters {
   countryCodes?: readonly string[];
   // World Bank region IDs; comma-joined into a single `country_wb_region=` param.
   wbRegionIds?: readonly string[];
+  // World Bank income group IDs; comma-joined into a single
+  // `country_wb_income_group=` param.
+  wbIncomeGroupIds?: readonly string[];
 }
 
 // Mirrors parseSearchParams: page must be >= 1, years > 0, all safe integers.
@@ -36,11 +43,14 @@ function isPositiveSafeInt(n: number | undefined): n is number {
 }
 
 // The structured filters are always serialised together — one `concept=` per
-// scheme, one `country=` / `country_wb_region=` for the OR'd codes. Extend here
-// when the backend grows another structured filter.
+// scheme, one `country=` / `country_wb_region=` / `country_wb_income_group=` for
+// the OR'd codes. Extend here when the backend grows another structured filter.
 function appendStructuredFilters(
   params: URLSearchParams,
-  filters: Pick<SearchFilters, "conceptFilters" | "countryCodes" | "wbRegionIds">,
+  filters: Pick<
+    SearchFilters,
+    "conceptFilters" | "countryCodes" | "wbRegionIds" | "wbIncomeGroupIds"
+  >,
 ): void {
   for (const group of filters.conceptFilters ?? []) {
     if (group.length > 0) params.append("concept", group.join(","));
@@ -51,6 +61,9 @@ function appendStructuredFilters(
   if (filters.wbRegionIds?.length) {
     params.append("country_wb_region", filters.wbRegionIds.join(","));
   }
+  if (filters.wbIncomeGroupIds?.length) {
+    params.append("country_wb_income_group", filters.wbIncomeGroupIds.join(","));
+  }
 }
 
 type SharedFilterFields =
@@ -59,7 +72,8 @@ type SharedFilterFields =
   | "annotation"
   | "conceptFilters"
   | "countryCodes"
-  | "wbRegionIds";
+  | "wbRegionIds"
+  | "wbIncomeGroupIds";
 
 // The filters every search-style endpoint accepts: everything but page and sort.
 export type SharedSearchFilters = Pick<SearchFilters, SharedFilterFields>;

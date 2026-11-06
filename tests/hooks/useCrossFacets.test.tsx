@@ -104,6 +104,22 @@ describe("useCrossFacets", () => {
     );
   });
 
+  test("forwards wbIncomeGroupIds and refetches when they change", async () => {
+    mockCrossFacets.mockResolvedValue(result(["AFE", SCHEME, 7]));
+    const { rerender } = renderHook(
+      ({ p }) => useCrossFacets(p, regionVsScheme),
+      { wrapper: withCommunityPath("/esea"), initialProps: { p: baseParams } },
+    );
+    await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(1));
+    rerender({ p: { ...baseParams, wbIncomeGroupIds: ["LIC", "HIC"] } });
+    await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(2));
+    expect(mockCrossFacets).toHaveBeenLastCalledWith(
+      "phonics",
+      expect.objectContaining({ wbIncomeGroupIds: ["LIC", "HIC"] }),
+      expect.anything(),
+    );
+  });
+
   test("refetches when the axis selection changes", async () => {
     mockCrossFacets.mockResolvedValue(result());
     const { rerender } = renderHook(
