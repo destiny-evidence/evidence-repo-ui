@@ -303,7 +303,7 @@ describe("FilterDrawer", () => {
     setCounts({ concepts: new Map([[URI_JOURNAL, 42]]) });
     const { container } = renderDrawer();
     expect(
-      container.querySelector(".concept-scheme-filter__count")?.textContent,
+      container.querySelector(".filter-options__count")?.textContent,
     ).toBe("42");
   });
 
@@ -318,10 +318,10 @@ describe("FilterDrawer", () => {
     // the named concept, then return its count nodes.
     const cards = container.querySelectorAll(".filter-card");
     for (const card of cards) {
-      const labels = card.querySelectorAll(".concept-scheme-filter__label");
+      const labels = card.querySelectorAll(".filter-options__label");
       for (const label of labels) {
         if (label.textContent === conceptLabel) {
-          return card.querySelectorAll(".concept-scheme-filter__count");
+          return card.querySelectorAll(".filter-options__count");
         }
       }
     }
