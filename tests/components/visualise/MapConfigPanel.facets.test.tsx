@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/preact
 import type { ComponentProps } from "preact";
 import { api } from "@/api/client";
 import { MapConfigPanel } from "@/components/visualise/MapConfigPanel";
+import { AXIS_COUNTRIES } from "@/services/crossFacets";
 import type { EvidenceMapAxes, ReferenceFacetResult } from "@/types/models";
 import { makeCommunity, makeSearchParams } from "../../fixtures";
 import {
@@ -95,8 +96,8 @@ describe("map panel facet requests", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show results" }));
     expect(onApply).toHaveBeenCalledWith({
       axes: {
-        row: label === "Rows (y)" ? { kind: "countries" } : axes.row,
-        column: label === "Columns (x)" ? { kind: "countries" } : axes.column,
+        row: label === "Rows (y)" ? { kind: "literal", token: AXIS_COUNTRIES } : axes.row,
+        column: label === "Columns (x)" ? { kind: "literal", token: AXIS_COUNTRIES } : axes.column,
       },
       filters: {
         conceptFilters: [[URI_JOURNAL]], countryCodes: [], wbIncomeGroupIds: [],
@@ -109,7 +110,7 @@ describe("map panel facet requests", () => {
     const onApply = vi.fn();
     render(<MapConfigPanel
       {...baseProps}
-      appliedAxes={{ row: { kind: "countries" }, column: axes.row }}
+      appliedAxes={{ row: { kind: "literal", token: AXIS_COUNTRIES }, column: axes.row }}
       appliedConceptFilters={[[URI_JOURNAL]]}
       appliedCountryCodes={["AU"]}
       appliedStartYear={2000}
@@ -137,7 +138,7 @@ describe("map panel facet requests", () => {
     // the dropdowns disable it.
     render(<MapConfigPanel
       {...baseProps}
-      appliedAxes={{ row: { kind: "countries" }, column: { kind: "countries" } }}
+      appliedAxes={{ row: { kind: "literal", token: AXIS_COUNTRIES }, column: { kind: "literal", token: AXIS_COUNTRIES } }}
     />);
     await screen.findByLabelText("12 results");
     expect(latestParams().getAll("axes")).toEqual(["countries", "countries"]);
