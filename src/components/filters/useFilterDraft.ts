@@ -2,7 +2,7 @@ import { useMemo, useState } from "preact/hooks";
 import { useSearchFacets, type FacetCounts } from "@/hooks/useSearchFacets";
 import type { FacetType } from "@/services/apiClient";
 import type { SearchParams } from "@/services/searchParams";
-import type { CrossFacetAxisPair } from "@/services/crossFacets";
+import type { EvidenceMapAxes } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import {
   emptyConceptSchemeState,
@@ -133,7 +133,7 @@ export function useFilterDraft({
   axes,
 }: FilterDraftInputs & {
   facets: readonly FacetType[];
-  axes?: CrossFacetAxisPair;
+  axes?: EvidenceMapAxes;
 }): FilterDraft {
   const [conceptDraft, setConceptDraft] = useState<ConceptDraft>(() =>
     parseConceptFilters(appliedConceptFilters, schemes ?? []),

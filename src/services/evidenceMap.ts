@@ -1,7 +1,9 @@
 import type {
+  CommunityFeatures,
   CrossFacetCell,
   EvidenceMapAxes,
   EvidenceMapAxis,
+  LiteralAxisToken,
   EvidenceMapRenderLimits,
 } from "@/types/models";
 import { toQueryString, type SearchParams } from "@/services/searchParams";
@@ -12,22 +14,60 @@ import {
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
-import { AXIS_COUNTRIES, type CrossFacetAxis } from "@/services/crossFacets";
+import { WB_INCOME_GROUPS, wbIncomeGroupName } from "@/utils/wbIncomeGroup";
+import {
+  AXIS_COUNTRIES,
+  AXIS_INCOME_GROUPS,
+  axisToken,
+} from "@/services/crossFacets";
 
-export function toCrossFacetAxis(axis: EvidenceMapAxis): CrossFacetAxis {
-  return axis.kind === "countries"
-    ? { kind: "literal", token: AXIS_COUNTRIES }
-    : { kind: "scheme", schemeUri: axis.schemeUri };
+interface LiteralAxis {
+  title: string;
+  // Every value in display order, so zero-hit values still render. Empty ⇒ the
+  // values come from the cells alone.
+  categories: AxisCategory[];
+  labelFor: (value: string) => string;
+  // The search filter a value of this axis applies when deep-linked.
+  filterKey: "countryCodes" | "wbIncomeGroupIds";
 }
 
-// The token written to / read from the URL (and a <select> value) for an axis.
-export function axisToken(axis: EvidenceMapAxis): string {
-  return axis.kind === "countries" ? AXIS_COUNTRIES : axis.schemeUri;
+const LITERAL_AXES: Record<LiteralAxisToken, LiteralAxis> = {
+  [AXIS_COUNTRIES]: {
+    title: "Countries",
+    categories: [],
+    labelFor: countryName,
+    filterKey: "countryCodes",
+  },
+  [AXIS_INCOME_GROUPS]: {
+    title: "World Bank income groups",
+    categories: WB_INCOME_GROUPS.map((g) => ({ key: g.id, label: g.name })),
+    labelFor: wbIncomeGroupName,
+    filterKey: "wbIncomeGroupIds",
+  },
+};
+
+function isLiteralToken(token: string): token is LiteralAxisToken {
+  return Object.hasOwn(LITERAL_AXES, token);
+}
+
+export function literalAxisTitle(token: LiteralAxisToken): string {
+  return LITERAL_AXES[token].title;
+}
+
+// Literal axes are offered only where their facet is populated; against an
+// empty facet the cross-facet query for that axis fails.
+export function offeredLiteralAxes(
+  features: Pick<CommunityFeatures, "countryFacetFilter" | "wbIncomeGroupFilter">,
+): LiteralAxisToken[] {
+  const tokens: LiteralAxisToken[] = [];
+  if (features.countryFacetFilter) tokens.push(AXIS_COUNTRIES);
+  if (features.wbIncomeGroupFilter) tokens.push(AXIS_INCOME_GROUPS);
+  return tokens;
 }
 
 export function parseAxis(token: string): EvidenceMapAxis {
-  return token === AXIS_COUNTRIES
-    ? { kind: "countries" }
+  return isLiteralToken(token)
+    ? { kind: "literal", token }
     : { kind: "scheme", schemeUri: token };
 }
 
@@ -36,7 +76,7 @@ export interface AxisCategory {
   label: string;
   // The concept's SKOS definition, when the vocabulary carries one. Surfaced in
   // the row/column header tooltip so a reader can see the scope of that axis
-  // value. Absent for countries and for cell-only keys the axis doesn't enumerate.
+  // value. Absent for literal axes and for cell-only keys the axis doesn't enumerate.
   definition?: string;
 }
 
@@ -105,14 +145,12 @@ export function localName(uri: string): string {
   return uri.split(/[/#:]/).filter(Boolean).pop() ?? uri;
 }
 
-const COUNTRIES_AXIS_TITLE = "Countries";
-
 export interface ResolvedAxis {
   title: string;
-  // Every value the axis can take (a scheme's concepts), so the grid renders
-  // zero-hit rows/columns. Empty for a countries axis ⇒ derived from the cells.
+  // Every value the axis can take (a scheme's concepts or a literal axis's fixed
+  // list), so the grid renders zero-hit rows/columns. Empty ⇒ derived from the cells.
   categories: AxisCategory[];
-  // Present for a resolved scheme; absent for countries and unknown schemes.
+  // Present for a resolved scheme; absent for literal axes and unknown schemes.
   tree?: AxisConcept[];
   labelFor: (value: string) => string;
 }
@@ -125,12 +163,9 @@ export function resolveMapAxis(
   schemes: readonly ConceptScheme[] | null,
   labels: ReadonlyMap<string, string> | null,
 ): ResolvedAxis {
-  if (axis.kind === "countries") {
-    return {
-      title: COUNTRIES_AXIS_TITLE,
-      categories: [],
-      labelFor: countryName,
-    };
+  if (axis.kind === "literal") {
+    const { title, categories, labelFor } = LITERAL_AXES[axis.token];
+    return { title, categories, labelFor };
   }
   // Scheme URIs are full URIs after parsing, so this matches directly.
   const scheme = schemes?.find((s) => s.uri === axis.schemeUri);
@@ -306,9 +341,9 @@ function flattenTree(tree: readonly AxisConcept[]): AxisCategory[] {
   return out;
 }
 
-// Axis categories keep their given order — a scheme's hierarchy, or the empty
-// list for a countries axis. Cell-only keys the axis doesn't enumerate trail
-// them, alphabetized; a countries axis (no categories) is thus fully alphabetical.
+// Axis categories keep their given order — a scheme's hierarchy or a literal
+// axis's fixed list. Cell-only keys the axis doesn't enumerate trail them,
+// alphabetized; an axis with no categories (countries) is thus fully alphabetical.
 function mergeCategories(
   axis: AxisInput,
   cellKeys: Set<string>,
@@ -500,15 +535,16 @@ export function axisSearchParams(
 
 // Applies one axis value as a filter: a scheme axis contributes a single-concept
 // filter group (AND'd with any existing groups, mirroring the cross-facet
-// query); a countries axis contributes a country code.
+// query); a literal axis adds its value to that axis's filter list.
 function applyAxisFilter(
   base: SearchParams,
   axis: EvidenceMapAxis,
   category: AxisCategory,
 ): SearchParams {
-  if (axis.kind === "countries") {
-    if (base.countryCodes.includes(category.key)) return base;
-    return { ...base, countryCodes: [...base.countryCodes, category.key] };
+  if (axis.kind === "literal") {
+    const key = LITERAL_AXES[axis.token].filterKey;
+    if (base[key].includes(category.key)) return base;
+    return { ...base, [key]: [...base[key], category.key] };
   }
   return { ...base, conceptFilters: [...base.conceptFilters, [category.key]] };
 }

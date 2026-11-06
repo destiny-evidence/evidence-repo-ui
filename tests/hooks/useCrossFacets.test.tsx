@@ -5,10 +5,9 @@ import { useCrossFacets } from "@/hooks/useCrossFacets";
 import { CommunityProvider } from "@/community/CommunityContext";
 import {
   AXIS_COUNTRIES,
-  AXIS_REGIONS,
-  type CrossFacetAxisPair,
+  AXIS_INCOME_GROUPS,
 } from "@/services/crossFacets";
-import type { ReferenceCrossFacetResult } from "@/types/models";
+import type { EvidenceMapAxes, ReferenceCrossFacetResult } from "@/types/models";
 import { makeSearchParams } from "../fixtures";
 
 vi.mock("@/services/apiClient", async (importOriginal) => {
@@ -21,12 +20,12 @@ const mockCrossFacets = vi.mocked(crossFacets);
 
 const baseParams = makeSearchParams({ q: "phonics" });
 const SCHEME = "https://vocab.example/scheme/Themes";
-const regionVsScheme: CrossFacetAxisPair = {
-  row: { kind: "literal", token: AXIS_REGIONS },
+const incomeGroupsVsScheme: EvidenceMapAxes = {
+  row: { kind: "literal", token: AXIS_INCOME_GROUPS },
   column: { kind: "scheme", schemeUri: SCHEME },
 };
-const regionVsCountry: CrossFacetAxisPair = {
-  row: { kind: "literal", token: AXIS_REGIONS },
+const incomeGroupsVsCountry: EvidenceMapAxes = {
+  row: { kind: "literal", token: AXIS_INCOME_GROUPS },
   column: { kind: "literal", token: AXIS_COUNTRIES },
 };
 
@@ -66,7 +65,7 @@ describe("useCrossFacets", () => {
   test("forwards filters, resolves axes against the Turtle vocab, returns cells + totals", async () => {
     mockCrossFacets.mockResolvedValue(result(["AFE", SCHEME, 7]));
     const { result: hook } = renderHook(
-      () => useCrossFacets(baseParams, regionVsScheme),
+      () => useCrossFacets(baseParams, incomeGroupsVsScheme),
       { wrapper: withCommunityPath("/esea") },
     );
     await waitFor(() => expect(hook.current.loading).toBe(false));
@@ -82,7 +81,7 @@ describe("useCrossFacets", () => {
         conceptFilters: [],
       }),
       {
-        axes: ["country_wb_regions", SCHEME],
+        axes: ["country_wb_income_groups", SCHEME],
         vocabularyUrl: expect.stringMatching(/\.ttl$/),
       },
     );
@@ -91,7 +90,7 @@ describe("useCrossFacets", () => {
   test("forwards wbRegionIds and refetches when they change", async () => {
     mockCrossFacets.mockResolvedValue(result(["AFE", SCHEME, 7]));
     const { rerender } = renderHook(
-      ({ p }) => useCrossFacets(p, regionVsScheme),
+      ({ p }) => useCrossFacets(p, incomeGroupsVsScheme),
       { wrapper: withCommunityPath("/esea"), initialProps: { p: baseParams } },
     );
     await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(1));
@@ -107,7 +106,7 @@ describe("useCrossFacets", () => {
   test("forwards wbIncomeGroupIds and refetches when they change", async () => {
     mockCrossFacets.mockResolvedValue(result(["AFE", SCHEME, 7]));
     const { rerender } = renderHook(
-      ({ p }) => useCrossFacets(p, regionVsScheme),
+      ({ p }) => useCrossFacets(p, incomeGroupsVsScheme),
       { wrapper: withCommunityPath("/esea"), initialProps: { p: baseParams } },
     );
     await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(1));
@@ -126,11 +125,11 @@ describe("useCrossFacets", () => {
       ({ axes }) => useCrossFacets(baseParams, axes),
       {
         wrapper: withCommunityPath("/esea"),
-        initialProps: { axes: regionVsScheme },
+        initialProps: { axes: incomeGroupsVsScheme },
       },
     );
     await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(1));
-    rerender({ axes: regionVsCountry });
+    rerender({ axes: incomeGroupsVsCountry });
     await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(2));
   });
 
@@ -140,7 +139,7 @@ describe("useCrossFacets", () => {
       ({ params, axes }) => useCrossFacets(params, axes),
       {
         wrapper: withCommunityPath("/esea"),
-        initialProps: { params: baseParams, axes: regionVsScheme },
+        initialProps: { params: baseParams, axes: incomeGroupsVsScheme },
       },
     );
     await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(1));
@@ -149,8 +148,8 @@ describe("useCrossFacets", () => {
       rerender({
         params: { ...baseParams },
         axes: {
-          row: { ...regionVsScheme.row },
-          column: { ...regionVsScheme.column },
+          row: { ...incomeGroupsVsScheme.row },
+          column: { ...incomeGroupsVsScheme.column },
         },
       }),
     );
@@ -167,12 +166,12 @@ describe("useCrossFacets", () => {
       ({ axes }) => useCrossFacets(baseParams, axes),
       {
         wrapper: withCommunityPath("/esea"),
-        initialProps: { axes: regionVsScheme },
+        initialProps: { axes: incomeGroupsVsScheme },
       },
     );
     await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(1));
 
-    rerender({ axes: regionVsCountry });
+    rerender({ axes: incomeGroupsVsCountry });
     await waitFor(() => expect(mockCrossFacets).toHaveBeenCalledTimes(2));
     await act(async () => second.resolve(result(["AFE", "AU", 22])));
     await waitFor(() => expect(hook.current.loading).toBe(false));
@@ -180,20 +179,20 @@ describe("useCrossFacets", () => {
       axes: ["AFE", "AU"],
       count: 22,
     });
-    expect(hook.current.resultAxes).toEqual(regionVsCountry);
+    expect(hook.current.resultAxes).toEqual(incomeGroupsVsCountry);
 
     await act(async () => first.resolve(result(["AFE", SCHEME, 11])));
     expect(hook.current.result?.cells[0]).toEqual({
       axes: ["AFE", "AU"],
       count: 22,
     });
-    expect(hook.current.resultAxes).toEqual(regionVsCountry);
+    expect(hook.current.resultAxes).toEqual(incomeGroupsVsCountry);
   });
 
   test("clears result to null on settled error", async () => {
     mockCrossFacets.mockRejectedValue(new Error("boom"));
     const { result: hook } = renderHook(
-      () => useCrossFacets(baseParams, regionVsScheme),
+      () => useCrossFacets(baseParams, incomeGroupsVsScheme),
       { wrapper: withCommunityPath("/esea") },
     );
     await waitFor(() => {
@@ -206,7 +205,7 @@ describe("useCrossFacets", () => {
   test("idle (no fetch) when slug resolves to no community", () => {
     mockCrossFacets.mockResolvedValue(result());
     const { result: hook } = renderHook(
-      () => useCrossFacets(baseParams, regionVsScheme),
+      () => useCrossFacets(baseParams, incomeGroupsVsScheme),
       { wrapper: withCommunityPath("/banana") },
     );
     expect(hook.current.result).toBeNull();
