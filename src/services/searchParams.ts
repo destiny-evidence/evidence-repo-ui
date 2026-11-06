@@ -55,21 +55,22 @@ function parseDecimalInt(raw: string | null): number | undefined {
   return Number.isSafeInteger(n) ? n : undefined;
 }
 
-// Comma-separated and repeated params flatten into one OR'd list. Upper-casing
-// mirrors the backend's normalisation, so hand-edited lower-case codes still match.
+// Comma-separated and repeated params flatten into one de-duplicated OR'd
+// list. Upper-casing mirrors the backend's normalisation, so hand-edited
+// lower-case codes still match.
 function parseCodeList(
   params: URLSearchParams,
   name: string,
   accept: (code: string) => boolean,
 ): string[] {
-  const codes: string[] = [];
+  const codes = new Set<string>();
   for (const raw of params.getAll(name)) {
     for (const piece of raw.split(",")) {
       const code = piece.trim().toUpperCase();
-      if (accept(code)) codes.push(code);
+      if (accept(code)) codes.add(code);
     }
   }
-  return codes;
+  return [...codes];
 }
 
 export function parseSearchParams(search: string): SearchParams {

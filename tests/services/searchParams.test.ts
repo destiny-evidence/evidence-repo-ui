@@ -188,6 +188,12 @@ describe("parseSearchParams country codes", () => {
   test("rejects non-ISO-3166-alpha-2 values", () => {
     expect(parseSearchParams("?country=DEU,1,,DE").countryCodes).toEqual(["DE"]);
   });
+
+  test("drops duplicates across repeated and comma-separated params", () => {
+    expect(
+      parseSearchParams("?country=DE,FR,de&country=FR").countryCodes,
+    ).toEqual(["DE", "FR"]);
+  });
 });
 
 describe("parseSearchParams World Bank regions", () => {
