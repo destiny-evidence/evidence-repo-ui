@@ -252,7 +252,7 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
       />,
     );
     expect(
-      container.querySelectorAll(".concept-scheme-filter__count"),
+      container.querySelectorAll(".filter-options__count"),
     ).toHaveLength(1);
   });
 
@@ -267,7 +267,7 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
       />,
     );
     expect(
-      container.querySelector(".concept-scheme-filter__count"),
+      container.querySelector(".filter-options__count"),
     ).toBeNull();
   });
 
@@ -288,7 +288,7 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     // Parent ("Access to Education") has children → count wrapped in Tooltip,
     // and the text no longer claims selecting it rolls up its children.
     const parentCount = container.querySelector(
-      ".concept-scheme-filter__count--parent",
+      ".filter-options__count--has-tooltip",
     );
     expect(parentCount).not.toBeNull();
     const tooltip = parentCount?.closest("[data-tooltip]");
@@ -299,9 +299,9 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
 
     // Leaf ("Education Finance") has no children → bare count, no tooltip.
     const leafCount = Array.from(
-      container.querySelectorAll(".concept-scheme-filter__count"),
+      container.querySelectorAll(".filter-options__count"),
     ).find(
-      (n) => !n.classList.contains("concept-scheme-filter__count--parent"),
+      (n) => !n.classList.contains("filter-options__count--has-tooltip"),
     );
     expect(leafCount).toBeDefined();
     expect(leafCount?.closest("[data-tooltip]")).toBeNull();
@@ -320,7 +320,7 @@ describe("ConceptSchemeFilter (hierarchical)", () => {
     );
     expect(
       container.querySelector(
-        ".concept-scheme-filter__count.is-updating",
+        ".filter-options__count.is-updating",
       ),
     ).not.toBeNull();
   });
@@ -395,9 +395,9 @@ describe("ConceptSchemeFilter 0-count rendering", () => {
     );
     expect(financeInput.disabled).toBe(true);
     const financeRow = financeInput.closest("label")!;
-    expect(financeRow.className).toContain("concept-scheme-filter__row--empty");
+    expect(financeRow.className).toContain("filter-options__row--empty");
     expect(
-      financeRow.querySelector(".concept-scheme-filter__count"),
+      financeRow.querySelector(".filter-options__count"),
     ).toBeNull();
   });
 
@@ -418,7 +418,7 @@ describe("ConceptSchemeFilter 0-count rendering", () => {
     expect(financeInput.checked).toBe(true);
     const financeRow = financeInput.closest("label")!;
     expect(financeRow.className).not.toContain(
-      "concept-scheme-filter__row--empty",
+      "filter-options__row--empty",
     );
   });
 
@@ -472,7 +472,7 @@ describe("ConceptSchemeFilter 0-count rendering", () => {
     expect(accessInput.disabled).toBe(false);
     expect(
       accessInput.closest("label")!.className,
-    ).not.toContain("concept-scheme-filter__row--empty");
+    ).not.toContain("filter-options__row--empty");
   });
 
   test("missing concept after counts have settled → treated as 0 (disabled + empty)", () => {
@@ -494,7 +494,7 @@ describe("ConceptSchemeFilter 0-count rendering", () => {
     expect(financeInput.disabled).toBe(true);
     expect(
       financeInput.closest("label")!.className,
-    ).toContain("concept-scheme-filter__row--empty");
+    ).toContain("filter-options__row--empty");
   });
 
   test("missing concept stays disabled across a refetch (dim-while-updating)", () => {
@@ -516,7 +516,7 @@ describe("ConceptSchemeFilter 0-count rendering", () => {
     expect(financeInput.disabled).toBe(true);
     expect(
       financeInput.closest("label")!.className,
-    ).toContain("concept-scheme-filter__row--empty");
+    ).toContain("filter-options__row--empty");
   });
 
   test("counts === null (no fetch yet) → all rows render normally", () => {
@@ -665,7 +665,7 @@ describe("ConceptSchemeFilter (collapsible)", () => {
     const parentCount = screen.getByLabelText("10 results");
     expect(parentCount.closest("[data-tooltip]")).toBeNull();
     expect(
-      container.querySelector(".concept-scheme-filter__count--parent"),
+      container.querySelector(".filter-options__count--has-tooltip"),
     ).toBeNull();
   });
 

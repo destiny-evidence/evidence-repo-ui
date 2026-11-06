@@ -61,7 +61,7 @@ describe("FixedListFilter", () => {
     );
     const high = checkbox("High income");
     expect(high.disabled).toBe(true);
-    expect(high.closest("label")?.className).toContain("concept-scheme-filter__row--empty");
+    expect(high.closest("label")?.className).toContain("filter-options__row--empty");
     expect(checkbox("Low income").disabled).toBe(false);
   });
 
@@ -140,7 +140,7 @@ describe("FixedListFilter", () => {
       />,
     );
     expect(
-      container.querySelectorAll(".concept-scheme-filter__count.is-updating"),
+      container.querySelectorAll(".filter-options__count.is-updating"),
     ).toHaveLength(1);
   });
 });
