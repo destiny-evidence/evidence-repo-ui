@@ -307,6 +307,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const activeFilterCount =
     activeConceptCount
     + totalSelectedCountryCount(params.countryCodes)
+    + params.wbIncomeGroupIds.length
     + totalSelectedYearCount(params.startYear, params.endYear);
 
   // Treat clicking Refine like submitting the search bar: commit any pending
@@ -329,6 +330,7 @@ function SearchPageInner({ community }: { community: Community }) {
     orderFilterItems(filterableSchemes, {
       pinned: community.pinnedFilters,
       showCountryFacetFilter: community.features.countryFacetFilter,
+      showWbIncomeGroupFilter: community.features.wbIncomeGroupFilter,
     }).length > 0;
   const refine = buildRefineConfig(
     vocab,
@@ -832,11 +834,13 @@ function SearchPageInner({ community }: { community: Community }) {
           title={community.copy.drawerTitle}
           countNoun={community.copy.countNoun}
           showCountryFacetFilter={community.features.countryFacetFilter}
+          showWbIncomeGroupFilter={community.features.wbIncomeGroupFilter}
           pinnedFilters={community.pinnedFilters}
           collapsibleConceptFilters={community.features.ancestorClosedCodings}
           schemes={vocab.error ? null : filterableSchemes}
           appliedConceptFilters={params.conceptFilters}
           appliedCountryCodes={params.countryCodes}
+          appliedWbIncomeGroupIds={params.wbIncomeGroupIds}
           appliedStartYear={params.startYear}
           appliedEndYear={params.endYear}
           params={params}

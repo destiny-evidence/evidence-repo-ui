@@ -25,6 +25,20 @@ describe("orderFilterItems", () => {
     expect(kinds(items)).toEqual(["year", "country", "u:apple", "u:zebra"]);
   });
 
+  test("adds the income group card after country when its filter is enabled", () => {
+    const items = orderFilterItems([apple], { showWbIncomeGroupFilter: true });
+    expect(kinds(items)).toEqual(["year", "country", "wbIncomeGroup", "u:apple"]);
+  });
+
+  test("pins the income group card after a scheme, without repeating it", () => {
+    const items = orderFilterItems([zebra, region], {
+      pinned: ["year", "u:region", "wbIncomeGroup", "wbIncomeGroup"],
+      showCountryFacetFilter: false,
+      showWbIncomeGroupFilter: true,
+    });
+    expect(kinds(items)).toEqual(["year", "u:region", "wbIncomeGroup", "u:zebra"]);
+  });
+
   test("omits the country card when the facet filter is hidden", () => {
     const items = orderFilterItems([apple], { showCountryFacetFilter: false });
     expect(kinds(items)).toEqual(["year", "u:apple"]);

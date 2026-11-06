@@ -30,9 +30,10 @@ describe("MapFiltersMenu", () => {
       makeSearchParams({
         conceptFilters: [[URI_LEARNING], ["https://example.org/unknown#Gone"]],
         countryCodes: ["KE"],
+        wbIncomeGroupIds: ["LIC", "HIC"],
         startYear: 2015,
       }),
-      4,
+      6,
     );
     const rows = within(panel)
       .getAllByRole("term")
@@ -41,6 +42,7 @@ describe("MapFiltersMenu", () => {
       ["Outcome", "Educational Outcomes and Learning"],
       ["Other", "Gone"],
       ["Countries", "Kenya"],
+      ["World Bank income group", "Low incomeHigh income"],
       ["Publication year", "from 2015"],
     ]);
   });

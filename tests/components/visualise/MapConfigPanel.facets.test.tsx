@@ -33,6 +33,7 @@ const baseProps: ComponentProps<typeof MapConfigPanel> = {
   defaultAxes: axes,
   appliedConceptFilters: [],
   appliedCountryCodes: [],
+  appliedWbIncomeGroupIds: [],
   appliedStartYear: undefined,
   appliedEndYear: undefined,
   params: makeSearchParams({ q: "climate" }),
@@ -99,7 +100,7 @@ describe("map panel facet requests", () => {
         column: label === "Columns (x)" ? { kind: "countries" } : axes.column,
       },
       filters: {
-        conceptFilters: [[URI_JOURNAL]], countryCodes: [],
+        conceptFilters: [[URI_JOURNAL]], countryCodes: [], wbIncomeGroupIds: [],
         startYear: undefined, endYear: undefined,
       },
     });

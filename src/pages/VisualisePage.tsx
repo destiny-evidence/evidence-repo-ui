@@ -500,6 +500,7 @@ function EvidenceMapView({
       ...params,
       conceptFilters: filters.conceptFilters,
       countryCodes: filters.countryCodes,
+      wbIncomeGroupIds: filters.wbIncomeGroupIds,
       startYear: filters.startYear,
       endYear: filters.endYear,
       page: 1,
@@ -594,6 +595,7 @@ function EvidenceMapView({
       filters: {
         conceptFilters: [],
         countryCodes: [],
+        wbIncomeGroupIds: [],
         startYear: undefined,
         endYear: undefined,
       },
@@ -604,6 +606,7 @@ function EvidenceMapView({
   const filterCount =
     params.conceptFilters.flat().length +
     params.countryCodes.length +
+    params.wbIncomeGroupIds.length +
     (params.startYear !== undefined || params.endYear !== undefined ? 1 : 0);
   // Scheme axes draw their categories from the vocabulary, so a greyed grid can
   // render even when no cells come back (the no-coverage state).
@@ -798,6 +801,7 @@ function EvidenceMapView({
         schemes={vocab.error ? null : filterableSchemes}
         loading={vocab.loading}
         showCountryFacetFilter={community.features.countryFacetFilter}
+        showWbIncomeGroupFilter={community.features.wbIncomeGroupFilter}
         pinnedFilters={community.pinnedFilters}
         expandOnMountFilters={panelExpandedFilters}
         collapsibleConceptFilters={community.features.ancestorClosedCodings}
@@ -805,6 +809,7 @@ function EvidenceMapView({
         defaultAxes={defaults}
         appliedConceptFilters={params.conceptFilters}
         appliedCountryCodes={params.countryCodes}
+        appliedWbIncomeGroupIds={params.wbIncomeGroupIds}
         appliedStartYear={params.startYear}
         appliedEndYear={params.endYear}
         params={params}

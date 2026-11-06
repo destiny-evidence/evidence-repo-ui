@@ -503,6 +503,24 @@ describe("VisualisePage map", () => {
     );
   });
 
+  test("the banner's Reset all also clears an applied income group", () => {
+    mockUseUrlParams.mockReturnValue(
+      "?country_wb_income_group=LIC&row=scheme%3Alevel&column=scheme%3Atheme",
+    );
+    mockUseCrossFacets.mockReturnValue({
+      result: crossFacetResult(0, []),
+      loading: false,
+      error: null,
+    });
+    const { container } = render(<VisualisePage />);
+    const banner = container.querySelector<HTMLElement>(".evidence-map-view__banner")!;
+    mockNavigate.mockClear();
+    fireEvent.click(within(banner).getByRole("button", { name: "Reset all" }));
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/test/visualise?row=scheme%3Alevel&column=scheme%3Atheme",
+    );
+  });
+
   test("distinguishes 'no map coverage' (results exist but none on both axes) from over-filtered", () => {
     mockUseVocabulary.mockReturnValue({
       labels: LABELS,
@@ -1869,12 +1887,12 @@ describe("VisualisePage on small screens", () => {
   test("the rail counts each applied filter value", () => {
     localStorage.setItem(PANEL_OPEN_KEY, "false");
     mockUseUrlParams.mockReturnValue(
-      "?concept=level%3Asecondary&country=KE,NG&row=scheme%3Alevel&column=scheme%3Atheme",
+      "?concept=level%3Asecondary&country=KE,NG&country_wb_income_group=LIC&row=scheme%3Alevel&column=scheme%3Atheme",
     );
     render(<VisualisePage />);
     expect(
-      screen.getByRole("button", { name: "Configure map, 3 filters applied" }),
-    ).toHaveTextContent("3");
+      screen.getByRole("button", { name: "Configure map, 4 filters applied" }),
+    ).toHaveTextContent("4");
   });
 
   test("defaults to small cells on a small screen, still overridable", () => {
