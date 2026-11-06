@@ -690,6 +690,18 @@ describe("World Bank income group filter integration", () => {
     ).toBeNull();
   });
 
+  test("requests the income group and country counts only when their cards show", () => {
+    const lastFacets = () => mockUseSearchFacets.mock.calls.at(-1)![1];
+    renderDrawer({ ...withCard, showCountryFacetFilter: false });
+    expect(lastFacets()).toContain("country_wb_income_groups");
+    expect(lastFacets()).not.toContain("countries");
+
+    cleanup();
+    renderDrawer();
+    expect(lastFacets()).not.toContain("country_wb_income_groups");
+    expect(lastFacets()).toContain("countries");
+  });
+
   test("lists all four groups in fixed order with counts, disabling the empty ones", () => {
     setCounts({ wbIncomeGroups: INCOME_COUNTS });
     renderDrawer({ ...withCard, expandOnMountFilters: ["wbIncomeGroup"] });

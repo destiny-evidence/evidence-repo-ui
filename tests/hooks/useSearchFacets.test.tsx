@@ -3,6 +3,7 @@ import { renderHook, waitFor } from "@testing-library/preact";
 import type { ComponentChildren } from "preact";
 import { useSearchFacets } from "@/hooks/useSearchFacets";
 import { CommunityProvider } from "@/community/CommunityContext";
+import type { FacetType } from "@/services/apiClient";
 import type { ReferenceFacetResult } from "@/types/models";
 import { makeSearchParams } from "../fixtures";
 
@@ -15,6 +16,7 @@ import { searchReferenceFacets } from "@/services/apiClient";
 const mockFacets = vi.mocked(searchReferenceFacets);
 
 const baseParams = makeSearchParams({ q: "phonics" });
+const FACETS: FacetType[] = ["concepts", "countries", "country_wb_regions"];
 
 function withCommunityPath(path: string) {
   window.history.replaceState(null, "", path);
@@ -55,9 +57,9 @@ beforeEach(() => {
 });
 
 describe("useSearchFacets", () => {
-  test("fetches on mount with q + community annotations + the community's facet types", async () => {
+  test("fetches on mount with q + community annotations + the given facet types", async () => {
     mockFacets.mockResolvedValue(result(["ex:A", 12]));
-    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(hook.current.loading).toBe(false));
@@ -76,19 +78,19 @@ describe("useSearchFacets", () => {
     );
   });
 
-  test.each([
-    ["/hpv", ["concepts", "country_wb_regions"]],
-    ["/destiny", ["concepts", "country_wb_regions", "country_wb_income_groups"]],
-  ])("%s requests only the facets its filter cards use", async (path, facets) => {
+  test("refetches with the new facet types when they change", async () => {
     mockFacets.mockResolvedValue(result());
-    renderHook(() => useSearchFacets(baseParams), {
-      wrapper: withCommunityPath(path),
+    const { rerender } = renderHook(({ f }) => useSearchFacets(baseParams, f), {
+      wrapper: withCommunityPath("/esea"),
+      initialProps: { f: FACETS },
     });
     await waitFor(() => expect(mockFacets).toHaveBeenCalledTimes(1));
-    expect(mockFacets).toHaveBeenCalledWith(
+    rerender({ f: [...FACETS, "country_wb_income_groups"] });
+    await waitFor(() => expect(mockFacets).toHaveBeenCalledTimes(2));
+    expect(mockFacets).toHaveBeenLastCalledWith(
       "phonics",
       expect.anything(),
-      facets,
+      ["concepts", "countries", "country_wb_regions", "country_wb_income_groups"],
       expect.anything(),
     );
   });
@@ -98,7 +100,7 @@ describe("useSearchFacets", () => {
       concepts: [{ concept: "ex:A", count: 1 }, { concept: "ex:B", count: 2 }],
       countries: [{ country: "DE", count: 50 }, { country: "FR", count: 30 }],
     });
-    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(hook.current.counts).not.toBeNull());
@@ -110,7 +112,7 @@ describe("useSearchFacets", () => {
 
   test("handles a response with no facet fields as empty Maps", async () => {
     mockFacets.mockResolvedValue({});
-    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(hook.current.loading).toBe(false));
@@ -121,7 +123,7 @@ describe("useSearchFacets", () => {
 
   test("parses country buckets even when concepts field is absent", async () => {
     mockFacets.mockResolvedValue(countryResult(["DE", 50]));
-    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(hook.current.counts).not.toBeNull());
@@ -131,7 +133,7 @@ describe("useSearchFacets", () => {
 
   test("parses World Bank region buckets into counts.wbRegions", async () => {
     mockFacets.mockResolvedValue(regionResult(["SAS", 40], ["SSF", 25]));
-    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(hook.current.counts).not.toBeNull());
@@ -142,7 +144,7 @@ describe("useSearchFacets", () => {
 
   test("parses World Bank income group buckets into counts.wbIncomeGroups", async () => {
     mockFacets.mockResolvedValue(incomeGroupResult(["LIC", 30], ["HIC", 12]));
-    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => expect(hook.current.counts).not.toBeNull());
@@ -153,7 +155,7 @@ describe("useSearchFacets", () => {
 
   test("forwards wbIncomeGroupIds and refetches when the selection changes", async () => {
     mockFacets.mockResolvedValue(result());
-    const { rerender } = renderHook(({ p }) => useSearchFacets(p), {
+    const { rerender } = renderHook(({ p }) => useSearchFacets(p, FACETS), {
       wrapper: withCommunityPath("/esea"),
       initialProps: { p: baseParams },
     });
@@ -170,7 +172,7 @@ describe("useSearchFacets", () => {
 
   test("forwards wbRegionIds and refetches when the selection changes", async () => {
     mockFacets.mockResolvedValue(result());
-    const { rerender } = renderHook(({ p }) => useSearchFacets(p), {
+    const { rerender } = renderHook(({ p }) => useSearchFacets(p, FACETS), {
       wrapper: withCommunityPath("/esea"),
       initialProps: { p: baseParams },
     });
@@ -187,7 +189,7 @@ describe("useSearchFacets", () => {
 
   test("does NOT refetch when only page changes", async () => {
     mockFacets.mockResolvedValue(result());
-    const { rerender } = renderHook(({ p }) => useSearchFacets(p), {
+    const { rerender } = renderHook(({ p }) => useSearchFacets(p, FACETS), {
       wrapper: withCommunityPath("/esea"),
       initialProps: { p: baseParams },
     });
@@ -199,7 +201,7 @@ describe("useSearchFacets", () => {
 
   test("does NOT refetch when only sort changes", async () => {
     mockFacets.mockResolvedValue(result());
-    const { rerender } = renderHook(({ p }) => useSearchFacets(p), {
+    const { rerender } = renderHook(({ p }) => useSearchFacets(p, FACETS), {
       wrapper: withCommunityPath("/esea"),
       initialProps: { p: baseParams },
     });
@@ -211,7 +213,7 @@ describe("useSearchFacets", () => {
 
   test("refetches when q changes", async () => {
     mockFacets.mockResolvedValue(result());
-    const { rerender } = renderHook(({ p }) => useSearchFacets(p), {
+    const { rerender } = renderHook(({ p }) => useSearchFacets(p, FACETS), {
       wrapper: withCommunityPath("/esea"),
       initialProps: { p: baseParams },
     });
@@ -222,7 +224,7 @@ describe("useSearchFacets", () => {
 
   test("refetches when conceptFilters change (sibling-aware counts depend on the filter set)", async () => {
     mockFacets.mockResolvedValue(result());
-    const { rerender } = renderHook(({ p }) => useSearchFacets(p), {
+    const { rerender } = renderHook(({ p }) => useSearchFacets(p, FACETS), {
       wrapper: withCommunityPath("/esea"),
       initialProps: { p: baseParams },
     });
@@ -243,7 +245,7 @@ describe("useSearchFacets", () => {
     );
 
     const { result: hook, rerender } = renderHook(
-      ({ p }) => useSearchFacets(p),
+      ({ p }) => useSearchFacets(p, FACETS),
       {
         wrapper: withCommunityPath("/esea"),
         initialProps: { p: baseParams },
@@ -262,7 +264,7 @@ describe("useSearchFacets", () => {
 
   test("clears counts to null on settled error", async () => {
     mockFacets.mockRejectedValue(new Error("boom"));
-    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
       wrapper: withCommunityPath("/esea"),
     });
     await waitFor(() => {
@@ -274,7 +276,7 @@ describe("useSearchFacets", () => {
 
   test("idle (no fetch) when slug resolves to no community", () => {
     mockFacets.mockResolvedValue(result());
-    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
       wrapper: withCommunityPath("/banana"),
     });
     expect(hook.current.counts).toBeNull();

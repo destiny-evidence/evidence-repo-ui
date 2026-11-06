@@ -6,6 +6,7 @@ import {
   type FilterCardOptions,
 } from "@/components/filters/FilterCardList";
 import { FilterActions } from "@/components/filters/FilterActions";
+import { facetTypesFor } from "@/components/filters/filterOrder";
 import {
   useFilterDraft,
   type AppliedFilters,
@@ -185,6 +186,7 @@ function MapConfigPanelInner({
     appliedStartYear,
     appliedEndYear,
     params,
+    facets: facetTypesFor({ showCountryFacetFilter, showWbIncomeGroupFilter }),
     axes: {
       row: toCrossFacetAxis(draftAxes.row),
       column: toCrossFacetAxis(draftAxes.column),

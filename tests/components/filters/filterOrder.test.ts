@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { orderFilterItems } from "@/components/filters/filterOrder";
+import { facetTypesFor, orderFilterItems } from "@/components/filters/filterOrder";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 
 function scheme(uri: string, label: string): ConceptScheme {
@@ -104,5 +104,17 @@ describe("orderFilterItems", () => {
       pinned: ["year", "country", "year"],
     });
     expect(kinds(items)).toEqual(["year", "country", "u:apple"]);
+  });
+});
+
+describe("facetTypesFor", () => {
+  test("defaults match orderFilterItems: country card on, income group card off", () => {
+    expect(facetTypesFor()).toEqual(["concepts", "countries", "country_wb_regions"]);
+  });
+
+  test("requests each facet-backed card's counts only when that card is shown", () => {
+    expect(
+      facetTypesFor({ showCountryFacetFilter: false, showWbIncomeGroupFilter: true }),
+    ).toEqual(["concepts", "country_wb_regions", "country_wb_income_groups"]);
   });
 });
