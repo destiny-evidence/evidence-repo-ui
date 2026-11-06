@@ -1,7 +1,11 @@
 export const AXIS_COUNTRIES = "countries";
 export const AXIS_REGIONS = "country_wb_regions";
+export const AXIS_INCOME_GROUPS = "country_wb_income_groups";
 
-export type LiteralAxisToken = typeof AXIS_COUNTRIES | typeof AXIS_REGIONS;
+export type LiteralAxisToken =
+  | typeof AXIS_COUNTRIES
+  | typeof AXIS_REGIONS
+  | typeof AXIS_INCOME_GROUPS;
 
 export type CrossFacetAxis =
   | { kind: "literal"; token: LiteralAxisToken }

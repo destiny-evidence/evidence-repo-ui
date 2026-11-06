@@ -9,6 +9,7 @@ export interface FacetCounts {
   concepts: ReadonlyMap<string, number>;
   countries: ReadonlyMap<string, number>;
   wbRegions: ReadonlyMap<string, number>;
+  wbIncomeGroups: ReadonlyMap<string, number>;
 }
 
 function countMap<T extends { count: number }>(
@@ -44,7 +45,7 @@ export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair)
     searchReferenceFacets(
       params.q || undefined,
       filters,
-      ["concepts", "countries", "country_wb_regions"],
+      ["concepts", "countries", "country_wb_regions", "country_wb_income_groups"],
       axes ? axisPairToParams(axes, vocabularyUrl) : { vocabularyUrl },
     )
       .then((r) => {
@@ -53,6 +54,10 @@ export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair)
           concepts: countMap(r.concepts, (b) => b.concept),
           countries: countMap(r.countries, (b) => b.country),
           wbRegions: countMap(r.country_wb_regions, (b) => b.country_wb_region),
+          wbIncomeGroups: countMap(
+            r.country_wb_income_groups,
+            (b) => b.country_wb_income_group,
+          ),
         });
       })
       .catch((e) => {

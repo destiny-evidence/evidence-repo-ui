@@ -1,6 +1,7 @@
 import { parseYear } from "@/utils/year";
 import type { SearchFilters, SharedSearchFilters } from "@/services/apiClient";
 import { isWbRegionId } from "@/utils/wbRegion";
+import { isWbIncomeGroupId } from "@/utils/wbIncomeGroup";
 
 export type SortOption = "newest" | "oldest";
 
@@ -38,6 +39,7 @@ export interface SearchParams {
   conceptFilters: readonly (readonly string[])[];
   countryCodes: readonly string[];
   wbRegionIds: readonly string[];
+  wbIncomeGroupIds: readonly string[];
 }
 
 // Unknown values fall back to undefined (relevance).
@@ -87,8 +89,14 @@ export function parseSearchParams(search: string): SearchParams {
   }
 
   const countryCodes = parseCodeList(params, "country", (c) => /^[A-Z]{2}$/.test(c));
-  // Unknown region IDs are dropped rather than forwarded: the backend rejects them.
+  // Unknown region and income group IDs are dropped rather than forwarded: the
+  // backend rejects them.
   const wbRegionIds = parseCodeList(params, "country_wb_region", isWbRegionId);
+  const wbIncomeGroupIds = parseCodeList(
+    params,
+    "country_wb_income_group",
+    isWbIncomeGroupId,
+  );
 
   const pageRaw = parseDecimalInt(params.get("page"));
   const page = pageRaw !== undefined && pageRaw >= 1 ? pageRaw : 1;
@@ -111,6 +119,7 @@ export function parseSearchParams(search: string): SearchParams {
     conceptFilters,
     countryCodes,
     wbRegionIds,
+    wbIncomeGroupIds,
   };
 }
 
@@ -125,6 +134,9 @@ export function toQueryString(params: SearchParams): string {
   }
   if (params.wbRegionIds.length > 0) {
     out.append("country_wb_region", params.wbRegionIds.join(","));
+  }
+  if (params.wbIncomeGroupIds.length > 0) {
+    out.append("country_wb_income_group", params.wbIncomeGroupIds.join(","));
   }
   if (params.startYear !== undefined)
     out.set("start_year", String(params.startYear));
@@ -144,7 +156,12 @@ export function buildSearchUrl(
 
 export type SearchFilterParams = Pick<
   SearchParams,
-  "conceptFilters" | "countryCodes" | "wbRegionIds" | "startYear" | "endYear"
+  | "conceptFilters"
+  | "countryCodes"
+  | "wbRegionIds"
+  | "wbIncomeGroupIds"
+  | "startYear"
+  | "endYear"
 >;
 
 // True when anything beyond the free-text query narrows the search.
@@ -153,6 +170,7 @@ export function hasFilters(params: SearchFilterParams): boolean {
     params.conceptFilters.length > 0 ||
     params.countryCodes.length > 0 ||
     params.wbRegionIds.length > 0 ||
+    params.wbIncomeGroupIds.length > 0 ||
     params.startYear !== undefined ||
     params.endYear !== undefined
   );
@@ -172,6 +190,7 @@ export function toSearchFilters(
     conceptFilters: params.conceptFilters,
     countryCodes: params.countryCodes,
     wbRegionIds: params.wbRegionIds,
+    wbIncomeGroupIds: params.wbIncomeGroupIds,
   };
 }
 

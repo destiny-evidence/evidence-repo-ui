@@ -1025,6 +1025,7 @@ describe("SearchPage", () => {
           conceptFilters: [],
           countryCodes: [],
           wbRegionIds: [],
+          wbIncomeGroupIds: [],
           // Browse mode has no relevance signal, so export mirrors the newest fallback.
           sort: ["-publication_year"],
         },
@@ -1083,6 +1084,7 @@ describe("SearchPage", () => {
           conceptFilters: [],
           countryCodes: [],
           wbRegionIds: [],
+          wbIncomeGroupIds: [],
           sort: ["-publication_year"],
         },
         "jsonl",
@@ -1302,6 +1304,7 @@ describe("SearchPage", () => {
           conceptFilters: [],
           countryCodes: [],
           wbRegionIds: [],
+          wbIncomeGroupIds: [],
         },
         "jsonl",
       );
@@ -1339,6 +1342,7 @@ describe("SearchPage", () => {
           ],
           countryCodes: [],
           wbRegionIds: [],
+          wbIncomeGroupIds: [],
         },
         "jsonl",
       );

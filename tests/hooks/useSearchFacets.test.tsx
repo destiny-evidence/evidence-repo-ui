@@ -40,6 +40,15 @@ function regionResult(...pairs: [string, number][]): ReferenceFacetResult {
   };
 }
 
+function incomeGroupResult(...pairs: [string, number][]): ReferenceFacetResult {
+  return {
+    country_wb_income_groups: pairs.map(([country_wb_income_group, count]) => ({
+      country_wb_income_group,
+      count,
+    })),
+  };
+}
+
 beforeEach(() => {
   mockFacets.mockReset();
   window.history.replaceState(null, "", "/");
@@ -60,7 +69,7 @@ describe("useSearchFacets", () => {
         annotation: ["domain-inclusion/jacobs-education"],
         conceptFilters: [],
       }),
-      ["concepts", "countries", "country_wb_regions"],
+      ["concepts", "countries", "country_wb_regions", "country_wb_income_groups"],
       expect.objectContaining({
         vocabularyUrl: expect.stringMatching(/\.ttl$/),
       }),
@@ -114,6 +123,34 @@ describe("useSearchFacets", () => {
     expect(hook.current.counts?.countries.size).toBe(0);
   });
 
+  test("parses World Bank income group buckets into counts.wbIncomeGroups", async () => {
+    mockFacets.mockResolvedValue(incomeGroupResult(["LIC", 30], ["HIC", 12]));
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(hook.current.counts).not.toBeNull());
+    expect(hook.current.counts?.wbIncomeGroups.get("LIC")).toBe(30);
+    expect(hook.current.counts?.wbIncomeGroups.get("HIC")).toBe(12);
+    expect(hook.current.counts?.wbRegions.size).toBe(0);
+  });
+
+  test("forwards wbIncomeGroupIds and refetches when the selection changes", async () => {
+    mockFacets.mockResolvedValue(result());
+    const { rerender } = renderHook(({ p }) => useSearchFacets(p), {
+      wrapper: withCommunityPath("/esea"),
+      initialProps: { p: baseParams },
+    });
+    await waitFor(() => expect(mockFacets).toHaveBeenCalledTimes(1));
+    rerender({ p: { ...baseParams, wbIncomeGroupIds: ["LIC"] } });
+    await waitFor(() => expect(mockFacets).toHaveBeenCalledTimes(2));
+    expect(mockFacets).toHaveBeenLastCalledWith(
+      "phonics",
+      expect.objectContaining({ wbIncomeGroupIds: ["LIC"] }),
+      ["concepts", "countries", "country_wb_regions", "country_wb_income_groups"],
+      expect.anything(),
+    );
+  });
+
   test("forwards wbRegionIds and refetches when the selection changes", async () => {
     mockFacets.mockResolvedValue(result());
     const { rerender } = renderHook(({ p }) => useSearchFacets(p), {
@@ -126,7 +163,7 @@ describe("useSearchFacets", () => {
     expect(mockFacets).toHaveBeenLastCalledWith(
       "phonics",
       expect.objectContaining({ wbRegionIds: ["SAS"] }),
-      ["concepts", "countries", "country_wb_regions"],
+      ["concepts", "countries", "country_wb_regions", "country_wb_income_groups"],
       expect.anything(),
     );
   });

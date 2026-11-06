@@ -9,6 +9,7 @@ import {
 } from "@/services/vocabulary/vocabularyService";
 import { countryName } from "@/utils/country";
 import { wbRegionName } from "@/utils/wbRegion";
+import { wbIncomeGroupName } from "@/utils/wbIncomeGroup";
 import {
   hasFilters,
   type SearchFilterParams,
@@ -67,7 +68,8 @@ export function conceptPathName(
 // `values` is the specific selections — each concept's path, each country, and
 // the `start-end` year range — feeding one `Applied` event each; `categories` is
 // the facet each belongs to (the concept scheme, plus "Country", "World Bank
-// region" and "Year range"), feeding one `Category Applied` event each.
+// region", "World Bank income group" and "Year range"), feeding one
+// `Category Applied` event each.
 export function activeFilters(
   filters: SearchFilterParams,
   schemes: ConceptScheme[],
@@ -92,6 +94,10 @@ export function activeFilters(
   if (filters.wbRegionIds.length > 0) {
     categories.push("World Bank region");
     values.push(...filters.wbRegionIds.map(wbRegionName));
+  }
+  if (filters.wbIncomeGroupIds.length > 0) {
+    categories.push("World Bank income group");
+    values.push(...filters.wbIncomeGroupIds.map(wbIncomeGroupName));
   }
   if (filters.startYear !== undefined || filters.endYear !== undefined) {
     categories.push("Year range");
