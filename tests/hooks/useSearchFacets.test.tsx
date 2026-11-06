@@ -31,6 +31,15 @@ function countryResult(...pairs: [string, number][]): ReferenceFacetResult {
   return { countries: pairs.map(([country, count]) => ({ country, count })) };
 }
 
+function regionResult(...pairs: [string, number][]): ReferenceFacetResult {
+  return {
+    country_wb_regions: pairs.map(([country_wb_region, count]) => ({
+      country_wb_region,
+      count,
+    })),
+  };
+}
+
 function incomeGroupResult(...pairs: [string, number][]): ReferenceFacetResult {
   return {
     country_wb_income_groups: pairs.map(([country_wb_income_group, count]) => ({
@@ -60,7 +69,7 @@ describe("useSearchFacets", () => {
         annotation: ["domain-inclusion/jacobs-education"],
         conceptFilters: [],
       }),
-      ["concepts", "countries"],
+      ["concepts", "countries", "country_wb_regions"],
       expect.objectContaining({
         vocabularyUrl: expect.stringMatching(/\.ttl$/),
       }),
@@ -68,8 +77,8 @@ describe("useSearchFacets", () => {
   });
 
   test.each([
-    ["/hpv", ["concepts"]],
-    ["/destiny", ["concepts", "country_wb_income_groups"]],
+    ["/hpv", ["concepts", "country_wb_regions"]],
+    ["/destiny", ["concepts", "country_wb_regions", "country_wb_income_groups"]],
   ])("%s requests only the facets its filter cards use", async (path, facets) => {
     mockFacets.mockResolvedValue(result());
     renderHook(() => useSearchFacets(baseParams), {
@@ -120,6 +129,17 @@ describe("useSearchFacets", () => {
     expect(hook.current.counts?.concepts.size).toBe(0);
   });
 
+  test("parses World Bank region buckets into counts.wbRegions", async () => {
+    mockFacets.mockResolvedValue(regionResult(["SAS", 40], ["SSF", 25]));
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(hook.current.counts).not.toBeNull());
+    expect(hook.current.counts?.wbRegions.get("SAS")).toBe(40);
+    expect(hook.current.counts?.wbRegions.get("SSF")).toBe(25);
+    expect(hook.current.counts?.countries.size).toBe(0);
+  });
+
   test("parses World Bank income group buckets into counts.wbIncomeGroups", async () => {
     mockFacets.mockResolvedValue(incomeGroupResult(["LIC", 30], ["HIC", 12]));
     const { result: hook } = renderHook(() => useSearchFacets(baseParams), {
@@ -128,7 +148,7 @@ describe("useSearchFacets", () => {
     await waitFor(() => expect(hook.current.counts).not.toBeNull());
     expect(hook.current.counts?.wbIncomeGroups.get("LIC")).toBe(30);
     expect(hook.current.counts?.wbIncomeGroups.get("HIC")).toBe(12);
-    expect(hook.current.counts?.countries.size).toBe(0);
+    expect(hook.current.counts?.wbRegions.size).toBe(0);
   });
 
   test("forwards wbIncomeGroupIds and refetches when the selection changes", async () => {
@@ -143,7 +163,7 @@ describe("useSearchFacets", () => {
     expect(mockFacets).toHaveBeenLastCalledWith(
       "phonics",
       expect.objectContaining({ wbIncomeGroupIds: ["LIC"] }),
-      ["concepts", "countries"],
+      ["concepts", "countries", "country_wb_regions"],
       expect.anything(),
     );
   });
@@ -160,7 +180,7 @@ describe("useSearchFacets", () => {
     expect(mockFacets).toHaveBeenLastCalledWith(
       "phonics",
       expect.objectContaining({ wbRegionIds: ["SAS"] }),
-      ["concepts", "countries"],
+      ["concepts", "countries", "country_wb_regions"],
       expect.anything(),
     );
   });
