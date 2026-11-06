@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { searchReferenceFacets } from "@/services/apiClient";
+import { searchReferenceFacets, type FacetType } from "@/services/apiClient";
 import { useCommunity } from "@/community/CommunityContext";
 import { toTurtleUrl } from "@/services/vocabulary/vocabularyService";
 import { toSearchFilters, type SearchParams } from "@/services/searchParams";
@@ -8,7 +8,6 @@ import { axisPairToParams, type CrossFacetAxisPair } from "@/services/crossFacet
 export interface FacetCounts {
   concepts: ReadonlyMap<string, number>;
   countries: ReadonlyMap<string, number>;
-  wbRegions: ReadonlyMap<string, number>;
   wbIncomeGroups: ReadonlyMap<string, number>;
 }
 
@@ -41,11 +40,15 @@ export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair)
     setLoading(true);
     // Backend wants the Turtle vocab; the env URL is the JSON-LD one.
     const vocabularyUrl = toTurtleUrl(community.vocabularyUrl);
+    // Only facets this community shows a card for; the rest is wasted backend work.
+    const facets: FacetType[] = ["concepts"];
+    if (community.features.countryFacetFilter) facets.push("countries");
+    if (community.features.wbIncomeGroupFilter) facets.push("country_wb_income_groups");
 
     searchReferenceFacets(
       params.q || undefined,
       filters,
-      ["concepts", "countries", "country_wb_regions", "country_wb_income_groups"],
+      facets,
       axes ? axisPairToParams(axes, vocabularyUrl) : { vocabularyUrl },
     )
       .then((r) => {
@@ -53,7 +56,6 @@ export function useSearchFacets(params: SearchParams, axes?: CrossFacetAxisPair)
         setCounts({
           concepts: countMap(r.concepts, (b) => b.concept),
           countries: countMap(r.countries, (b) => b.country),
-          wbRegions: countMap(r.country_wb_regions, (b) => b.country_wb_region),
           wbIncomeGroups: countMap(
             r.country_wb_income_groups,
             (b) => b.country_wb_income_group,
