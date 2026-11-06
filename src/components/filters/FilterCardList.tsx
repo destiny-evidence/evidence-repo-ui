@@ -6,7 +6,11 @@ import { YearRangeFilter } from "./YearRangeFilter";
 import { summary } from "./conceptSchemeFilterState";
 import { summary as countrySummary } from "./countryFilterState";
 import { summary as yearSummary } from "./yearRangeFilterState";
-import { orderFilterItems, type FilterItem } from "./filterOrder";
+import {
+  orderFilterItems,
+  type FacetCardOptions,
+  type FilterItem,
+} from "./filterOrder";
 import {
   schemeDisplayLabel,
   type ConceptScheme,
@@ -17,12 +21,8 @@ import type { FilterDraft } from "./useFilterDraft";
 import "./FilterCardList.css";
 
 // Presentation options for the card stack, passed through by its host.
-export interface FilterCardOptions {
+export interface FilterCardOptions extends FacetCardOptions {
   countNoun?: string;
-  // Show the facet-backed country card; off where the `countries` facet is empty.
-  showCountryFacetFilter?: boolean;
-  // Show the World Bank income group card; off where its facet is empty.
-  showWbIncomeGroupFilter?: boolean;
   // Filter cards pinned to the top; absent ⇒ DEFAULT_PINNED_FILTERS.
   pinnedFilters?: readonly PinnedFilter[];
   // Filter cards that expand on mount
@@ -46,8 +46,8 @@ interface FilterCardListProps extends FilterCardOptions {
 export function FilterCardList({
   draft,
   countNoun = "results",
-  showCountryFacetFilter = true,
-  showWbIncomeGroupFilter = false,
+  showCountryFacetFilter,
+  showWbIncomeGroupFilter,
   pinnedFilters,
   expandOnMountFilters = [],
   collapsibleConceptFilters = false,

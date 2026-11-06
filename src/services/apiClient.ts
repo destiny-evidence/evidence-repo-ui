@@ -127,7 +127,7 @@ export async function searchReferenceIds(
 export async function searchReferenceFacets(
   query: string | undefined,
   filters: Pick<SearchFilters, SharedFilterFields>,
-  facets: FacetType[],
+  facets: readonly FacetType[],
   options: Partial<CrossFacetQueryAxes> = {},
 ): Promise<ReferenceFacetResult> {
   const params = buildSharedSearchParams(query, filters);

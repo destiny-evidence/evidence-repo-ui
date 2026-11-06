@@ -1,6 +1,7 @@
 import { Drawer } from "@/components/common/Drawer";
 import { FilterCardList, type FilterCardOptions } from "./FilterCardList";
 import { FilterActions } from "./FilterActions";
+import { facetTypesFor } from "./filterOrder";
 import {
   useFilterDraft,
   type AppliedFilters,
@@ -47,6 +48,7 @@ function FilterDrawerPanel({
     appliedStartYear,
     appliedEndYear,
     params,
+    facets: facetTypesFor(cardOptions),
   });
 
   function handleApply() {
