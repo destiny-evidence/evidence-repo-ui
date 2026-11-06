@@ -80,8 +80,23 @@ describe("orderFilterItems", () => {
     const phase2 = scheme("u:p2", "Phase 2");
     const items = orderFilterItems([phase10, phase2], {
       pinned: [],
+      showCountryFacetFilter: false,
     });
     expect(kinds(items)).toEqual(["u:p2", "u:p10"]);
+  });
+
+  test("appends enabled country and income group cards that aren't pinned", () => {
+    const items = orderFilterItems([zebra, apple], {
+      pinned: ["year"],
+      showWbIncomeGroupFilter: true,
+    });
+    expect(kinds(items)).toEqual([
+      "year",
+      "u:apple",
+      "u:zebra",
+      "country",
+      "wbIncomeGroup",
+    ]);
   });
 
   test("a repeated built-in slot is emitted once", () => {
