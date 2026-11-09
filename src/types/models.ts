@@ -11,6 +11,9 @@ export interface CommunityFeatures {
   exportsEnabled: boolean;
   // Whether the facet-backed country filter card is shown; needs a populated `countries` facet.
   countryFacetFilter: boolean;
+  // Whether the World Bank income group filter card is shown; needs a populated
+  // `country_wb_income_groups` facet.
+  wbIncomeGroupFilter: boolean;
   // Gates the result-row selection UI (checkboxes + selection controls). Only
   // useful alongside export or AI summaries, which consume the selection.
   referenceSelection: boolean;
@@ -35,10 +38,10 @@ export interface EvidenceMapRenderLimits {
   readonly maxCells: number;
 }
 
-// A pinned filter card: the built-in "year"/"country" cards, or any concept
-// scheme by URI. The `string & {}` arm keeps the named tokens auto-completable
-// while still accepting arbitrary scheme URIs.
-export type PinnedFilter = "year" | "country" | (string & {});
+// A pinned filter card: the built-in "year"/"country"/"wbIncomeGroup" cards,
+// or any concept scheme by URI. The `string & {}` arm keeps the named tokens
+// auto-completable while still accepting arbitrary scheme URIs.
+export type PinnedFilter = "year" | "country" | "wbIncomeGroup" | (string & {});
 
 // The filters a visitor arriving with no search of their own lands on.
 export interface SearchDefaults {

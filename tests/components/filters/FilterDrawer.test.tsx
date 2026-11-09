@@ -32,14 +32,16 @@ const defaultParams = makeSearchParams();
 function setCounts({
   concepts = new Map<string, number>(),
   countries = new Map<string, number>(),
+  wbIncomeGroups = new Map<string, number>(),
   loading = false,
 }: {
   concepts?: ReadonlyMap<string, number>;
   countries?: ReadonlyMap<string, number>;
+  wbIncomeGroups?: ReadonlyMap<string, number>;
   loading?: boolean;
 } = {}) {
   mockUseSearchFacets.mockReturnValue({
-    counts: { concepts, countries, wbRegions: new Map(), wbIncomeGroups: new Map() },
+    counts: { concepts, countries, wbRegions: new Map(), wbIncomeGroups },
     loading,
     error: null,
   });
@@ -69,6 +71,7 @@ const baseDrawerProps: DrawerProps = {
   schemes: TWO_SCHEMES,
   appliedConceptFilters: [],
   appliedCountryCodes: [],
+  appliedWbIncomeGroupIds: [],
   appliedStartYear: undefined,
   appliedEndYear: undefined,
   params: defaultParams,
@@ -300,7 +303,7 @@ describe("FilterDrawer", () => {
     setCounts({ concepts: new Map([[URI_JOURNAL, 42]]) });
     const { container } = renderDrawer();
     expect(
-      container.querySelector(".concept-scheme-filter__count")?.textContent,
+      container.querySelector(".filter-options__count")?.textContent,
     ).toBe("42");
   });
 
@@ -315,10 +318,10 @@ describe("FilterDrawer", () => {
     // the named concept, then return its count nodes.
     const cards = container.querySelectorAll(".filter-card");
     for (const card of cards) {
-      const labels = card.querySelectorAll(".concept-scheme-filter__label");
+      const labels = card.querySelectorAll(".filter-options__label");
       for (const label of labels) {
         if (label.textContent === conceptLabel) {
-          return card.querySelectorAll(".concept-scheme-filter__count");
+          return card.querySelectorAll(".filter-options__count");
         }
       }
     }
@@ -429,6 +432,7 @@ describe("FilterDrawer", () => {
       expect(onApply).toHaveBeenCalledTimes(1);
       expect(onApply.mock.calls[0][0]).toEqual({
         countryCodes: ["DE"],
+        wbIncomeGroupIds: [],
         conceptFilters: [],
         startYear: undefined,
         endYear: undefined,
@@ -518,6 +522,7 @@ describe("FilterDrawer", () => {
       expect(onApply).toHaveBeenCalledTimes(1);
       expect(onApply.mock.calls[0][0]).toEqual({
         countryCodes: [],
+        wbIncomeGroupIds: [],
         conceptFilters: [],
         startYear: 1990,
         endYear: undefined,
@@ -577,6 +582,7 @@ describe("FilterDrawer", () => {
 
       expect(onApply.mock.calls[0][0]).toEqual({
         countryCodes: [],
+        wbIncomeGroupIds: [],
         conceptFilters: [],
         startYear: undefined,
         endYear: undefined,
@@ -654,6 +660,135 @@ describe("FilterDrawer", () => {
     // Post-toggle: the most recent call carries the freshly-drafted country.
     const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
     expect(after?.countryCodes).toEqual(["DE"]);
+    expect(after?.q).toBe("phonics");
+  });
+});
+
+describe("World Bank income group filter integration", () => {
+  const INCOME_COUNTS = new Map([["HIC", 109], ["LIC", 72]]);
+  const withCard = { showWbIncomeGroupFilter: true } as const;
+
+  test("renders the card after Country, collapsed, only when enabled", () => {
+    const { container } = renderDrawer(withCard);
+    const titles = Array.from(
+      container.querySelectorAll(".filter-card__title"),
+    ).map((n) => n.textContent);
+    expect(titles.slice(0, 3)).toEqual([
+      "Publication year",
+      "Country",
+      "World Bank income group",
+    ]);
+    expect(
+      screen.getByRole("button", { name: /World Bank income group/ })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+
+    cleanup();
+    renderDrawer();
+    expect(
+      screen.queryByRole("button", { name: /World Bank income group/ }),
+    ).toBeNull();
+  });
+
+  test("requests the income group and country counts only when their cards show", () => {
+    const lastFacets = () => mockUseSearchFacets.mock.calls.at(-1)![1];
+    renderDrawer({ ...withCard, showCountryFacetFilter: false });
+    expect(lastFacets()).toContain("country_wb_income_groups");
+    expect(lastFacets()).not.toContain("countries");
+
+    cleanup();
+    renderDrawer();
+    expect(lastFacets()).not.toContain("country_wb_income_groups");
+    expect(lastFacets()).toContain("countries");
+  });
+
+  test("lists all four groups in fixed order with counts, disabling the empty ones", () => {
+    setCounts({ wbIncomeGroups: INCOME_COUNTS });
+    renderDrawer({ ...withCard, expandOnMountFilters: ["wbIncomeGroup"] });
+    const rows = screen.getAllByRole("checkbox", { name: /income/ }) as HTMLInputElement[];
+    expect(rows.map((r) => r.closest("label")?.textContent)).toEqual([
+      "High income109",
+      "Upper middle income",
+      "Lower middle income",
+      "Low income72",
+    ]);
+    expect(rows.map((r) => r.disabled)).toEqual([false, true, true, false]);
+  });
+
+  test("selecting groups and applying emits their ids in display order", () => {
+    const onApply = vi.fn();
+    setCounts({ wbIncomeGroups: INCOME_COUNTS });
+    renderDrawer({ ...withCard, schemes: [], expandOnMountFilters: ["wbIncomeGroup"], onApply });
+    fireEvent.click(screen.getByLabelText(/^Low income/));
+    fireEvent.click(screen.getByLabelText(/^High income/));
+    fireEvent.click(screen.getByRole("button", { name: "Show results" }));
+
+    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(onApply.mock.calls[0][0]).toEqual({
+      countryCodes: [],
+      wbIncomeGroupIds: ["HIC", "LIC"],
+      conceptFilters: [],
+      startYear: undefined,
+      endYear: undefined,
+    });
+  });
+
+  test("hydrates the selection from appliedWbIncomeGroupIds and stays clean", () => {
+    renderDrawer({
+      ...withCard,
+      schemes: [],
+      appliedWbIncomeGroupIds: ["LIC"],
+      expandOnMountFilters: ["wbIncomeGroup"],
+    });
+    expect((screen.getByLabelText(/^Low income/) as HTMLInputElement).checked).toBe(true);
+    expect(
+      (screen.getByRole("button", { name: "Show results" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  test("Reset all clears the income group draft along with the others", () => {
+    setCounts({ countries: new Map([["DE", 230]]), wbIncomeGroups: INCOME_COUNTS });
+    renderDrawer({ ...withCard, expandOnMountFilters: ["wbIncomeGroup"] });
+    fireEvent.click(screen.getByLabelText("Journal Article"));
+    fireEvent.click(screen.getByLabelText(/^Germany/));
+    fireEvent.click(screen.getByLabelText(/^Low income/));
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
+
+    expect((screen.getByLabelText(/^Low income/) as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByLabelText(/^Germany/) as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByLabelText("Journal Article") as HTMLInputElement).checked).toBe(false);
+  });
+
+  test("applies concept, country and income group facets together", () => {
+    const onApply = vi.fn();
+    setCounts({ countries: new Map([["DE", 230]]), wbIncomeGroups: INCOME_COUNTS });
+    renderDrawer({ ...withCard, expandOnMountFilters: ["wbIncomeGroup"], onApply });
+    fireEvent.click(screen.getByLabelText("Journal Article"));
+    fireEvent.click(screen.getByLabelText(/^Germany/));
+    fireEvent.click(screen.getByLabelText(/^High income/));
+    fireEvent.click(screen.getByRole("button", { name: "Show results" }));
+
+    expect(onApply.mock.calls[0][0]).toMatchObject({
+      conceptFilters: [[URI_JOURNAL]],
+      countryCodes: ["DE"],
+      wbIncomeGroupIds: ["HIC"],
+    });
+  });
+
+  test("eager loading: toggling a group re-keys the facet hook with the new draft", () => {
+    setCounts({ wbIncomeGroups: INCOME_COUNTS });
+    renderDrawer({
+      ...withCard,
+      expandOnMountFilters: ["wbIncomeGroup"],
+      params: makeSearchParams({ q: "phonics" }),
+    });
+    expect(mockUseSearchFacets.mock.calls.at(-1)?.[0]?.wbIncomeGroupIds).toEqual([]);
+
+    fireEvent.click(screen.getByLabelText(/^Low income/));
+
+    const after = mockUseSearchFacets.mock.calls.at(-1)?.[0];
+    expect(after?.wbIncomeGroupIds).toEqual(["LIC"]);
     expect(after?.q).toBe("phonics");
   });
 });

@@ -43,6 +43,7 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   findingsAndEstimates: true,
   exportsEnabled: false,
   countryFacetFilter: true,
+  wbIncomeGroupFilter: false,
   // Selection UI still only shows where a consumer (AI summary / selection
   // export) is enabled — see selectionEnabled.
   referenceSelection: true,
@@ -62,6 +63,9 @@ const DOI_IDENTIFIER: IdentifierColumn = { header: "DOI", type: "doi" };
 // scheme URIs to match inScheme. Ordered specific → broad: the country, then its
 // classification, then the regional groupings (alphabetical) — the order they
 // group in as filter cards.
+const DESTINY_GEO_SCHEME =
+  "https://vocab.destiny-evidence.org/geographic-location";
+
 const HPV_GEO_SCHEMES = [
   "https://vocab.aliveevidence.org/hpv/Country",
   "https://vocab.aliveevidence.org/hpv/CountryClassification",
@@ -230,15 +234,15 @@ const COMMUNITIES: Community[] = [
     ),
     filterExcludedSchemes: [],
     pillExcludedSchemes: [],
-    geographicSchemes: [
-      "https://vocab.destiny-evidence.org/geographic-location",
-    ],
+    geographicSchemes: [DESTINY_GEO_SCHEME],
+    pinnedFilters: ["year", DESTINY_GEO_SCHEME, "wbIncomeGroup"],
     searchDefaults: { endYear: new Date().getFullYear() + 1 },
     features: {
       ...DEFAULT_FEATURES,
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
+      wbIncomeGroupFilter: false,
       exportsEnabled: true,
       ancestorClosedCodings: true,
     },

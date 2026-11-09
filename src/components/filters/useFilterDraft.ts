@@ -1,5 +1,6 @@
 import { useMemo, useState } from "preact/hooks";
 import { useSearchFacets, type FacetCounts } from "@/hooks/useSearchFacets";
+import type { FacetType } from "@/services/apiClient";
 import type { SearchParams } from "@/services/searchParams";
 import type { CrossFacetAxisPair } from "@/services/crossFacets";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
@@ -24,11 +25,13 @@ import {
   type ValidationResult,
   type YearRangeFilterState,
 } from "./yearRangeFilterState";
+import { WB_INCOME_GROUPS } from "@/utils/wbIncomeGroup";
 
 // The filter selections committed to the URL — emitted by "Show results".
 export interface AppliedFilters {
   conceptFilters: readonly (readonly string[])[];
   countryCodes: readonly string[];
+  wbIncomeGroupIds: readonly string[];
   startYear: number | undefined;
   endYear: number | undefined;
 }
@@ -38,9 +41,11 @@ type ConceptDraft = Map<string, ConceptSchemeFilterState>;
 export interface FilterDraft {
   schemes: ConceptScheme[] | null;
   countryDraft: CountryFilterState;
+  wbIncomeGroupDraft: ReadonlySet<string>;
   yearDraft: YearRangeFilterState;
   onSchemeChange: (scheme: ConceptScheme, next: ConceptSchemeFilterState) => void;
   setCountryDraft: (next: CountryFilterState) => void;
+  setWbIncomeGroupDraft: (next: ReadonlySet<string>) => void;
   setYearDraft: (next: YearRangeFilterState) => void;
   conceptStateFor: (scheme: ConceptScheme) => ConceptSchemeFilterState;
   yearValidation: ValidationResult;
@@ -63,6 +68,7 @@ export interface FilterDraftInputs {
   schemes: ConceptScheme[] | null;
   appliedConceptFilters: readonly (readonly string[])[];
   appliedCountryCodes: readonly string[];
+  appliedWbIncomeGroupIds: readonly string[];
   appliedStartYear: number | undefined;
   appliedEndYear: number | undefined;
   // Drives the facet-count fetch alongside the draft — the source of truth for
@@ -119,11 +125,16 @@ export function useFilterDraft({
   schemes,
   appliedConceptFilters,
   appliedCountryCodes,
+  appliedWbIncomeGroupIds,
   appliedStartYear,
   appliedEndYear,
   params,
+  facets,
   axes,
-}: FilterDraftInputs & { axes?: CrossFacetAxisPair }): FilterDraft {
+}: FilterDraftInputs & {
+  facets: readonly FacetType[];
+  axes?: CrossFacetAxisPair;
+}): FilterDraft {
   const [conceptDraft, setConceptDraft] = useState<ConceptDraft>(() =>
     parseConceptFilters(appliedConceptFilters, schemes ?? []),
   );
@@ -133,6 +144,9 @@ export function useFilterDraft({
   const [countryDraft, setCountryDraft] = useState<CountryFilterState>(() =>
     countryStateFromCodes(appliedCountryCodes),
   );
+  const [wbIncomeGroupDraft, setWbIncomeGroupDraft] = useState<
+    ReadonlySet<string>
+  >(() => new Set(appliedWbIncomeGroupIds));
   const [yearDraft, setYearDraft] = useState<YearRangeFilterState>(() =>
     yearRangeFromParams(appliedStartYear, appliedEndYear),
   );
@@ -148,6 +162,14 @@ export function useFilterDraft({
     () => selectedCodes(countryDraft),
     [countryDraft],
   );
+  // Emitted in the fixed display order so the URL is stable across re-renders.
+  const draftWbIncomeGroupIds = useMemo(
+    () =>
+      WB_INCOME_GROUPS.filter((g) => wbIncomeGroupDraft.has(g.id)).map(
+        (g) => g.id,
+      ),
+    [wbIncomeGroupDraft],
+  );
   const yearValidation = useMemo(() => validateYearRange(yearDraft), [yearDraft]);
 
   // Only feed each year into the preview fetch when its input is "ready"
@@ -159,6 +181,7 @@ export function useFilterDraft({
     ...params,
     conceptFilters: draftConceptFilters,
     countryCodes: draftCountryCodes,
+    wbIncomeGroupIds: draftWbIncomeGroupIds,
     startYear:
       yearValidation.ok && startReady ? yearValidation.startYear : appliedStartYear,
     endYear:
@@ -168,7 +191,7 @@ export function useFilterDraft({
     counts: facetCounts,
     loading: facetCountsLoading,
     error: facetError,
-  } = useSearchFacets(facetParams, axes);
+  } = useSearchFacets(facetParams, facets, axes);
 
   function onSchemeChange(
     scheme: ConceptScheme,
@@ -190,11 +213,13 @@ export function useFilterDraft({
     setConceptDraft(new Map());
     setOpaqueConceptFilters([]);
     setCountryDraft(emptyCountryState());
+    setWbIncomeGroupDraft(new Set());
     setYearDraft(emptyYearRangeState());
   }
 
   const facetsDirty =
     !codeArraysEqual(draftCountryCodes, appliedCountryCodes) ||
+    !codeArraysEqual(draftWbIncomeGroupIds, appliedWbIncomeGroupIds) ||
     !conceptFiltersEqual(draftConceptFilters, appliedConceptFilters);
   const yearDirty = isYearDirty(yearDraft, appliedStartYear, appliedEndYear);
   const dirty = facetsDirty || yearDirty;
@@ -205,6 +230,7 @@ export function useFilterDraft({
     return {
       conceptFilters: draftConceptFilters,
       countryCodes: draftCountryCodes,
+      wbIncomeGroupIds: draftWbIncomeGroupIds,
       startYear: yearValidation.startYear,
       endYear: yearValidation.endYear,
     };
@@ -213,9 +239,11 @@ export function useFilterDraft({
   return {
     schemes,
     countryDraft,
+    wbIncomeGroupDraft,
     yearDraft,
     onSchemeChange,
     setCountryDraft,
+    setWbIncomeGroupDraft,
     setYearDraft,
     conceptStateFor,
     yearValidation,

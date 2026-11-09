@@ -1,0 +1,67 @@
+.filter-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.filter-options__item {
+  margin: 0;
+}
+
+.filter-options__row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  cursor: pointer;
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+}
+
+.filter-options__row--empty {
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.filter-options__checkbox {
+  margin: 0;
+  cursor: pointer;
+}
+
+.filter-options__row--empty .filter-options__checkbox {
+  cursor: not-allowed;
+}
+
+.filter-options__label--has-tooltip {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  outline: none;
+}
+
+/* The count may sit inside a tooltip trigger, so right-alignment lives on
+   this slot rather than the count itself. */
+.filter-options__count-slot {
+  margin-left: auto;
+}
+
+.filter-options__count {
+  padding-left: var(--spacing-sm);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-small);
+  transition: opacity 150ms ease;
+}
+
+.filter-options__count--has-tooltip {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+  outline: none;
+}
+
+.filter-options__count.is-updating {
+  opacity: 0.5;
+}
