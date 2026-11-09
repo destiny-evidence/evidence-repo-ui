@@ -12,6 +12,7 @@ interface JsonLdGraphEntry {
   "skos:inScheme"?: JsonLdRef | JsonLdRef[];
   "skos:hasTopConcept"?: JsonLdRef | JsonLdRef[];
   "dct:title"?: string;
+  "dct:description"?: string;
   "rdfs:label"?: string;
   [key: string]: unknown;
 }
@@ -30,6 +31,7 @@ export interface Concept {
 export interface ConceptScheme {
   uri: string;
   label: string;
+  description?: string;
   topConcepts: Concept[];
 }
 
@@ -151,6 +153,7 @@ function extractAllRefIds(
 interface RawScheme {
   uri: string;
   label: string;
+  description?: string;
   topConceptUris: string[];
 }
 
@@ -207,6 +210,7 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
       rawSchemes.push({
         uri: id,
         label,
+        description: entry["dct:description"],
         topConceptUris: extractAllRefIds(entry["skos:hasTopConcept"]).map(
           expand,
         ),
@@ -243,6 +247,7 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
   const schemes: ConceptScheme[] = rawSchemes.map((raw) => ({
     uri: raw.uri,
     label: raw.label,
+    ...(raw.description ? { description: raw.description } : {}),
     topConcepts: raw.topConceptUris
       .map((uri) => buildConcept(uri, new Set()))
       .filter((c): c is Concept => c !== null)

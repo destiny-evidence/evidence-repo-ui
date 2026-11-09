@@ -48,6 +48,7 @@ const SAMPLE_VOCABULARY = {
       "@id": "esea:DocumentTypeScheme",
       "@type": "skos:ConceptScheme",
       "dct:title": "Document Type",
+      "dct:description": "Types of publications.",
       "skos:hasTopConcept": [
         {
           "@id": "https://vocab.esea.education/DocumentTypeScheme/C00008",
@@ -166,6 +167,7 @@ describe("buildVocabularyData", () => {
     expect(docType).toEqual({
       uri: "https://vocab.esea.education/DocumentTypeScheme",
       label: "Document Type",
+      description: "Types of publications.",
       topConcepts: [
         {
           uri: "https://vocab.esea.education/DocumentTypeScheme/C00008",
@@ -179,6 +181,7 @@ describe("buildVocabularyData", () => {
       (s) => s.uri === "https://vocab.esea.education/EducationThemeScheme",
     );
     expect(theme?.label).toBe("Education Theme Scheme");
+    expect(theme && "description" in theme).toBe(false);
     expect(theme?.topConcepts[0]?.uri).toBe(
       "https://vocab.esea.education/EducationThemeScheme/C00022",
     );

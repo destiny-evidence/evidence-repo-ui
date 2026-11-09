@@ -18,6 +18,7 @@ export interface TaxoNode {
 export interface TaxonomyGroup {
   schemeUri: string;
   schemeLabel: string;
+  schemeDescription?: string;
   // drives ordering only (geo first)
   isGeo: boolean;
   nodes: TaxoNode[];
@@ -108,6 +109,7 @@ export function groupAppliedConcepts(
     ordered.push({
       schemeUri: scheme.uri,
       schemeLabel: schemeDisplayLabel(scheme.label),
+      schemeDescription: scheme.description,
       isGeo,
       nodes,
       order: idx,

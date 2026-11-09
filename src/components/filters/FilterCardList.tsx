@@ -171,6 +171,7 @@ function SchemeCard({
   return (
     <FilterCard
       title={schemeDisplayLabel(scheme.label)}
+      titleTooltip={scheme.description}
       summary={summary(state)}
       expandOnMount={expandOnMount}
     >

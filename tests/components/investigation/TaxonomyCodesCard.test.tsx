@@ -118,4 +118,21 @@ describe("TaxonomyCodesCard", () => {
       /Vocabulary unavailable/,
     );
   });
+
+  test("shows the scheme description as a tooltip on the scheme heading", () => {
+    render(
+      <TaxonomyCodesCard
+        groups={[{ ...topical, schemeDescription: "How the study was run." }]}
+      />,
+    );
+    const tooltip = screen.getByText("Study Design").closest("[data-tooltip]");
+    expect(tooltip?.getAttribute("data-tooltip")).toBe("How the study was run.");
+  });
+
+  test("renders a plain scheme heading when there is no description", () => {
+    const { container } = render(<TaxonomyCodesCard groups={[topical]} />);
+    expect(
+      container.querySelector(".taxonomy-codes-card__scheme [data-tooltip]"),
+    ).toBeNull();
+  });
 });

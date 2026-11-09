@@ -1,16 +1,24 @@
 import type { ComponentChildren } from "preact";
 import { useId, useRef, useState } from "preact/hooks";
 import { ChevronDownIcon, ChevronRightIcon } from "@/components/common/icons";
+import { Tooltip } from "@/components/common/Tooltip";
 import "./FilterCard.css";
 
 interface FilterCardProps {
   title: string;
+  titleTooltip?: string;
   summary?: string;
   expandOnMount?: boolean;
   children: ComponentChildren;
 }
 
-export function FilterCard({ title, summary, expandOnMount = false, children }: FilterCardProps) {
+export function FilterCard({
+  title,
+  titleTooltip,
+  summary,
+  expandOnMount = false,
+  children,
+}: FilterCardProps) {
   const [expanded, setExpanded] = useState(expandOnMount);
   const cardRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -39,7 +47,17 @@ export function FilterCard({ title, summary, expandOnMount = false, children }: 
         aria-expanded={expanded}
         aria-controls={panelId}
       >
-        <span class="filter-card__title">{title}</span>
+        <Tooltip text={titleTooltip}>
+          <span
+            class={
+              titleTooltip
+                ? "filter-card__title filter-card__title--has-tooltip"
+                : "filter-card__title"
+            }
+          >
+            {title}
+          </span>
+        </Tooltip>
         {showSummary && (
           <span class="filter-card__summary">{summary}</span>
         )}

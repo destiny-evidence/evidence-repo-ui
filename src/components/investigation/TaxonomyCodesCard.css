@@ -12,6 +12,11 @@
 .taxonomy-codes-card__scheme {
   margin: var(--spacing-md) 0 var(--spacing-sm);
 }
+.taxonomy-codes-card__scheme-label--has-tooltip {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+}
 .taxonomy-codes-card__vocab-note {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
