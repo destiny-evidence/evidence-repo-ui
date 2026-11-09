@@ -1,0 +1,8 @@
+.geographic-heat-map-page__map {
+  max-width: 1400px;
+  transition: opacity 0.15s;
+}
+
+.geographic-heat-map-page__map.is-updating {
+  opacity: 0.5;
+}

@@ -74,6 +74,7 @@ export function makeCommunity(
       wbIncomeGroupFilter: false,
       referenceSelection: false,
       ancestorClosedCodings: false,
+      geographicHeatMap: false,
       ...features,
     },
     copy: {

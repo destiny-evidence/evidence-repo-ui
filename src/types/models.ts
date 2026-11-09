@@ -21,6 +21,8 @@ export interface CommunityFeatures {
   // so a parent concept stands for its whole subtree. Enables nested
   // evidence-map axes and collapsible concept filters.
   ancestorClosedCodings: boolean;
+  // Unlinked /visualise/geographic route while the geographic heat map is built.
+  geographicHeatMap: boolean;
 }
 
 // Cross-facet axis tokens sent in place of a concept-scheme URI, each described

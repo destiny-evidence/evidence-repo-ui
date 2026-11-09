@@ -196,6 +196,7 @@ describe("community registry", () => {
       wbIncomeGroupFilter: false,
       referenceSelection: true,
       ancestorClosedCodings: false,
+      geographicHeatMap: false,
     });
   });
 
