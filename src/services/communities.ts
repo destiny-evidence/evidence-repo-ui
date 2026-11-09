@@ -48,7 +48,7 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   // export) is enabled — see selectionEnabled.
   referenceSelection: true,
   ancestorClosedCodings: false,
-  geographicHeatMap: true,
+  geographicHeatMap: false,
 };
 
 // Mirrors destiny-repository's current cross-facet bucket ceiling (the API's

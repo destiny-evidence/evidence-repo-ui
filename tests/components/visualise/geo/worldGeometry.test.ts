@@ -1,11 +1,12 @@
 import { describe, test, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { geoArea } from "d3-geo";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import type { FeatureCollection } from "geojson";
 import world from "@/data/world-geo.json";
 import { loadWorldGeometry } from "@/components/visualise/geo/worldGeometry";
-import heatMapCss from "@/components/visualise/GeographicHeatMap.css?raw";
 
 // Guards the committed output of scripts/generate-world-geo.mjs.
 describe("world geometry", () => {
@@ -50,7 +51,12 @@ describe("world geometry", () => {
 
   test("the frame's aspect ratio in the CSS matches the viewBox", () => {
     const [, , width, height] = geometry.viewBox.split(" ").map(Number);
-    const match = heatMapCss.match(/aspect-ratio:\s*([\d.]+)\s*\/\s*([\d.]+)/);
+    // Read from disk because Vitest blanks CSS imports, even with ?raw.
+    const css = readFileSync(
+      resolve(__dirname, "../../../../src/components/visualise/GeographicHeatMap.css"),
+      "utf8",
+    );
+    const match = css.match(/aspect-ratio:\s*([\d.]+)\s*\/\s*([\d.]+)/);
     expect(match).not.toBeNull();
     expect(Number(match![1]) / Number(match![2])).toBeCloseTo(width / height, 2);
   });
