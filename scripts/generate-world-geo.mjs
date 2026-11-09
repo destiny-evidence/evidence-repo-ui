@@ -2,7 +2,6 @@
 //
 //   npm run generate:geo
 
-import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { geoCentroid } from "d3-geo";
@@ -10,7 +9,8 @@ import { topology } from "topojson-server";
 import { presimplify, quantile, simplify } from "topojson-simplify";
 import { quantize } from "topojson-client";
 
-const NE_VERSION = "v5.1.2";
+// The v5.1.2 tag, pinned by commit so the files can't change under us.
+const NE_COMMIT = "f1890d9f152c896d250a77557a5751a93d494776";
 // Share of the least significant points to drop.
 const SIMPLIFY_QUANTILE = 0.3;
 const QUANTIZE = 1e4;
@@ -19,29 +19,13 @@ const QUANTIZE = 1e4;
 const TINY_MAX_EXTENT_DEG = 1.5;
 const DROPPED = "AQ";
 
-const SOURCES = {
-  countries: {
-    file: "ne_50m_admin_0_countries.geojson",
-    sha256: "3e458fc036ad0a66411f2c1e6cac49c5d7bfb81cb1123bc513b22511a2b7fdeb",
-  },
-  tiny: {
-    file: "ne_50m_admin_0_tiny_countries.geojson",
-    sha256: "e44d2a67feed7fd0c74b4b2c0342ade1983c038e43e32acc461c82bfa6538009",
-  },
-};
-
 const OUT = fileURLToPath(new URL("../src/data/world-geo.json", import.meta.url));
-const BASE = `https://raw.githubusercontent.com/nvkelso/natural-earth-vector/${NE_VERSION}/geojson`;
+const BASE = `https://raw.githubusercontent.com/nvkelso/natural-earth-vector/${NE_COMMIT}/geojson`;
 
-async function fetchPinned({ file, sha256 }) {
+async function fetchLayer(file) {
   const res = await fetch(`${BASE}/${file}`);
   if (!res.ok) throw new Error(`${file}: HTTP ${res.status}`);
-  const text = await res.text();
-  const digest = createHash("sha256").update(text).digest("hex");
-  if (digest !== sha256) {
-    throw new Error(`${file}: sha256 ${digest} does not match the pinned ${sha256}`);
-  }
-  return JSON.parse(text);
+  return res.json();
 }
 
 // Natural Earth marks shapes without an ISO code as "-99".
@@ -127,8 +111,8 @@ function stripWeights(topo) {
   return topo;
 }
 
-const { byCode, features } = countryFeatures(await fetchPinned(SOURCES.countries));
-const dots = dotFeatures(byCode, await fetchPinned(SOURCES.tiny));
+const { byCode, features } = countryFeatures(await fetchLayer("ne_50m_admin_0_countries.geojson"));
+const dots = dotFeatures(byCode, await fetchLayer("ne_50m_admin_0_tiny_countries.geojson"));
 
 let topo = presimplify(
   topology({
