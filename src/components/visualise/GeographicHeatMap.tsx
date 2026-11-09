@@ -15,7 +15,9 @@ const DOT_RADIUS = 2.5;
 // Loaded on first use so d3-geo and the shapes stay out of the main bundle.
 let loaded: WorldGeometry | null = null;
 function loadGeometry(): Promise<WorldGeometry> {
-  return import("./geo/worldGeometry").then((m) => (loaded = m.loadWorldGeometry()));
+  return import("./geo/worldGeometry").then(
+    (m) => (loaded = m.loadWorldGeometry()),
+  );
 }
 
 export interface GeographicHeatMapProps {
@@ -25,7 +27,11 @@ export interface GeographicHeatMapProps {
   countNoun: string;
 }
 
-export function GeographicHeatMap({ counts, label, countNoun }: GeographicHeatMapProps) {
+export function GeographicHeatMap({
+  counts,
+  label,
+  countNoun,
+}: GeographicHeatMapProps) {
   const [geometry, setGeometry] = useState(loaded);
   const [failed, setFailed] = useState(false);
 
@@ -67,7 +73,14 @@ export function GeographicHeatMap({ counts, label, countNoun }: GeographicHeatMa
     );
   }
 
-  return <HeatMap geometry={geometry} counts={counts} label={label} countNoun={countNoun} />;
+  return (
+    <HeatMap
+      geometry={geometry}
+      counts={counts}
+      label={label}
+      countNoun={countNoun}
+    />
+  );
 }
 
 function HeatMap({
@@ -75,10 +88,15 @@ function HeatMap({
   counts,
   label,
   countNoun,
-}: GeographicHeatMapProps & { geometry: WorldGeometry; counts: ReadonlyMap<string, number> }) {
-  const bands = useMemo(() => heatBands(Math.max(0, ...counts.values())), [counts]);
-  // Dots only mark small countries that have references; a grey dot adds
-  // clutter without saying anything the empty map doesn't.
+}: GeographicHeatMapProps & {
+  geometry: WorldGeometry;
+  counts: ReadonlyMap<string, number>;
+}) {
+  const bands = useMemo(
+    () => heatBands(Math.max(0, ...counts.values())),
+    [counts],
+  );
+  // Exclude dots for countries with no references
   const dots = useMemo(
     () => geometry.dots.filter((d) => (counts.get(d.code) ?? 0) > 0),
     [geometry, counts],
@@ -94,9 +112,18 @@ function HeatMap({
   return (
     <figure class="geo-heat-map is-loaded">
       <div class="geo-heat-map__frame">
-        <svg class="geo-heat-map__svg" viewBox={geometry.viewBox} role="group" aria-label={label}>
+        <svg
+          class="geo-heat-map__svg"
+          viewBox={geometry.viewBox}
+          role="group"
+          aria-label={label}
+        >
           <g>
-            <path class="geo-heat-map__outline" d={geometry.outline} aria-hidden="true" />
+            <path
+              class="geo-heat-map__outline"
+              d={geometry.outline}
+              aria-hidden="true"
+            />
             {geometry.countries.map(({ code, d }, i) =>
               code && !dotCodes.has(code) ? (
                 <path
@@ -117,7 +144,11 @@ function HeatMap({
                 />
               ),
             )}
-            <path class="geo-heat-map__borders" d={geometry.borders} aria-hidden="true" />
+            <path
+              class="geo-heat-map__borders"
+              d={geometry.borders}
+              aria-hidden="true"
+            />
             {dots.map(({ code, x, y }) => (
               <circle
                 key={code}
@@ -138,18 +169,29 @@ function HeatMap({
   );
 }
 
-function HeatMapLegend({ bands, countNoun }: { bands: HeatBand[]; countNoun: string }) {
+function HeatMapLegend({
+  bands,
+  countNoun,
+}: {
+  bands: HeatBand[];
+  countNoun: string;
+}) {
   return (
     <figcaption class="geo-heat-map__legend">
       <span class="geo-heat-map__legend-label lg-label">{countNoun}</span>
-      {[{ shade: 0, label: "0" }, ...bands.map((b) => ({ shade: b.shade, label: bandLabel(b) }))].map(
-        ({ shade, label }) => (
-          <span key={shade} class="geo-heat-map__legend-item">
-            <span class="geo-heat-map__swatch" data-shade={shade} aria-hidden="true" />
-            {label}
-          </span>
-        ),
-      )}
+      {[
+        { shade: 0, label: "0" },
+        ...bands.map((b) => ({ shade: b.shade, label: bandLabel(b) })),
+      ].map(({ shade, label }) => (
+        <span key={shade} class="geo-heat-map__legend-item">
+          <span
+            class="geo-heat-map__swatch"
+            data-shade={shade}
+            aria-hidden="true"
+          />
+          {label}
+        </span>
+      ))}
     </figcaption>
   );
 }

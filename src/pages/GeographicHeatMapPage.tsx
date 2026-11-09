@@ -56,8 +56,7 @@ function GeographicHeatMapView({ countNoun }: { countNoun: string }) {
   );
 }
 
-// The countries facet leaves out its own filter so filter cards can show
-// sibling counts, which on a map would shade countries the URL filters out.
+// The API's country counts ignore the country filter, so exclude countries outside it.
 function onlySelected(
   counts: ReadonlyMap<string, number> | undefined,
   selected: readonly string[],

@@ -76,11 +76,11 @@
   --color-retracted-text: #991b1b;
 
   /* ── Colors: geographic heat map, empty then lightest to darkest ── */
-  --color-heat-0: #eef0f3;
-  --color-heat-1: #d6deeb;
-  --color-heat-2: #aebfda;
-  --color-heat-3: #7b93c0;
-  --color-heat-4: #4a6499;
+  --color-heat-0: color-mix(in oklab, var(--color-accent) 7%, white);
+  --color-heat-1: color-mix(in oklab, var(--color-accent) 16%, white);
+  --color-heat-2: color-mix(in oklab, var(--color-accent) 31%, white);
+  --color-heat-3: color-mix(in oklab, var(--color-accent) 53%, white);
+  --color-heat-4: color-mix(in oklab, var(--color-accent) 77%, white);
   --color-heat-5: var(--color-accent);
 
   /* ── Spacing ── */
