@@ -81,7 +81,7 @@ describe("MapConfigPanel", () => {
   });
 
   test("omits the Countries axis option where the country facet is unsupported", () => {
-    renderPanel({ showCountryFacetFilter: false });
+    renderPanel({ showCountryDerivedFilters: false });
     // Scheme axes are still offered...
     const row = within(rowSelect());
     expect(row.getByRole("option", { name: "Outcome" })).toBeInTheDocument();
@@ -94,8 +94,8 @@ describe("MapConfigPanel", () => {
     ).toBeNull();
   });
 
-  test("offers the World Bank income groups axis only behind the country facet flag", () => {
-    const { unmount } = renderPanel({ showCountryFacetFilter: false });
+  test("offers the World Bank income groups axis only behind showCountryDerivedFilters", () => {
+    const { unmount } = renderPanel({ showCountryDerivedFilters: false });
     const option = { name: "World Bank income groups" };
     expect(within(rowSelect()).queryByRole("option", option)).toBeNull();
     unmount();
@@ -115,7 +115,7 @@ describe("MapConfigPanel", () => {
 
   test("names an applied literal axis by its title even where it isn't offered", () => {
     renderPanel({
-      showCountryFacetFilter: false,
+      showCountryDerivedFilters: false,
       appliedAxes: {
         row: AXES.row,
         column: { kind: "literal", token: AXIS_INCOME_GROUPS },
@@ -234,7 +234,7 @@ describe("MapConfigPanel", () => {
     expect((screen.getByLabelText(/^Low income/) as HTMLInputElement).checked).toBe(false);
 
     cleanup();
-    renderPanel({ showCountryFacetFilter: false });
+    renderPanel({ showCountryDerivedFilters: false });
     expect(screen.queryByRole("button", { name: /World Bank income group/ })).toBeNull();
   });
 

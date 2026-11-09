@@ -904,7 +904,7 @@ describe("SearchPage", () => {
       communityOverride.current = {
         ...esea,
         pinnedFilters: [],
-        features: { ...esea.features, countryFacetFilter: false },
+        features: { ...esea.features, countrySearchable: false },
       };
       mockVocab.mockReturnValue(vocabWith([]));
       mockBoth({ results: makeResult(120, ["r1"]) });

@@ -45,14 +45,14 @@ describe("orderFilterItems", () => {
   });
 
   test("omits the country and income group cards when the facet filter is hidden", () => {
-    const items = orderFilterItems([apple], { showCountryFacetFilter: false });
+    const items = orderFilterItems([apple], { showCountryDerivedFilters: false });
     expect(kinds(items)).toEqual(["year", "u:apple"]);
   });
 
   test("pins schemes by URI in order, then appends the rest alphabetically", () => {
     const items = orderFilterItems([zebra, apple, country, region, convening], {
       pinned: ["u:convening", "year", "u:country", "u:region"],
-      showCountryFacetFilter: false,
+      showCountryDerivedFilters: false,
     });
     expect(kinds(items)).toEqual([
       "u:convening",
@@ -67,7 +67,7 @@ describe("orderFilterItems", () => {
   test("a pinned scheme isn't repeated by the trailing alphabetical sweep", () => {
     const items = orderFilterItems([zebra, apple], {
       pinned: ["u:zebra"],
-      showCountryFacetFilter: false,
+      showCountryDerivedFilters: false,
     });
     expect(kinds(items)).toEqual(["u:zebra", "u:apple"]);
   });
@@ -75,7 +75,7 @@ describe("orderFilterItems", () => {
   test("ignores pinned URIs for schemes not present", () => {
     const items = orderFilterItems([apple], {
       pinned: ["u:missing", "year"],
-      showCountryFacetFilter: false,
+      showCountryDerivedFilters: false,
     });
     expect(kinds(items)).toEqual(["year", "u:apple"]);
   });
@@ -85,7 +85,7 @@ describe("orderFilterItems", () => {
     const phase2 = scheme("u:p2", "Phase 2");
     const items = orderFilterItems([phase10, phase2], {
       pinned: [],
-      showCountryFacetFilter: false,
+      showCountryDerivedFilters: false,
     });
     expect(kinds(items)).toEqual(["u:p2", "u:p10"]);
   });
@@ -120,7 +120,7 @@ describe("facetTypesFor", () => {
   });
 
   test("requests country and income group counts only when their cards are shown", () => {
-    expect(facetTypesFor({ showCountryFacetFilter: false })).toEqual([
+    expect(facetTypesFor({ showCountryDerivedFilters: false })).toEqual([
       "concepts",
       "country_wb_regions",
     ]);

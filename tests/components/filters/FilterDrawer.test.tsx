@@ -109,8 +109,8 @@ describe("FilterDrawer", () => {
     expect(screen.getByText("Country")).toBeInTheDocument();
   });
 
-  test("hides the dedicated Country card when showCountryFacetFilter is false", () => {
-    renderDrawer({ showCountryFacetFilter: false });
+  test("hides the dedicated Country card when showCountryDerivedFilters is false", () => {
+    renderDrawer({ showCountryDerivedFilters: false });
     expect(screen.queryByText("Country")).toBeNull();
   });
 
@@ -667,7 +667,7 @@ describe("FilterDrawer", () => {
 describe("World Bank income group filter integration", () => {
   const INCOME_COUNTS = new Map([["HIC", 109], ["LIC", 72]]);
 
-  test("renders the card after Country, collapsed, only when the country facet filter is enabled", () => {
+  test("renders the card after Country, collapsed, only when showCountryDerivedFilters", () => {
     const { container } = renderDrawer();
     const titles = Array.from(
       container.querySelectorAll(".filter-card__title"),
@@ -683,7 +683,7 @@ describe("World Bank income group filter integration", () => {
     ).toBe("false");
 
     cleanup();
-    renderDrawer({ showCountryFacetFilter: false });
+    renderDrawer({ showCountryDerivedFilters: false });
     expect(
       screen.queryByRole("button", { name: /World Bank income group/ }),
     ).toBeNull();
@@ -691,7 +691,7 @@ describe("World Bank income group filter integration", () => {
 
   test("requests the income group and country counts only when their cards show", () => {
     const lastFacets = () => mockUseSearchFacets.mock.calls.at(-1)![1];
-    renderDrawer({ showCountryFacetFilter: false });
+    renderDrawer({ showCountryDerivedFilters: false });
     expect(lastFacets()).not.toContain("country_wb_income_groups");
     expect(lastFacets()).not.toContain("countries");
 

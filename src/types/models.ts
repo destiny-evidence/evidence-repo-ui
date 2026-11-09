@@ -9,9 +9,9 @@ export interface CommunityFeatures {
   findingsAndEstimates: boolean;
   // Whether or not exports are available for this community.
   exportsEnabled: boolean;
-  // Whether the facet-backed country and World Bank income group filter cards
-  // are shown; needs populated `countries` and `country_wb_income_groups` facets.
-  countryFacetFilter: boolean;
+  // Whether references can be searched and aggregated by country, gating every
+  // country-derived feature; needs populated `countries` and `country_wb_*` facets.
+  countrySearchable: boolean;
   // Gates the result-row selection UI (checkboxes + selection controls). Only
   // useful alongside export or AI summaries, which consume the selection.
   referenceSelection: boolean;

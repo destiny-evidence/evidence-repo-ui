@@ -70,7 +70,7 @@ export function makeCommunity(
       selfSignup: false,
       findingsAndEstimates: true,
       exportsEnabled: true,
-      countryFacetFilter: true,
+      countrySearchable: true,
       referenceSelection: false,
       ancestorClosedCodings: false,
       ...features,

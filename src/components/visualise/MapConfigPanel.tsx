@@ -34,7 +34,7 @@ interface MapConfigPanelProps extends MapConfigPanelInnerProps, PanelChromeProps
   loading: boolean;
 }
 
-// `schemes` and `showCountryFacetFilter` also drive the axis dropdowns.
+// `schemes` and `showCountryDerivedFilters` also drive the axis dropdowns.
 interface MapConfigPanelInnerProps extends FilterDraftInputs, FilterCardOptions {
   // Currently-applied axes (from the URL) → the initial axis draft.
   appliedAxes: EvidenceMapAxes;
@@ -172,13 +172,13 @@ function MapConfigPanelInner({
   appliedStartYear,
   appliedEndYear,
   params,
-  showCountryFacetFilter = true,
+  showCountryDerivedFilters = true,
   onApply,
   ...cardOptions
 }: MapConfigPanelInnerProps) {
   const [draftAxes, setDraftAxes] = useState<EvidenceMapAxes>(appliedAxes);
   const literalAxes = offeredLiteralAxes({
-    countryFacetFilter: showCountryFacetFilter,
+    countrySearchable: showCountryDerivedFilters,
   });
 
   const draft = useFilterDraft({
@@ -189,7 +189,7 @@ function MapConfigPanelInner({
     appliedStartYear,
     appliedEndYear,
     params,
-    facets: facetTypesFor({ showCountryFacetFilter }),
+    facets: facetTypesFor({ showCountryDerivedFilters }),
     axes: draftAxes,
   });
 
@@ -231,7 +231,7 @@ function MapConfigPanelInner({
           </h3>
           <FilterCardList
             draft={draft}
-            showCountryFacetFilter={showCountryFacetFilter}
+            showCountryDerivedFilters={showCountryDerivedFilters}
             {...cardOptions}
           />
         </section>

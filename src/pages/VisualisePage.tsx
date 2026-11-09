@@ -757,7 +757,7 @@ function EvidenceMapView({
         key={canonical}
         schemes={vocab.error ? null : filterableSchemes}
         loading={vocab.loading}
-        showCountryFacetFilter={community.features.countryFacetFilter}
+        showCountryDerivedFilters={community.features.countrySearchable}
         pinnedFilters={community.pinnedFilters}
         expandOnMountFilters={panelExpandedFilters}
         collapsibleConceptFilters={community.features.ancestorClosedCodings}
