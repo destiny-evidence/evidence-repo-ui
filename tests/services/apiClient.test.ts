@@ -195,6 +195,50 @@ describe("World Bank region filter forwarding", () => {
   });
 });
 
+describe("World Bank income group filter forwarding", () => {
+  const filters = { countryCodes: ["DE"], wbIncomeGroupIds: ["LIC", "HIC"] };
+
+  function sentParams(mock: typeof mockedGet | typeof mockedPost): URLSearchParams {
+    return new URLSearchParams(mock.mock.calls[0][0].split("?")[1]);
+  }
+
+  test("searchReferences sends one comma-joined country_wb_income_group= param", async () => {
+    mockedGet.mockResolvedValue({});
+    await searchReferences("phonics", filters);
+    expect(sentParams(mockedGet).getAll("country_wb_income_group")).toEqual(["LIC,HIC"]);
+    expect(sentParams(mockedGet).get("country")).toBe("DE");
+  });
+
+  test("searchReferenceIds forwards it", async () => {
+    mockedGet.mockResolvedValue({});
+    await searchReferenceIds("phonics", filters);
+    expect(sentParams(mockedGet).get("country_wb_income_group")).toBe("LIC,HIC");
+  });
+
+  test("searchReferenceFacets forwards it alongside the country_wb_income_groups facet", async () => {
+    mockedGet.mockResolvedValue({});
+    await searchReferenceFacets("phonics", filters, [
+      "countries",
+      "country_wb_income_groups",
+    ]);
+    const params = sentParams(mockedGet);
+    expect(params.get("country_wb_income_group")).toBe("LIC,HIC");
+    expect(params.getAll("facet")).toEqual(["countries", "country_wb_income_groups"]);
+  });
+
+  test("requestSearchExport forwards it", async () => {
+    mockedPost.mockResolvedValue({});
+    await requestSearchExport("phonics", filters);
+    expect(sentParams(mockedPost).get("country_wb_income_group")).toBe("LIC,HIC");
+  });
+
+  test("omits the param when no income groups are selected", async () => {
+    mockedGet.mockResolvedValue({});
+    await searchReferences("phonics", { wbIncomeGroupIds: [] });
+    expect(sentParams(mockedGet).has("country_wb_income_group")).toBe(false);
+  });
+});
+
 describe("searchReferenceFacets", () => {
   const emptyResult: ReferenceFacetResult = { concepts: [] };
   const VOCAB = "https://vocab.example/v1/vocabulary.ttl";
@@ -311,7 +355,7 @@ describe("crossFacets", () => {
     ).toBe("https://vocab.example/v1/vocabulary.ttl");
   });
 
-  test("forwards concept, country and World Bank region filters", async () => {
+  test("forwards concept, country, World Bank region and income group filters", async () => {
     mockedGet.mockResolvedValue(result);
     await crossFacets(
       "phonics",
@@ -319,13 +363,16 @@ describe("crossFacets", () => {
         conceptFilters: [["ex:A"], ["ex:B"]],
         countryCodes: ["DE", "FR"],
         wbRegionIds: ["SAS", "SSF"],
+        wbIncomeGroupIds: ["LIC"],
       },
-      { axes: ["countries", "country_wb_regions"] },
+      { axes: ["countries", "country_wb_income_groups"] },
     );
     const params = new URLSearchParams(mockedGet.mock.calls[0][0].split("?")[1]);
     expect(params.getAll("concept")).toEqual(["ex:A", "ex:B"]);
     expect(params.get("country")).toBe("DE,FR");
     expect(params.get("country_wb_region")).toBe("SAS,SSF");
+    expect(params.get("country_wb_income_group")).toBe("LIC");
+    expect(params.getAll("axes")).toEqual(["countries", "country_wb_income_groups"]);
   });
 
   test("returns the cells and both totals, dropping the deprecated alias", async () => {

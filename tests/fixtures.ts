@@ -34,6 +34,7 @@ export function makeSearchParams(
     conceptFilters: [],
     countryCodes: [],
     wbRegionIds: [],
+    wbIncomeGroupIds: [],
     ...overrides,
   };
 }

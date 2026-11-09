@@ -1,6 +1,7 @@
 import { describe, test, expect } from "vitest";
 import {
   AXIS_COUNTRIES,
+  AXIS_INCOME_GROUPS,
   AXIS_REGIONS,
   axisPairToParams,
   type CrossFacetAxis,
@@ -11,6 +12,7 @@ const SCHEME = "https://vocab.example/scheme/Themes";
 
 const countries: CrossFacetAxis = { kind: "literal", token: AXIS_COUNTRIES };
 const regions: CrossFacetAxis = { kind: "literal", token: AXIS_REGIONS };
+const incomeGroups: CrossFacetAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
 const scheme: CrossFacetAxis = { kind: "scheme", schemeUri: SCHEME };
 
 describe("axisPairToParams", () => {
@@ -34,6 +36,12 @@ describe("axisPairToParams", () => {
       row: regions,
       column: scheme,
       expected: { axes: ["country_wb_regions", SCHEME], vocabularyUrl: VOCAB },
+    },
+    {
+      label: "income group literal",
+      row: incomeGroups,
+      column: scheme,
+      expected: { axes: ["country_wb_income_groups", SCHEME], vocabularyUrl: VOCAB },
     },
     {
       label: "both schemes",

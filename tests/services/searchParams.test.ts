@@ -18,6 +18,7 @@ describe("parseSearchParams", () => {
       conceptFilters: [],
       countryCodes: [],
       wbRegionIds: [],
+      wbIncomeGroupIds: [],
     });
   });
 
@@ -32,6 +33,7 @@ describe("parseSearchParams", () => {
       conceptFilters: [],
       countryCodes: [],
       wbRegionIds: [],
+      wbIncomeGroupIds: [],
     });
   });
 
@@ -186,6 +188,12 @@ describe("parseSearchParams country codes", () => {
   test("rejects non-ISO-3166-alpha-2 values", () => {
     expect(parseSearchParams("?country=DEU,1,,DE").countryCodes).toEqual(["DE"]);
   });
+
+  test("drops duplicates across repeated and comma-separated params", () => {
+    expect(
+      parseSearchParams("?country=DE,FR,de&country=FR").countryCodes,
+    ).toEqual(["DE", "FR"]);
+  });
 });
 
 describe("parseSearchParams World Bank regions", () => {
@@ -211,6 +219,37 @@ describe("parseSearchParams World Bank regions", () => {
       parseSearchParams("?country_wb_region=XXX,EU,,SA,SAS").wbRegionIds,
     ).toEqual(["SAS"]);
     expect(parseSearchParams("?country_wb_region=xyz").wbRegionIds).toEqual([]);
+  });
+});
+
+describe("parseSearchParams World Bank income groups", () => {
+  test("single country_wb_income_group= param → one id", () => {
+    expect(parseSearchParams("?country_wb_income_group=LIC").wbIncomeGroupIds).toEqual([
+      "LIC",
+    ]);
+  });
+
+  test("comma-separated and repeated params flatten into one OR'd list", () => {
+    expect(
+      parseSearchParams(
+        "?country_wb_income_group=LIC,LMC&country_wb_income_group=HIC",
+      ).wbIncomeGroupIds,
+    ).toEqual(["LIC", "LMC", "HIC"]);
+  });
+
+  test("upper-cases lower-case ids from hand-edited URLs", () => {
+    expect(
+      parseSearchParams("?country_wb_income_group=lic, hic").wbIncomeGroupIds,
+    ).toEqual(["LIC", "HIC"]);
+  });
+
+  test("drops unknown or malformed ids", () => {
+    expect(
+      parseSearchParams("?country_wb_income_group=XXX,HI,,LI,LIC").wbIncomeGroupIds,
+    ).toEqual(["LIC"]);
+    expect(parseSearchParams("?country_wb_income_group=xyz").wbIncomeGroupIds).toEqual(
+      [],
+    );
   });
 });
 
@@ -273,7 +312,20 @@ describe("toQueryString", () => {
     expect(parseSearchParams(toQueryString(p)).wbRegionIds).toEqual(["SAS", "SSF"]);
   });
 
-  test("q comes before concept=, country=, country_wb_region=, and tail params", () => {
+  test("emits a single comma-joined country_wb_income_group= param (OR semantics)", () => {
+    const p = makeSearchParams({ wbIncomeGroupIds: ["LIC", "HIC"] });
+    expect(toQueryString(p)).toBe("country_wb_income_group=LIC%2CHIC");
+  });
+
+  test("country_wb_income_group= round-trips through parse", () => {
+    const p = makeSearchParams({ wbIncomeGroupIds: ["LIC", "HIC"] });
+    expect(parseSearchParams(toQueryString(p)).wbIncomeGroupIds).toEqual([
+      "LIC",
+      "HIC",
+    ]);
+  });
+
+  test("q comes before concept=, country=, country_wb_region=, country_wb_income_group=, and tail params", () => {
     const p = makeSearchParams({
       q: "phonics",
       page: 3,
@@ -282,6 +334,7 @@ describe("toQueryString", () => {
       conceptFilters: [["https://x/A"]],
       countryCodes: ["DE"],
       wbRegionIds: ["SAS"],
+      wbIncomeGroupIds: ["LIC"],
     });
     const keyOrder = Array.from(new URLSearchParams(toQueryString(p)).keys());
     expect(keyOrder).toEqual([
@@ -289,6 +342,7 @@ describe("toQueryString", () => {
       "concept",
       "country",
       "country_wb_region",
+      "country_wb_income_group",
       "start_year",
       "sort",
       "page",
@@ -359,6 +413,13 @@ describe("toUnpaginatedSearchQuery", () => {
     expect(out.filters.wbRegionIds).toEqual(["SAS", "SSF"]);
   });
 
+  test("World Bank income group filters travel as structured filter", () => {
+    const p = makeSearchParams({ q: "phonics", wbIncomeGroupIds: ["LIC", "HIC"] });
+    const out = toUnpaginatedSearchQuery(p, ["dom-x"]);
+    expect(out.query).toBe("phonics");
+    expect(out.filters.wbIncomeGroupIds).toEqual(["LIC", "HIC"]);
+  });
+
   test("concept filters travel as structured filter, not embedded in query", () => {
     const p = makeSearchParams({
       q: "phonics",
@@ -403,6 +464,7 @@ describe("toUnpaginatedSearchQuery", () => {
       conceptFilters: [],
       countryCodes: ["DE"],
       wbRegionIds: [],
+      wbIncomeGroupIds: [],
     });
   });
 });

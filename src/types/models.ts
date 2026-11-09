@@ -161,10 +161,16 @@ export interface CountryWbRegionFacetCount {
   count: number;
 }
 
+export interface CountryWbIncomeGroupFacetCount {
+  country_wb_income_group: string;
+  count: number;
+}
+
 export interface ReferenceFacetResult {
   concepts?: ConceptFacetCount[];
   countries?: CountryFacetCount[];
   country_wb_regions?: CountryWbRegionFacetCount[];
+  country_wb_income_groups?: CountryWbIncomeGroupFacetCount[];
 }
 
 export interface CrossFacetCell {

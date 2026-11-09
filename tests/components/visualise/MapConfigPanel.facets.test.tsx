@@ -70,6 +70,7 @@ describe("map panel facet requests", () => {
       "concepts",
       "countries",
       "country_wb_regions",
+      "country_wb_income_groups",
     ]);
   });
 
