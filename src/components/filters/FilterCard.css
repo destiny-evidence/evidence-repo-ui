@@ -6,6 +6,11 @@
   border-top: 1px solid var(--color-border);
 }
 
+/* The tooltip wrapper is inline-flex; widen it so the header keeps full width. */
+.filter-card > .tooltip {
+  display: flex;
+}
+
 .filter-card__header {
   display: flex;
   align-items: center;

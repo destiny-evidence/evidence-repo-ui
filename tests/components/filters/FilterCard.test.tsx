@@ -111,6 +111,16 @@ describe("FilterCard", () => {
     expect(tooltip?.getAttribute("data-tooltip")).toBe("Types of publications.");
   });
 
+  test("shows the title tooltip when the header gets keyboard focus", () => {
+    render(
+      <FilterCard title="Document type" titleTooltip="Types of publications.">
+        <div>child</div>
+      </FilterCard>,
+    );
+    fireEvent.focus(screen.getByRole("button", { name: /Document type/ }));
+    expect(screen.getByText("Types of publications.")).toBeInTheDocument();
+  });
+
   test("renders no tooltip when titleTooltip is omitted", () => {
     const { container } = render(
       <FilterCard title="Document type">

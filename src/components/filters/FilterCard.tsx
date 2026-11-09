@@ -40,14 +40,14 @@ export function FilterCard({
 
   return (
     <div class="filter-card" ref={cardRef}>
-      <button
-        class="filter-card__header"
-        type="button"
-        onClick={toggle}
-        aria-expanded={expanded}
-        aria-controls={panelId}
-      >
-        <Tooltip text={titleTooltip}>
+      <Tooltip text={titleTooltip}>
+        <button
+          class="filter-card__header"
+          type="button"
+          onClick={toggle}
+          aria-expanded={expanded}
+          aria-controls={panelId}
+        >
           <span
             class={
               titleTooltip
@@ -57,14 +57,14 @@ export function FilterCard({
           >
             {title}
           </span>
-        </Tooltip>
-        {showSummary && (
-          <span class="filter-card__summary">{summary}</span>
-        )}
-        <span class="filter-card__arrow" aria-hidden="true">
-          {expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
-        </span>
-      </button>
+          {showSummary && (
+            <span class="filter-card__summary">{summary}</span>
+          )}
+          <span class="filter-card__arrow" aria-hidden="true">
+            {expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+          </span>
+        </button>
+      </Tooltip>
       <div id={panelId} class="filter-card__panel" hidden={!expanded}>
         {children}
       </div>
