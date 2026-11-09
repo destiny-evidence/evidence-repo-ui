@@ -232,7 +232,7 @@ describe("community registry", () => {
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
-      wbIncomeGroupFilter: true,
+      wbIncomeGroupFilter: false,
       exportsEnabled: true,
       ancestorClosedCodings: true,
     },
