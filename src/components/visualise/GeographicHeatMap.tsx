@@ -41,10 +41,13 @@ export function GeographicHeatMap({ counts, label, countNoun }: GeographicHeatMa
   }, []);
 
   const bands = useMemo(() => heatBands(Math.max(0, ...counts.values())), [counts]);
-  const dotCodes = useMemo(
-    () => new Set(geometry?.dots.map((d) => d.code)),
-    [geometry],
+  // Dots only mark small countries that have references; a grey dot adds
+  // clutter without saying anything the empty map doesn't.
+  const dots = useMemo(
+    () => (geometry?.dots ?? []).filter((d) => (counts.get(d.code) ?? 0) > 0),
+    [geometry, counts],
   );
+  const dotCodes = useMemo(() => new Set(dots.map((d) => d.code)), [dots]);
 
   const countryLabel = (code: string) => {
     const count = counts.get(code) ?? 0;
@@ -91,7 +94,7 @@ export function GeographicHeatMap({ counts, label, countNoun }: GeographicHeatMa
                 ),
               )}
               <path class="geo-heat-map__borders" d={geometry.borders} aria-hidden="true" />
-              {geometry.dots.map(({ code, x, y }) => (
+              {dots.map(({ code, x, y }) => (
                 <circle
                   key={code}
                   class="geo-heat-map__dot"

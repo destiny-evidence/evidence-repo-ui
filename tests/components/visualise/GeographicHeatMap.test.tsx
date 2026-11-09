@@ -78,14 +78,20 @@ describe("GeographicHeatMap", () => {
     const [singapore] = await screen.findAllByRole("img", { name: /^Singapore/ });
     expect(screen.getAllByRole("img", { name: /^Singapore/ })).toHaveLength(1);
     expect(singapore.tagName).toBe("circle");
-    expect(screen.getByRole("img", { name: "Gibraltar: no references" }).tagName).toBe("circle");
+  });
+
+  test("small countries without references get no dot and are labelled on their shape", async () => {
+    const { container } = await renderMap({ FR: 5 });
+    expect((await screen.findByRole("img", { name: "Singapore: no references" })).tagName).toBe("path");
+    expect(screen.queryByRole("img", { name: /^Gibraltar/ })).not.toBeInTheDocument();
+    expect(container.querySelectorAll("circle")).toHaveLength(0);
   });
 
   test("shapes without a code are hidden from assistive technology", async () => {
     const { container } = await renderMap({});
     await screen.findByRole("group");
     expect(container.querySelector('path[d="M4,4Z"]')).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getAllByRole("img")).toHaveLength(4);
+    expect(screen.getAllByRole("img")).toHaveLength(3);
   });
 
   test("the legend lists zero and each band's range", async () => {
