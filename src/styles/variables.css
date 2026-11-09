@@ -75,6 +75,14 @@
   --color-retracted-border: #fecaca;
   --color-retracted-text: #991b1b;
 
+  /* ── Colors: geographic heat map, empty then lightest to darkest ── */
+  --color-heat-0: #eef0f3;
+  --color-heat-1: #d6deeb;
+  --color-heat-2: #aebfda;
+  --color-heat-3: #7b93c0;
+  --color-heat-4: #4a6499;
+  --color-heat-5: var(--color-accent);
+
   /* ── Spacing ── */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
