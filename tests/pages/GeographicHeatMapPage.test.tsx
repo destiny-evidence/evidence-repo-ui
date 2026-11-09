@@ -43,8 +43,9 @@ describe("GeographicHeatMapPage", () => {
 
   test("shades the map from the country facet for the search in the URL", () => {
     render(<GeographicHeatMapPage />);
-    const [params] = mockUseSearchFacets.mock.calls[0];
+    const [params, facets] = mockUseSearchFacets.mock.calls[0];
     expect(params).toMatchObject({ q: "heat", countryCodes: ["KE"] });
+    expect(facets).toEqual(["countries"]);
     expect(screen.getByTestId("map")).toHaveTextContent('[["KE",12]]');
     expect(screen.getByTestId("map")).toHaveAccessibleName("World map of results by country");
   });

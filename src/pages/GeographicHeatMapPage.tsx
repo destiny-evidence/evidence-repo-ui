@@ -3,10 +3,13 @@ import { useCommunity } from "@/community/CommunityContext";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useSearchFacets } from "@/hooks/useSearchFacets";
 import { parseSearchParams } from "@/services/searchParams";
+import type { FacetType } from "@/services/apiClient";
 import { GeographicHeatMap } from "@/components/visualise/GeographicHeatMap";
 import { NotFoundPage } from "./NotFoundPage";
 import "./VisualisePage.css";
 import "./GeographicHeatMapPage.css";
+
+const FACETS: readonly FacetType[] = ["countries"];
 
 interface GeographicHeatMapPageProps {
   path?: string;
@@ -22,7 +25,7 @@ export function GeographicHeatMapPage(_props: GeographicHeatMapPageProps) {
 function GeographicHeatMapView({ countNoun }: { countNoun: string }) {
   const search = useUrlParams();
   const params = useMemo(() => parseSearchParams(search), [search]);
-  const { counts, loading, error } = useSearchFacets(params);
+  const { counts, loading, error } = useSearchFacets(params, FACETS);
 
   return (
     <div class="visualise-page geographic-heat-map-page">
