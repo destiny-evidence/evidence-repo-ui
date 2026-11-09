@@ -23,10 +23,14 @@ export interface CommunityFeatures {
   ancestorClosedCodings: boolean;
 }
 
+// Cross-facet axis tokens sent in place of a concept-scheme URI, each described
+// for the evidence map in evidenceMap.ts's LITERAL_AXES.
+export type LiteralAxisToken = "countries" | "country_wb_income_groups";
+
 // One axis of the evidence map.
 export type EvidenceMapAxis =
   | { kind: "scheme"; schemeUri: string }
-  | { kind: "countries" };
+  | { kind: "literal"; token: LiteralAxisToken };
 
 // A community's evidence-map axis pair: `row` is the y-axis, `column` the x-axis.
 export interface EvidenceMapAxes {

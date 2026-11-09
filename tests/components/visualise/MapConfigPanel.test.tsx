@@ -7,8 +7,11 @@ vi.mock("@/hooks/useSearchFacets", () => ({
 }));
 
 import { MapConfigPanel } from "@/components/visualise/MapConfigPanel";
-import { axisToken } from "@/services/evidenceMap";
-import { AXIS_COUNTRIES } from "@/services/crossFacets";
+import {
+  AXIS_COUNTRIES,
+  AXIS_INCOME_GROUPS,
+  axisToken,
+} from "@/services/crossFacets";
 import type { ComponentProps } from "preact";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import type { EvidenceMapAxes } from "@/types/models";
@@ -91,6 +94,38 @@ describe("MapConfigPanel", () => {
     ).toBeNull();
   });
 
+  test("offers the World Bank income groups axis only behind the income group flag", () => {
+    const { unmount } = renderPanel();
+    const option = { name: "World Bank income groups" };
+    expect(within(rowSelect()).queryByRole("option", option)).toBeNull();
+    unmount();
+
+    const onApply = vi.fn();
+    renderPanel({ showWbIncomeGroupFilter: true, onApply });
+    expect(within(rowSelect()).getByRole("option", option)).toBeInTheDocument();
+    expect(within(columnSelect()).getByRole("option", option)).toBeInTheDocument();
+
+    fireEvent.change(columnSelect(), { target: { value: AXIS_INCOME_GROUPS } });
+    fireEvent.click(showResults());
+    expect(onApply.mock.calls[0][0].axes).toEqual({
+      row: AXES.row,
+      column: { kind: "literal", token: AXIS_INCOME_GROUPS },
+    });
+  });
+
+  test("names an applied literal axis by its title even where it isn't offered", () => {
+    renderPanel({
+      appliedAxes: {
+        row: AXES.row,
+        column: { kind: "literal", token: AXIS_INCOME_GROUPS },
+      },
+    });
+    expect(columnSelect().value).toBe(AXIS_INCOME_GROUPS);
+    expect(
+      within(columnSelect()).getByRole("option", { name: "World Bank income groups" }),
+    ).toBeInTheDocument();
+  });
+
   test("sorts the dropdown options alphabetically by label", () => {
     renderPanel();
     const labels = within(rowSelect())
@@ -145,7 +180,7 @@ describe("MapConfigPanel", () => {
     expect(onApply).toHaveBeenCalledTimes(1);
     expect(onApply.mock.calls[0][0]).toEqual({
       axes: {
-        row: { kind: "countries" },
+        row: { kind: "literal", token: AXIS_COUNTRIES },
         column: { kind: "scheme", schemeUri: DOCUMENT_TYPE_SCHEME.uri },
       },
       filters: {
@@ -204,7 +239,7 @@ describe("MapConfigPanel", () => {
     renderPanel({
       defaultAxes: AXES,
       appliedAxes: {
-        row: { kind: "countries" },
+        row: { kind: "literal", token: AXIS_COUNTRIES },
         column: { kind: "scheme", schemeUri: OUTCOME_SCHEME_FIXTURE.uri },
       },
     });
@@ -223,7 +258,7 @@ describe("MapConfigPanel", () => {
   test("hydrates the axis drafts from appliedAxes (independent of defaults)", () => {
     renderPanel({
       appliedAxes: {
-        row: { kind: "countries" },
+        row: { kind: "literal", token: AXIS_COUNTRIES },
         column: { kind: "scheme", schemeUri: OUTCOME_SCHEME_FIXTURE.uri },
       },
     });

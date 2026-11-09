@@ -1,32 +1,26 @@
-export const AXIS_COUNTRIES = "countries";
-export const AXIS_REGIONS = "country_wb_regions";
-export const AXIS_INCOME_GROUPS = "country_wb_income_groups";
+import type {
+  EvidenceMapAxes,
+  EvidenceMapAxis,
+  LiteralAxisToken,
+} from "@/types/models";
 
-export type LiteralAxisToken =
-  | typeof AXIS_COUNTRIES
-  | typeof AXIS_REGIONS
-  | typeof AXIS_INCOME_GROUPS;
-
-export type CrossFacetAxis =
-  | { kind: "literal"; token: LiteralAxisToken }
-  | { kind: "scheme"; schemeUri: string };
-
-export interface CrossFacetAxisPair {
-  row: CrossFacetAxis;
-  column: CrossFacetAxis;
-}
+export const AXIS_COUNTRIES = "countries" satisfies LiteralAxisToken;
+export const AXIS_INCOME_GROUPS =
+  "country_wb_income_groups" satisfies LiteralAxisToken;
 
 export interface CrossFacetQueryAxes {
   axes: readonly [string, string];
   vocabularyUrl?: string;
 }
 
-function axisToken(axis: CrossFacetAxis): string {
+// The token sent to the cross-facet endpoint, also written to / read from the
+// map URL and used as an axis <select> value.
+export function axisToken(axis: EvidenceMapAxis): string {
   return axis.kind === "literal" ? axis.token : axis.schemeUri;
 }
 
 export function axisPairToParams(
-  pair: CrossFacetAxisPair,
+  pair: EvidenceMapAxes,
   vocabularyUrl: string,
 ): CrossFacetQueryAxes {
   return {

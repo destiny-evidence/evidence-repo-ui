@@ -1,6 +1,5 @@
 import { describe, test, expect } from "vitest";
 import {
-  axisToken,
   buildEvidenceMapModel,
   parseAxis,
   resolveMapAxis,
@@ -24,7 +23,11 @@ import {
   visibleTreeCategories,
   type AxisCategory,
 } from "@/services/evidenceMap";
-import { AXIS_COUNTRIES } from "@/services/crossFacets";
+import {
+  AXIS_COUNTRIES,
+  AXIS_INCOME_GROUPS,
+  axisToken,
+} from "@/services/crossFacets";
 import type {
   CrossFacetCell,
   EvidenceMapAxis,
@@ -322,12 +325,32 @@ describe("resolveMapAxis", () => {
   });
 
   test("expands a countries axis through Intl, with no enumerated categories yet", () => {
-    const axis = resolveMapAxis({ kind: "countries" }, null, null);
+    const axis = resolveMapAxis({ kind: "literal", token: AXIS_COUNTRIES }, null, null);
     expect(axis.title).toBe("Countries");
     expect(axis.categories).toEqual([]);
     expect(axis.tree).toBeUndefined();
     expect(axis.labelFor("FR")).toBe(countryName("FR"));
     expect(axis.labelFor("FR")).not.toBe("FR");
+  });
+
+  test("enumerates every income group in the fixed order, so zero-hit groups still render", () => {
+    const axis = resolveMapAxis({ kind: "literal", token: AXIS_INCOME_GROUPS }, null, null);
+    expect(axis.title).toBe("World Bank income groups");
+    expect(axis.tree).toBeUndefined();
+
+    const model = buildEvidenceMapModel(
+      [{ axes: ["LIC", "u:x"], count: 4 }],
+      axis,
+      { categories: [], labelFor: (v) => v },
+    );
+    expect(model.rows.map((r) => r.label)).toEqual([
+      "High income",
+      "Upper middle income",
+      "Lower middle income",
+      "Low income",
+    ]);
+    expect(model.getCount("HIC", "u:x")).toBeUndefined();
+    expect(model.getCount("LIC", "u:x")).toBe(4);
   });
 });
 
@@ -668,7 +691,7 @@ describe("axisToken / parseAxis", () => {
     kind: "scheme",
     schemeUri: "https://vocab.esea.education/EducationLevelScheme",
   };
-  const COUNTRIES: EvidenceMapAxis = { kind: "countries" };
+  const COUNTRIES: EvidenceMapAxis = { kind: "literal", token: AXIS_COUNTRIES };
 
   test("a scheme axis tokenises to its URI", () => {
     expect(axisToken(SCHEME)).toBe(SCHEME.schemeUri);
@@ -686,7 +709,13 @@ describe("axisToken / parseAxis", () => {
     expect(parseAxis(axisToken(COUNTRIES))).toEqual(COUNTRIES);
   });
 
-  test("parses any non-countries token as a scheme URI", () => {
+  test("round-trips an income groups axis", () => {
+    const incomeGroups: EvidenceMapAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
+    expect(axisToken(incomeGroups)).toBe(AXIS_INCOME_GROUPS);
+    expect(parseAxis(AXIS_INCOME_GROUPS)).toEqual(incomeGroups);
+  });
+
+  test("parses any other token as a scheme URI", () => {
     expect(parseAxis("https://vocab.example/Thing")).toEqual({
       kind: "scheme",
       schemeUri: "https://vocab.example/Thing",
@@ -733,7 +762,7 @@ describe("cellSearchParams", () => {
 
   test("a countries axis contributes a country code, de-duplicated", () => {
     const axes: EvidenceMapAxes = {
-      row: { kind: "countries" },
+      row: { kind: "literal", token: AXIS_COUNTRIES },
       column: { kind: "scheme", schemeUri: "scheme:theme" },
     };
     const next = cellSearchParams(
@@ -750,7 +779,7 @@ describe("cellSearchParams", () => {
   test("a countries axis appends a new code to the existing filter", () => {
     const axes: EvidenceMapAxes = {
       row: { kind: "scheme", schemeUri: "scheme:level" },
-      column: { kind: "countries" },
+      column: { kind: "literal", token: AXIS_COUNTRIES },
     };
     const next = cellSearchParams(
       base,
@@ -765,7 +794,7 @@ describe("cellSearchParams", () => {
   test("does not mutate the base params", () => {
     const axes: EvidenceMapAxes = {
       row: { kind: "scheme", schemeUri: "scheme:level" },
-      column: { kind: "countries" },
+      column: { kind: "literal", token: AXIS_COUNTRIES },
     };
     cellSearchParams(
       base,
@@ -775,6 +804,22 @@ describe("cellSearchParams", () => {
     );
     expect(base.conceptFilters).toEqual([["scheme-a:x"]]);
     expect(base.countryCodes).toEqual(["FR"]);
+  });
+
+  test("an income groups axis adds the group to the income group filter, beside a country", () => {
+    const axes: EvidenceMapAxes = {
+      row: { kind: "literal", token: AXIS_INCOME_GROUPS },
+      column: { kind: "literal", token: AXIS_COUNTRIES },
+    };
+    const next = cellSearchParams(
+      { ...base, wbIncomeGroupIds: ["HIC"] },
+      axes,
+      { key: "LIC", label: "Low income" },
+      { key: "KE", label: "Kenya" },
+    );
+    expect(next.wbIncomeGroupIds).toEqual(["HIC", "LIC"]);
+    expect(next.countryCodes).toEqual(["FR", "KE"]);
+    expect(next.conceptFilters).toEqual([["scheme-a:x"]]);
   });
 });
 
@@ -806,17 +851,30 @@ describe("axisSearchParams", () => {
   test("a countries axis appends a new, de-duplicated country code", () => {
     const added = axisSearchParams(
       base,
-      { kind: "countries" },
+      { kind: "literal", token: AXIS_COUNTRIES },
       { key: "DE", label: "Germany" },
     );
     expect(added.countryCodes).toEqual(["FR", "DE"]);
 
     const dupe = axisSearchParams(
       base,
-      { kind: "countries" },
+      { kind: "literal", token: AXIS_COUNTRIES },
       { key: "FR", label: "France" },
     );
     expect(dupe.countryCodes).toEqual(["FR"]);
+  });
+
+  test("an income groups axis appends a new, de-duplicated income group", () => {
+    const axis: EvidenceMapAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
+    const withLic = { ...base, wbIncomeGroupIds: ["LIC"] };
+    expect(
+      axisSearchParams(withLic, axis, { key: "LMC", label: "Lower middle income" })
+        .wbIncomeGroupIds,
+    ).toEqual(["LIC", "LMC"]);
+    expect(
+      axisSearchParams(withLic, axis, { key: "LIC", label: "Low income" })
+        .wbIncomeGroupIds,
+    ).toEqual(["LIC"]);
   });
 
   test("does not mutate the base params", () => {
@@ -846,7 +904,7 @@ describe("buildVisualiseUrl", () => {
       },
       {
         row: { kind: "scheme", schemeUri: "scheme:level" },
-        column: { kind: "countries" },
+        column: { kind: "literal", token: AXIS_COUNTRIES },
       },
     );
     const [path, query] = url.split("?");
