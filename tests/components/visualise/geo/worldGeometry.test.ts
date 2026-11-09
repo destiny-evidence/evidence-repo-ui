@@ -5,6 +5,7 @@ import type { GeometryCollection, Topology } from "topojson-specification";
 import type { FeatureCollection } from "geojson";
 import world from "@/data/world-geo.json";
 import { loadWorldGeometry } from "@/components/visualise/geo/worldGeometry";
+import heatMapCss from "@/components/visualise/GeographicHeatMap.css?raw";
 
 // Guards the committed output of scripts/generate-world-geo.mjs.
 describe("world geometry", () => {
@@ -45,6 +46,13 @@ describe("world geometry", () => {
     expect(geometry.countries.every((c) => c.d.length > 0)).toBe(true);
     expect(geometry.dots.every((d) => Number.isFinite(d.x) && Number.isFinite(d.y))).toBe(true);
     expect(geometry.viewBox.split(" ")[2]).toBe("960");
+  });
+
+  test("the frame's aspect ratio in the CSS matches the viewBox", () => {
+    const [, , width, height] = geometry.viewBox.split(" ").map(Number);
+    const match = heatMapCss.match(/aspect-ratio:\s*([\d.]+)\s*\/\s*([\d.]+)/);
+    expect(match).not.toBeNull();
+    expect(Number(match![1]) / Number(match![2])).toBeCloseTo(width / height, 2);
   });
 
   test("the outline is cut off with a visible edge above the bottom of the view", () => {

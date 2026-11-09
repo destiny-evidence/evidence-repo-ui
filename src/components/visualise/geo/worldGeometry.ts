@@ -32,11 +32,13 @@ type WorldTopology = Topology<{
   dots: GeometryCollection;
 }>;
 
+const equalEarth = () => geoEqualEarth().fitWidth(MAP_WIDTH, { type: "Sphere" });
+
 // The globe is fitted to the full width and cut off a little below the land,
 // with a straight edge where Antarctica would be to mirror the flat pole at the top.
 export function buildWorldGeometry(topology: WorldTopology): WorldGeometry {
   const countries = feature(topology, topology.objects.countries) as FeatureCollection;
-  const projection = geoEqualEarth().fitWidth(MAP_WIDTH, { type: "Sphere" });
+  const projection = equalEarth();
   const path = geoPath(projection);
 
   const [[, top]] = path.bounds({ type: "Sphere" });
@@ -46,12 +48,10 @@ export function buildWorldGeometry(topology: WorldTopology): WorldGeometry {
   const height = cut + VERTICAL_PADDING - y;
 
   const outline = geoPath(
-    geoEqualEarth()
-      .fitWidth(MAP_WIDTH, { type: "Sphere" })
-      .clipExtent([
-        [-1, y],
-        [MAP_WIDTH + 1, cut],
-      ]),
+    equalEarth().clipExtent([
+      [-1, y],
+      [MAP_WIDTH + 1, cut],
+    ]),
   )({ type: "Sphere" });
 
   const dots: CountryDot[] = [];
@@ -73,9 +73,6 @@ export function buildWorldGeometry(topology: WorldTopology): WorldGeometry {
   };
 }
 
-let cached: WorldGeometry | null = null;
-
 export function loadWorldGeometry(): WorldGeometry {
-  cached ??= buildWorldGeometry(world as unknown as WorldTopology);
-  return cached;
+  return buildWorldGeometry(world as unknown as WorldTopology);
 }

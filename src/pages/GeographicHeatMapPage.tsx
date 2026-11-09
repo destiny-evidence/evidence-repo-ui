@@ -26,6 +26,12 @@ function GeographicHeatMapView({ countNoun }: { countNoun: string }) {
   const search = useUrlParams();
   const params = useMemo(() => parseSearchParams(search), [search]);
   const { counts, loading, error } = useSearchFacets(params, FACETS);
+  // The first load has its own spinner; dimming is for new counts over old.
+  const refetching = loading && counts !== null;
+  const countryCounts = useMemo(
+    () => onlySelected(counts?.countries, params.countryCodes),
+    [counts, params.countryCodes],
+  );
 
   return (
     <div class="visualise-page geographic-heat-map-page">
@@ -36,11 +42,11 @@ function GeographicHeatMapView({ countNoun }: { countNoun: string }) {
         </p>
       ) : (
         <div
-          class={`geographic-heat-map-page__map${loading ? " is-updating" : ""}`}
-          aria-busy={loading}
+          class={`geographic-heat-map-page__map${refetching ? " is-updating" : ""}`}
+          aria-busy={refetching}
         >
           <GeographicHeatMap
-            counts={counts?.countries}
+            counts={countryCounts}
             label={`World map of ${countNoun} by country`}
             countNoun={countNoun}
           />
@@ -48,4 +54,14 @@ function GeographicHeatMapView({ countNoun }: { countNoun: string }) {
       )}
     </div>
   );
+}
+
+// The countries facet leaves out its own filter so filter cards can show
+// sibling counts, which on a map would shade countries the URL filters out.
+function onlySelected(
+  counts: ReadonlyMap<string, number> | undefined,
+  selected: readonly string[],
+): ReadonlyMap<string, number> | undefined {
+  if (!counts || selected.length === 0) return counts;
+  return new Map([...counts].filter(([code]) => selected.includes(code)));
 }

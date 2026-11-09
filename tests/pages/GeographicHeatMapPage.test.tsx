@@ -50,10 +50,44 @@ describe("GeographicHeatMapPage", () => {
     expect(screen.getByTestId("map")).toHaveAccessibleName("World map of results by country");
   });
 
-  test("passes no counts until the first response", () => {
+  test("only shades the countries the URL filters to", () => {
+    mockUseSearchFacets.mockReturnValue({
+      counts: { countries: new Map([["FR", 30], ["KE", 12]]) },
+      loading: false,
+      error: null,
+    });
+    render(<GeographicHeatMapPage />);
+    expect(screen.getByTestId("map")).toHaveTextContent('[["KE",12]]');
+  });
+
+  test("shades every country without a country filter", () => {
+    mockUseUrlParams.mockReturnValue("?q=heat");
+    mockUseSearchFacets.mockReturnValue({
+      counts: { countries: new Map([["FR", 30], ["KE", 12]]) },
+      loading: false,
+      error: null,
+    });
+    render(<GeographicHeatMapPage />);
+    expect(screen.getByTestId("map")).toHaveTextContent('[["FR",30],["KE",12]]');
+  });
+
+  test("passes no counts until the first response, without dimming the map's own spinner", () => {
     mockUseSearchFacets.mockReturnValue({ counts: null, loading: true, error: null });
     render(<GeographicHeatMapPage />);
     expect(screen.getByTestId("map")).toHaveTextContent("no counts");
+    expect(screen.getByTestId("map").parentElement).not.toHaveClass("is-updating");
+    expect(screen.getByTestId("map").parentElement).toHaveAttribute("aria-busy", "false");
+  });
+
+  test("dims the previous counts while new ones load", () => {
+    mockUseSearchFacets.mockReturnValue({
+      counts: { countries: new Map([["KE", 12]]) },
+      loading: true,
+      error: null,
+    });
+    render(<GeographicHeatMapPage />);
+    expect(screen.getByTestId("map").parentElement).toHaveClass("is-updating");
+    expect(screen.getByTestId("map").parentElement).toHaveAttribute("aria-busy", "true");
   });
 
   test("shows an error when the counts fail to load", () => {

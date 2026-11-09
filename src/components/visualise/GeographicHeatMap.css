@@ -5,7 +5,8 @@
   gap: var(--spacing-md);
 }
 
-/* Matches the generated viewBox so the frame doesn't jump once shapes load. */
+/* Matches the generated viewBox so the frame doesn't jump once shapes load.
+   worldGeometry.test.ts fails if the two drift apart. */
 .geo-heat-map__frame {
   aspect-ratio: 960 / 447;
 }
