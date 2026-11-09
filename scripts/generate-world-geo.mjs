@@ -1,9 +1,6 @@
 // Builds src/data/world-geo.json from a pinned Natural Earth release.
 //
 //   npm run generate:geo
-//
-// Edit the constants below to change the source scale, simplification or
-// dots, then regenerate and commit the output.
 
 import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
@@ -14,38 +11,35 @@ import { presimplify, quantile, simplify } from "topojson-simplify";
 import { quantize } from "topojson-client";
 
 const NE_VERSION = "v5.1.2";
-const SCALE = "50m";
-// Share of the least significant points to drop (0 keeps every point).
+// Share of the least significant points to drop.
 const SIMPLIFY_QUANTILE = 0.3;
 const QUANTIZE = 1e4;
 // Countries whose largest landmass is narrower than this (in degrees), or that
-// have no shape at all, are also drawn as a dot so they can be seen.
-const TINY_DOTS = true;
+// have no shape at all, also get a dot so they can be seen.
 const TINY_MAX_EXTENT_DEG = 1.5;
-const DROP = new Set(["AQ"]);
+const DROPPED = "AQ";
 
-const SHA256 = {
-  "110m": {
-    countries: "6866c877d39cba9c357620878839b336d569f8c662d3cfab4cb1dbe2d39c977f",
-    tiny: "753c4b167361f0f1223091d52f98aaddfb9101529eef263cc094057e43228c40",
+const SOURCES = {
+  countries: {
+    file: "ne_50m_admin_0_countries.geojson",
+    sha256: "3e458fc036ad0a66411f2c1e6cac49c5d7bfb81cb1123bc513b22511a2b7fdeb",
   },
-  "50m": {
-    countries: "3e458fc036ad0a66411f2c1e6cac49c5d7bfb81cb1123bc513b22511a2b7fdeb",
-    tiny: "e44d2a67feed7fd0c74b4b2c0342ade1983c038e43e32acc461c82bfa6538009",
+  tiny: {
+    file: "ne_50m_admin_0_tiny_countries.geojson",
+    sha256: "e44d2a67feed7fd0c74b4b2c0342ade1983c038e43e32acc461c82bfa6538009",
   },
 };
 
 const OUT = fileURLToPath(new URL("../src/data/world-geo.json", import.meta.url));
 const BASE = `https://raw.githubusercontent.com/nvkelso/natural-earth-vector/${NE_VERSION}/geojson`;
 
-async function fetchPinned(layer, file) {
+async function fetchPinned({ file, sha256 }) {
   const res = await fetch(`${BASE}/${file}`);
   if (!res.ok) throw new Error(`${file}: HTTP ${res.status}`);
   const text = await res.text();
   const digest = createHash("sha256").update(text).digest("hex");
-  const expected = SHA256[SCALE]?.[layer];
-  if (digest !== expected) {
-    throw new Error(`${file}: sha256 ${digest} does not match the pinned ${expected}`);
+  if (digest !== sha256) {
+    throw new Error(`${file}: sha256 ${digest} does not match the pinned ${sha256}`);
   }
   return JSON.parse(text);
 }
@@ -88,7 +82,7 @@ function countryFeatures(source) {
   const unkeyed = [];
   for (const f of source.features) {
     const code = isoCode(f);
-    if (code && DROP.has(code)) continue;
+    if (code === DROPPED) continue;
     const polys = polygons(f.geometry);
     if (!code) unkeyed.push(polys);
     else byCode.set(code, [...(byCode.get(code) ?? []), ...polys]);
@@ -117,7 +111,7 @@ function dotFeatures(byCode, tinySource) {
   const codes = new Set([...points.keys(), ...byCode.keys()]);
   const dots = [];
   for (const code of [...codes].sort()) {
-    if (DROP.has(code)) continue;
+    if (code === DROPPED) continue;
     const polys = byCode.get(code);
     const largest = polys && largestRing(polys);
     if (largest && largest.extent >= TINY_MAX_EXTENT_DEG) continue;
@@ -133,22 +127,17 @@ function stripWeights(topo) {
   return topo;
 }
 
-const countriesSource = await fetchPinned("countries", `ne_${SCALE}_admin_0_countries.geojson`);
-const { byCode, features } = countryFeatures(countriesSource);
-const objects = { countries: { type: "FeatureCollection", features } };
-if (TINY_DOTS) {
-  const tinySource = await fetchPinned("tiny", `ne_${SCALE}_admin_0_tiny_countries.geojson`);
-  objects.dots = { type: "FeatureCollection", features: dotFeatures(byCode, tinySource) };
-}
+const { byCode, features } = countryFeatures(await fetchPinned(SOURCES.countries));
+const dots = dotFeatures(byCode, await fetchPinned(SOURCES.tiny));
 
-let topo = topology(objects);
-if (SIMPLIFY_QUANTILE > 0) {
-  topo = presimplify(topo);
-  topo = stripWeights(simplify(topo, quantile(topo, SIMPLIFY_QUANTILE)));
-}
+let topo = presimplify(
+  topology({
+    countries: { type: "FeatureCollection", features },
+    dots: { type: "FeatureCollection", features: dots },
+  }),
+);
+topo = stripWeights(simplify(topo, quantile(topo, SIMPLIFY_QUANTILE)));
 topo = quantize(topo, QUANTIZE);
 
 await writeFile(OUT, JSON.stringify(topo));
-console.log(
-  `Wrote ${OUT}: ${features.length} shapes, ${objects.dots?.features.length ?? 0} dots`,
-);
+console.log(`Wrote ${OUT}: ${features.length} shapes, ${dots.length} dots`);

@@ -29,7 +29,7 @@ const VERTICAL_PADDING = 8;
 
 type WorldTopology = Topology<{
   countries: GeometryCollection;
-  dots?: GeometryCollection;
+  dots: GeometryCollection;
 }>;
 
 // The globe is fitted to the full width and cut off a little below the land,
@@ -55,12 +55,10 @@ export function buildWorldGeometry(topology: WorldTopology): WorldGeometry {
   )({ type: "Sphere" });
 
   const dots: CountryDot[] = [];
-  if (topology.objects.dots) {
-    const points = feature(topology, topology.objects.dots) as FeatureCollection<Point>;
-    for (const f of points.features) {
-      const xy = projection(f.geometry.coordinates as [number, number]);
-      if (xy) dots.push({ code: String(f.id), x: xy[0], y: xy[1] });
-    }
+  const points = feature(topology, topology.objects.dots) as FeatureCollection<Point>;
+  for (const f of points.features) {
+    const xy = projection(f.geometry.coordinates as [number, number]);
+    if (xy) dots.push({ code: String(f.id), x: xy[0], y: xy[1] });
   }
 
   return {
