@@ -758,7 +758,6 @@ function EvidenceMapView({
         schemes={vocab.error ? null : filterableSchemes}
         loading={vocab.loading}
         showCountryFacetFilter={community.features.countryFacetFilter}
-        showWbIncomeGroupFilter={community.features.wbIncomeGroupFilter}
         pinnedFilters={community.pinnedFilters}
         expandOnMountFilters={panelExpandedFilters}
         collapsibleConceptFilters={community.features.ancestorClosedCodings}

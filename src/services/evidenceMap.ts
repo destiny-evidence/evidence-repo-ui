@@ -57,12 +57,9 @@ export function literalAxisTitle(token: LiteralAxisToken): string {
 // Literal axes are offered only where their facet is populated; against an
 // empty facet the cross-facet query for that axis fails.
 export function offeredLiteralAxes(
-  features: Pick<CommunityFeatures, "countryFacetFilter" | "wbIncomeGroupFilter">,
+  features: Pick<CommunityFeatures, "countryFacetFilter">,
 ): LiteralAxisToken[] {
-  const tokens: LiteralAxisToken[] = [];
-  if (features.countryFacetFilter) tokens.push(AXIS_COUNTRIES);
-  if (features.wbIncomeGroupFilter) tokens.push(AXIS_INCOME_GROUPS);
-  return tokens;
+  return features.countryFacetFilter ? [AXIS_COUNTRIES, AXIS_INCOME_GROUPS] : [];
 }
 
 export function parseAxis(token: string): EvidenceMapAxis {

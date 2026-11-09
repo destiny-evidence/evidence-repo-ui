@@ -47,7 +47,6 @@ export function FilterCardList({
   draft,
   countNoun = "results",
   showCountryFacetFilter,
-  showWbIncomeGroupFilter,
   pinnedFilters,
   expandOnMountFilters = [],
   collapsibleConceptFilters = false,
@@ -55,7 +54,6 @@ export function FilterCardList({
   const items = orderFilterItems(draft.schemes ?? [], {
     pinned: pinnedFilters,
     showCountryFacetFilter,
-    showWbIncomeGroupFilter,
   });
   const expanded = new Set(expandOnMountFilters);
 

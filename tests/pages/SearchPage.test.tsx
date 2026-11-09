@@ -871,25 +871,6 @@ describe("SearchPage", () => {
       expect(screen.getByRole("button", { name: /Refine\s*4/ })).toBeDefined();
     });
 
-    test("Refine is offered for a community whose only card is the income group one", async () => {
-      const esea = findCommunity("esea")!;
-      communityOverride.current = {
-        ...esea,
-        pinnedFilters: ["wbIncomeGroup"],
-        features: { ...esea.features, countryFacetFilter: false, wbIncomeGroupFilter: true },
-      };
-      mockVocab.mockReturnValue(vocabWith([]));
-      mockBoth({ results: makeResult(120, ["r1"]) });
-      renderSearchPage();
-      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-
-      fireEvent.click(screen.getByRole("button", { name: "Refine" }));
-      expect(
-        screen.getByRole("button", { name: /World Bank income group/ }),
-      ).toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /Country/ })).toBeNull();
-    });
-
     test("Refine is offered when the vocabulary has no filterable schemes", async () => {
       // ESEA pins year and country, neither of which needs the vocabulary.
       mockVocab.mockReturnValue(vocabWith([]));

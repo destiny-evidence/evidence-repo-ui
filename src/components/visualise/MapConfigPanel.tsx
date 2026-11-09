@@ -34,8 +34,7 @@ interface MapConfigPanelProps extends MapConfigPanelInnerProps, PanelChromeProps
   loading: boolean;
 }
 
-// `schemes`, `showCountryFacetFilter` and `showWbIncomeGroupFilter` also drive
-// the axis dropdowns.
+// `schemes` and `showCountryFacetFilter` also drive the axis dropdowns.
 interface MapConfigPanelInnerProps extends FilterDraftInputs, FilterCardOptions {
   // Currently-applied axes (from the URL) → the initial axis draft.
   appliedAxes: EvidenceMapAxes;
@@ -174,14 +173,12 @@ function MapConfigPanelInner({
   appliedEndYear,
   params,
   showCountryFacetFilter = true,
-  showWbIncomeGroupFilter = false,
   onApply,
   ...cardOptions
 }: MapConfigPanelInnerProps) {
   const [draftAxes, setDraftAxes] = useState<EvidenceMapAxes>(appliedAxes);
   const literalAxes = offeredLiteralAxes({
     countryFacetFilter: showCountryFacetFilter,
-    wbIncomeGroupFilter: showWbIncomeGroupFilter,
   });
 
   const draft = useFilterDraft({
@@ -192,7 +189,7 @@ function MapConfigPanelInner({
     appliedStartYear,
     appliedEndYear,
     params,
-    facets: facetTypesFor({ showCountryFacetFilter, showWbIncomeGroupFilter }),
+    facets: facetTypesFor({ showCountryFacetFilter }),
     axes: draftAxes,
   });
 
@@ -235,7 +232,6 @@ function MapConfigPanelInner({
           <FilterCardList
             draft={draft}
             showCountryFacetFilter={showCountryFacetFilter}
-            showWbIncomeGroupFilter={showWbIncomeGroupFilter}
             {...cardOptions}
           />
         </section>

@@ -21,10 +21,8 @@ export const DEFAULT_PINNED_FILTERS: readonly PinnedFilter[] = [
 ];
 
 export interface FacetCardOptions {
-  // When false the "country" slot renders nothing (facet unavailable).
+  // When false the "country" and "wbIncomeGroup" slots render nothing (facets unavailable).
   showCountryFacetFilter?: boolean;
-  // When false the "wbIncomeGroup" slot renders nothing (facet unavailable).
-  showWbIncomeGroupFilter?: boolean;
 }
 
 interface OrderFilterItemsOptions extends FacetCardOptions {
@@ -37,13 +35,12 @@ interface OrderFilterItemsOptions extends FacetCardOptions {
  */
 export function facetTypesFor({
   showCountryFacetFilter = true,
-  showWbIncomeGroupFilter = false,
 }: FacetCardOptions = {}): FacetType[] {
   const facets: FacetType[] = ["concepts"];
   if (showCountryFacetFilter) facets.push("countries");
   // No card uses region counts yet; they're requested for every community.
   facets.push("country_wb_regions");
-  if (showWbIncomeGroupFilter) facets.push("country_wb_income_groups");
+  if (showCountryFacetFilter) facets.push("country_wb_income_groups");
   return facets;
 }
 
@@ -58,7 +55,6 @@ export function orderFilterItems(
   {
     pinned = DEFAULT_PINNED_FILTERS,
     showCountryFacetFilter = true,
-    showWbIncomeGroupFilter = false,
   }: OrderFilterItemsOptions = {},
 ): FilterItem[] {
   const byUri = new Map(schemes.map((s) => [s.uri, s]));
@@ -72,7 +68,7 @@ export function orderFilterItems(
     }
   };
   const pushWbIncomeGroup = () => {
-    if (showWbIncomeGroupFilter && !placed.has("wbIncomeGroup")) {
+    if (showCountryFacetFilter && !placed.has("wbIncomeGroup")) {
       placed.add("wbIncomeGroup");
       items.push({ kind: "wbIncomeGroup" });
     }

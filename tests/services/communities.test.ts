@@ -193,7 +193,6 @@ describe("community registry", () => {
       findingsAndEstimates: true,
       exportsEnabled: false,
       countryFacetFilter: true,
-      wbIncomeGroupFilter: false,
       referenceSelection: true,
       ancestorClosedCodings: false,
     });
@@ -213,7 +212,6 @@ describe("community registry", () => {
       findingsAndEstimates: true,
       exportsEnabled: true,
       countryFacetFilter: true,
-      wbIncomeGroupFilter: false,
       ancestorClosedCodings: false,
     },
     {
@@ -222,7 +220,6 @@ describe("community registry", () => {
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
-      wbIncomeGroupFilter: false,
       exportsEnabled: true,
       ancestorClosedCodings: false,
     },
@@ -232,7 +229,6 @@ describe("community registry", () => {
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
-      wbIncomeGroupFilter: false,
       exportsEnabled: true,
       ancestorClosedCodings: true,
     },

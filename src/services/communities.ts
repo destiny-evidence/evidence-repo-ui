@@ -43,7 +43,6 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   findingsAndEstimates: true,
   exportsEnabled: false,
   countryFacetFilter: true,
-  wbIncomeGroupFilter: false,
   // Selection UI still only shows where a consumer (AI summary / selection
   // export) is enabled — see selectionEnabled.
   referenceSelection: true,
@@ -242,7 +241,6 @@ const COMMUNITIES: Community[] = [
       selfSignup: true,
       findingsAndEstimates: false,
       countryFacetFilter: false,
-      wbIncomeGroupFilter: false,
       exportsEnabled: true,
       ancestorClosedCodings: true,
     },

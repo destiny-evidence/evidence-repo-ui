@@ -666,10 +666,9 @@ describe("FilterDrawer", () => {
 
 describe("World Bank income group filter integration", () => {
   const INCOME_COUNTS = new Map([["HIC", 109], ["LIC", 72]]);
-  const withCard = { showWbIncomeGroupFilter: true } as const;
 
-  test("renders the card after Country, collapsed, only when enabled", () => {
-    const { container } = renderDrawer(withCard);
+  test("renders the card after Country, collapsed, only when the country facet filter is enabled", () => {
+    const { container } = renderDrawer();
     const titles = Array.from(
       container.querySelectorAll(".filter-card__title"),
     ).map((n) => n.textContent);
@@ -684,7 +683,7 @@ describe("World Bank income group filter integration", () => {
     ).toBe("false");
 
     cleanup();
-    renderDrawer();
+    renderDrawer({ showCountryFacetFilter: false });
     expect(
       screen.queryByRole("button", { name: /World Bank income group/ }),
     ).toBeNull();
@@ -692,19 +691,19 @@ describe("World Bank income group filter integration", () => {
 
   test("requests the income group and country counts only when their cards show", () => {
     const lastFacets = () => mockUseSearchFacets.mock.calls.at(-1)![1];
-    renderDrawer({ ...withCard, showCountryFacetFilter: false });
-    expect(lastFacets()).toContain("country_wb_income_groups");
+    renderDrawer({ showCountryFacetFilter: false });
+    expect(lastFacets()).not.toContain("country_wb_income_groups");
     expect(lastFacets()).not.toContain("countries");
 
     cleanup();
     renderDrawer();
-    expect(lastFacets()).not.toContain("country_wb_income_groups");
+    expect(lastFacets()).toContain("country_wb_income_groups");
     expect(lastFacets()).toContain("countries");
   });
 
   test("lists all four groups in fixed order with counts, disabling the empty ones", () => {
     setCounts({ wbIncomeGroups: INCOME_COUNTS });
-    renderDrawer({ ...withCard, expandOnMountFilters: ["wbIncomeGroup"] });
+    renderDrawer({expandOnMountFilters: ["wbIncomeGroup"] });
     const rows = screen.getAllByRole("checkbox", { name: /income/ }) as HTMLInputElement[];
     expect(rows.map((r) => r.closest("label")?.textContent)).toEqual([
       "High income109",
@@ -718,7 +717,7 @@ describe("World Bank income group filter integration", () => {
   test("selecting groups and applying emits their ids in display order", () => {
     const onApply = vi.fn();
     setCounts({ wbIncomeGroups: INCOME_COUNTS });
-    renderDrawer({ ...withCard, schemes: [], expandOnMountFilters: ["wbIncomeGroup"], onApply });
+    renderDrawer({schemes: [], expandOnMountFilters: ["wbIncomeGroup"], onApply });
     fireEvent.click(screen.getByLabelText(/^Low income/));
     fireEvent.click(screen.getByLabelText(/^High income/));
     fireEvent.click(screen.getByRole("button", { name: "Show results" }));
@@ -735,7 +734,6 @@ describe("World Bank income group filter integration", () => {
 
   test("hydrates the selection from appliedWbIncomeGroupIds and stays clean", () => {
     renderDrawer({
-      ...withCard,
       schemes: [],
       appliedWbIncomeGroupIds: ["LIC"],
       expandOnMountFilters: ["wbIncomeGroup"],
@@ -748,7 +746,7 @@ describe("World Bank income group filter integration", () => {
 
   test("Reset all clears the income group draft along with the others", () => {
     setCounts({ countries: new Map([["DE", 230]]), wbIncomeGroups: INCOME_COUNTS });
-    renderDrawer({ ...withCard, expandOnMountFilters: ["wbIncomeGroup"] });
+    renderDrawer({expandOnMountFilters: ["wbIncomeGroup"] });
     fireEvent.click(screen.getByLabelText("Journal Article"));
     fireEvent.click(screen.getByLabelText(/^Germany/));
     fireEvent.click(screen.getByLabelText(/^Low income/));
@@ -763,7 +761,7 @@ describe("World Bank income group filter integration", () => {
   test("applies concept, country and income group facets together", () => {
     const onApply = vi.fn();
     setCounts({ countries: new Map([["DE", 230]]), wbIncomeGroups: INCOME_COUNTS });
-    renderDrawer({ ...withCard, expandOnMountFilters: ["wbIncomeGroup"], onApply });
+    renderDrawer({expandOnMountFilters: ["wbIncomeGroup"], onApply });
     fireEvent.click(screen.getByLabelText("Journal Article"));
     fireEvent.click(screen.getByLabelText(/^Germany/));
     fireEvent.click(screen.getByLabelText(/^High income/));
@@ -779,7 +777,6 @@ describe("World Bank income group filter integration", () => {
   test("eager loading: toggling a group re-keys the facet hook with the new draft", () => {
     setCounts({ wbIncomeGroups: INCOME_COUNTS });
     renderDrawer({
-      ...withCard,
       expandOnMountFilters: ["wbIncomeGroup"],
       params: makeSearchParams({ q: "phonics" }),
     });

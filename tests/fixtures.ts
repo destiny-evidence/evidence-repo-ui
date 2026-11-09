@@ -71,7 +71,6 @@ export function makeCommunity(
       findingsAndEstimates: true,
       exportsEnabled: true,
       countryFacetFilter: true,
-      wbIncomeGroupFilter: false,
       referenceSelection: false,
       ancestorClosedCodings: false,
       ...features,
