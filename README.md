@@ -38,6 +38,23 @@ Stack: Vite + Preact + TypeScript
 | `VITE_MATOMO_URL` | unset | Matomo base URL, e.g. `https://futureevidence.matomo.cloud/` |
 | `VITE_MATOMO_SITE_ID` | unset | Site id of the matomo measurable to send tracking to e.g. `5` for the dev measurable |
 
+## Data sources
+
+### Country shapes
+
+`src/data/world-geo.json` (the geographic heat map's TopoJSON) is generated from [Natural Earth](https://www.naturalearthdata.com/) by `scripts/generate-world-geo.mjs`:
+
+```bash
+npm run generate:geo
+```
+
+- **Source:** Natural Earth `v5.1.2`, 1:50m Admin 0 – Countries and Admin 0 – Tiny Countries, from the [natural-earth-vector](https://github.com/nvkelso/natural-earth-vector/tree/v5.1.2/geojson) repository. The script checks each file against a pinned sha256.
+- **Licence:** public domain ([Natural Earth terms of use](https://www.naturalearthdata.com/about/terms-of-use/)).
+- **Changes:** countries are keyed by `ISO_A2_EH` (so France, Norway and Kosovo resolve), Natural Earth features sharing a code are merged, shapes without an ISO code (Somaliland, Northern Cyprus, Siachen Glacier) are kept unkeyed, Antarctica is dropped, and the shapes are simplified and quantized. Countries too small to see at world scale get a dot, placed from the Tiny Countries layer.
+- Boundaries follow Natural Earth's default (de facto) point of view.
+
+The scale, simplification and dots are constants at the top of the script.
+
 ## Authentication
 
 The app requires Keycloak authentication on all community routes (`onLoad: 'login-required'`). On load, it redirects unauthenticated users to Keycloak and attaches a Bearer token to every destiny-repository API request. You need a Keycloak account in the `destiny` realm to run the app locally.
