@@ -21,10 +21,8 @@ export const DEFAULT_PINNED_FILTERS: readonly PinnedFilter[] = [
 ];
 
 export interface FacetCardOptions {
-  // When false the "country" slot renders nothing (facet unavailable).
-  showCountryFacetFilter?: boolean;
-  // When false the "wbIncomeGroup" slot renders nothing (facet unavailable).
-  showWbIncomeGroupFilter?: boolean;
+  // When false the "country" and "wbIncomeGroup" slots render nothing (facets unavailable).
+  showCountryDerivedFilters?: boolean;
 }
 
 interface OrderFilterItemsOptions extends FacetCardOptions {
@@ -36,14 +34,13 @@ interface OrderFilterItemsOptions extends FacetCardOptions {
  * with the same options, so a card is never rendered without its counts.
  */
 export function facetTypesFor({
-  showCountryFacetFilter = true,
-  showWbIncomeGroupFilter = false,
+  showCountryDerivedFilters = true,
 }: FacetCardOptions = {}): FacetType[] {
   const facets: FacetType[] = ["concepts"];
-  if (showCountryFacetFilter) facets.push("countries");
+  if (showCountryDerivedFilters) facets.push("countries");
   // No card uses region counts yet; they're requested for every community.
   facets.push("country_wb_regions");
-  if (showWbIncomeGroupFilter) facets.push("country_wb_income_groups");
+  if (showCountryDerivedFilters) facets.push("country_wb_income_groups");
   return facets;
 }
 
@@ -57,8 +54,7 @@ export function orderFilterItems(
   schemes: readonly ConceptScheme[],
   {
     pinned = DEFAULT_PINNED_FILTERS,
-    showCountryFacetFilter = true,
-    showWbIncomeGroupFilter = false,
+    showCountryDerivedFilters = true,
   }: OrderFilterItemsOptions = {},
 ): FilterItem[] {
   const byUri = new Map(schemes.map((s) => [s.uri, s]));
@@ -66,13 +62,13 @@ export function orderFilterItems(
   const items: FilterItem[] = [];
 
   const pushCountry = () => {
-    if (showCountryFacetFilter && !placed.has("country")) {
+    if (showCountryDerivedFilters && !placed.has("country")) {
       placed.add("country");
       items.push({ kind: "country" });
     }
   };
   const pushWbIncomeGroup = () => {
-    if (showWbIncomeGroupFilter && !placed.has("wbIncomeGroup")) {
+    if (showCountryDerivedFilters && !placed.has("wbIncomeGroup")) {
       placed.add("wbIncomeGroup");
       items.push({ kind: "wbIncomeGroup" });
     }

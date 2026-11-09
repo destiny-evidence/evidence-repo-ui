@@ -42,8 +42,7 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   selfSignup: false,
   findingsAndEstimates: true,
   exportsEnabled: false,
-  countryFacetFilter: true,
-  wbIncomeGroupFilter: false,
+  countrySearchable: true,
   // Selection UI still only shows where a consumer (AI summary / selection
   // export) is enabled — see selectionEnabled.
   referenceSelection: true,
@@ -165,7 +164,7 @@ const COMMUNITIES: Community[] = [
       aiSummaries: true,
       selfSignup: true,
       findingsAndEstimates: false,
-      countryFacetFilter: false,
+      countrySearchable: false,
       exportsEnabled: true,
     },
     defaultEvidenceMapAxes: {
@@ -241,8 +240,7 @@ const COMMUNITIES: Community[] = [
       ...DEFAULT_FEATURES,
       selfSignup: true,
       findingsAndEstimates: false,
-      countryFacetFilter: false,
-      wbIncomeGroupFilter: false,
+      countrySearchable: false,
       exportsEnabled: true,
       ancestorClosedCodings: true,
     },

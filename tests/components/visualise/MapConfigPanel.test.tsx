@@ -81,7 +81,7 @@ describe("MapConfigPanel", () => {
   });
 
   test("omits the Countries axis option where the country facet is unsupported", () => {
-    renderPanel({ showCountryFacetFilter: false });
+    renderPanel({ showCountryDerivedFilters: false });
     // Scheme axes are still offered...
     const row = within(rowSelect());
     expect(row.getByRole("option", { name: "Outcome" })).toBeInTheDocument();
@@ -94,14 +94,14 @@ describe("MapConfigPanel", () => {
     ).toBeNull();
   });
 
-  test("offers the World Bank income groups axis only behind the income group flag", () => {
-    const { unmount } = renderPanel();
+  test("offers the World Bank income groups axis only behind showCountryDerivedFilters", () => {
+    const { unmount } = renderPanel({ showCountryDerivedFilters: false });
     const option = { name: "World Bank income groups" };
     expect(within(rowSelect()).queryByRole("option", option)).toBeNull();
     unmount();
 
     const onApply = vi.fn();
-    renderPanel({ showWbIncomeGroupFilter: true, onApply });
+    renderPanel({ onApply });
     expect(within(rowSelect()).getByRole("option", option)).toBeInTheDocument();
     expect(within(columnSelect()).getByRole("option", option)).toBeInTheDocument();
 
@@ -115,6 +115,7 @@ describe("MapConfigPanel", () => {
 
   test("names an applied literal axis by its title even where it isn't offered", () => {
     renderPanel({
+      showCountryDerivedFilters: false,
       appliedAxes: {
         row: AXES.row,
         column: { kind: "literal", token: AXIS_INCOME_GROUPS },
@@ -131,7 +132,12 @@ describe("MapConfigPanel", () => {
     const labels = within(rowSelect())
       .getAllByRole("option")
       .map((o) => o.textContent);
-    expect(labels).toEqual(["Countries", "Document type", "Outcome"]);
+    expect(labels).toEqual([
+      "Countries",
+      "Document type",
+      "Outcome",
+      "World Bank income groups",
+    ]);
   });
 
   test("picking the other axis's field swaps the axes", () => {
@@ -215,7 +221,6 @@ describe("MapConfigPanel", () => {
     const onApply = vi.fn();
     renderPanel({
       onApply,
-      showWbIncomeGroupFilter: true,
       expandOnMountFilters: ["wbIncomeGroup"],
     });
     fireEvent.click(screen.getByLabelText(/^Low income/));
@@ -229,7 +234,7 @@ describe("MapConfigPanel", () => {
     expect((screen.getByLabelText(/^Low income/) as HTMLInputElement).checked).toBe(false);
 
     cleanup();
-    renderPanel();
+    renderPanel({ showCountryDerivedFilters: false });
     expect(screen.queryByRole("button", { name: /World Bank income group/ })).toBeNull();
   });
 

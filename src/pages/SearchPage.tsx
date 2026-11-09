@@ -330,8 +330,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const hasFilterCards =
     orderFilterItems(filterableSchemes, {
       pinned: community.pinnedFilters,
-      showCountryFacetFilter: community.features.countryFacetFilter,
-      showWbIncomeGroupFilter: community.features.wbIncomeGroupFilter,
+      showCountryDerivedFilters: community.features.countrySearchable,
     }).length > 0;
   const refine = buildRefineConfig(
     vocab,
@@ -835,8 +834,7 @@ function SearchPageInner({ community }: { community: Community }) {
           open={drawerOpen}
           title={community.copy.drawerTitle}
           countNoun={community.copy.countNoun}
-          showCountryFacetFilter={community.features.countryFacetFilter}
-          showWbIncomeGroupFilter={community.features.wbIncomeGroupFilter}
+          showCountryDerivedFilters={community.features.countrySearchable}
           pinnedFilters={community.pinnedFilters}
           collapsibleConceptFilters={community.features.ancestorClosedCodings}
           schemes={vocab.error ? null : filterableSchemes}

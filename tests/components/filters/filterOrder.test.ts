@@ -20,34 +20,39 @@ function kinds(items: ReturnType<typeof orderFilterItems>): string[] {
 }
 
 describe("orderFilterItems", () => {
-  test("default order: year, country, then schemes alphabetically by display label", () => {
+  test("default order: year, country, income group, then schemes alphabetically by display label", () => {
     const items = orderFilterItems([zebra, apple]);
-    expect(kinds(items)).toEqual(["year", "country", "u:apple", "u:zebra"]);
-  });
-
-  test("adds the income group card after country when its filter is enabled", () => {
-    const items = orderFilterItems([apple], { showWbIncomeGroupFilter: true });
-    expect(kinds(items)).toEqual(["year", "country", "wbIncomeGroup", "u:apple"]);
+    expect(kinds(items)).toEqual([
+      "year",
+      "country",
+      "wbIncomeGroup",
+      "u:apple",
+      "u:zebra",
+    ]);
   });
 
   test("pins the income group card after a scheme, without repeating it", () => {
     const items = orderFilterItems([zebra, region], {
       pinned: ["year", "u:region", "wbIncomeGroup", "wbIncomeGroup"],
-      showCountryFacetFilter: false,
-      showWbIncomeGroupFilter: true,
     });
-    expect(kinds(items)).toEqual(["year", "u:region", "wbIncomeGroup", "u:zebra"]);
+    expect(kinds(items)).toEqual([
+      "year",
+      "u:region",
+      "wbIncomeGroup",
+      "u:zebra",
+      "country",
+    ]);
   });
 
-  test("omits the country card when the facet filter is hidden", () => {
-    const items = orderFilterItems([apple], { showCountryFacetFilter: false });
+  test("omits the country and income group cards when the facet filter is hidden", () => {
+    const items = orderFilterItems([apple], { showCountryDerivedFilters: false });
     expect(kinds(items)).toEqual(["year", "u:apple"]);
   });
 
   test("pins schemes by URI in order, then appends the rest alphabetically", () => {
     const items = orderFilterItems([zebra, apple, country, region, convening], {
       pinned: ["u:convening", "year", "u:country", "u:region"],
-      showCountryFacetFilter: false,
+      showCountryDerivedFilters: false,
     });
     expect(kinds(items)).toEqual([
       "u:convening",
@@ -62,7 +67,7 @@ describe("orderFilterItems", () => {
   test("a pinned scheme isn't repeated by the trailing alphabetical sweep", () => {
     const items = orderFilterItems([zebra, apple], {
       pinned: ["u:zebra"],
-      showCountryFacetFilter: false,
+      showCountryDerivedFilters: false,
     });
     expect(kinds(items)).toEqual(["u:zebra", "u:apple"]);
   });
@@ -70,7 +75,7 @@ describe("orderFilterItems", () => {
   test("ignores pinned URIs for schemes not present", () => {
     const items = orderFilterItems([apple], {
       pinned: ["u:missing", "year"],
-      showCountryFacetFilter: false,
+      showCountryDerivedFilters: false,
     });
     expect(kinds(items)).toEqual(["year", "u:apple"]);
   });
@@ -80,16 +85,13 @@ describe("orderFilterItems", () => {
     const phase2 = scheme("u:p2", "Phase 2");
     const items = orderFilterItems([phase10, phase2], {
       pinned: [],
-      showCountryFacetFilter: false,
+      showCountryDerivedFilters: false,
     });
     expect(kinds(items)).toEqual(["u:p2", "u:p10"]);
   });
 
   test("appends enabled country and income group cards that aren't pinned", () => {
-    const items = orderFilterItems([zebra, apple], {
-      pinned: ["year"],
-      showWbIncomeGroupFilter: true,
-    });
+    const items = orderFilterItems([zebra, apple], { pinned: ["year"] });
     expect(kinds(items)).toEqual([
       "year",
       "u:apple",
@@ -103,18 +105,24 @@ describe("orderFilterItems", () => {
     const items = orderFilterItems([apple], {
       pinned: ["year", "country", "year"],
     });
-    expect(kinds(items)).toEqual(["year", "country", "u:apple"]);
+    expect(kinds(items)).toEqual(["year", "country", "u:apple", "wbIncomeGroup"]);
   });
 });
 
 describe("facetTypesFor", () => {
-  test("defaults match orderFilterItems: country card on, income group card off", () => {
-    expect(facetTypesFor()).toEqual(["concepts", "countries", "country_wb_regions"]);
+  test("defaults match orderFilterItems: country and income group cards on", () => {
+    expect(facetTypesFor()).toEqual([
+      "concepts",
+      "countries",
+      "country_wb_regions",
+      "country_wb_income_groups",
+    ]);
   });
 
-  test("requests each facet-backed card's counts only when that card is shown", () => {
-    expect(
-      facetTypesFor({ showCountryFacetFilter: false, showWbIncomeGroupFilter: true }),
-    ).toEqual(["concepts", "country_wb_regions", "country_wb_income_groups"]);
+  test("requests country and income group counts only when their cards are shown", () => {
+    expect(facetTypesFor({ showCountryDerivedFilters: false })).toEqual([
+      "concepts",
+      "country_wb_regions",
+    ]);
   });
 });

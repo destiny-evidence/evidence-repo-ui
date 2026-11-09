@@ -46,16 +46,14 @@ interface FilterCardListProps extends FilterCardOptions {
 export function FilterCardList({
   draft,
   countNoun = "results",
-  showCountryFacetFilter,
-  showWbIncomeGroupFilter,
+  showCountryDerivedFilters,
   pinnedFilters,
   expandOnMountFilters = [],
   collapsibleConceptFilters = false,
 }: FilterCardListProps) {
   const items = orderFilterItems(draft.schemes ?? [], {
     pinned: pinnedFilters,
-    showCountryFacetFilter,
-    showWbIncomeGroupFilter,
+    showCountryDerivedFilters,
   });
   const expanded = new Set(expandOnMountFilters);
 
