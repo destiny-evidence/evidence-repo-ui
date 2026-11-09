@@ -13,9 +13,9 @@ vi.mock("@/community/CommunityContext", () => ({ useCommunity: mockUseCommunity 
 vi.mock("@/hooks/useUrlParams", () => ({ useUrlParams: mockUseUrlParams }));
 vi.mock("@/hooks/useSearchFacets", () => ({ useSearchFacets: mockUseSearchFacets }));
 vi.mock("@/components/visualise/GeographicHeatMap", () => ({
-  GeographicHeatMap: ({ counts, label }: { counts: ReadonlyMap<string, number>; label: string }) => (
+  GeographicHeatMap: ({ counts, label }: { counts?: ReadonlyMap<string, number>; label: string }) => (
     <div data-testid="map" aria-label={label}>
-      {JSON.stringify([...counts])}
+      {counts ? JSON.stringify([...counts]) : "no counts"}
     </div>
   ),
 }));
@@ -47,6 +47,12 @@ describe("GeographicHeatMapPage", () => {
     expect(params).toMatchObject({ q: "heat", countryCodes: ["KE"] });
     expect(screen.getByTestId("map")).toHaveTextContent('[["KE",12]]');
     expect(screen.getByTestId("map")).toHaveAccessibleName("World map of results by country");
+  });
+
+  test("passes no counts until the first response", () => {
+    mockUseSearchFacets.mockReturnValue({ counts: null, loading: true, error: null });
+    render(<GeographicHeatMapPage />);
+    expect(screen.getByTestId("map")).toHaveTextContent("no counts");
   });
 
   test("shows an error when the counts fail to load", () => {

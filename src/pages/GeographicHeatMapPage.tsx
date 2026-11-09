@@ -8,8 +8,6 @@ import { NotFoundPage } from "./NotFoundPage";
 import "./VisualisePage.css";
 import "./GeographicHeatMapPage.css";
 
-const NO_COUNTS: ReadonlyMap<string, number> = new Map();
-
 interface GeographicHeatMapPageProps {
   path?: string;
 }
@@ -39,7 +37,7 @@ function GeographicHeatMapView({ countNoun }: { countNoun: string }) {
           aria-busy={loading}
         >
           <GeographicHeatMap
-            counts={counts?.countries ?? NO_COUNTS}
+            counts={counts?.countries}
             label={`World map of ${countNoun} by country`}
             countNoun={countNoun}
           />

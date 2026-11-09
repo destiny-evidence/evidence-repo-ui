@@ -25,11 +25,11 @@ const GEOMETRY: WorldGeometry = {
 
 // The component caches the loaded shapes at module level, so each test gets a
 // fresh copy of it.
-async function renderMap(counts: Record<string, number>) {
+async function renderMap(counts: Record<string, number> | undefined) {
   const { GeographicHeatMap } = await import("@/components/visualise/GeographicHeatMap");
   return render(
     <GeographicHeatMap
-      counts={new Map(Object.entries(counts))}
+      counts={counts && new Map(Object.entries(counts))}
       label="References by country"
       countNoun="references"
     />,
@@ -47,6 +47,19 @@ describe("GeographicHeatMap", () => {
     expect(screen.getByText("Loading map…")).toBeInTheDocument();
     expect(await screen.findByRole("group", { name: "References by country" })).toBeInTheDocument();
     expect(screen.queryByText("Loading map…")).not.toBeInTheDocument();
+  });
+
+  test("keeps loading until the counts arrive, rather than drawing an empty map", async () => {
+    const { GeographicHeatMap } = await import("@/components/visualise/GeographicHeatMap");
+    const props = { label: "References by country", countNoun: "references" };
+    const { rerender } = render(<GeographicHeatMap counts={undefined} {...props} />);
+    await vi.waitFor(() => expect(mockLoad).toHaveBeenCalled());
+    expect(screen.getByRole("status")).toHaveTextContent("Loading map…");
+    expect(screen.queryByRole("group")).not.toBeInTheDocument();
+
+    rerender(<GeographicHeatMap counts={new Map([["FR", 3]])} {...props} />);
+    expect(await screen.findByRole("img", { name: "France: 3 references" })).toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   test("shows an error if the shapes fail to load", async () => {
@@ -96,6 +109,7 @@ describe("GeographicHeatMap", () => {
 
   test("the legend lists zero and each band's range", async () => {
     const { container } = await renderMap({ FR: 1234 });
+    await screen.findByRole("group");
     const legend = container.querySelector("figcaption")!;
     expect(legend).toHaveTextContent("references");
     expect([...legend.querySelectorAll(".geo-heat-map__legend-item")].map((e) => e.textContent)).toEqual([

@@ -8,7 +8,6 @@
 /* Matches the generated viewBox so the frame doesn't jump once shapes load. */
 .geo-heat-map__frame {
   aspect-ratio: 960 / 439;
-  background: var(--color-bg-surface);
 }
 
 .geo-heat-map__svg {
@@ -24,15 +23,43 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-sm);
   font-size: var(--font-size-small);
   color: var(--color-text-tertiary);
 }
 
+/* The sphere is the sea; outside it the page shows through. */
 .geo-heat-map__outline {
-  fill: none;
+  fill: var(--color-bg-surface);
   stroke: var(--color-border);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
+}
+
+.geo-heat-map__country,
+.geo-heat-map__dot {
+  transition: fill 0.3s;
+}
+
+.geo-heat-map.is-loaded {
+  animation: geo-heat-map-in 0.3s ease-out;
+}
+
+@keyframes geo-heat-map-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .geo-heat-map__country,
+  .geo-heat-map__dot {
+    transition: none;
+  }
+
+  .geo-heat-map.is-loaded {
+    animation: none;
+  }
 }
 
 .geo-heat-map__borders {

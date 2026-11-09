@@ -7,6 +7,7 @@ import {
   type HeatBand,
 } from "@/services/geoHeatMap";
 import { countryName } from "@/utils/country";
+import { Spinner } from "@/components/common/Spinner";
 import "./GeographicHeatMap.css";
 
 const DOT_RADIUS = 2.5;
@@ -18,8 +19,8 @@ function loadGeometry(): Promise<WorldGeometry> {
 }
 
 export interface GeographicHeatMapProps {
-  // Reference counts keyed by ISO alpha-2 code.
-  counts: ReadonlyMap<string, number>;
+  // Reference counts keyed by ISO alpha-2 code; undefined until they first load.
+  counts: ReadonlyMap<string, number> | undefined;
   label: string;
   countNoun: string;
 }
@@ -40,11 +41,46 @@ export function GeographicHeatMap({ counts, label, countNoun }: GeographicHeatMa
     };
   }, []);
 
+  if (failed) {
+    return (
+      <figure class="geo-heat-map">
+        <div class="geo-heat-map__frame">
+          <p class="geo-heat-map__status" role="alert">
+            Couldn’t load the map.
+          </p>
+        </div>
+      </figure>
+    );
+  }
+
+  // Waits for both shapes and counts so the map doesn't draw empty and then fill.
+  if (!geometry || !counts) {
+    return (
+      <figure class="geo-heat-map">
+        <div class="geo-heat-map__frame">
+          <p class="geo-heat-map__status" role="status">
+            <Spinner size={20} />
+            Loading map…
+          </p>
+        </div>
+      </figure>
+    );
+  }
+
+  return <HeatMap geometry={geometry} counts={counts} label={label} countNoun={countNoun} />;
+}
+
+function HeatMap({
+  geometry,
+  counts,
+  label,
+  countNoun,
+}: GeographicHeatMapProps & { geometry: WorldGeometry; counts: ReadonlyMap<string, number> }) {
   const bands = useMemo(() => heatBands(Math.max(0, ...counts.values())), [counts]);
   // Dots only mark small countries that have references; a grey dot adds
   // clutter without saying anything the empty map doesn't.
   const dots = useMemo(
-    () => (geometry?.dots ?? []).filter((d) => (counts.get(d.code) ?? 0) > 0),
+    () => geometry.dots.filter((d) => (counts.get(d.code) ?? 0) > 0),
     [geometry, counts],
   );
   const dotCodes = useMemo(() => new Set(dots.map((d) => d.code)), [dots]);
@@ -56,59 +92,46 @@ export function GeographicHeatMap({ counts, label, countNoun }: GeographicHeatMa
   const shade = (code: string) => heatShade(counts.get(code) ?? 0, bands);
 
   return (
-    <figure class="geo-heat-map">
+    <figure class="geo-heat-map is-loaded">
       <div class="geo-heat-map__frame">
-        {failed ? (
-          <p class="geo-heat-map__status" role="alert">
-            Couldn’t load the map.
-          </p>
-        ) : !geometry ? (
-          <p class="geo-heat-map__status">Loading map…</p>
-        ) : (
-          <svg
-            class="geo-heat-map__svg"
-            viewBox={geometry.viewBox}
-            role="group"
-            aria-label={label}
-          >
-            <g>
-              <path class="geo-heat-map__outline" d={geometry.outline} aria-hidden="true" />
-              {geometry.countries.map(({ code, d }, i) =>
-                code && !dotCodes.has(code) ? (
-                  <path
-                    key={code}
-                    class="geo-heat-map__country"
-                    d={d}
-                    data-shade={shade(code)}
-                    role="img"
-                    aria-label={countryLabel(code)}
-                  />
-                ) : (
-                  <path
-                    key={code ?? `unkeyed-${i}`}
-                    class="geo-heat-map__country"
-                    d={d}
-                    data-shade={code ? shade(code) : 0}
-                    aria-hidden="true"
-                  />
-                ),
-              )}
-              <path class="geo-heat-map__borders" d={geometry.borders} aria-hidden="true" />
-              {dots.map(({ code, x, y }) => (
-                <circle
+        <svg class="geo-heat-map__svg" viewBox={geometry.viewBox} role="group" aria-label={label}>
+          <g>
+            <path class="geo-heat-map__outline" d={geometry.outline} aria-hidden="true" />
+            {geometry.countries.map(({ code, d }, i) =>
+              code && !dotCodes.has(code) ? (
+                <path
                   key={code}
-                  class="geo-heat-map__dot"
-                  cx={x}
-                  cy={y}
-                  r={DOT_RADIUS}
+                  class="geo-heat-map__country"
+                  d={d}
                   data-shade={shade(code)}
                   role="img"
                   aria-label={countryLabel(code)}
                 />
-              ))}
-            </g>
-          </svg>
-        )}
+              ) : (
+                <path
+                  key={code ?? `unkeyed-${i}`}
+                  class="geo-heat-map__country"
+                  d={d}
+                  data-shade={code ? shade(code) : 0}
+                  aria-hidden="true"
+                />
+              ),
+            )}
+            <path class="geo-heat-map__borders" d={geometry.borders} aria-hidden="true" />
+            {dots.map(({ code, x, y }) => (
+              <circle
+                key={code}
+                class="geo-heat-map__dot"
+                cx={x}
+                cy={y}
+                r={DOT_RADIUS}
+                data-shade={shade(code)}
+                role="img"
+                aria-label={countryLabel(code)}
+              />
+            ))}
+          </g>
+        </svg>
       </div>
       <HeatMapLegend bands={bands} countNoun={countNoun} />
     </figure>
