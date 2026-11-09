@@ -32,8 +32,8 @@ type WorldTopology = Topology<{
   dots?: GeometryCollection;
 }>;
 
-// The globe is fitted to the full width and cropped vertically to the land,
-// so the outline's southern arc runs off the bottom edge.
+// The globe is fitted to the full width and cut off a little below the land,
+// with a straight edge where Antarctica would be to mirror the flat pole at the top.
 export function buildWorldGeometry(topology: WorldTopology): WorldGeometry {
   const countries = feature(topology, topology.objects.countries) as FeatureCollection;
   const projection = geoEqualEarth().fitWidth(MAP_WIDTH, { type: "Sphere" });
@@ -41,8 +41,18 @@ export function buildWorldGeometry(topology: WorldTopology): WorldGeometry {
 
   const [[, top]] = path.bounds({ type: "Sphere" });
   const [, [, landBottom]] = path.bounds(countries);
+  const cut = landBottom + VERTICAL_PADDING;
   const y = top - VERTICAL_PADDING;
-  const height = landBottom + VERTICAL_PADDING - y;
+  const height = cut + VERTICAL_PADDING - y;
+
+  const outline = geoPath(
+    geoEqualEarth()
+      .fitWidth(MAP_WIDTH, { type: "Sphere" })
+      .clipExtent([
+        [-1, y],
+        [MAP_WIDTH + 1, cut],
+      ]),
+  )({ type: "Sphere" });
 
   const dots: CountryDot[] = [];
   if (topology.objects.dots) {
@@ -55,7 +65,7 @@ export function buildWorldGeometry(topology: WorldTopology): WorldGeometry {
 
   return {
     viewBox: `0 ${y} ${MAP_WIDTH} ${height}`,
-    outline: path({ type: "Sphere" }) ?? "",
+    outline: outline ?? "",
     countries: countries.features.map((f: Feature) => ({
       code: f.id == null ? null : String(f.id),
       d: path(f) ?? "",

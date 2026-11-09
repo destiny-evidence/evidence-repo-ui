@@ -7,7 +7,7 @@
 
 /* Matches the generated viewBox so the frame doesn't jump once shapes load. */
 .geo-heat-map__frame {
-  aspect-ratio: 960 / 439;
+  aspect-ratio: 960 / 447;
 }
 
 .geo-heat-map__svg {

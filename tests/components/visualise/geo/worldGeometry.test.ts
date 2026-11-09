@@ -46,4 +46,10 @@ describe("world geometry", () => {
     expect(geometry.dots.every((d) => Number.isFinite(d.x) && Number.isFinite(d.y))).toBe(true);
     expect(geometry.viewBox.split(" ")[2]).toBe("960");
   });
+
+  test("the outline is cut off with a visible edge above the bottom of the view", () => {
+    const [, y, , height] = geometry.viewBox.split(" ").map(Number);
+    const ys = [...geometry.outline.matchAll(/-?[\d.]+,(-?[\d.]+)/g)].map((m) => Number(m[1]));
+    expect(Math.max(...ys)).toBeLessThan(y + height);
+  });
 });
