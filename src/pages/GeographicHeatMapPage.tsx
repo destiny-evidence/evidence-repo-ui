@@ -16,6 +16,7 @@ import {
   heatMapQueryString,
 } from "@/services/geoHeatMap";
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
+import { backToVisualiseState } from "@/services/evidenceMap";
 import { countSearchMatches } from "@/services/searchCount";
 import { navigate } from "@/services/navigation";
 import type { FacetType } from "@/services/apiClient";
@@ -23,6 +24,7 @@ import type { Community, MapAxis, FacetTotals } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { track } from "@/analytics/matomo";
 import { activeFilters, withoutDefaults } from "@/analytics/searchEvents";
+import { countryName } from "@/utils/country";
 import { formatTotal } from "@/utils/searchTotal";
 import { EMPTY_APPLIED_FILTERS } from "@/components/filters/useFilterDraft";
 import { Tooltip } from "@/components/common/Tooltip";
@@ -115,6 +117,26 @@ function GeographicHeatMapView({ community }: { community: Community }) {
     apply({ ...params, ...EMPTY_APPLIED_FILTERS });
   }
 
+  // Search with the country filter narrowed to just this country.
+  function countrySearchUrl(code: string): string {
+    return buildSearchUrl(community.slug, {
+      ...params,
+      countryCodes: [code],
+      page: 1,
+    });
+  }
+
+  function handleCountryView(code: string) {
+    track({
+      category: "GeographicHeatMap",
+      action: "Country Clicked",
+      name: countryName(code),
+    });
+    navigate(countrySearchUrl(code), {
+      state: backToVisualiseState(buildHeatMapUrl(community.slug, params)),
+    });
+  }
+
   const filterCount = appliedFilterCount(params);
 
   return (
@@ -142,6 +164,9 @@ function GeographicHeatMapView({ community }: { community: Community }) {
             />
           </div>
           <p class="evidence-map-view__hint">
+            {countryCount > 0 && (
+              <span>Click a country to view matching {noun}</span>
+            )}
             <a
               class="evidence-map-view__view-all"
               href={buildSearchUrl(community.slug, { ...params, page: 1 })}
@@ -184,6 +209,16 @@ function GeographicHeatMapView({ community }: { community: Community }) {
                 counts={countryCounts}
                 label={`World map of ${noun} by country`}
                 countNoun={noun}
+                total={totals?.mapped?.count ?? 0}
+                viewHref={countrySearchUrl}
+                onSelect={(code) =>
+                  track({
+                    category: "GeographicHeatMap",
+                    action: "Country Selected",
+                    name: countryName(code),
+                  })
+                }
+                onView={handleCountryView}
               />
             </section>
           </>

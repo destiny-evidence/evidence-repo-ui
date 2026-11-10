@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor, within } from "@testing-library/pre
 import { GeographicHeatMapPage } from "@/pages/GeographicHeatMapPage";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import type { FacetTotals } from "@/types/models";
+import type { GeographicHeatMapProps } from "@/components/visualise/GeographicHeatMap";
 import { makeCommunity } from "../fixtures";
 
 const {
@@ -31,9 +32,17 @@ vi.mock("@/services/navigation", async (importOriginal) => {
   return { ...actual, navigate: mockNavigate };
 });
 vi.mock("@/components/visualise/GeographicHeatMap", () => ({
-  GeographicHeatMap: ({ counts, label }: { counts?: ReadonlyMap<string, number>; label: string }) => (
-    <div data-testid="map" aria-label={label}>
+  GeographicHeatMap: ({ counts, label, total, viewHref, onSelect, onView }: GeographicHeatMapProps) => (
+    <div data-testid="map" aria-label={label} data-total={total}>
       {counts ? JSON.stringify([...counts]) : "no counts"}
+      {[...(counts ?? [])].map(([code]) => (
+        <span key={code}>
+          <button onClick={() => onSelect?.(code)}>Select {code}</button>
+          <a href={viewHref(code)} onClick={(e) => (e.preventDefault(), onView(code))}>
+            View {code}
+          </a>
+        </span>
+      ))}
     </div>
   ),
 }));
@@ -225,6 +234,46 @@ describe("GeographicHeatMapPage", () => {
       "href",
       "/test?q=heat&country=KE",
     );
+  });
+
+  test("hints at clicking a country once one has references", () => {
+    renderAt("?q=heat");
+    expect(screen.getByText("Click a country to view matching investigations")).toBeInTheDocument();
+  });
+
+  test("doesn't hint at clicking a country when none have references", () => {
+    facets([["KE", 0]], totals(5, 0));
+    renderAt("?q=heat");
+    expect(screen.queryByText(/click a country/i)).not.toBeInTheDocument();
+  });
+
+  test("measures each country's share against the references on the map", () => {
+    renderAt("?q=heat");
+    expect(screen.getByTestId("map")).toHaveAttribute("data-total", "30");
+  });
+
+  test("a country opens search narrowed to it, with the rest of the search kept", () => {
+    renderAt("?q=heat&country=FR%2CKE");
+    expect(screen.getByRole("link", { name: "View KE" })).toHaveAttribute(
+      "href",
+      "/test?q=heat&country=KE",
+    );
+  });
+
+  test("going through to a country lets search return to the map as it was", () => {
+    renderAt("?q=heat&country=FR%2CKE");
+    fireEvent.click(screen.getByRole("link", { name: "View KE" }));
+    expect(mockNavigate).toHaveBeenCalledWith("/test?q=heat&country=KE", {
+      state: { backToVisualise: "/test/visualise/geographic?q=heat&country=FR%2CKE" },
+    });
+  });
+
+  test("reports selecting a country and going through to it", () => {
+    renderAt("?q=heat");
+    fireEvent.click(screen.getByRole("button", { name: "Select KE" }));
+    fireEvent.click(screen.getByRole("link", { name: "View KE" }));
+    expect(events("Country Selected").map((e) => e[3])).toEqual(["Kenya"]);
+    expect(events("Country Clicked").map((e) => e[3])).toEqual(["Kenya"]);
   });
 
   test("applying the panel's filters puts them in the heat map URL", () => {

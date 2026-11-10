@@ -1,16 +1,36 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import type { RefObject } from "preact";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "preact/hooks";
 import type { WorldGeometry } from "./geo/worldGeometry";
 import {
   bandLabel,
+  formatShare,
   heatBands,
   heatShade,
+  placePopup,
   type HeatBand,
+  type Point,
 } from "@/services/geoHeatMap";
 import { countryName } from "@/utils/country";
 import { Spinner } from "@/components/common/Spinner";
 import "./GeographicHeatMap.css";
 
 const DOT_RADIUS = 2.5;
+const DOT_TARGET_RADIUS = 6;
+const POPUP_GAP = 12;
+const TIP_GAP = 8;
+const ARROW_STEPS: Record<string, number> = {
+  ArrowRight: 1,
+  ArrowDown: 1,
+  ArrowLeft: -1,
+  ArrowUp: -1,
+};
 
 // Loaded on first use so d3-geo and the shapes stay out of the main bundle.
 let loaded: WorldGeometry | null = null;
@@ -25,12 +45,16 @@ export interface GeographicHeatMapProps {
   counts: ReadonlyMap<string, number> | undefined;
   label: string;
   countNoun: string;
+  // Unique references on the map, which each country's share is out of.
+  total: number;
+  viewHref: (code: string) => string;
+  onSelect?: (code: string) => void;
+  onView: (code: string) => void;
 }
 
 export function GeographicHeatMap({
   counts,
-  label,
-  countNoun,
+  ...props
 }: GeographicHeatMapProps) {
   const [geometry, setGeometry] = useState(loaded);
   const [failed, setFailed] = useState(false);
@@ -73,14 +97,12 @@ export function GeographicHeatMap({
     );
   }
 
-  return (
-    <HeatMap
-      geometry={geometry}
-      counts={counts}
-      label={label}
-      countNoun={countNoun}
-    />
-  );
+  return <HeatMap geometry={geometry} counts={counts} {...props} />;
+}
+
+interface Target {
+  anchor: Point;
+  shape: { d: string } | { cx: number; cy: number };
 }
 
 function HeatMap({
@@ -88,6 +110,10 @@ function HeatMap({
   counts,
   label,
   countNoun,
+  total,
+  viewHref,
+  onSelect,
+  onView,
 }: GeographicHeatMapProps & {
   geometry: WorldGeometry;
   counts: ReadonlyMap<string, number>;
@@ -103,15 +129,193 @@ function HeatMap({
   );
   const dotCodes = useMemo(() => new Set(dots.map((d) => d.code)), [dots]);
 
+  // Countries with references, which are the ones that can be selected.
+  const targets = useMemo(() => {
+    const byCode = new Map<string, Target>();
+    for (const { code, d, anchor } of geometry.countries) {
+      if (code && !dotCodes.has(code) && (counts.get(code) ?? 0) > 0) {
+        byCode.set(code, { anchor, shape: { d } });
+      }
+    }
+    for (const { code, x, y } of dots) {
+      byCode.set(code, { anchor: { x, y }, shape: { cx: x, cy: y } });
+    }
+    return byCode;
+  }, [geometry, counts, dots, dotCodes]);
+  // The order the arrow keys step through them.
+  const order = useMemo(
+    () =>
+      [...targets.keys()].sort((a, b) =>
+        countryName(a).localeCompare(countryName(b)),
+      ),
+    [targets],
+  );
+
+  const [selected, setSelected] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
+  const [active, setActive] = useState<string | null>(null);
+  const tabStop = active && targets.has(active) ? active : order[0];
+
+  const frameRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const tipRef = useRef<HTMLDivElement>(null);
+  const elements = useRef(new Map<string, SVGElement>());
+  const [layout, setLayout] = useState(0);
+
+  const shownCounts = useRef(counts);
+  useEffect(() => {
+    if (shownCounts.current === counts) return;
+    shownCounts.current = counts;
+    setSelected(null);
+  }, [counts]);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => setLayout((n) => n + 1));
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, []);
+
+  function close(returnFocus: boolean) {
+    const code = selected;
+    setSelected(null);
+    if (returnFocus && code) elements.current.get(code)?.focus();
+  }
+
+  useEffect(() => {
+    if (!selected) return;
+    function onClick(e: MouseEvent) {
+      const target = e.target as Element | null;
+      if (popupRef.current?.contains(target)) return;
+      if (target?.closest?.("[data-country]")) return;
+      setSelected(null);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") close(true);
+    }
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [selected]);
+
+  const [vbX, vbY, vbWidth, vbHeight] = geometry.viewBox.split(" ").map(Number);
+  function inFrame({ x, y }: Point, frame: HTMLElement): Point {
+    return {
+      x: ((x - vbX) / vbWidth) * frame.clientWidth,
+      y: ((y - vbY) / vbHeight) * frame.clientHeight,
+    };
+  }
+
+  useLayoutEffect(() => {
+    const popup = popupRef.current;
+    const frame = frameRef.current;
+    const target = selected && targets.get(selected);
+    if (!popup || !frame || !target) return;
+    const placement = placePopup(
+      inFrame(target.anchor, frame),
+      { width: popup.offsetWidth, height: popup.offsetHeight },
+      { width: frame.clientWidth, height: frame.clientHeight },
+      POPUP_GAP,
+    );
+    popup.style.left = `${placement.left}px`;
+    popup.style.top = `${placement.top}px`;
+    popup.style.setProperty("--pointer-top", `${placement.pointerTop}px`);
+    if (placement.side) popup.dataset.side = placement.side;
+    else delete popup.dataset.side;
+  }, [selected, targets, layout]);
+
+  const tipCode = selected ? null : (hovered ?? focused);
+  useLayoutEffect(() => {
+    const tip = tipRef.current;
+    const frame = frameRef.current;
+    const target = tipCode && targets.get(tipCode);
+    if (!tip || !frame || !target) return;
+    const { x, y } = inFrame(target.anchor, frame);
+    const { offsetWidth: width, offsetHeight: height } = tip;
+    const left = Math.max(0, Math.min(x - width / 2, frame.clientWidth - width));
+    const above = y - TIP_GAP - height;
+    tip.style.left = `${left}px`;
+    tip.style.top = `${above >= 0 ? above : y + TIP_GAP}px`;
+  }, [tipCode, targets, layout]);
+
+  function select(code: string) {
+    if (selected === code) {
+      setSelected(null);
+      return;
+    }
+    setSelected(code);
+    onSelect?.(code);
+  }
+
+  function handleKeyDown(e: KeyboardEvent, code: string) {
+    const step = ARROW_STEPS[e.key];
+    if (step) {
+      e.preventDefault();
+      const next = order[order.indexOf(code) + step];
+      if (next) {
+        setActive(next);
+        elements.current.get(next)?.focus();
+      }
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      select(code);
+    }
+  }
+
   const countryLabel = (code: string) => {
     const count = counts.get(code) ?? 0;
     return `${countryName(code)}: ${count > 0 ? count.toLocaleString() : "no"} ${countNoun}`;
   };
   const shade = (code: string) => heatShade(counts.get(code) ?? 0, bands);
 
+  const selectable = (code: string) => ({
+    ref: (el: SVGElement | null) => {
+      if (el) elements.current.set(code, el);
+      else elements.current.delete(code);
+    },
+    "data-country": code,
+    role: "button" as const,
+    tabindex: code === tabStop ? 0 : -1,
+    "aria-label": countryLabel(code),
+    "aria-haspopup": "dialog" as const,
+    "aria-expanded": selected === code,
+    onClick: () => select(code),
+    onKeyDown: (e: KeyboardEvent) => handleKeyDown(e, code),
+    onMouseEnter: () => setHovered(code),
+    onMouseLeave: () => setHovered(null),
+    onFocus: () => {
+      setFocused(code);
+      setActive(code);
+    },
+    onBlur: () => setFocused(null),
+  });
+
+  const highlight = (code: string, isSelected: boolean) => {
+    const target = targets.get(code);
+    if (!target) return null;
+    const cls = `geo-heat-map__highlight${isSelected ? " is-selected" : ""}`;
+    return "d" in target.shape ? (
+      <path class={cls} d={target.shape.d} aria-hidden="true" />
+    ) : (
+      <circle
+        class={cls}
+        cx={target.shape.cx}
+        cy={target.shape.cy}
+        r={DOT_RADIUS}
+        aria-hidden="true"
+      />
+    );
+  };
+  const hoverCode = hovered ?? focused;
+
   return (
     <figure class="geo-heat-map is-loaded">
-      <div class="geo-heat-map__frame">
+      <div class="geo-heat-map__frame" ref={frameRef}>
         <svg
           class="geo-heat-map__svg"
           viewBox={geometry.viewBox}
@@ -125,7 +329,15 @@ function HeatMap({
               aria-hidden="true"
             />
             {geometry.countries.map(({ code, d }, i) =>
-              code && !dotCodes.has(code) ? (
+              code && targets.has(code) && !dotCodes.has(code) ? (
+                <path
+                  key={code}
+                  class="geo-heat-map__country is-selectable"
+                  d={d}
+                  data-shade={shade(code)}
+                  {...selectable(code)}
+                />
+              ) : code && !dotCodes.has(code) ? (
                 <path
                   key={code}
                   class="geo-heat-map__country"
@@ -157,15 +369,133 @@ function HeatMap({
                 cy={y}
                 r={DOT_RADIUS}
                 data-shade={shade(code)}
-                role="img"
-                aria-label={countryLabel(code)}
+                aria-hidden="true"
+              />
+            ))}
+            {hoverCode && hoverCode !== selected && highlight(hoverCode, false)}
+            {selected && highlight(selected, true)}
+            {/* Wider than the dots themselves so small countries can be hit. */}
+            {dots.map(({ code, x, y }) => (
+              <circle
+                key={code}
+                class="geo-heat-map__dot-target is-selectable"
+                cx={x}
+                cy={y}
+                r={DOT_TARGET_RADIUS}
+                {...selectable(code)}
               />
             ))}
           </g>
         </svg>
+        {tipCode && targets.has(tipCode) && (
+          <div ref={tipRef} class="geo-heat-map__tip" aria-hidden="true">
+            {countryName(tipCode)}
+          </div>
+        )}
+        {selected && (
+          <CountryPopup
+            key={selected}
+            popupRef={popupRef}
+            code={selected}
+            count={counts.get(selected) ?? 0}
+            total={total}
+            countNoun={countNoun}
+            href={viewHref(selected)}
+            onView={() => onView(selected)}
+            onClose={() => close(true)}
+          />
+        )}
       </div>
       <HeatMapLegend bands={bands} countNoun={countNoun} />
     </figure>
+  );
+}
+
+function CountryPopup({
+  popupRef,
+  code,
+  count,
+  total,
+  countNoun,
+  href,
+  onView,
+  onClose,
+}: {
+  popupRef: RefObject<HTMLDivElement>;
+  code: string;
+  count: number;
+  total: number;
+  countNoun: string;
+  href: string;
+  onView: () => void;
+  onClose: () => void;
+}) {
+  const titleId = useId();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const viewRef = useRef<HTMLAnchorElement>(null);
+  const share = formatShare(count, total);
+
+  useEffect(() => viewRef.current?.focus(), []);
+
+  function trapFocus(e: KeyboardEvent) {
+    if (e.key !== "Tab") return;
+    const [first, last] = [closeRef.current, viewRef.current];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last?.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first?.focus();
+    }
+  }
+
+  // Plain clicks navigate with history state; modified ones open the link natively.
+  function handleView(e: MouseEvent) {
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onView();
+  }
+
+  return (
+    <div
+      ref={popupRef}
+      class="geo-heat-map__popup"
+      role="dialog"
+      aria-labelledby={titleId}
+      onKeyDown={trapFocus}
+    >
+      <span class="geo-heat-map__popup-pointer" aria-hidden="true" />
+      <div class="geo-heat-map__popup-header">
+        <h2 id={titleId} class="geo-heat-map__popup-title">
+          {countryName(code)}
+        </h2>
+        <button
+          ref={closeRef}
+          type="button"
+          class="geo-heat-map__popup-close"
+          aria-label="Close"
+          onClick={onClose}
+        >
+          ✕
+        </button>
+      </div>
+      <p class="geo-heat-map__popup-stats">
+        <span class="geo-heat-map__popup-count">{count.toLocaleString()}</span>
+        <span class="geo-heat-map__popup-detail">
+          {countNoun}
+          {share && ` · ${share} of total`}
+        </span>
+      </p>
+      <a
+        ref={viewRef}
+        class="geo-heat-map__popup-view"
+        href={href}
+        onClick={handleView}
+      >
+        View {countNoun} <span aria-hidden="true">→</span>
+      </a>
+    </div>
   );
 }
 

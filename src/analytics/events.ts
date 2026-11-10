@@ -53,6 +53,10 @@ export type AnalyticsEvent =
   | { category: MapCategory; action: "No Coverage"; name: string }
   // every view of the heat map, defaults included
   | { category: "GeographicHeatMap"; action: "Map Viewed" }
+  // name: country, as filters report it — its popup opened
+  | { category: "GeographicHeatMap"; action: "Country Selected"; name: string }
+  // name: country, as filters report it — through to its search results
+  | { category: "GeographicHeatMap"; action: "Country Clicked"; name: string }
   // name: select | deselect
   | { category: "Selection"; action: "Toggled"; name: string }
   // value: selected count after selecting all
