@@ -8,21 +8,30 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:geo": "node scripts/generate-world-geo.mjs"
   },
   "dependencies": {
+    "d3-geo": "^3.1.2",
     "jspdf": "^4.2.1",
     "keycloak-js": "^26.2.4",
     "preact": "^10.25.4",
     "preact-router": "^4.1.2",
+    "topojson-client": "^3.1.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.9.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/preact": "^3.2.4",
+    "@types/d3-geo": "^3.1.1",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^22.10.5",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
     "jsdom": "^25.0.1",
+    "topojson-server": "^3.0.1",
+    "topojson-simplify": "^3.0.3",
     "typescript": "^5.7.2",
     "vite": "^6.0.7",
     "vitest": "^2.1.8"

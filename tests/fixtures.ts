@@ -73,6 +73,7 @@ export function makeCommunity(
       countrySearchable: true,
       referenceSelection: false,
       ancestorClosedCodings: false,
+      geographicHeatMap: false,
       ...features,
     },
     copy: {

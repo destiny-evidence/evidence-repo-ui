@@ -47,6 +47,7 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   // export) is enabled — see selectionEnabled.
   referenceSelection: true,
   ancestorClosedCodings: false,
+  geographicHeatMap: false,
 };
 
 // Mirrors destiny-repository's current cross-facet bucket ceiling (the API's
@@ -196,7 +197,8 @@ const COMMUNITIES: Community[] = [
       },
       {
         title: "Protocol v4 October 2026",
-        description: "The scope, eligibility criteria and planned methods for maintaining the repository.",
+        description:
+          "The scope, eligibility criteria and planned methods for maintaining the repository.",
         href: "https://aliveevidence.org/wp-content/uploads/2026/10/hpv-repo-protocol-v4.0-2026-10.pdf",
       },
       {
