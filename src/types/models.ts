@@ -173,7 +173,14 @@ export interface CountryWbIncomeGroupFacetCount {
   count: number;
 }
 
+// `mapped` is only returned when map axes are requested.
+export interface FacetTotals {
+  search: SearchResultTotal;
+  mapped?: SearchResultTotal;
+}
+
 export interface ReferenceFacetResult {
+  totals?: FacetTotals;
   concepts?: ConceptFacetCount[];
   countries?: CountryFacetCount[];
   country_wb_regions?: CountryWbRegionFacetCount[];

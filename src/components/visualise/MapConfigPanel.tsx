@@ -190,7 +190,7 @@ function MapConfigPanelInner({
     appliedEndYear,
     params,
     facets: facetTypesFor({ showCountryDerivedFilters }),
-    axes: draftAxes,
+    mapAxes: [draftAxes.row, draftAxes.column],
   });
 
   const axesDirty = !axesEqual(draftAxes, appliedAxes);

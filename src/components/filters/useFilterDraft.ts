@@ -2,7 +2,7 @@ import { useMemo, useState } from "preact/hooks";
 import { useSearchFacets, type FacetCounts } from "@/hooks/useSearchFacets";
 import type { FacetType } from "@/services/apiClient";
 import type { SearchParams } from "@/services/searchParams";
-import type { EvidenceMapAxes } from "@/types/models";
+import type { EvidenceMapAxis } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import {
   emptyConceptSchemeState,
@@ -130,10 +130,10 @@ export function useFilterDraft({
   appliedEndYear,
   params,
   facets,
-  axes,
+  mapAxes,
 }: FilterDraftInputs & {
   facets: readonly FacetType[];
-  axes?: EvidenceMapAxes;
+  mapAxes?: readonly EvidenceMapAxis[];
 }): FilterDraft {
   const [conceptDraft, setConceptDraft] = useState<ConceptDraft>(() =>
     parseConceptFilters(appliedConceptFilters, schemes ?? []),
@@ -191,7 +191,7 @@ export function useFilterDraft({
     counts: facetCounts,
     loading: facetCountsLoading,
     error: facetError,
-  } = useSearchFacets(facetParams, facets, axes);
+  } = useSearchFacets(facetParams, facets, mapAxes);
 
   function onSchemeChange(
     scheme: ConceptScheme,

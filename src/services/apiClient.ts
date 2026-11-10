@@ -128,7 +128,7 @@ export async function searchReferenceFacets(
   query: string | undefined,
   filters: Pick<SearchFilters, SharedFilterFields>,
   facets: readonly FacetType[],
-  options: Partial<CrossFacetQueryAxes> = {},
+  options: { axes?: readonly string[]; vocabularyUrl?: string } = {},
 ): Promise<ReferenceFacetResult> {
   const params = buildSharedSearchParams(query, filters);
   for (const f of facets) params.append("facet", f);

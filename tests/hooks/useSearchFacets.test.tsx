@@ -262,6 +262,38 @@ describe("useSearchFacets", () => {
     await waitFor(() => expect(hook.current.counts?.concepts.get("ex:A")).toBe(20));
   });
 
+  test("scopes to the given map axes and returns the totals", async () => {
+    const totals = {
+      search: { count: 40, is_lower_bound: false },
+      mapped: { count: 25, is_lower_bound: false },
+    };
+    mockFacets.mockResolvedValue({ ...countryResult(["FR", 25]), totals });
+    const { result: hook } = renderHook(
+      () =>
+        useSearchFacets(baseParams, ["countries"], [
+          { kind: "literal", token: "countries" },
+        ]),
+      { wrapper: withCommunityPath("/esea") },
+    );
+    await waitFor(() => expect(hook.current.loading).toBe(false));
+    expect(hook.current.totals).toEqual(totals);
+    expect(mockFacets).toHaveBeenCalledWith(
+      "phonics",
+      expect.anything(),
+      ["countries"],
+      expect.objectContaining({ axes: ["countries"] }),
+    );
+  });
+
+  test("totals are null when the server sends none", async () => {
+    mockFacets.mockResolvedValue(countryResult(["FR", 3]));
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(hook.current.loading).toBe(false));
+    expect(hook.current.totals).toBeNull();
+  });
+
   test("clears counts to null on settled error", async () => {
     mockFacets.mockRejectedValue(new Error("boom"));
     const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
