@@ -44,8 +44,10 @@ import { RefineButton } from "@/components/search/RefineButton";
 import {
   VisualiseMenu,
   type VisualiseChoice,
+  type VisualiseOption,
 } from "@/components/search/VisualiseMenu";
-import { buildHeatMapUrl, heatMapEnabled } from "@/services/geoHeatMap";
+import { buildHeatMapUrl } from "@/services/geoHeatMap";
+import { VISUALISE_VIEWS, enabledViews } from "@/services/visualiseViews";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
 import { BackLink } from "@/components/common/BackLink";
@@ -333,16 +335,26 @@ function SearchPageInner({ community }: { community: Community }) {
     setDrawerOpen(false);
   }
 
-  const mapAxes = community.features.evidenceMap
-    ? community.defaultEvidenceMapAxes
-    : undefined;
-  const literalAxes = offeredLiteralAxes(community.features);
-
-  const heatMap = heatMapEnabled(community.features);
+  const visualiseOptions = enabledViews(community.features).flatMap(
+    (kind): VisualiseOption[] => {
+      if (kind === "heat-map") return [{ kind }];
+      const defaultAxes = community.defaultEvidenceMapAxes;
+      // Nothing to start the axes on; the evidence map page says it isn't configured.
+      if (!defaultAxes) return [];
+      return [
+        {
+          kind,
+          defaultAxes,
+          schemes: filterableSchemes,
+          literalAxes: offeredLiteralAxes(community.features),
+        },
+      ];
+    },
+  );
 
   function handleVisualise(choice: VisualiseChoice) {
     track({
-      category: choice.kind === "evidence-map" ? "EvidenceMap" : "GeographicHeatMap",
+      category: VISUALISE_VIEWS[choice.kind].category,
       action: "Visualised From Search",
       name: hasActiveSearch(withoutDefaults(community, params))
         ? "search"
@@ -727,16 +739,14 @@ function SearchPageInner({ community }: { community: Community }) {
             </span>
             {(refine || results.results) && (
               <span class="search-results__meta-right">
-                {(mapAxes || heatMap) && results.results && (
+                {visualiseOptions.length > 0 && results.results && (
                   <VisualiseMenu
+                    key={community.slug}
                     total={results.results.total}
                     loading={results.loading}
                     scoped={hasActiveSearch(params)}
                     countNoun={community.copy.countNoun}
-                    defaultAxes={mapAxes}
-                    heatMap={heatMap}
-                    schemes={filterableSchemes}
-                    literalAxes={literalAxes}
+                    options={visualiseOptions}
                     onVisualise={handleVisualise}
                   />
                 )}

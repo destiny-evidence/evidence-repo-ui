@@ -3,10 +3,8 @@ import { useDismiss } from "@/hooks/useDismiss";
 import { ChevronDownIcon } from "@/components/common/icons";
 import { Tooltip } from "@/components/common/Tooltip";
 import { MapAxisFields } from "@/components/visualise/MapAxisFields";
-import {
-  VisualiseThumbnail,
-  type VisualiseKind,
-} from "@/components/layout/VisualiseThumbnail";
+import { VisualiseThumbnail } from "@/components/visualise/VisualiseThumbnail";
+import { VISUALISE_VIEWS, type VisualiseKind } from "@/services/visualiseViews";
 import { formatTotal } from "@/utils/searchTotal";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import type {
@@ -17,14 +15,19 @@ import type {
 import "./ExportMenu.css";
 import "./VisualiseMenu.css";
 
+export type VisualiseOption =
+  | {
+      kind: "evidence-map";
+      // The axes start on these.
+      defaultAxes: EvidenceMapAxes;
+      schemes: ConceptScheme[];
+      literalAxes: readonly LiteralAxisToken[];
+    }
+  | { kind: "heat-map" };
+
 export type VisualiseChoice =
   | { kind: "evidence-map"; axes: EvidenceMapAxes }
   | { kind: "heat-map" };
-
-const VIEW_NAMES: Record<VisualiseKind, string> = {
-  "evidence-map": "Evidence map",
-  "heat-map": "Geographic heat map",
-};
 
 interface VisualiseMenuProps {
   total: SearchResultTotal;
@@ -33,36 +36,29 @@ interface VisualiseMenuProps {
   // Whether a query or filters narrow the results, or it's the whole repository.
   scoped: boolean;
   countNoun: string;
-  // Absent when the community has no evidence map.
-  defaultAxes?: EvidenceMapAxes;
-  heatMap: boolean;
-  schemes: ConceptScheme[];
-  literalAxes: readonly LiteralAxisToken[];
+  // At least one; a choice between them when there are more.
+  options: readonly VisualiseOption[];
   onVisualise: (choice: VisualiseChoice) => void;
 }
 
 /**
- * Maps every result of the current search as an evidence map or heat map,
- * offering the choice when the community has both. Shares the Export menu's
- * look; the axes start on the community defaults.
+ * Maps every result of the current search as one of the given views. Shares
+ * the Export menu's look.
  */
 export function VisualiseMenu({
   total,
   loading,
   scoped,
   countNoun,
-  defaultAxes,
-  heatMap,
-  schemes,
-  literalAxes,
+  options,
   onVisualise,
 }: VisualiseMenuProps) {
   const [open, setOpen] = useState(false);
-  const kinds: VisualiseKind[] = [];
-  if (defaultAxes) kinds.push("evidence-map");
-  if (heatMap) kinds.push("heat-map");
-  const [kind, setKind] = useState<VisualiseKind>(kinds[0]);
-  const [axes, setAxes] = useState(defaultAxes);
+  const [kind, setKind] = useState<VisualiseKind>();
+  // Unset until the user changes them, so they track the defaults.
+  const [axes, setAxes] = useState<EvidenceMapAxes>();
+  // The choice falls back to the first view if its view is no longer offered.
+  const current = options.find((o) => o.kind === kind) ?? options[0];
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
@@ -108,7 +104,7 @@ export function VisualiseMenu({
           role="group"
           aria-label="Visualise these results"
         >
-          {kinds.length > 1 && (
+          {options.length > 1 && (
             <>
               <p class="export-menu__label" id={viewLabelId}>
                 View as
@@ -118,18 +114,20 @@ export function VisualiseMenu({
                 role="radiogroup"
                 aria-labelledby={viewLabelId}
               >
-                {kinds.map((k) => (
+                {options.map(({ kind: k }) => (
                   <label key={k} class="visualise-menu__view">
                     <input
                       class="visually-hidden"
                       type="radio"
                       name={viewRadioName}
                       value={k}
-                      checked={kind === k}
+                      checked={current.kind === k}
                       onChange={() => setKind(k)}
                     />
                     <VisualiseThumbnail kind={k} />
-                    <span class="visualise-menu__view-name">{VIEW_NAMES[k]}</span>
+                    <span class="visualise-menu__view-name">
+                      {VISUALISE_VIEWS[k].name}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -146,14 +144,14 @@ export function VisualiseMenu({
             <span class="export-menu__ext">{formatTotal(total)}</span>
           </div>
 
-          {kind === "evidence-map" && axes && (
+          {current.kind === "evidence-map" && (
             <>
               <p class="export-menu__label">Configure map</p>
               <div class="visualise-menu__axes">
                 <MapAxisFields
-                  axes={axes}
-                  schemes={schemes}
-                  literalAxes={literalAxes}
+                  axes={axes ?? current.defaultAxes}
+                  schemes={current.schemes}
+                  literalAxes={current.literalAxes}
                   onChange={setAxes}
                 />
               </div>
@@ -166,9 +164,9 @@ export function VisualiseMenu({
             onClick={() => {
               setOpen(false);
               onVisualise(
-                kind === "evidence-map" && axes
-                  ? { kind, axes }
-                  : { kind: "heat-map" },
+                current.kind === "evidence-map"
+                  ? { kind: current.kind, axes: axes ?? current.defaultAxes }
+                  : current,
               );
             }}
           >

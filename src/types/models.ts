@@ -1,5 +1,5 @@
 export interface CommunityFeatures {
-  // No UI yet; reserved so the evidence map can ship behind a flag (#103).
+  // Gates the evidence map view.
   evidenceMap: boolean;
   // Gates the "Generate AI summary" entry point and its drawer.
   aiSummaries: boolean;

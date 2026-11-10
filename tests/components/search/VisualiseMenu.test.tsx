@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, within, cleanup } from "@testing-library/preact";
-import { VisualiseMenu } from "@/components/search/VisualiseMenu";
+import { VisualiseMenu, type VisualiseOption } from "@/components/search/VisualiseMenu";
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
 import type { EvidenceMapAxes } from "@/types/models";
 import {
@@ -15,29 +15,37 @@ const AXES: EvidenceMapAxes = {
   column: { kind: "scheme", schemeUri: DOCUMENT_TYPE_SCHEME.uri },
 };
 
+const EVIDENCE_MAP: VisualiseOption = {
+  kind: "evidence-map",
+  defaultAxes: AXES,
+  schemes: [OUTCOME_SCHEME_FIXTURE, DOCUMENT_TYPE_SCHEME],
+  literalAxes: [AXIS_COUNTRIES],
+};
+const HEAT_MAP: VisualiseOption = { kind: "heat-map" };
+
 function setup({
   count = 342,
   scoped = true,
   loading = false,
-  evidenceMap = true,
-  heatMap = false,
+  options = [EVIDENCE_MAP] as VisualiseOption[],
 } = {}) {
   const onVisualise = vi.fn();
-  const menu = (loading: boolean) => (
+  const menu = (loading: boolean, opts = options) => (
     <VisualiseMenu
       total={{ count, is_lower_bound: false }}
       loading={loading}
       scoped={scoped}
       countNoun="investigations"
-      defaultAxes={evidenceMap ? AXES : undefined}
-      heatMap={heatMap}
-      schemes={[OUTCOME_SCHEME_FIXTURE, DOCUMENT_TYPE_SCHEME]}
-      literalAxes={[AXIS_COUNTRIES]}
+      options={opts}
       onVisualise={onVisualise}
     />
   );
   const { rerender } = render(menu(loading));
-  return { onVisualise, startLoading: () => rerender(menu(true)) };
+  return {
+    onVisualise,
+    startLoading: () => rerender(menu(true)),
+    offer: (opts: VisualiseOption[]) => rerender(menu(loading, opts)),
+  };
 }
 
 const trigger = () => screen.getByRole("button", { name: /^visualise$/i, expanded: false });
@@ -76,7 +84,7 @@ describe("VisualiseMenu", () => {
   });
 
   test("offers the heat map beside the evidence map, without the axes", () => {
-    const { onVisualise } = setup({ heatMap: true });
+    const { onVisualise } = setup({ options: [EVIDENCE_MAP, HEAT_MAP] });
     const panel = openPanel();
     const views = within(panel).getByRole("radiogroup", { name: "View as" });
     expect(within(views).getByRole("radio", { name: "Evidence map" })).toBeChecked();
@@ -88,12 +96,21 @@ describe("VisualiseMenu", () => {
   });
 
   test("goes straight to the heat map when it is the only view", () => {
-    const { onVisualise } = setup({ evidenceMap: false, heatMap: true });
+    const { onVisualise } = setup({ options: [HEAT_MAP] });
     const panel = openPanel();
     expect(within(panel).queryByRole("radiogroup")).toBeNull();
     expect(within(panel).queryByLabelText("Rows (y)")).toBeNull();
     fireEvent.click(within(panel).getByRole("button", { name: /^visualise$/i }));
     expect(onVisualise).toHaveBeenCalledWith({ kind: "heat-map" });
+  });
+
+  test("falls back to the first view when the chosen one is no longer offered", () => {
+    const { onVisualise, offer } = setup({ options: [EVIDENCE_MAP, HEAT_MAP] });
+    const panel = openPanel();
+    fireEvent.click(within(panel).getByRole("radio", { name: "Geographic heat map" }));
+    offer([EVIDENCE_MAP]);
+    fireEvent.click(within(panel).getByRole("button", { name: /^visualise$/i }));
+    expect(onVisualise).toHaveBeenCalledWith({ kind: "evidence-map", axes: AXES });
   });
 
   test("closes on Escape", () => {

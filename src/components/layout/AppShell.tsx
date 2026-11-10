@@ -8,12 +8,11 @@ import { FeedbackLink } from "@/components/feedback/FeedbackLink";
 import { MenuIcon, NewTabLinkIcon } from "@/components/common/icons";
 import { NewTabLink } from "@/components/common/NewTabLink";
 import { ResourcesMenu } from "./ResourcesMenu";
-import { VisualiseNavMenu, type VisualiseView } from "./VisualiseNavMenu";
+import { VisualiseNavMenu } from "./VisualiseNavMenu";
 import { SiteFrame } from "./SiteFrame";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 import { FEEDBACK_FORM_URL } from "@/config";
-import { heatMapEnabled, heatMapPath } from "@/services/geoHeatMap";
-import type { Community } from "@/types/models";
+import { VISUALISE_VIEWS, enabledViews } from "@/services/visualiseViews";
 import "./AppShell.css";
 
 function usePathname(): string {
@@ -28,28 +27,6 @@ function usePathname(): string {
     };
   }, []);
   return pathname;
-}
-
-function visualiseViews(community: Community): VisualiseView[] {
-  const views: VisualiseView[] = [];
-  if (community.features.evidenceMap) {
-    views.push({
-      kind: "evidence-map",
-      name: "Evidence map",
-      description:
-        "Compare two dimensions to see where studies cluster and where they are missing.",
-      href: `/${community.slug}/visualise`,
-    });
-  }
-  if (heatMapEnabled(community.features)) {
-    views.push({
-      kind: "heat-map",
-      name: "Geographic heat map",
-      description: "See where research took place.",
-      href: heatMapPath(community.slug),
-    });
-  }
-  return views;
 }
 
 interface AppShellProps {
@@ -68,7 +45,7 @@ export function AppShell({ children }: AppShellProps) {
     community != null &&
     (pathname === `/${community.slug}/visualise` ||
       pathname.startsWith(`/${community.slug}/visualise/`));
-  const views = community ? visualiseViews(community) : [];
+  const views = community ? enabledViews(community.features) : [];
   // Within a community the brand goes to its root; off one (an unknown slug)
   // it goes to the home page, which lists the communities.
   const brandHref = community ? `/${community.slug}` : "/";
@@ -133,9 +110,10 @@ export function AppShell({ children }: AppShellProps) {
                     {views.length > 0 && (
                       <VisualiseNavMenu
                         views={views}
+                        communitySlug={community.slug}
                         active={visualiseActive}
                         pathname={pathname}
-                        onSelect={(view) => trackTab(view.name)()}
+                        onSelect={(kind) => trackTab(VISUALISE_VIEWS[kind].name)()}
                       />
                     )}
                     {resources.length > 0 && (

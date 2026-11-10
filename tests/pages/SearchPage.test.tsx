@@ -1473,8 +1473,20 @@ describe("SearchPage", () => {
       return url;
     }
 
-    test("maps the search's query and filters, dropping page and sort", async () => {
-      const url = visualise(await openVisualise());
+    test("maps the search's query and filters, dropping page and sort, and reports it", async () => {
+      const panel = await openVisualise();
+      window._paq = [];
+      const url = visualise(panel);
+      const events = window._paq;
+      window._paq = undefined;
+
+      expect(events).toContainEqual([
+        "trackEvent",
+        "EvidenceMap",
+        "Visualised From Search",
+        "search",
+        undefined,
+      ]);
       expect(url.pathname).toBe("/esea/visualise");
       expect(url.searchParams.get("q")).toBe("phonics");
       expect(url.searchParams.get("country")).toBe("KE");
@@ -1502,6 +1514,17 @@ describe("SearchPage", () => {
         "search",
         undefined,
       ]);
+    });
+
+    test("offers the heat map alone when the community has no evidence map", async () => {
+      const esea = findCommunity("esea")!;
+      communityOverride.current = {
+        ...esea,
+        features: { ...esea.features, evidenceMap: false },
+      };
+      const panel = await openVisualise();
+      expect(within(panel).queryByRole("radiogroup")).toBeNull();
+      expect(visualise(panel).pathname).toBe("/esea/visualise/geographic");
     });
 
     test("is absent when the community has neither map", async () => {

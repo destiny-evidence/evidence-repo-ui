@@ -31,10 +31,17 @@
   background: var(--color-bg-hover);
 }
 
+/* A wider border rather than a shadow, so forced colours still show the choice. */
 .visualise-menu__view:has(input:checked) {
-  border-color: var(--color-accent);
-  box-shadow: inset 0 0 0 1px var(--color-accent);
+  border: 2px solid var(--color-accent);
+  padding: 7px;
   background: var(--color-accent-light);
+}
+
+@media (forced-colors: active) {
+  .visualise-menu__view:has(input:checked) {
+    border-color: Highlight;
+  }
 }
 
 .visualise-menu__view:has(input:focus-visible) {

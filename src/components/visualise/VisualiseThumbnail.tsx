@@ -1,6 +1,5 @@
+import type { VisualiseKind } from "@/services/visualiseViews";
 import "./VisualiseThumbnail.css";
-
-export type VisualiseKind = "evidence-map" | "heat-map";
 
 // [diameter px, shade] for each dot, row by row.
 const DOTS: [number, number][] = [

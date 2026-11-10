@@ -1,30 +1,31 @@
 import { useId, useRef, useState } from "preact/hooks";
 import { useDismiss } from "@/hooks/useDismiss";
 import { ChevronDownIcon } from "@/components/common/icons";
-import { VisualiseThumbnail, type VisualiseKind } from "./VisualiseThumbnail";
+import { VisualiseThumbnail } from "@/components/visualise/VisualiseThumbnail";
+import { VISUALISE_VIEWS, type VisualiseKind } from "@/services/visualiseViews";
 import "./ResourcesMenu.css";
 import "./VisualiseNavMenu.css";
 
-export interface VisualiseView {
-  kind: VisualiseKind;
-  name: string;
-  description: string;
-  href: string;
-}
-
 interface VisualiseNavMenuProps {
-  views: readonly VisualiseView[];
+  views: readonly VisualiseKind[];
+  communitySlug: string;
   active: boolean;
   pathname: string;
-  onSelect: (view: VisualiseView) => void;
+  onSelect: (kind: VisualiseKind) => void;
 }
 
 export function VisualiseNavMenu({
   views,
+  communitySlug,
   active,
   pathname,
   onSelect,
 }: VisualiseNavMenuProps) {
+  const links = views.map((kind) => ({
+    kind,
+    ...VISUALISE_VIEWS[kind],
+    href: VISUALISE_VIEWS[kind].path(communitySlug),
+  }));
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -56,7 +57,7 @@ export function VisualiseNavMenu({
           id={panelId}
           hidden={!open}
         >
-          {views.map((view) => (
+          {links.map((view) => (
             <a
               key={view.href}
               class="resource-link"
@@ -64,7 +65,7 @@ export function VisualiseNavMenu({
               aria-current={view.href === pathname ? "page" : undefined}
               onClick={() => {
                 setOpen(false);
-                onSelect(view);
+                onSelect(view.kind);
               }}
             >
               <VisualiseThumbnail kind={view.kind} />
@@ -78,13 +79,13 @@ export function VisualiseNavMenu({
       </div>
       {/* Flat stand-in for the dropdown in the narrow-screen menu; CSS shows one or the other. */}
       <div class="app-nav__visualise-flat" role="group" aria-label="Visualise">
-        {views.map((view) => (
+        {links.map((view) => (
           <a
             key={view.href}
             class={`app-nav__link${view.href === pathname ? " active" : ""}`}
             href={view.href}
             aria-current={view.href === pathname ? "page" : undefined}
-            onClick={() => onSelect(view)}
+            onClick={() => onSelect(view.kind)}
           >
             {view.name}
           </a>
