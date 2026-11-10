@@ -15,7 +15,13 @@ const AXES: EvidenceMapAxes = {
   column: { kind: "scheme", schemeUri: DOCUMENT_TYPE_SCHEME.uri },
 };
 
-function setup({ count = 342, scoped = true, loading = false } = {}) {
+function setup({
+  count = 342,
+  scoped = true,
+  loading = false,
+  evidenceMap = true,
+  heatMap = false,
+} = {}) {
   const onVisualise = vi.fn();
   const menu = (loading: boolean) => (
     <VisualiseMenu
@@ -23,7 +29,8 @@ function setup({ count = 342, scoped = true, loading = false } = {}) {
       loading={loading}
       scoped={scoped}
       countNoun="investigations"
-      defaultAxes={AXES}
+      defaultAxes={evidenceMap ? AXES : undefined}
+      heatMap={heatMap}
       schemes={[OUTCOME_SCHEME_FIXTURE, DOCUMENT_TYPE_SCHEME]}
       literalAxes={[AXIS_COUNTRIES]}
       onVisualise={onVisualise}
@@ -37,7 +44,7 @@ const trigger = () => screen.getByRole("button", { name: /^visualise$/i, expande
 
 function openPanel() {
   fireEvent.click(trigger());
-  return screen.getByRole("group", { name: /visualise as an evidence map/i });
+  return screen.getByRole("group", { name: /visualise these results/i });
 }
 
 describe("VisualiseMenu", () => {
@@ -63,9 +70,30 @@ describe("VisualiseMenu", () => {
     });
     fireEvent.click(within(panel).getByRole("button", { name: /^visualise$/i }));
     expect(onVisualise).toHaveBeenCalledWith({
-      row: AXES.column,
-      column: AXES.row,
+      kind: "evidence-map",
+      axes: { row: AXES.column, column: AXES.row },
     });
+  });
+
+  test("offers the heat map beside the evidence map, without the axes", () => {
+    const { onVisualise } = setup({ heatMap: true });
+    const panel = openPanel();
+    const views = within(panel).getByRole("radiogroup", { name: "View as" });
+    expect(within(views).getByRole("radio", { name: "Evidence map" })).toBeChecked();
+
+    fireEvent.click(within(views).getByRole("radio", { name: "Geographic heat map" }));
+    expect(within(panel).queryByLabelText("Rows (y)")).toBeNull();
+    fireEvent.click(within(panel).getByRole("button", { name: /^visualise$/i }));
+    expect(onVisualise).toHaveBeenCalledWith({ kind: "heat-map" });
+  });
+
+  test("goes straight to the heat map when it is the only view", () => {
+    const { onVisualise } = setup({ evidenceMap: false, heatMap: true });
+    const panel = openPanel();
+    expect(within(panel).queryByRole("radiogroup")).toBeNull();
+    expect(within(panel).queryByLabelText("Rows (y)")).toBeNull();
+    fireEvent.click(within(panel).getByRole("button", { name: /^visualise$/i }));
+    expect(onVisualise).toHaveBeenCalledWith({ kind: "heat-map" });
   });
 
   test("closes on Escape", () => {
