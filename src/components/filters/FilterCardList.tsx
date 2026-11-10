@@ -12,6 +12,7 @@ import {
   type FilterItem,
 } from "./filterOrder";
 import {
+  schemeDisplayDescription,
   schemeDisplayLabel,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
@@ -171,7 +172,7 @@ function SchemeCard({
   return (
     <FilterCard
       title={schemeDisplayLabel(scheme.label)}
-      titleTooltip={scheme.description}
+      titleTooltip={schemeDisplayDescription(scheme.description)}
       summary={summary(state)}
       expandOnMount={expandOnMount}
     >

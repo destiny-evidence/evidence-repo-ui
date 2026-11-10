@@ -45,6 +45,25 @@ export function schemeDisplayLabel(label: string): string {
   return label.replace(/\s+Scheme$/i, "");
 }
 
+// About six lines of tooltip; even all-W text still fits a 13" laptop screen.
+const SCHEME_DESCRIPTION_MAX_LENGTH = 200;
+
+/**
+ * Display form of a scheme description: long ones are cut at a word boundary
+ * with an ellipsis so the tooltip doesn't cover the list it sits on.
+ */
+export function schemeDisplayDescription(
+  description: string | undefined,
+): string | undefined {
+  if (!description || description.length <= SCHEME_DESCRIPTION_MAX_LENGTH) {
+    return description;
+  }
+  const head = description.slice(0, SCHEME_DESCRIPTION_MAX_LENGTH + 1);
+  const lastSpace = head.lastIndexOf(" ");
+  const cut = lastSpace > 0 ? head.slice(0, lastSpace) : head.slice(0, -1);
+  return `${cut.replace(/[\s.,;:—–-]+$/, "")}…`;
+}
+
 /**
  * The published vocabulary encodes sort order inside `skos:prefLabel`: a "Z_"
  * prefix pins catch-all concepts.

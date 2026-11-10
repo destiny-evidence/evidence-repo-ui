@@ -2,7 +2,10 @@ import type {
   Concept,
   ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
-import { schemeDisplayLabel } from "@/services/vocabulary/vocabularyService";
+import {
+  schemeDisplayDescription,
+  schemeDisplayLabel,
+} from "@/services/vocabulary/vocabularyService";
 import type { ResolvedConcept } from "@/types/investigation";
 
 export interface TaxoNode {
@@ -109,7 +112,7 @@ export function groupAppliedConcepts(
     ordered.push({
       schemeUri: scheme.uri,
       schemeLabel: schemeDisplayLabel(scheme.label),
-      schemeDescription: scheme.description,
+      schemeDescription: schemeDisplayDescription(scheme.description),
       isGeo,
       nodes,
       order: idx,
