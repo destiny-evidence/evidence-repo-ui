@@ -10,7 +10,7 @@ import {
   sortKey,
   type SortOption,
 } from "@/services/searchParams";
-import { navigate } from "@/services/navigation";
+import { isPlainPrimaryClick, navigate } from "@/services/navigation";
 import { track, trackSiteSearch } from "@/analytics/matomo";
 import {
   activeFilters,
@@ -188,8 +188,7 @@ function SearchPageInner({ community }: { community: Community }) {
   // Primary clicks must carry history.state through router anchor handling.
   function handleBackClick(event: MouseEvent) {
     if (!visualiseBackUrl || !backExpansion) return;
-    if (event.button !== 0) return;
-    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    if (!isPlainPrimaryClick(event)) return;
     event.preventDefault();
     event.stopPropagation();
     navigate(visualiseBackUrl, { state: mapExpansionState(backExpansion) });

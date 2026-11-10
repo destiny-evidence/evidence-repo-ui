@@ -2,6 +2,7 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/preact";
 import { PILL_CAP, ResultRow } from "@/components/search/ResultRow";
 import { rawSourcePatterns } from "@/services/codingInstitution";
+import { backToSearchFromState } from "@/services/searchParams";
 import {
   abstractEnh,
   bibliographicEnh,
@@ -441,6 +442,36 @@ describe("ResultRow", () => {
     );
     expect(screen.queryByText("Cohort study")).not.toBeNull();
     expect(screen.queryByText("Nigeria")).toBeNull();
+  });
+
+  describe("opening the record", () => {
+    test("leaves the search to return to in the record's history.state", () => {
+      const searchState = { backToVisualise: "/esea/visualise?row=a" };
+      history.replaceState(searchState, "", "/esea?q=phonics&page=2");
+      render(<ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={makeRef()} />);
+
+      fireEvent.click(screen.getByRole("link", { name: /on phonics instruction/i }));
+
+      expect(location.pathname).toBe(`/esea/references/${REF_ID}`);
+      expect(backToSearchFromState(history.state)).toEqual({
+        url: "/esea?q=phonics&page=2",
+        state: searchState,
+      });
+    });
+
+    test.each([
+      ["a modified click", { metaKey: true }],
+      ["a non-primary button", { button: 1 }],
+    ])("leaves %s to the browser", (_label, init) => {
+      history.replaceState(null, "", "/esea");
+      render(<ResultRow communitySlug="esea" vocabularyIds={VOCABULARY_IDS} reference={makeRef()} />);
+      const pushState = vi.spyOn(history, "pushState");
+
+      fireEvent.click(screen.getByRole("link", { name: /on phonics instruction/i }), init);
+
+      expect(pushState).not.toHaveBeenCalled();
+      pushState.mockRestore();
+    });
   });
 
   describe("selection", () => {

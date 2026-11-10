@@ -8,6 +8,10 @@
   margin: 0 auto;
 }
 
+.record-detail-page__back {
+  margin-bottom: var(--spacing-md);
+}
+
 .record-detail-page__vocab-banner {
   margin: var(--spacing-md) 0 0;
   padding: var(--spacing-sm) var(--spacing-md);

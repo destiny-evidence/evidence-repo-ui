@@ -1,10 +1,11 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/preact";
+import { fireEvent, render, screen } from "@testing-library/preact";
 import { RecordDetailPage } from "@/pages/RecordDetailPage";
 import { AuthProvider } from "@/auth/AuthContext";
 import { CommunityProvider } from "@/community/CommunityContext";
 import { makeReference, makeVocabResult } from "../fixtures";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
+import { backToSearchState } from "@/services/searchParams";
 
 function renderRecordDetail(id: string) {
   return render(
@@ -431,5 +432,48 @@ describe("RecordDetailPage", () => {
     expect(
       screen.queryByRole("link", { name: /Request more data/ }),
     ).toBeNull();
+  });
+
+  describe("Back to search link", () => {
+    const linkQuery = { name: /back to search/i } as const;
+
+    function renderWithState(state: unknown) {
+      history.replaceState(state, "", "/esea/references/abc");
+      mockUseReference.mockReturnValue({
+        reference: makeReference(),
+        loading: false,
+        error: null,
+      });
+      renderRecordDetail("abc");
+    }
+
+    test("renders from history.state set by a search result", () => {
+      renderWithState(backToSearchState("/esea?q=phonics&page=2", null));
+      expect(screen.getByRole("link", linkQuery)).toHaveAttribute(
+        "href",
+        "/esea?q=phonics&page=2",
+      );
+    });
+
+    test("absent without the state (e.g. a shared record URL)", () => {
+      renderWithState(null);
+      expect(screen.queryByRole("link", linkQuery)).toBeNull();
+    });
+
+    test("ignores a state URL pointing at a different community", () => {
+      renderWithState(backToSearchState("/other?q=phonics", null));
+      expect(screen.queryByRole("link", linkQuery)).toBeNull();
+    });
+
+    test("restores the search entry's own state", () => {
+      const searchState = { backToVisualise: "/esea/visualise?row=a" };
+      renderWithState(backToSearchState("/esea?q=phonics", searchState));
+      const pushState = vi.spyOn(history, "pushState");
+
+      fireEvent.click(screen.getByRole("link", linkQuery));
+
+      expect(pushState).toHaveBeenCalledWith(searchState, "", "/esea?q=phonics");
+      pushState.mockRestore();
+    });
   });
 });

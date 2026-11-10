@@ -15,7 +15,12 @@ import {
 } from "@/services/referenceUtils";
 import { parseInvestigation } from "@/services/investigationParser";
 import { conceptsToTags } from "@/services/conceptLabels";
-import { recordDetailPath } from "@/services/navigation";
+import {
+  isPlainPrimaryClick,
+  navigate,
+  recordDetailPath,
+} from "@/services/navigation";
+import { backToSearchState } from "@/services/searchParams";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
 import { NewTabLink } from "@/components/common/NewTabLink";
@@ -172,6 +177,21 @@ export function ResultRow({
       ? pillTags
       : pillTags.slice(0, PILL_CAP);
   const overflow = pillTags ? pillTags.length - visibleTags.length : 0;
+  const href = recordDetailPath(communitySlug, reference.id);
+
+  // Primary clicks must carry history.state through router anchor handling.
+  function handleOpen(event: MouseEvent) {
+    track({ category: "Record", action: "Opened", value: position });
+    if (!isPlainPrimaryClick(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    navigate(href, {
+      state: backToSearchState(
+        `${window.location.pathname}${window.location.search}`,
+        window.history.state,
+      ),
+    });
+  }
 
   // Stretched-link pattern: the .row-link <a> wraps left-column content, and
   // its ::before extends a transparent overlay across the whole .result-row
@@ -200,9 +220,9 @@ export function ResultRow({
       )}
       <a
         class="row-link"
-        href={recordDetailPath(communitySlug, reference.id)}
+        href={href}
         aria-label={title}
-        onClick={() => track({ category: "Record", action: "Opened", value: position })}
+        onClick={handleOpen}
       >
         <div class="row-title">
           {title}

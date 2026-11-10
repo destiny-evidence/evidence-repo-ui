@@ -11,12 +11,16 @@ import {
   parseInvestigation,
   extractIsRetracted,
 } from "@/services/investigationParser";
+import { isPlainPrimaryClick, navigate } from "@/services/navigation";
+import { backToSearchFromState } from "@/services/searchParams";
+import { useHistoryState } from "@/hooks/useHistoryState";
 import { useReference } from "@/hooks/useReference";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
 import { InvestigationCard } from "@/components/investigation/InvestigationCard";
 import { FindingsSection } from "@/components/investigation/FindingsSection";
 import { TaxonomyCodesCard } from "@/components/investigation/TaxonomyCodesCard";
+import { BackLink } from "@/components/common/BackLink";
 import { EnrichmentRequestPanel } from "@/components/enrichment/EnrichmentRequestPanel";
 import {
   countCodedAnnotations,
@@ -34,6 +38,7 @@ interface RecordDetailPageProps {
 
 export function RecordDetailPage({ id }: RecordDetailPageProps) {
   const community = useCommunity();
+  const backToSearch = backToSearchFromState(useHistoryState());
 
   const { reference, loading: refLoading, error: refError } = useReference(id);
   const bibliographic = reference ? extractBibliographic(reference) : null;
@@ -102,12 +107,43 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
 
   if (!community) return <NotFoundPage />;
 
+  // Confined to this community's search route so a stale state entry can't
+  // render a bad link.
+  const searchPath = `/${community.slug}`;
+  const searchBack =
+    backToSearch &&
+    (backToSearch.url === searchPath ||
+      backToSearch.url.startsWith(`${searchPath}?`))
+      ? backToSearch
+      : null;
+
+  // Primary clicks must carry history.state through router anchor handling.
+  function handleBackClick(event: MouseEvent) {
+    if (!searchBack || !isPlainPrimaryClick(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    navigate(searchBack.url, { state: searchBack.state });
+  }
+
+  const backLink = searchBack && (
+    <BackLink
+      class="record-detail-page__back"
+      href={searchBack.url}
+      onClick={handleBackClick}
+    >
+      Back to search
+    </BackLink>
+  );
+
   const loading = refLoading || vocabLoading || ctxLoading;
 
   if (loading) {
     return (
       <div class="record-detail-page">
-        <div class="record-detail-page__container">Loading…</div>
+        <div class="record-detail-page__container">
+          {backLink}
+          <div>Loading…</div>
+        </div>
       </div>
     );
   }
@@ -116,6 +152,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
     return (
       <div class="record-detail-page">
         <div class="record-detail-page__container">
+          {backLink}
           <p>We couldn't load this reference.</p>
         </div>
       </div>
@@ -134,6 +171,7 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
   return (
     <div class="record-detail-page">
       <div class="record-detail-page__container">
+        {backLink}
         <InvestigationCard
           title={bibliographic?.title ?? null}
           authors={bibliographic?.authorship ?? null}

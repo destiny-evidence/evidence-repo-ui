@@ -155,6 +155,35 @@ export function buildSearchUrl(
   return qs ? `/${communitySlug}?${qs}` : `/${communitySlug}`;
 }
 
+// history.state key set when a search result opens a record. Carries the search
+// entry's own state too, so returning restores it (e.g. its Back to Visualise
+// link). State (not a URL param) so a shared record link shows no back link.
+const BACK_TO_SEARCH = "backToSearch";
+
+export interface BackToSearch {
+  url: string;
+  state: unknown;
+}
+
+export function backToSearchState(
+  url: string,
+  state: unknown,
+): Record<string, unknown> {
+  return { [BACK_TO_SEARCH]: { url, state } };
+}
+
+// Reads the search to return to out of an opaque history.state, or null if absent.
+export function backToSearchFromState(state: unknown): BackToSearch | null {
+  if (!state || typeof state !== "object" || !(BACK_TO_SEARCH in state)) {
+    return null;
+  }
+  const value = (state as Record<string, unknown>)[BACK_TO_SEARCH];
+  if (!value || typeof value !== "object") return null;
+  const { url, state: searchState } = value as Record<string, unknown>;
+  if (typeof url !== "string") return null;
+  return { url, state: searchState ?? null };
+}
+
 export type SearchFilterParams = Pick<
   SearchParams,
   | "conceptFilters"

@@ -43,6 +43,17 @@ export function stampHistoryState(state: unknown): void {
   history.replaceState(state, "", window.location.href);
 }
 
+/** An unmodified left click — the only kind a link may take over from the browser. */
+export function isPlainPrimaryClick(event: MouseEvent): boolean {
+  return (
+    event.button === 0 &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.shiftKey &&
+    !event.altKey
+  );
+}
+
 export function navigate(
   url: string,
   options: { mode?: "push" | "replace"; state?: unknown } = {},
