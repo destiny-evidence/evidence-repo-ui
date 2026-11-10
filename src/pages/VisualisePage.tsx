@@ -6,10 +6,9 @@ import { useVocabulary } from "@/hooks/useVocabulary";
 import {
   parseSearchParams,
   buildSearchUrl,
-  toUnpaginatedSearchQuery,
   type SearchParams,
 } from "@/services/searchParams";
-import { searchReferences } from "@/services/apiClient";
+import { countSearchMatches } from "@/services/searchCount";
 import { navigate, stampHistoryState } from "@/services/navigation";
 import {
   buildAxisBands,
@@ -50,11 +49,11 @@ import { CellSizeSelect } from "@/components/visualise/CellSizeSelect";
 import {
   MapConfigPanel,
   MapConfigRail,
-  PANEL_FILTERS_HEADING_ID,
 } from "@/components/visualise/MapConfigPanel";
+import { useMapPanel } from "@/components/visualise/useMapPanel";
 import { MapFiltersMenu } from "@/components/visualise/MapFiltersMenu";
 import type { AppliedFilters } from "@/components/filters/useFilterDraft";
-import { WarningIcon } from "@/components/common/icons";
+import { NoMatchesBanner } from "@/components/visualise/NoMatchesBanner";
 import { MapCoverageNote } from "@/components/visualise/MapCoverageNote";
 import { MapSourceMenu } from "@/components/visualise/MapSourceMenu";
 import { NotFoundPage } from "./NotFoundPage";
@@ -64,18 +63,6 @@ const MAP_TITLE_ID = "evidence-map-title";
 
 interface VisualisePageProps {
   path?: string;
-}
-
-const PANEL_OPEN_KEY = "evidence-map-panel-open";
-
-function initialPanelOpen(): boolean {
-  try {
-    const stored = localStorage.getItem(PANEL_OPEN_KEY);
-    if (stored !== null) return stored === "true";
-  } catch {
-    // Storage blocked: fall through to the screen-size default.
-  }
-  return !window.matchMedia("(max-width: 1440px)").matches;
 }
 
 // Small screens default to Small cells; variables.css decides what's small.
@@ -178,11 +165,8 @@ function EvidenceMapView({
   // Presentation only, so it stays out of the URL (like `view`): the canonical
   // query feeds the shareable link, the panel's key and the cell deep-links.
   const [cellSize, setCellSize] = useState<CellSize>(initialCellSize);
-  const [panelOpen, setPanelOpen] = useState(initialPanelOpen);
-  const railRef = useRef<HTMLButtonElement>(null);
-  const hideRef = useRef<HTMLButtonElement>(null);
-  const panelToggled = useRef(false);
-  const focusPanelFilters = useRef(false);
+  const { panelOpen, togglePanel, editFilters, railRef, hideRef } =
+    useMapPanel("EvidenceMap");
 
   function handleViewChange(next: MapView) {
     track({ category: "EvidenceMap", action: "View Toggled", name: next });
@@ -192,47 +176,6 @@ function EvidenceMapView({
   function handleCellSizeChange(next: CellSize) {
     track({ category: "EvidenceMap", action: "Cell Size Changed", name: next });
     setCellSize(next);
-  }
-
-  function handlePanelToggle(open: boolean) {
-    track({
-      category: "EvidenceMap",
-      action: "Panel Toggled",
-      name: open ? "open" : "hidden",
-    });
-    panelToggled.current = true;
-    setPanelOpen(open);
-    try {
-      localStorage.setItem(PANEL_OPEN_KEY, String(open));
-    } catch {
-      // Storage blocked: the choice lasts this visit only.
-    }
-  }
-
-  // Move focus to the control that replaced the one just clicked, which unmounted
-  // (the rail) or hid (the Hide button).
-  useEffect(() => {
-    if (!panelToggled.current) return;
-    if (panelOpen && focusPanelFilters.current) {
-      focusPanelFilters.current = false;
-      focusFiltersHeading();
-      return;
-    }
-    (panelOpen ? hideRef : railRef).current?.focus();
-  }, [panelOpen]);
-
-  // The heading is missing while the vocabulary loads, so fall back to Hide.
-  function focusFiltersHeading() {
-    (document.getElementById(PANEL_FILTERS_HEADING_ID) ?? hideRef.current)?.focus();
-  }
-
-  function handleEditFilters() {
-    if (panelOpen) {
-      focusFiltersHeading();
-      return;
-    }
-    focusPanelFilters.current = true;
-    handlePanelToggle(true);
   }
 
   // Resolve labels against the axes `result` was fetched for, not the URL's:
@@ -309,13 +252,6 @@ function EvidenceMapView({
         : undefined,
     [nestedAxes, columnAxis.tree, columnExpandedKeys],
   );
-
-  // Flag the docked configure panel on <body> so .app-main can go full-bleed
-  // (see VisualisePage.css).
-  useEffect(() => {
-    document.body.classList.add("visualise-has-panel");
-    return () => document.body.classList.remove("visualise-has-panel");
-  }, []);
 
   const model = useMemo(() => {
     if (!result) return null;
@@ -526,12 +462,8 @@ function EvidenceMapView({
     };
   }
 
-  async function countMatches(q: string): Promise<number> {
-    const { query, filters } = toUnpaginatedSearchQuery(
-      { ...params, q },
-      community.defaultAnnotations,
-    );
-    return (await searchReferences(query, filters)).total.count;
+  function countMatches(q: string): Promise<number> {
+    return countSearchMatches({ ...params, q }, community.defaultAnnotations);
   }
 
   function handleQueryChange(q: string) {
@@ -635,7 +567,7 @@ function EvidenceMapView({
               params={params}
               count={filterCount}
               schemes={vocab.schemes ?? []}
-              onEditInPanel={handleEditFilters}
+              onEditInPanel={editFilters}
             />
           </div>
           <p class="evidence-map-view__hint">
@@ -661,20 +593,7 @@ function EvidenceMapView({
               // Over-filtered: nothing matches the filters. The greyed grid still
               // renders below (when the axes' categories are known) so the chosen
               // axes stay visible, with a "Reset all" shortcut (wireframe #93).
-              <div class="evidence-map-view__banner" role="status">
-                <WarningIcon />
-                <span class="evidence-map-view__banner-text">
-                  No {noun} match the current filters. Please update the filters
-                  and try again.
-                </span>
-                <button
-                  type="button"
-                  class="evidence-map-view__banner-reset"
-                  onClick={handleResetAll}
-                >
-                  Reset all
-                </button>
-              </div>
+              <NoMatchesBanner countNoun={noun} onReset={handleResetAll} />
             ) : result.cells.length === 0 ? (
               // Distinct from over-filtered: references match, but none carry a
               // value on both axes — nothing cross-tabulates. The message sits
@@ -693,6 +612,8 @@ function EvidenceMapView({
               <MapCoverageNote
                 totals={result.totals}
                 countNoun={noun}
+                detail="Only those coded against both axes can be placed - the rest are in your search results."
+                storageKey="evidence-map-coverage-note-dismissed"
                 returnFocusTo={MAP_TITLE_ID}
               />
             ) : null}
@@ -772,13 +693,13 @@ function EvidenceMapView({
         countNoun={noun}
         onApply={handleApply}
         hidden={!panelOpen}
-        onHide={() => handlePanelToggle(false)}
+        onHide={() => togglePanel(false)}
         hideButtonRef={hideRef}
       />
       {!panelOpen && (
         <MapConfigRail
           filterCount={filterCount}
-          onOpen={() => handlePanelToggle(true)}
+          onOpen={() => togglePanel(true)}
           buttonRef={railRef}
         />
       )}

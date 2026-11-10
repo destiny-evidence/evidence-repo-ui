@@ -3,6 +3,9 @@ export type AnalyticsEventPayload = { name?: string; value?: number };
 // Typed Matomo custom events, discriminated on `category` + `action`. Matomo
 // carries only a string `name` and numeric `value` beyond the two labels, and
 // both are generic slots — so each variant notes what they hold.
+// Actions the evidence map and geographic heat map report alike.
+export type MapCategory = "EvidenceMap" | "GeographicHeatMap";
+
 export type AnalyticsEvent =
   // name: sort key (relevance | newest | oldest)
   | { category: "Search"; action: "Sort Changed"; name: string }
@@ -25,29 +28,31 @@ export type AnalyticsEvent =
   // name: `${rowDim} x ${colDim}` — the pair switched to; only on a real change.
   | { category: "EvidenceMap"; action: "Axes Changed"; name: string }
   // name: specific value (concept uri | country code | year-range); one per active value
-  | { category: "EvidenceMap"; action: "Filter Applied"; name: string }
+  | { category: MapCategory; action: "Filter Applied"; name: string }
   // name: category (concept-scheme uri | country | year-range); one per active category
-  | { category: "EvidenceMap"; action: "Filter Category Applied"; name: string }
+  | { category: MapCategory; action: "Filter Category Applied"; name: string }
   // name: bubble | table
   | { category: "EvidenceMap"; action: "View Toggled"; name: string }
   // name: small | medium | large | xlarge
   | { category: "EvidenceMap"; action: "Cell Size Changed"; name: string }
   // name: open | hidden — the configure panel's rail / Hide button
-  | { category: "EvidenceMap"; action: "Panel Toggled"; name: string }
+  | { category: MapCategory; action: "Panel Toggled"; name: string }
   // name: search (a query or filters) | repository — from Search's Visualise menu
   | { category: "EvidenceMap"; action: "Visualised From Search"; name: string }
   // name: updated (a new query) | cleared — from the map's Search popover
-  | { category: "EvidenceMap"; action: "Search Changed"; name: string }
+  | { category: MapCategory; action: "Search Changed"; name: string }
   // name: `${rowValue} x ${columnValue}` — the cell's two axis values
   | { category: "EvidenceMap"; action: "Cell Clicked"; name: string }
   // name: axis value clicked in the header
   | { category: "EvidenceMap"; action: "Row Clicked"; name: string }
   | { category: "EvidenceMap"; action: "Column Clicked"; name: string }
   // name: panel (draft reset) | banner (over-filtered shortcut)
-  | { category: "EvidenceMap"; action: "Reset All"; name: string }
+  | { category: MapCategory; action: "Reset All"; name: string }
   // name: over-filtered (nothing matches the filters) | no-coverage (matches
-  // exist, but none carry a value on both axes)
-  | { category: "EvidenceMap"; action: "No Coverage"; name: string }
+  // exist, but none can be placed on the map)
+  | { category: MapCategory; action: "No Coverage"; name: string }
+  // every view of the heat map, defaults included
+  | { category: "GeographicHeatMap"; action: "Map Viewed" }
   // name: select | deselect
   | { category: "Selection"; action: "Toggled"; name: string }
   // value: selected count after selecting all
@@ -78,7 +83,7 @@ export type AnalyticsEvent =
   // name: resource title
   | { category: "Resources"; action: "Link Clicked"; name: string }
   | { category: "Feedback"; action: "Nav Clicked" }
-  // name: Search | Visualise
+  // name: Search | Visualise | Evidence map | Geographic heat map
   | { category: "Navigation"; action: "Tab Clicked"; name: string }
   // value: references the summary was asked for
   | { category: "AISummary"; action: "Generate Requested"; value: number }

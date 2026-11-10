@@ -13,9 +13,10 @@ import {
   type FilterDraftInputs,
 } from "@/components/filters/useFilterDraft";
 import { track } from "@/analytics/matomo";
+import type { MapCategory } from "@/analytics/events";
 import { offeredLiteralAxes } from "@/services/evidenceMap";
 import { axisToken } from "@/services/crossFacets";
-import type { EvidenceMapAxes } from "@/types/models";
+import type { EvidenceMapAxes, EvidenceMapAxis } from "@/types/models";
 import { MapAxisFields } from "./MapAxisFields";
 import "./MapConfigPanel.css";
 
@@ -65,22 +66,34 @@ function MapConfigPanelLoading() {
   );
 }
 
+interface PanelFrameProps extends PanelChromeProps {
+  heading: string;
+  label: string;
+  // Makes the heading itself the target of "Edit filters".
+  headingId?: string;
+  children: ComponentChildren;
+}
+
 function PanelFrame({
   hidden,
   onHide,
   hideButtonRef,
+  heading,
+  label,
+  headingId,
   children,
-}: PanelChromeProps & { children: ComponentChildren }) {
+}: PanelFrameProps) {
   return (
-    <aside
-      id={PANEL_ID}
-      class="map-config-panel"
-      aria-label="Configure the evidence map"
-      hidden={hidden}
-    >
+    <aside id={PANEL_ID} class="map-config-panel" aria-label={label} hidden={hidden}>
       <div class="map-config-panel__frame">
         <header class="map-config-panel__header">
-          <h2 class="map-config-panel__heading">Configure map</h2>
+          <h2
+            class="map-config-panel__heading"
+            id={headingId}
+            tabIndex={headingId ? -1 : undefined}
+          >
+            {heading}
+          </h2>
           <button
             type="button"
             class="map-config-panel__hide"
@@ -106,10 +119,12 @@ export function MapConfigRail({
   filterCount,
   onOpen,
   buttonRef,
+  label = "Configure map",
 }: {
   filterCount: number;
   onOpen: () => void;
   buttonRef?: Ref<HTMLButtonElement>;
+  label?: string;
 }) {
   return (
     <div class="map-config-rail">
@@ -120,8 +135,8 @@ export function MapConfigRail({
         aria-controls={PANEL_ID}
         aria-label={
           filterCount > 0
-            ? `Configure map, ${filterCount} ${filterCount === 1 ? "filter" : "filters"} applied`
-            : "Configure map"
+            ? `${label}, ${filterCount} ${filterCount === 1 ? "filter" : "filters"} applied`
+            : label
         }
         onClick={onOpen}
         ref={buttonRef}
@@ -132,7 +147,7 @@ export function MapConfigRail({
             <span class="map-config-rail__count">{filterCount}</span>
           )}
         </span>
-        <span class="map-config-rail__label">Configure map</span>
+        <span class="map-config-rail__label">{label}</span>
       </button>
     </div>
   );
@@ -156,9 +171,103 @@ export function MapConfigPanel({
   ...rest
 }: MapConfigPanelProps) {
   return (
-    <PanelFrame hidden={hidden} onHide={onHide} hideButtonRef={hideButtonRef}>
+    <PanelFrame
+      hidden={hidden}
+      onHide={onHide}
+      hideButtonRef={hideButtonRef}
+      heading="Configure map"
+      label="Configure the evidence map"
+    >
       {loading ? <MapConfigPanelLoading /> : <MapConfigPanelInner {...rest} />}
     </PanelFrame>
+  );
+}
+
+interface MapFilterPanelProps
+  extends FilterDraftInputs,
+    FilterCardOptions,
+    PanelChromeProps {
+  loading: boolean;
+  label: string;
+  category: MapCategory;
+  mapAxes?: readonly EvidenceMapAxis[];
+  onApply: (filters: AppliedFilters) => void;
+}
+
+/** The configure panel with only the filters, for maps with fixed axes. */
+export function MapFilterPanel({
+  loading,
+  hidden,
+  onHide,
+  hideButtonRef,
+  label,
+  ...rest
+}: MapFilterPanelProps) {
+  return (
+    <PanelFrame
+      hidden={hidden}
+      onHide={onHide}
+      hideButtonRef={hideButtonRef}
+      heading="Filters"
+      label={label}
+      headingId={PANEL_FILTERS_HEADING_ID}
+    >
+      {loading ? <MapConfigPanelLoading /> : <MapFilterPanelInner {...rest} />}
+    </PanelFrame>
+  );
+}
+
+function MapFilterPanelInner({
+  schemes,
+  appliedConceptFilters,
+  appliedCountryCodes,
+  appliedWbIncomeGroupIds,
+  appliedStartYear,
+  appliedEndYear,
+  params,
+  showCountryDerivedFilters = true,
+  category,
+  mapAxes,
+  onApply,
+  ...cardOptions
+}: Omit<MapFilterPanelProps, keyof PanelChromeProps | "loading" | "label">) {
+  const draft = useFilterDraft({
+    schemes,
+    appliedConceptFilters,
+    appliedCountryCodes,
+    appliedWbIncomeGroupIds,
+    appliedStartYear,
+    appliedEndYear,
+    params,
+    facets: facetTypesFor({ showCountryDerivedFilters }),
+    mapAxes,
+  });
+
+  function handleReset() {
+    track({ category, action: "Reset All", name: "panel" });
+    draft.reset();
+  }
+
+  function handleApply() {
+    const filters = draft.buildApplied();
+    if (filters) onApply(filters);
+  }
+
+  return (
+    <>
+      <div class="map-config-panel__body">
+        <FilterCardList
+          draft={draft}
+          showCountryDerivedFilters={showCountryDerivedFilters}
+          {...cardOptions}
+        />
+      </div>
+      <FilterActions
+        onReset={handleReset}
+        onApply={handleApply}
+        applyDisabled={!draft.dirty || !draft.yearValidation.ok}
+      />
+    </>
   );
 }
 
