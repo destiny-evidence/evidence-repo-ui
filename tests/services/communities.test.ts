@@ -195,7 +195,6 @@ describe("community registry", () => {
       countrySearchable: true,
       referenceSelection: true,
       ancestorClosedCodings: false,
-      geographicHeatMap: false,
     });
   });
 

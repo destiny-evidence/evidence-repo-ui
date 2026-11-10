@@ -26,7 +26,7 @@ describe("AppShell Visualise tab", () => {
 
   test("hides the Visualise tab when the community has neither map", () => {
     mockUseCommunity.mockReturnValue(
-      makeCommunity({ features: { evidenceMap: false } }),
+      makeCommunity({ features: { evidenceMap: false, countrySearchable: false } }),
     );
     renderShell();
     expect(screen.queryByRole("button", { name: "Visualise" })).toBeNull();
@@ -34,8 +34,7 @@ describe("AppShell Visualise tab", () => {
 });
 
 describe("AppShell Visualise dropdown", () => {
-  const bothViews = () =>
-    makeCommunity({ features: { evidenceMap: true, geographicHeatMap: true } });
+  const bothViews = () => makeCommunity({ features: { evidenceMap: true } });
   const visualiseButton = () => screen.getByRole("button", { name: "Visualise" });
   const dropdown = () =>
     document.getElementById(visualiseButton().getAttribute("aria-controls")!)!;
@@ -50,8 +49,8 @@ describe("AppShell Visualise dropdown", () => {
   });
 
   test.each([
-    ["the evidence map", { evidenceMap: true, geographicHeatMap: true, countrySearchable: false }, "/test/visualise"],
-    ["the heat map", { evidenceMap: false, geographicHeatMap: true }, "/test/visualise/geographic"],
+    ["the evidence map", { evidenceMap: true, countrySearchable: false }, "/test/visualise"],
+    ["the heat map", { evidenceMap: false }, "/test/visualise/geographic"],
   ])("is still a dropdown with only %s", (_name, features, href) => {
     mockUseCommunity.mockReturnValue(makeCommunity({ features }));
     renderShell();
@@ -117,7 +116,7 @@ describe("AppShell nav analytics", () => {
 
   test("clicking the Search tab reports it", () => {
     mockUseCommunity.mockReturnValue(
-      makeCommunity({ features: { evidenceMap: true } }),
+      makeCommunity({ features: { evidenceMap: true, countrySearchable: false } }),
     );
     renderShell();
 
