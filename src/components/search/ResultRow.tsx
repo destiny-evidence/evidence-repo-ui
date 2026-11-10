@@ -15,11 +15,7 @@ import {
 } from "@/services/referenceUtils";
 import { parseInvestigation } from "@/services/investigationParser";
 import { conceptsToTags } from "@/services/conceptLabels";
-import {
-  isPlainPrimaryClick,
-  navigate,
-  recordDetailPath,
-} from "@/services/navigation";
+import { navigateWithState, recordDetailPath } from "@/services/navigation";
 import { backToSearchState } from "@/services/searchParams";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import { useContextPrefixes } from "@/hooks/useContextPrefixes";
@@ -179,18 +175,16 @@ export function ResultRow({
   const overflow = pillTags ? pillTags.length - visibleTags.length : 0;
   const href = recordDetailPath(communitySlug, reference.id);
 
-  // Primary clicks must carry history.state through router anchor handling.
   function handleOpen(event: MouseEvent) {
     track({ category: "Record", action: "Opened", value: position });
-    if (!isPlainPrimaryClick(event)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    navigate(href, {
-      state: backToSearchState(
+    navigateWithState(
+      event,
+      href,
+      backToSearchState(
         `${window.location.pathname}${window.location.search}`,
         window.history.state,
       ),
-    });
+    );
   }
 
   // Stretched-link pattern: the .row-link <a> wraps left-column content, and

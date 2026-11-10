@@ -11,7 +11,7 @@ import {
   parseInvestigation,
   extractIsRetracted,
 } from "@/services/investigationParser";
-import { isPlainPrimaryClick, navigate } from "@/services/navigation";
+import { isRouteUrl } from "@/services/navigation";
 import { backToSearchFromState } from "@/services/searchParams";
 import { useHistoryState } from "@/hooks/useHistoryState";
 import { useReference } from "@/hooks/useReference";
@@ -109,27 +109,16 @@ export function RecordDetailPage({ id }: RecordDetailPageProps) {
 
   // Confined to this community's search route so a stale state entry can't
   // render a bad link.
-  const searchPath = `/${community.slug}`;
   const searchBack =
-    backToSearch &&
-    (backToSearch.url === searchPath ||
-      backToSearch.url.startsWith(`${searchPath}?`))
+    backToSearch && isRouteUrl(backToSearch.url, `/${community.slug}`)
       ? backToSearch
       : null;
-
-  // Primary clicks must carry history.state through router anchor handling.
-  function handleBackClick(event: MouseEvent) {
-    if (!searchBack || !isPlainPrimaryClick(event)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    navigate(searchBack.url, { state: searchBack.state });
-  }
 
   const backLink = searchBack && (
     <BackLink
       class="record-detail-page__back"
       href={searchBack.url}
-      onClick={handleBackClick}
+      state={searchBack.state}
     >
       Back to search
     </BackLink>

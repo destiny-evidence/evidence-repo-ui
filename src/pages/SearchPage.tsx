@@ -10,7 +10,7 @@ import {
   sortKey,
   type SortOption,
 } from "@/services/searchParams";
-import { isPlainPrimaryClick, navigate } from "@/services/navigation";
+import { isRouteUrl, navigate } from "@/services/navigation";
 import { track, trackSiteSearch } from "@/analytics/matomo";
 import {
   activeFilters,
@@ -175,24 +175,12 @@ function SearchPageInner({ community }: { community: Community }) {
   // community's visualise route so a stale state entry can't render a bad link.
   const historyState = useHistoryState();
   const backUrl = backToVisualiseUrl(historyState);
-  // Match the route exactly, then the query string — not a `startsWith` prefix,
-  // which would also accept sibling routes like `/{slug}/visualise-elsewhere`.
-  const visualisePath = `/${community.slug}/visualise`;
   const visualiseBackUrl =
-    backUrl === visualisePath || backUrl?.startsWith(`${visualisePath}?`)
+    backUrl && isRouteUrl(backUrl, `/${community.slug}/visualise`)
       ? backUrl
       : null;
   // The branches that were open on the map we came from, to hand back to it.
   const backExpansion = mapExpansionFromState(historyState);
-
-  // Primary clicks must carry history.state through router anchor handling.
-  function handleBackClick(event: MouseEvent) {
-    if (!visualiseBackUrl || !backExpansion) return;
-    if (!isPlainPrimaryClick(event)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    navigate(visualiseBackUrl, { state: mapExpansionState(backExpansion) });
-  }
 
   // Canonicalize once: if URL query string doesn't match the canonical form,
   // silently rewrite via replaceState. Keyed on canonicalQs so it runs per divergence.
@@ -632,7 +620,7 @@ function SearchPageInner({ community }: { community: Community }) {
         <BackLink
           class="search-page__back"
           href={visualiseBackUrl}
-          onClick={handleBackClick}
+          state={backExpansion && mapExpansionState(backExpansion)}
         >
           Back to Visualise
         </BackLink>

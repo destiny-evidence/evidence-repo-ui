@@ -43,15 +43,35 @@ export function stampHistoryState(state: unknown): void {
   history.replaceState(state, "", window.location.href);
 }
 
-/** An unmodified left click — the only kind a link may take over from the browser. */
-export function isPlainPrimaryClick(event: MouseEvent): boolean {
-  return (
+/**
+ * Whether `url` is the `path` route, with or without a query string. Not a
+ * plain prefix match, which would also accept siblings like `${path}-elsewhere`.
+ */
+export function isRouteUrl(url: string, path: string): boolean {
+  return url === path || url.startsWith(`${path}?`);
+}
+
+/**
+ * Follows a link click to `url` with `state` on the new history entry. Modified
+ * and non-primary clicks are left to the browser (new tab, new window, …).
+ */
+export function navigateWithState(
+  event: MouseEvent,
+  url: string,
+  state: unknown,
+): void {
+  const plainClick =
     event.button === 0 &&
     !event.ctrlKey &&
     !event.metaKey &&
     !event.shiftKey &&
-    !event.altKey
-  );
+    !event.altKey;
+  if (!plainClick) return;
+  event.preventDefault();
+  // preact-router routes any anchor from a window listener without checking
+  // defaultPrevented, which would replace this entry's state with null.
+  event.stopPropagation();
+  navigate(url, { state });
 }
 
 export function navigate(
