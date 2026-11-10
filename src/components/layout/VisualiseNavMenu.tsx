@@ -1,10 +1,12 @@
 import { useId, useRef, useState } from "preact/hooks";
 import { useDismiss } from "@/hooks/useDismiss";
 import { ChevronDownIcon } from "@/components/common/icons";
+import { VisualiseThumbnail, type VisualiseKind } from "./VisualiseThumbnail";
 import "./ResourcesMenu.css";
 import "./VisualiseNavMenu.css";
 
 export interface VisualiseView {
+  kind: VisualiseKind;
   name: string;
   description: string;
   href: string;
@@ -65,6 +67,7 @@ export function VisualiseNavMenu({
                 onSelect(view);
               }}
             >
+              <VisualiseThumbnail kind={view.kind} />
               <span class="resource-link__body">
                 <span class="resource-link__title">{view.name}</span>
                 <span class="resource-link__desc">{view.description}</span>

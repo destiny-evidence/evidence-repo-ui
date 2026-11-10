@@ -34,6 +34,7 @@ function visualiseViews(community: Community): VisualiseView[] {
   const views: VisualiseView[] = [];
   if (community.features.evidenceMap) {
     views.push({
+      kind: "evidence-map",
       name: "Evidence map",
       description:
         "Compare two dimensions to see where studies cluster and where they are missing.",
@@ -42,6 +43,7 @@ function visualiseViews(community: Community): VisualiseView[] {
   }
   if (community.features.geographicHeatMap) {
     views.push({
+      kind: "heat-map",
       name: "Geographic heat map",
       description: "See where research took place.",
       href: heatMapPath(community.slug),
