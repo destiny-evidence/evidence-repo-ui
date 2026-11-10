@@ -45,7 +45,6 @@ export function schemeDisplayLabel(label: string): string {
   return label.replace(/\s+Scheme$/i, "");
 }
 
-// About six lines of tooltip; even all-W text still fits a 13" laptop screen.
 const SCHEME_DESCRIPTION_MAX_LENGTH = 200;
 
 /**
