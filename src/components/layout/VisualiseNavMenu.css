@@ -9,21 +9,6 @@
   background: var(--color-bg-hover);
 }
 
-.app-nav__visualise-flat {
-  display: none;
-}
-
-@media (max-width: 860px) {
-  .app-nav__visualise {
-    display: none;
-  }
-
-  .app-nav__visualise-flat {
-    display: flex;
-    flex-direction: column;
-  }
-}
-
 .visualise-nav-menu .resource-link {
   align-items: center;
   gap: 14px;

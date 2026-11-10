@@ -187,6 +187,10 @@
   display: none;
 }
 
+.app-nav__visualise-flat {
+  display: none;
+}
+
 .app-header__menu-toggle:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
@@ -235,8 +239,14 @@
     height: auto;
   }
 
-  .app-nav__resources {
+  .app-nav__resources,
+  .app-nav__visualise {
     display: none;
+  }
+
+  .app-nav__visualise-flat {
+    display: flex;
+    flex-direction: column;
   }
 
   .app-header__menu-resources {
