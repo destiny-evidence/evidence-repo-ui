@@ -36,6 +36,14 @@ export interface AppliedFilters {
   endYear: number | undefined;
 }
 
+export const EMPTY_APPLIED_FILTERS: AppliedFilters = {
+  conceptFilters: [],
+  countryCodes: [],
+  wbIncomeGroupIds: [],
+  startYear: undefined,
+  endYear: undefined,
+};
+
 type ConceptDraft = Map<string, ConceptSchemeFilterState>;
 
 export interface FilterDraft {

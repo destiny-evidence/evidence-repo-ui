@@ -1,4 +1,12 @@
 import { toQueryString, type SearchParams } from "@/services/searchParams";
+import type { CommunityFeatures } from "@/types/models";
+
+// The map has nothing to show without country facets.
+export function heatMapEnabled(
+  features: Pick<CommunityFeatures, "geographicHeatMap" | "countrySearchable">,
+): boolean {
+  return features.geographicHeatMap && features.countrySearchable;
+}
 
 export function heatMapPath(communitySlug: string): string {
   return `/${communitySlug}/visualise/geographic`;

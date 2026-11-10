@@ -9,7 +9,11 @@ import {
   parseSearchParams,
   type SearchParams,
 } from "@/services/searchParams";
-import { buildHeatMapUrl, heatMapQueryString } from "@/services/geoHeatMap";
+import {
+  buildHeatMapUrl,
+  heatMapEnabled,
+  heatMapQueryString,
+} from "@/services/geoHeatMap";
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
 import { countSearchMatches } from "@/services/searchCount";
 import { navigate } from "@/services/navigation";
@@ -19,7 +23,7 @@ import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { track } from "@/analytics/matomo";
 import { activeFilters, withoutDefaults } from "@/analytics/searchEvents";
 import { formatTotal } from "@/utils/searchTotal";
-import type { AppliedFilters } from "@/components/filters/useFilterDraft";
+import { EMPTY_APPLIED_FILTERS } from "@/components/filters/useFilterDraft";
 import { Tooltip } from "@/components/common/Tooltip";
 import { GeographicHeatMap } from "@/components/visualise/GeographicHeatMap";
 import { MapFilterPanel, MapConfigRail } from "@/components/visualise/MapConfigPanel";
@@ -38,13 +42,6 @@ const COUNTRY_AXIS: readonly EvidenceMapAxis[] = [
   { kind: "literal", token: AXIS_COUNTRIES },
 ];
 const SETTING_NOTE = "Counts come from where each investigation took place.";
-const NO_FILTERS: AppliedFilters = {
-  conceptFilters: [],
-  countryCodes: [],
-  wbIncomeGroupIds: [],
-  startYear: undefined,
-  endYear: undefined,
-};
 
 interface GeographicHeatMapPageProps {
   path?: string;
@@ -52,7 +49,7 @@ interface GeographicHeatMapPageProps {
 
 export function GeographicHeatMapPage(_props: GeographicHeatMapPageProps) {
   const community = useCommunity();
-  if (!community?.features.geographicHeatMap) return <NotFoundPage />;
+  if (!community || !heatMapEnabled(community.features)) return <NotFoundPage />;
   return <GeographicHeatMapView community={community} />;
 }
 
@@ -120,7 +117,7 @@ function GeographicHeatMapView({ community }: { community: Community }) {
 
   function handleResetAll() {
     track({ category: "GeographicHeatMap", action: "Reset All", name: "banner" });
-    apply({ ...params, ...NO_FILTERS });
+    apply({ ...params, ...EMPTY_APPLIED_FILTERS });
   }
 
   const filterCount = appliedFilterCount(params);
@@ -172,8 +169,11 @@ function GeographicHeatMapView({ community }: { community: Community }) {
                 onReset={handleResetAll}
               />
             )}
-            <section class="geographic-heat-map-page__card">
-              {totals?.mapped && (
+            <section
+              class={`geographic-heat-map-page__card${refetching ? " is-updating" : ""}`}
+              aria-busy={refetching}
+            >
+              {totals?.mapped && totals.mapped.count > 0 && (
                 <div class="geographic-heat-map-page__summary">
                   <p class="geographic-heat-map-page__total">
                     <span class="geographic-heat-map-page__count">
@@ -185,16 +185,11 @@ function GeographicHeatMapView({ community }: { community: Community }) {
                   <LocationNote />
                 </div>
               )}
-              <div
-                class={`geographic-heat-map-page__map${refetching ? " is-updating" : ""}`}
-                aria-busy={refetching}
-              >
-                <GeographicHeatMap
-                  counts={countryCounts}
-                  label={`World map of ${noun} by country`}
-                  countNoun={noun}
-                />
-              </div>
+              <GeographicHeatMap
+                counts={countryCounts}
+                label={`World map of ${noun} by country`}
+                countNoun={noun}
+              />
             </section>
           </>
         )}

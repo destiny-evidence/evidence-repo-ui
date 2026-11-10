@@ -12,7 +12,7 @@ import { VisualiseNavMenu, type VisualiseView } from "./VisualiseNavMenu";
 import { SiteFrame } from "./SiteFrame";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 import { FEEDBACK_FORM_URL } from "@/config";
-import { heatMapPath } from "@/services/geoHeatMap";
+import { heatMapEnabled, heatMapPath } from "@/services/geoHeatMap";
 import type { Community } from "@/types/models";
 import "./AppShell.css";
 
@@ -41,7 +41,7 @@ function visualiseViews(community: Community): VisualiseView[] {
       href: `/${community.slug}/visualise`,
     });
   }
-  if (community.features.geographicHeatMap) {
+  if (heatMapEnabled(community.features)) {
     views.push({
       kind: "heat-map",
       name: "Geographic heat map",

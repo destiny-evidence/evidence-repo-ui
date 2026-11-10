@@ -68,6 +68,19 @@ describe("AppShell Visualise dropdown", () => {
     );
   });
 
+  test("leaves the heat map out when the community can't search by country", () => {
+    mockUseCommunity.mockReturnValue(
+      makeCommunity({
+        features: { evidenceMap: true, geographicHeatMap: true, countrySearchable: false },
+      }),
+    );
+    renderShell();
+    expect(screen.getByRole("link", { name: "Visualise" })).toHaveAttribute(
+      "href",
+      "/test/visualise",
+    );
+  });
+
   test("lists both views when both are enabled and reports the one chosen", () => {
     mockUseCommunity.mockReturnValue(bothViews());
     renderShell();

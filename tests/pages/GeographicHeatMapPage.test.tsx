@@ -108,6 +108,14 @@ describe("GeographicHeatMapPage", () => {
     expect(mockUseSearchFacets).not.toHaveBeenCalled();
   });
 
+  test("404s when the community can't search by country", () => {
+    mockUseCommunity.mockReturnValue(
+      makeCommunity({ features: { geographicHeatMap: true, countrySearchable: false } }),
+    );
+    renderAt("");
+    expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+  });
+
   test("counts countries for the search in the URL, scoped to references with one", () => {
     renderAt("?q=heat&country=KE");
     const [params, requested, options] = mockUseSearchFacets.mock.calls[0];
@@ -178,6 +186,7 @@ describe("GeographicHeatMapPage", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "7 investigations match your filters, but none have a country coded",
     );
+    expect(screen.queryByText(/unique investigations across/)).toBeNull();
   });
 
   test("shows an error when the counts fail to load", () => {
@@ -189,10 +198,13 @@ describe("GeographicHeatMapPage", () => {
     expect(screen.queryByTestId("map")).not.toBeInTheDocument();
   });
 
-  test("dims the previous counts while new ones load", () => {
+  test("dims the previous summary and counts while new ones load", () => {
     facets([["KE", 12]], totals(12, 12), { loading: true });
     renderAt("?q=heat");
-    expect(screen.getByTestId("map").parentElement).toHaveClass("is-updating");
+    const card = screen.getByTestId("map").parentElement!;
+    expect(card).toHaveClass("is-updating");
+    expect(card).toHaveAttribute("aria-busy", "true");
+    expect(card).toContainElement(screen.getByText(/unique investigations across/));
   });
 
   test("rewrites the URL into its canonical form", () => {

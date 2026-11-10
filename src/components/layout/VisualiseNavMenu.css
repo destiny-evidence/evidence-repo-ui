@@ -5,7 +5,7 @@
   transform-origin: top left;
 }
 
-.resource-link[aria-current="page"] {
+.visualise-nav-menu .resource-link[aria-current="page"] {
   background: var(--color-bg-hover);
 }
 

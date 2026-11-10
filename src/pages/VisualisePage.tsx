@@ -53,7 +53,10 @@ import {
 } from "@/components/visualise/MapConfigPanel";
 import { useMapPanel } from "@/components/visualise/useMapPanel";
 import { MapFiltersMenu } from "@/components/visualise/MapFiltersMenu";
-import type { AppliedFilters } from "@/components/filters/useFilterDraft";
+import {
+  EMPTY_APPLIED_FILTERS,
+  type AppliedFilters,
+} from "@/components/filters/useFilterDraft";
 import { NoMatchesBanner } from "@/components/visualise/NoMatchesBanner";
 import { MapCoverageNote } from "@/components/visualise/MapCoverageNote";
 import { MapSourceMenu } from "@/components/visualise/MapSourceMenu";
@@ -480,16 +483,7 @@ function EvidenceMapView({
   // in one click: default axes, no filters.
   function handleResetAll() {
     track({ category: "EvidenceMap", action: "Reset All", name: "banner" });
-    handleApply({
-      axes: defaults,
-      filters: {
-        conceptFilters: [],
-        countryCodes: [],
-        wbIncomeGroupIds: [],
-        startYear: undefined,
-        endYear: undefined,
-      },
-    });
+    handleApply({ axes: defaults, filters: EMPTY_APPLIED_FILTERS });
   }
 
   const noun = community.copy.countNoun;
