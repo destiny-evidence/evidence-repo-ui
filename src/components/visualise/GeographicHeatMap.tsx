@@ -269,7 +269,7 @@ function HeatMap({
     if (code) setActive(code);
   }
 
-  // Handlers live on the group rather than each country, so hover and focus
+  // Handlers live on the frame rather than each country, so hover and focus
   // changes leave this layer alone.
   const countryLayer = useMemo(() => {
     const countryLabel = (code: string) => {
@@ -372,24 +372,28 @@ function HeatMap({
 
   return (
     <figure class="geo-heat-map is-loaded">
-      <div class="geo-heat-map__frame" ref={frameRef}>
+      {/* Chrome makes SVG elements with focus listeners focusable, so these
+          sit on the frame rather than the SVG. */}
+      <div
+        class="geo-heat-map__frame"
+        ref={frameRef}
+        onClick={(e) => {
+          const code = countryOf(e.target);
+          if (code) select(code);
+        }}
+        onKeyDown={handleKeyDown}
+        onMouseOver={(e) => setHovered(countryOf(e.target))}
+        onMouseLeave={() => setHovered(null)}
+        onFocusCapture={handleFocus}
+        onBlurCapture={() => setFocused(null)}
+      >
         <svg
           class="geo-heat-map__svg"
           viewBox={geometry.viewBox}
           role="group"
           aria-label={label}
         >
-          <g
-            onClick={(e) => {
-              const code = countryOf(e.target);
-              if (code) select(code);
-            }}
-            onKeyDown={handleKeyDown}
-            onMouseOver={(e) => setHovered(countryOf(e.target))}
-            onMouseLeave={() => setHovered(null)}
-            onFocusCapture={handleFocus}
-            onBlurCapture={() => setFocused(null)}
-          >
+          <g>
             {countryLayer}
             {[...new Set([hovered, focused])].map(
               (code) => code && code !== selected && highlight(code, false),

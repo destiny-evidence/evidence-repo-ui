@@ -223,7 +223,7 @@ describe("GeographicHeatMap", () => {
       const { container } = await renderMap(COUNTS);
       fireEvent.mouseOver(await screen.findByRole("button", { name: /^France/ }));
       expect(container.querySelector(".geo-heat-map__tip")).toHaveTextContent("France");
-      fireEvent.mouseLeave(screen.getByRole("group").firstElementChild!);
+      fireEvent.mouseLeave(container.querySelector(".geo-heat-map__frame")!);
       expect(container.querySelector(".geo-heat-map__tip")).not.toBeInTheDocument();
     });
   });
