@@ -1,17 +1,35 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/preact";
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/preact";
 import { GeographicHeatMapPage } from "@/pages/GeographicHeatMapPage";
+import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
+import type { FacetTotals } from "@/types/models";
 import { makeCommunity } from "../fixtures";
 
-const { mockUseCommunity, mockUseUrlParams, mockUseSearchFacets } = vi.hoisted(() => ({
+const {
+  mockUseCommunity,
+  mockUseUrlParams,
+  mockUseSearchFacets,
+  mockUseVocabulary,
+  mockNavigate,
+  mockSearchReferences,
+} = vi.hoisted(() => ({
   mockUseCommunity: vi.fn(),
   mockUseUrlParams: vi.fn(),
   mockUseSearchFacets: vi.fn(),
+  mockUseVocabulary: vi.fn(),
+  mockNavigate: vi.fn(),
+  mockSearchReferences: vi.fn(),
 }));
 
 vi.mock("@/community/CommunityContext", () => ({ useCommunity: mockUseCommunity }));
 vi.mock("@/hooks/useUrlParams", () => ({ useUrlParams: mockUseUrlParams }));
 vi.mock("@/hooks/useSearchFacets", () => ({ useSearchFacets: mockUseSearchFacets }));
+vi.mock("@/hooks/useVocabulary", () => ({ useVocabulary: mockUseVocabulary }));
+vi.mock("@/services/apiClient", () => ({ searchReferences: mockSearchReferences }));
+vi.mock("@/services/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/navigation")>();
+  return { ...actual, navigate: mockNavigate };
+});
 vi.mock("@/components/visualise/GeographicHeatMap", () => ({
   GeographicHeatMap: ({ counts, label }: { counts?: ReadonlyMap<string, number>; label: string }) => (
     <div data-testid="map" aria-label={label}>
@@ -20,80 +38,232 @@ vi.mock("@/components/visualise/GeographicHeatMap", () => ({
   ),
 }));
 
-const enabled = makeCommunity({ features: { geographicHeatMap: true } });
+const SCHEMES: ConceptScheme[] = [
+  {
+    uri: "scheme:level",
+    label: "Education Level Scheme",
+    topConcepts: [
+      { uri: "level:primary", label: "Primary" },
+      { uri: "level:secondary", label: "Secondary" },
+    ],
+  },
+];
+
+const enabled = makeCommunity({
+  features: { geographicHeatMap: true },
+  copy: { countNoun: "investigations" },
+});
+
+function totals(search: number, mapped?: number): FacetTotals {
+  return {
+    search: { count: search, is_lower_bound: false },
+    ...(mapped === undefined ? {} : { mapped: { count: mapped, is_lower_bound: false } }),
+  };
+}
+
+function facets(
+  countries: [string, number][],
+  t: FacetTotals | null = totals(40, 30),
+  { loading = false, error = null }: { loading?: boolean; error?: Error | null } = {},
+) {
+  mockUseSearchFacets.mockReturnValue({
+    counts: error ? null : { concepts: new Map(), countries: new Map(countries) },
+    totals: error ? null : t,
+    loading,
+    error,
+  });
+}
+
+function renderAt(search: string) {
+  mockUseUrlParams.mockReturnValue(search);
+  return render(<GeographicHeatMapPage />);
+}
+
+function events(action: string) {
+  return (window._paq ?? []).filter((e) => e[1] === "GeographicHeatMap" && e[2] === action);
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window._paq = [];
   mockUseCommunity.mockReturnValue(enabled);
-  mockUseUrlParams.mockReturnValue("?q=heat&country=KE");
-  mockUseSearchFacets.mockReturnValue({
-    counts: { countries: new Map([["KE", 12]]) },
+  mockUseVocabulary.mockReturnValue({
+    labels: new Map(),
+    schemes: SCHEMES,
     loading: false,
     error: null,
   });
+  facets([["KE", 12], ["FR", 30]]);
+});
+
+afterEach(() => {
+  delete window._paq;
 });
 
 describe("GeographicHeatMapPage", () => {
   test("404s when the flag is off", () => {
     mockUseCommunity.mockReturnValue(makeCommunity());
-    render(<GeographicHeatMapPage />);
+    renderAt("");
     expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
     expect(mockUseSearchFacets).not.toHaveBeenCalled();
   });
 
-  test("shades the map from the country facet for the search in the URL", () => {
-    render(<GeographicHeatMapPage />);
-    const [params, facets] = mockUseSearchFacets.mock.calls[0];
+  test("counts countries for the search in the URL, scoped to references with one", () => {
+    renderAt("?q=heat&country=KE");
+    const [params, requested, mapAxes] = mockUseSearchFacets.mock.calls[0];
     expect(params).toMatchObject({ q: "heat", countryCodes: ["KE"] });
-    expect(facets).toEqual(["countries"]);
-    expect(screen.getByTestId("map")).toHaveTextContent('[["KE",12]]');
-    expect(screen.getByTestId("map")).toHaveAccessibleName("World map of results by country");
+    expect(requested).toEqual(["countries"]);
+    expect(mapAxes).toEqual([{ kind: "literal", token: "countries" }]);
+    expect(screen.getByTestId("map")).toHaveAccessibleName(
+      "World map of investigations by country",
+    );
   });
 
   test("only shades the countries the URL filters to", () => {
-    mockUseSearchFacets.mockReturnValue({
-      counts: { countries: new Map([["FR", 30], ["KE", 12]]) },
-      loading: false,
-      error: null,
-    });
-    render(<GeographicHeatMapPage />);
+    renderAt("?q=heat&country=KE");
     expect(screen.getByTestId("map")).toHaveTextContent('[["KE",12]]');
   });
 
-  test("shades every country without a country filter", () => {
-    mockUseUrlParams.mockReturnValue("?q=heat");
-    mockUseSearchFacets.mockReturnValue({
-      counts: { countries: new Map([["FR", 30], ["KE", 12]]) },
-      loading: false,
-      error: null,
-    });
-    render(<GeographicHeatMapPage />);
-    expect(screen.getByTestId("map")).toHaveTextContent('[["FR",30],["KE",12]]');
+  test("summarises the mapped total and the countries with references", () => {
+    facets([["KE", 12], ["FR", 30], ["DE", 0]], totals(40, 35));
+    renderAt("?q=heat");
+    expect(screen.getByText(/unique investigations across/)).toHaveTextContent(
+      "35 unique investigations across 2 countries",
+    );
   });
 
-  test("passes no counts until the first response, without dimming the map's own spinner", () => {
-    mockUseSearchFacets.mockReturnValue({ counts: null, loading: true, error: null });
-    render(<GeographicHeatMapPage />);
-    expect(screen.getByTestId("map")).toHaveTextContent("no counts");
-    expect(screen.getByTestId("map").parentElement).not.toHaveClass("is-updating");
-    expect(screen.getByTestId("map").parentElement).toHaveAttribute("aria-busy", "false");
+  test("the info button can be focused and describes where counts come from", () => {
+    renderAt("?q=heat");
+    const info = screen.getByRole("button", { name: "About investigation setting" });
+    info.focus();
+    expect(info).toHaveFocus();
+    expect(info).toHaveAccessibleDescription(
+      "Counts come from where each investigation took place.",
+    );
   });
 
-  test("dims the previous counts while new ones load", () => {
-    mockUseSearchFacets.mockReturnValue({
-      counts: { countries: new Map([["KE", 12]]) },
-      loading: true,
-      error: null,
-    });
-    render(<GeographicHeatMapPage />);
-    expect(screen.getByTestId("map").parentElement).toHaveClass("is-updating");
-    expect(screen.getByTestId("map").parentElement).toHaveAttribute("aria-busy", "true");
+  test("warns that some aren't on the map until dismissed", () => {
+    facets([["KE", 12]], totals(40, 12));
+    renderAt("?q=heat");
+    expect(screen.getByText(/only those with a country coded/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByText(/only those with a country coded/i)).toBeNull();
+  });
+
+  test("doesn't warn when every match is on the map", () => {
+    facets([["KE", 12]], totals(12, 12));
+    renderAt("?q=heat");
+    expect(screen.queryByText(/only those with a country coded/i)).toBeNull();
+  });
+
+  test("offers to reset the filters when nothing matches", () => {
+    facets([], totals(0, 0));
+    renderAt("?q=heat&country=KE&start_year=2020");
+    mockNavigate.mockClear();
+
+    const banner = screen.getByText(/no investigations match/i).parentElement!;
+    fireEvent.click(within(banner).getByRole("button", { name: "Reset all" }));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/test/visualise/geographic?q=heat");
+    expect(events("Reset All").map((e) => e[3])).toEqual(["banner"]);
+  });
+
+  test("explains when matches exist but none have a country", () => {
+    facets([], totals(7, 0));
+    renderAt("?q=heat");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "7 investigations match your filters, but none have a country coded",
+    );
   });
 
   test("shows an error when the counts fail to load", () => {
-    mockUseSearchFacets.mockReturnValue({ counts: null, loading: false, error: new Error("boom") });
-    render(<GeographicHeatMapPage />);
-    expect(screen.getByRole("alert")).toHaveTextContent("Couldn’t load country counts.");
+    facets([], null, { error: new Error("boom") });
+    renderAt("?q=heat");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Couldn’t load the geographic heat map.",
+    );
     expect(screen.queryByTestId("map")).not.toBeInTheDocument();
+  });
+
+  test("dims the previous counts while new ones load", () => {
+    facets([["KE", 12]], totals(12, 12), { loading: true });
+    renderAt("?q=heat");
+    expect(screen.getByTestId("map").parentElement).toHaveClass("is-updating");
+  });
+
+  test("rewrites the URL into its canonical form", () => {
+    renderAt("?q=heat&page=3&sort=newest");
+    expect(mockNavigate).toHaveBeenCalledWith("/test/visualise/geographic?q=heat", {
+      mode: "replace",
+    });
+  });
+
+  test("leaves a canonical URL alone", () => {
+    renderAt("?q=heat&country=KE");
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  test("links to the matching investigations in search", () => {
+    renderAt("?q=heat&country=KE");
+    expect(screen.getByRole("link", { name: /view investigations/i })).toHaveAttribute(
+      "href",
+      "/test?q=heat&country=KE",
+    );
+  });
+
+  test("applying the panel's filters puts them in the heat map URL", () => {
+    renderAt("?q=heat&concept=level%3Asecondary");
+    fireEvent.click(screen.getByLabelText("Secondary"));
+    fireEvent.click(screen.getByRole("button", { name: "Show results" }));
+    expect(mockNavigate).toHaveBeenCalledWith("/test/visualise/geographic?q=heat");
+  });
+
+  test("an edited search keeps the filters", async () => {
+    mockSearchReferences.mockResolvedValue({ total: { count: 3, is_lower_bound: false } });
+    renderAt("?q=heat&country=KE");
+    fireEvent.click(screen.getByRole("button", { name: /search.*heat/i }));
+    const field = screen.getByLabelText("Search to map");
+    fireEvent.input(field, { target: { value: "flood" } });
+    fireEvent.keyDown(field, { key: "Enter" });
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/test/visualise/geographic?q=flood&country=KE",
+      ),
+    );
+    expect(events("Search Changed").map((e) => e[3])).toEqual(["updated"]);
+  });
+
+  test("reports each view once, with its filters", () => {
+    const { rerender } = renderAt("?q=heat&country=KE");
+    rerender(<GeographicHeatMapPage />);
+    expect(events("Map Viewed")).toHaveLength(1);
+    expect(events("Filter Applied").map((e) => e[3])).toEqual(["Kenya"]);
+    expect(events("Filter Category Applied").map((e) => e[3])).toEqual(["Country"]);
+  });
+
+  test("waits for the counts before reporting a view", () => {
+    facets([], totals(1, 1), { loading: true });
+    renderAt("?q=heat");
+    expect(events("Map Viewed")).toHaveLength(0);
+  });
+
+  test.each([
+    ["over-filtered", totals(0, 0)],
+    ["no-coverage", totals(5, 0)],
+  ])("reports %s as no coverage", (name, t) => {
+    facets([], t);
+    renderAt("?q=heat");
+    expect(events("No Coverage").map((e) => e[3])).toEqual([name]);
+  });
+
+  test("folds the panel into a Filters rail", () => {
+    renderAt("?q=heat&country=KE");
+    fireEvent.click(screen.getByRole("button", { name: "Hide panel" }));
+    expect(
+      screen.getByRole("button", { name: "Filters, 1 filter applied" }),
+    ).toBeInTheDocument();
+    expect(events("Panel Toggled").map((e) => e[3])).toEqual(["hidden"]);
   });
 });

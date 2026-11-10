@@ -5,6 +5,7 @@ import { useCrossFacets } from "@/hooks/useCrossFacets";
 import { useVocabulary } from "@/hooks/useVocabulary";
 import {
   parseSearchParams,
+  appliedFilterCount,
   buildSearchUrl,
   type SearchParams,
 } from "@/services/searchParams";
@@ -492,11 +493,7 @@ function EvidenceMapView({
   }
 
   const noun = community.copy.countNoun;
-  const filterCount =
-    params.conceptFilters.flat().length +
-    params.countryCodes.length +
-    params.wbIncomeGroupIds.length +
-    (params.startYear !== undefined || params.endYear !== undefined ? 1 : 0);
+  const filterCount = appliedFilterCount(params);
   // Scheme axes draw their categories from the vocabulary, so a greyed grid can
   // render even when no cells come back (the no-coverage state).
   const hasGrid =
