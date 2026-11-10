@@ -172,8 +172,10 @@ function HeatMap({
   const frameRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
-  const elements = useRef(new Map<string, SVGElement>());
   const [layout, setLayout] = useState(0);
+  const countryElement = (code: string) =>
+    frameRef.current?.querySelector<SVGElement>(`[data-country="${code}"]`) ??
+    null;
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -184,7 +186,7 @@ function HeatMap({
   }, []);
 
   const selectedRef = useRef<SVGElement | null>(null);
-  selectedRef.current = selected ? (elements.current.get(selected) ?? null) : null;
+  selectedRef.current = selected ? countryElement(selected) : null;
   const setOpen = useCallback((open: boolean) => {
     if (!open) setSelection(null);
   }, []);
@@ -244,14 +246,16 @@ function HeatMap({
     onSelect?.(code);
   }
 
-  function handleKeyDown(e: KeyboardEvent, code: string) {
+  function handleKeyDown(e: KeyboardEvent) {
+    const code = countryOf(e.target);
+    if (!code) return;
     const step = ARROW_STEPS[e.key];
     if (step) {
       e.preventDefault();
       const next = order[order.indexOf(code) + step];
       if (next) {
         setActive(next);
-        elements.current.get(next)?.focus();
+        countryElement(next)?.focus();
       }
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -259,42 +263,104 @@ function HeatMap({
     }
   }
 
-  const countryLabel = (code: string) => {
-    const count = counts.get(code) ?? 0;
-    return `${countryName(code)}: ${count > 0 ? count.toLocaleString() : "no"} ${countNoun}`;
-  };
-  const shade = (code: string) => heatShade(counts.get(code) ?? 0, bands);
+  function handleFocus(e: FocusEvent) {
+    const code = countryOf(e.target);
+    setFocused(code);
+    if (code) setActive(code);
+  }
 
-  const selectable = (code: string) => ({
-    ref: (el: SVGElement | null) => {
-      if (el) elements.current.set(code, el);
-      else elements.current.delete(code);
-    },
-    "data-country": code,
-    role: "button" as const,
-    tabindex: code === tabStop ? 0 : -1,
-    "aria-label": countryLabel(code),
-    "aria-haspopup": "dialog" as const,
-    "aria-expanded": selected === code,
-    onClick: () => select(code),
-    onKeyDown: (e: KeyboardEvent) => handleKeyDown(e, code),
-    onMouseEnter: () => setHovered(code),
-    onMouseLeave: () => setHovered(null),
-    onFocus: () => {
-      setFocused(code);
-      setActive(code);
-    },
-    onBlur: () => setFocused(null),
-  });
+  // Handlers live on the group rather than each country, so hover and focus
+  // changes leave this layer alone.
+  const countryLayer = useMemo(() => {
+    const countryLabel = (code: string) => {
+      const count = counts.get(code) ?? 0;
+      return `${countryName(code)}: ${count > 0 ? count.toLocaleString() : "no"} ${countNoun}`;
+    };
+    const shade = (code: string) => heatShade(counts.get(code) ?? 0, bands);
+    const selectable = (code: string) => ({
+      "data-country": code,
+      role: "button" as const,
+      tabindex: code === tabStop ? 0 : -1,
+      "aria-label": countryLabel(code),
+      "aria-haspopup": "dialog" as const,
+      "aria-expanded": selected === code,
+    });
+
+    return (
+      <g>
+        <path
+          class="geo-heat-map__outline"
+          d={geometry.outline}
+          aria-hidden="true"
+        />
+        {geometry.countries.map(({ code, d }, i) =>
+          code && targets.has(code) && !dotCodes.has(code) ? (
+            <path
+              key={code}
+              class="geo-heat-map__country is-selectable"
+              d={d}
+              data-shade={shade(code)}
+              {...selectable(code)}
+            />
+          ) : code && !dotCodes.has(code) ? (
+            <path
+              key={code}
+              class="geo-heat-map__country"
+              d={d}
+              data-shade={shade(code)}
+              role="img"
+              aria-label={countryLabel(code)}
+            />
+          ) : (
+            <path
+              key={code ?? `unkeyed-${i}`}
+              class="geo-heat-map__country"
+              d={d}
+              data-shade={code ? shade(code) : 0}
+              aria-hidden="true"
+            />
+          ),
+        )}
+        <path
+          class="geo-heat-map__borders"
+          d={geometry.borders}
+          aria-hidden="true"
+        />
+        {dots.map(({ code, x, y }) => (
+          <circle
+            key={code}
+            class="geo-heat-map__dot"
+            cx={x}
+            cy={y}
+            r={DOT_RADIUS}
+            data-shade={shade(code)}
+            aria-hidden="true"
+          />
+        ))}
+        {/* Wider than the dots themselves so small countries can be hit. */}
+        {dots.map(({ code, x, y }) => (
+          <circle
+            key={code}
+            class="geo-heat-map__dot-target is-selectable"
+            cx={x}
+            cy={y}
+            r={DOT_TARGET_RADIUS}
+            {...selectable(code)}
+          />
+        ))}
+      </g>
+    );
+  }, [geometry, counts, countNoun, bands, targets, dots, dotCodes, tabStop, selected]);
 
   const highlight = (code: string, isSelected: boolean) => {
     const target = targets.get(code);
     if (!target) return null;
     const cls = `geo-heat-map__highlight${isSelected ? " is-selected" : ""}`;
     return "d" in target.shape ? (
-      <path class={cls} d={target.shape.d} aria-hidden="true" />
+      <path key={code} class={cls} d={target.shape.d} aria-hidden="true" />
     ) : (
       <circle
+        key={code}
         class={cls}
         cx={target.shape.cx}
         cy={target.shape.cy}
@@ -313,71 +379,22 @@ function HeatMap({
           role="group"
           aria-label={label}
         >
-          <g>
-            <path
-              class="geo-heat-map__outline"
-              d={geometry.outline}
-              aria-hidden="true"
-            />
-            {geometry.countries.map(({ code, d }, i) =>
-              code && targets.has(code) && !dotCodes.has(code) ? (
-                <path
-                  key={code}
-                  class="geo-heat-map__country is-selectable"
-                  d={d}
-                  data-shade={shade(code)}
-                  {...selectable(code)}
-                />
-              ) : code && !dotCodes.has(code) ? (
-                <path
-                  key={code}
-                  class="geo-heat-map__country"
-                  d={d}
-                  data-shade={shade(code)}
-                  role="img"
-                  aria-label={countryLabel(code)}
-                />
-              ) : (
-                <path
-                  key={code ?? `unkeyed-${i}`}
-                  class="geo-heat-map__country"
-                  d={d}
-                  data-shade={code ? shade(code) : 0}
-                  aria-hidden="true"
-                />
-              ),
-            )}
-            <path
-              class="geo-heat-map__borders"
-              d={geometry.borders}
-              aria-hidden="true"
-            />
-            {dots.map(({ code, x, y }) => (
-              <circle
-                key={code}
-                class="geo-heat-map__dot"
-                cx={x}
-                cy={y}
-                r={DOT_RADIUS}
-                data-shade={shade(code)}
-                aria-hidden="true"
-              />
-            ))}
+          <g
+            onClick={(e) => {
+              const code = countryOf(e.target);
+              if (code) select(code);
+            }}
+            onKeyDown={handleKeyDown}
+            onMouseOver={(e) => setHovered(countryOf(e.target))}
+            onMouseLeave={() => setHovered(null)}
+            onFocusCapture={handleFocus}
+            onBlurCapture={() => setFocused(null)}
+          >
+            {countryLayer}
             {[...new Set([hovered, focused])].map(
               (code) => code && code !== selected && highlight(code, false),
             )}
             {selected && highlight(selected, true)}
-            {/* Wider than the dots themselves so small countries can be hit. */}
-            {dots.map(({ code, x, y }) => (
-              <circle
-                key={code}
-                class="geo-heat-map__dot-target is-selectable"
-                cx={x}
-                cy={y}
-                r={DOT_TARGET_RADIUS}
-                {...selectable(code)}
-              />
-            ))}
           </g>
         </svg>
         {tipCode && targets.has(tipCode) && (
@@ -511,6 +528,11 @@ function HeatMapLegend({
   );
 }
 
+function countryOf(target: EventTarget | null): string | null {
+  if (!(target instanceof Element)) return null;
+  return target.closest("[data-country]")?.getAttribute("data-country") ?? null;
+}
+
 function isCountry(target: Node): boolean {
-  return target instanceof Element && target.closest("[data-country]") !== null;
+  return countryOf(target) !== null;
 }

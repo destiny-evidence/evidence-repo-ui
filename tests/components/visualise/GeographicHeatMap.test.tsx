@@ -213,7 +213,7 @@ describe("GeographicHeatMap", () => {
 
     test("keyboard focus stays outlined while the mouse rests on another country", async () => {
       const { container } = await renderMap(COUNTS);
-      fireEvent.mouseEnter(await screen.findByRole("button", { name: /^France/ }));
+      fireEvent.mouseOver(await screen.findByRole("button", { name: /^France/ }));
       fireEvent.focus(country(/^Kenya/));
       const outlined = [...container.querySelectorAll(".geo-heat-map__highlight")];
       expect(outlined.map((el) => el.getAttribute("d"))).toEqual(["M1,1Z", "M2,2Z"]);
@@ -221,8 +221,10 @@ describe("GeographicHeatMap", () => {
 
     test("shows the country's name on hover", async () => {
       const { container } = await renderMap(COUNTS);
-      fireEvent.mouseEnter(await screen.findByRole("button", { name: /^France/ }));
+      fireEvent.mouseOver(await screen.findByRole("button", { name: /^France/ }));
       expect(container.querySelector(".geo-heat-map__tip")).toHaveTextContent("France");
+      fireEvent.mouseLeave(screen.getByRole("group").firstElementChild!);
+      expect(container.querySelector(".geo-heat-map__tip")).not.toBeInTheDocument();
     });
   });
 
