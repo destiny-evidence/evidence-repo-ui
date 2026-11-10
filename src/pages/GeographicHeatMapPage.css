@@ -1,5 +1,12 @@
+/* Wider than 1400px only while the whole card still fits the viewport. The
+   chrome is the page's gutters, title, toolbar and coverage note plus the
+   card's padding, summary and legend. The 960 / 447 is the map's aspect ratio. */
 .geographic-heat-map-page__card {
-  max-width: 1400px;
+  --heat-map-chrome: 23rem;
+  max-width: max(
+    1400px,
+    (100vh - var(--header-height) - var(--footer-height) - var(--heat-map-chrome)) * 960 / 447
+  );
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
