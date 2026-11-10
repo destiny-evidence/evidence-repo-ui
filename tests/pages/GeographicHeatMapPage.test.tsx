@@ -110,10 +110,13 @@ describe("GeographicHeatMapPage", () => {
 
   test("counts countries for the search in the URL, scoped to references with one", () => {
     renderAt("?q=heat&country=KE");
-    const [params, requested, mapAxes] = mockUseSearchFacets.mock.calls[0];
+    const [params, requested, options] = mockUseSearchFacets.mock.calls[0];
     expect(params).toMatchObject({ q: "heat", countryCodes: ["KE"] });
     expect(requested).toEqual(["countries"]);
-    expect(mapAxes).toEqual([{ kind: "literal", token: "countries" }]);
+    expect(options).toEqual({
+      mapAxes: [{ kind: "literal", token: "countries" }],
+      totals: true,
+    });
     expect(screen.getByTestId("map")).toHaveAccessibleName(
       "World map of investigations by country",
     );

@@ -67,11 +67,10 @@ function GeographicHeatMapView({ community }: { community: Community }) {
       ),
     [vocab.schemes, community.filterExcludedSchemes],
   );
-  const { counts, totals, loading, error } = useSearchFacets(
-    params,
-    FACETS,
-    COUNTRY_AXIS,
-  );
+  const { counts, totals, loading, error } = useSearchFacets(params, FACETS, {
+    mapAxes: COUNTRY_AXIS,
+    totals: true,
+  });
   const { panelOpen, togglePanel, editFilters, railRef, hideRef } =
     useMapPanel("GeographicHeatMap");
 

@@ -270,9 +270,10 @@ describe("useSearchFacets", () => {
     mockFacets.mockResolvedValue({ ...countryResult(["FR", 25]), totals });
     const { result: hook } = renderHook(
       () =>
-        useSearchFacets(baseParams, ["countries"], [
-          { kind: "literal", token: "countries" },
-        ]),
+        useSearchFacets(baseParams, ["countries"], {
+          mapAxes: [{ kind: "literal", token: "countries" }],
+          totals: true,
+        }),
       { wrapper: withCommunityPath("/esea") },
     );
     await waitFor(() => expect(hook.current.loading).toBe(false));
@@ -281,8 +282,17 @@ describe("useSearchFacets", () => {
       "phonics",
       expect.anything(),
       ["countries"],
-      expect.objectContaining({ axes: ["countries"] }),
+      expect.objectContaining({ axes: ["countries"], totals: true }),
     );
+  });
+
+  test("doesn't ask for totals by default", async () => {
+    mockFacets.mockResolvedValue(countryResult(["FR", 3]));
+    const { result: hook } = renderHook(() => useSearchFacets(baseParams, FACETS), {
+      wrapper: withCommunityPath("/esea"),
+    });
+    await waitFor(() => expect(hook.current.loading).toBe(false));
+    expect(mockFacets.mock.calls[0][3]).toMatchObject({ totals: false });
   });
 
   test("totals are null when the server sends none", async () => {

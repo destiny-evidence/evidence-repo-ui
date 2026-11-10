@@ -191,7 +191,7 @@ export function useFilterDraft({
     counts: facetCounts,
     loading: facetCountsLoading,
     error: facetError,
-  } = useSearchFacets(facetParams, facets, mapAxes);
+  } = useSearchFacets(facetParams, facets, { mapAxes });
 
   function onSchemeChange(
     scheme: ConceptScheme,

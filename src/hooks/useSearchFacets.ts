@@ -20,11 +20,15 @@ function countMap<T extends { count: number }>(
   return new Map((buckets ?? []).map((b) => [key(b), b.count]));
 }
 
-// `mapAxes` scopes the counts to references with a value on every axis.
+// `mapAxes` scopes the counts to references with a value on every axis;
+// `totals` also asks for the search total, and the mapped total with `mapAxes`.
 export function useSearchFacets(
   params: SearchParams,
   facets: readonly FacetType[],
-  mapAxes?: readonly EvidenceMapAxis[],
+  { mapAxes, totals: withTotals = false }: {
+    mapAxes?: readonly EvidenceMapAxis[];
+    totals?: boolean;
+  } = {},
 ): {
   counts: FacetCounts | null;
   totals: FacetTotals | null;
@@ -41,6 +45,7 @@ export function useSearchFacets(
     filters,
     facets,
     axisTokens,
+    withTotals,
   ]);
   const [counts, setCounts] = useState<FacetCounts | null>(null);
   const [totals, setTotals] = useState<FacetTotals | null>(null);
@@ -62,7 +67,7 @@ export function useSearchFacets(
       params.q || undefined,
       filters,
       facets,
-      { axes: axisTokens, vocabularyUrl },
+      { axes: axisTokens, vocabularyUrl, totals: withTotals },
     )
       .then((r) => {
         if (cancelled) return;
