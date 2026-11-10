@@ -52,6 +52,7 @@ npm run generate:geo
 - **Licence:** public domain ([Natural Earth terms of use](https://www.naturalearthdata.com/about/terms-of-use/)).
 - **Changes:** countries are keyed by `ISO_A2_EH`, Natural Earth features sharing a code are merged, shapes without an ISO code are kept unkeyed, Antarctica is dropped, and the shapes are simplified and quantized. Countries too small to see at world scale get a dot, placed from the Tiny Countries layer; the map only draws a country's dot when it has references.
 - Boundaries follow Natural Earth's default (de facto) point of view.
+- The Visualise menu's heat map thumbnail (`VisualiseThumbnail.tsx`) is the same release's 1:110m Admin 0 – Countries, merged into one landmass and simplified to icon size.
 
 ## Authentication
 

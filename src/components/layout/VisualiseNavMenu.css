@@ -60,12 +60,6 @@
   height: 100%;
 }
 
-.visualise-thumbnail__map path {
-  stroke: var(--color-bg-surface);
-  stroke-width: 0.5;
-  stroke-linejoin: round;
-}
-
 .visualise-thumbnail [data-shade="0"] { fill: var(--color-heat-0); background: var(--color-heat-0); }
 .visualise-thumbnail [data-shade="1"] { fill: var(--color-heat-1); background: var(--color-heat-1); }
 .visualise-thumbnail [data-shade="2"] { fill: var(--color-heat-2); background: var(--color-heat-2); }
