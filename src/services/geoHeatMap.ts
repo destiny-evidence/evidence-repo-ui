@@ -1,3 +1,7 @@
+export function heatMapPath(communitySlug: string): string {
+  return `/${communitySlug}/visualise/geographic`;
+}
+
 export const HEAT_SHADES = 5;
 
 export interface HeatBand {

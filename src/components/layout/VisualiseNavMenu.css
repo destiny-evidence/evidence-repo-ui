@@ -1,0 +1,25 @@
+.visualise-nav-menu {
+  right: auto;
+  left: 0;
+  width: 380px;
+  transform-origin: top left;
+}
+
+.resource-link[aria-current="page"] {
+  background: var(--color-bg-hover);
+}
+
+.app-nav__visualise-flat {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .app-nav__visualise {
+    display: none;
+  }
+
+  .app-nav__visualise-flat {
+    display: flex;
+    flex-direction: column;
+  }
+}

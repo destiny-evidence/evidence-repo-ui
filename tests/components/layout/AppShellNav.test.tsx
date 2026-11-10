@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/preact";
+import { render, screen, fireEvent, within } from "@testing-library/preact";
 import { AppShell } from "@/components/layout/AppShell";
 import { AuthProvider } from "@/auth/AuthContext";
 import { makeCommunity } from "../../fixtures";
@@ -38,6 +38,79 @@ describe("AppShell Visualise tab", () => {
     );
     renderShell();
     expect(screen.queryByRole("link", { name: /visualise/i })).toBeNull();
+  });
+});
+
+describe("AppShell Visualise dropdown", () => {
+  const bothViews = () =>
+    makeCommunity({ features: { evidenceMap: true, geographicHeatMap: true } });
+  const visualiseButton = () => screen.getByRole("button", { name: "Visualise" });
+  const dropdown = () =>
+    document.getElementById(visualiseButton().getAttribute("aria-controls")!)!;
+
+  beforeEach(() => {
+    mockUseCommunity.mockReset();
+    history.replaceState(null, "", "/test");
+    window._paq = [];
+  });
+  afterEach(() => {
+    delete window._paq;
+  });
+
+  test("the tab links straight to the heat map when it is the only view", () => {
+    mockUseCommunity.mockReturnValue(
+      makeCommunity({ features: { evidenceMap: false, geographicHeatMap: true } }),
+    );
+    renderShell();
+    expect(screen.getByRole("link", { name: "Visualise" })).toHaveAttribute(
+      "href",
+      "/test/visualise/geographic",
+    );
+  });
+
+  test("lists both views when both are enabled and reports the one chosen", () => {
+    mockUseCommunity.mockReturnValue(bothViews());
+    renderShell();
+    expect(screen.queryByRole("link", { name: "Visualise" })).toBeNull();
+
+    fireEvent.click(visualiseButton());
+    expect(visualiseButton()).toHaveAttribute("aria-expanded", "true");
+    const links = within(dropdown()).getAllByRole("link");
+    expect(links.map((a) => a.getAttribute("href"))).toEqual([
+      "/test/visualise",
+      "/test/visualise/geographic",
+    ]);
+
+    fireEvent.click(within(dropdown()).getByRole("link", { name: /geographic heat map/i }));
+    expect(visualiseButton()).toHaveAttribute("aria-expanded", "false");
+    expect(window._paq).toEqual([
+      ["trackEvent", "Navigation", "Tab Clicked", "Geographic heat map", undefined],
+    ]);
+  });
+
+  test("marks the tab active and the current view on the heat map route", () => {
+    history.replaceState(null, "", "/test/visualise/geographic");
+    mockUseCommunity.mockReturnValue(bothViews());
+    renderShell();
+    expect(visualiseButton()).toHaveClass("active");
+
+    fireEvent.click(visualiseButton());
+    expect(
+      within(dropdown()).getByRole("link", { name: /geographic heat map/i }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(
+      within(dropdown()).getByRole("link", { name: /evidence map/i }),
+    ).not.toHaveAttribute("aria-current");
+  });
+
+  test("the narrow-screen menu lists the views flat", () => {
+    mockUseCommunity.mockReturnValue(bothViews());
+    renderShell();
+    const flat = screen.getByRole("group", { name: "Visualise" });
+    expect(within(flat).getAllByRole("link").map((a) => a.textContent)).toEqual([
+      "Evidence map",
+      "Geographic heat map",
+    ]);
   });
 });
 
