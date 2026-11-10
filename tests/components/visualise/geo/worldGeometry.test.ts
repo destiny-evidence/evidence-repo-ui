@@ -1,12 +1,12 @@
 import { describe, test, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { geoArea } from "d3-geo";
+import { geoArea, geoEqualEarth } from "d3-geo";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import type { FeatureCollection } from "geojson";
 import world from "@/data/world-geo.json";
-import { loadWorldGeometry } from "@/components/visualise/geo/worldGeometry";
+import { loadWorldGeometry, MAP_WIDTH } from "@/components/visualise/geo/worldGeometry";
 
 // Guards the committed output of scripts/generate-world-geo.mjs.
 describe("world geometry", () => {
@@ -47,6 +47,18 @@ describe("world geometry", () => {
     expect(geometry.countries.every((c) => c.d.length > 0)).toBe(true);
     expect(geometry.dots.every((d) => Number.isFinite(d.x) && Number.isFinite(d.y))).toBe(true);
     expect(geometry.viewBox.split(" ")[2]).toBe("960");
+  });
+
+  test("anchors sit on a country's main landmass, not between its parts", () => {
+    const projection = geoEqualEarth().fitWidth(MAP_WIDTH, { type: "Sphere" });
+    const near = (code: string, lonLat: [number, number]) => {
+      const { anchor } = geometry.countries.find((c) => c.code === code)!;
+      const [x, y] = projection(lonLat)!;
+      expect(Math.hypot(anchor.x - x, anchor.y - y)).toBeLessThan(15);
+    };
+    // The US without Alaska and Hawaii, and France without French Guiana.
+    near("US", [-98, 39]);
+    near("FR", [2.5, 46.5]);
   });
 
   test("the frame's aspect ratio in the CSS matches the viewBox", () => {

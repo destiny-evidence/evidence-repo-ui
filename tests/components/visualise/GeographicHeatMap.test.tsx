@@ -11,10 +11,10 @@ const GEOMETRY: WorldGeometry = {
   viewBox: "0 0 960 440",
   outline: "M0,0Z",
   countries: [
-    { code: "FR", d: "M1,1Z" },
-    { code: "KE", d: "M2,2Z" },
-    { code: "SG", d: "M3,3Z" },
-    { code: null, d: "M4,4Z" },
+    { code: "FR", d: "M1,1Z", anchor: { x: 1, y: 1 } },
+    { code: "KE", d: "M2,2Z", anchor: { x: 2, y: 2 } },
+    { code: "SG", d: "M3,3Z", anchor: { x: 3, y: 3 } },
+    { code: null, d: "M4,4Z", anchor: { x: 4, y: 4 } },
   ],
   borders: "M5,5Z",
   dots: [
