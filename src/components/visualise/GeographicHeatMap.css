@@ -162,11 +162,11 @@
   left: 0;
   z-index: 2;
   box-sizing: border-box;
-  width: 240px;
-  padding: 14px 16px;
+  width: 220px;
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-lg);
@@ -218,6 +218,8 @@
   flex: none;
   width: 24px;
   height: 24px;
+  /* Sits in the corner without pushing the title row taller. */
+  margin: -4px -6px -4px 0;
   padding: 0;
   border: 0;
   border-radius: var(--radius-md);
@@ -240,6 +242,7 @@
 .geo-heat-map__popup-count {
   font-family: var(--font-mono);
   font-size: 20px;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
 }
@@ -251,7 +254,8 @@
 
 .geo-heat-map__popup-view {
   display: block;
-  padding: 8px 12px;
+  margin-top: 2px;
+  padding: 6px 12px;
   border-radius: var(--radius-md);
   background: var(--color-primary);
   color: #fff;
