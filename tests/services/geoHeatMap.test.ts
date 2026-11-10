@@ -57,9 +57,10 @@ describe("bandLabel", () => {
 });
 
 describe("formatShare", () => {
-  test("rounds to a whole percent, with a floor above zero", () => {
+  test("rounds to a whole percent, never to 0% or 100% unless it is", () => {
     expect(formatShare(25, 200)).toBe("13%");
     expect(formatShare(1, 1000)).toBe("<1%");
+    expect(formatShare(199, 200)).toBe(">99%");
     expect(formatShare(200, 200)).toBe("100%");
   });
 

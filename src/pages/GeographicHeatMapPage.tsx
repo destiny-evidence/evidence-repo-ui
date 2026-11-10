@@ -18,7 +18,7 @@ import {
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
 import { backToVisualiseState } from "@/services/evidenceMap";
 import { countSearchMatches } from "@/services/searchCount";
-import { navigate } from "@/services/navigation";
+import { isPlainClick, navigate } from "@/services/navigation";
 import type { FacetType } from "@/services/apiClient";
 import type { Community, MapAxis, FacetTotals } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
@@ -126,12 +126,16 @@ function GeographicHeatMapView({ community }: { community: Community }) {
     });
   }
 
-  function handleCountryView(code: string) {
+  // Plain clicks navigate here so search gets history state to come back with.
+  function handleCountryView(code: string, event: MouseEvent) {
     track({
       category: "GeographicHeatMap",
       action: "Country Clicked",
       name: countryName(code),
     });
+    if (!isPlainClick(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
     navigate(countrySearchUrl(code), {
       state: backToVisualiseState(buildHeatMapUrl(community.slug, params)),
     });

@@ -186,14 +186,12 @@ describe("GeographicHeatMap", () => {
       expect(screen.getAllByRole("dialog")).toHaveLength(1);
     });
 
-    test("View links to the country's search and hands plain clicks over", async () => {
+    test("View links to the country's search and hands every click over", async () => {
       await openKenya();
       const view = screen.getByRole("link", { name: /view references/i });
       expect(view).toHaveAttribute("href", "/esea?country=KE");
       fireEvent.click(view, { metaKey: true });
-      expect(onView).not.toHaveBeenCalled();
-      fireEvent.click(view);
-      expect(onView).toHaveBeenCalledWith("KE");
+      expect(onView).toHaveBeenCalledWith("KE", expect.objectContaining({ metaKey: true }));
     });
 
     test("countries without references can't be selected", async () => {
@@ -211,6 +209,14 @@ describe("GeographicHeatMap", () => {
       fireEvent.click(await screen.findByRole("button", { name: /^Kenya/ }));
       rerender(<GeographicHeatMap counts={new Map([["KE", 3]])} {...baseProps} />);
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    test("keyboard focus stays outlined while the mouse rests on another country", async () => {
+      const { container } = await renderMap(COUNTS);
+      fireEvent.mouseEnter(await screen.findByRole("button", { name: /^France/ }));
+      fireEvent.focus(country(/^Kenya/));
+      const outlined = [...container.querySelectorAll(".geo-heat-map__highlight")];
+      expect(outlined.map((el) => el.getAttribute("d"))).toEqual(["M1,1Z", "M2,2Z"]);
     });
 
     test("shows the country's name on hover", async () => {

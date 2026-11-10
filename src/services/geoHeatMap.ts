@@ -71,11 +71,14 @@ export function bandLabel(band: HeatBand): string {
     : `${band.min.toLocaleString()}–${band.max.toLocaleString()}`;
 }
 
-// A country's share of the references on the map, rounded to a whole percent.
+// A country's share of the references on the map, rounded to a whole percent
+// that never rounds to 0% or 100% unless it is.
 export function formatShare(count: number, total: number): string | null {
   if (total <= 0) return null;
   const percent = (count / total) * 100;
-  return percent > 0 && percent < 1 ? "<1%" : `${Math.round(percent)}%`;
+  if (percent > 0 && percent < 1) return "<1%";
+  if (percent > 99 && percent < 100) return ">99%";
+  return `${Math.round(percent)}%`;
 }
 
 export interface Point {

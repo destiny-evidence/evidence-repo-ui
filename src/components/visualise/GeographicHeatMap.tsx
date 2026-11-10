@@ -1,5 +1,6 @@
 import type { RefObject } from "preact";
 import {
+  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
@@ -19,6 +20,8 @@ import {
 } from "@/services/geoHeatMap";
 import { countryName } from "@/utils/country";
 import { Spinner } from "@/components/common/Spinner";
+import { useDismiss } from "@/hooks/useDismiss";
+import "@/components/common/Tooltip.css";
 import "./GeographicHeatMap.css";
 
 const DOT_RADIUS = 2.5;
@@ -49,7 +52,8 @@ export interface GeographicHeatMapProps {
   total: number;
   viewHref: (code: string) => string;
   onSelect?: (code: string) => void;
-  onView: (code: string) => void;
+  // Every click on a country's View link, plain or modified, before it navigates.
+  onView: (code: string, event: MouseEvent) => void;
 }
 
 export function GeographicHeatMap({
@@ -151,7 +155,15 @@ function HeatMap({
     [targets],
   );
 
-  const [selected, setSelected] = useState<string | null>(null);
+  // Held with the counts it was made on, so new counts drop it as they render.
+  const [selection, setSelection] = useState<{
+    code: string;
+    counts: ReadonlyMap<string, number>;
+  } | null>(null);
+  const selected =
+    selection?.counts === counts && targets.has(selection.code)
+      ? selection.code
+      : null;
   const [hovered, setHovered] = useState<string | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
@@ -163,13 +175,6 @@ function HeatMap({
   const elements = useRef(new Map<string, SVGElement>());
   const [layout, setLayout] = useState(0);
 
-  const shownCounts = useRef(counts);
-  useEffect(() => {
-    if (shownCounts.current === counts) return;
-    shownCounts.current = counts;
-    setSelected(null);
-  }, [counts]);
-
   useEffect(() => {
     const frame = frameRef.current;
     if (!frame || typeof ResizeObserver === "undefined") return;
@@ -178,30 +183,17 @@ function HeatMap({
     return () => observer.disconnect();
   }, []);
 
-  function close(returnFocus: boolean) {
-    const code = selected;
-    setSelected(null);
-    if (returnFocus && code) elements.current.get(code)?.focus();
-  }
+  const selectedRef = useRef<SVGElement | null>(null);
+  selectedRef.current = selected ? (elements.current.get(selected) ?? null) : null;
+  const setOpen = useCallback((open: boolean) => {
+    if (!open) setSelection(null);
+  }, []);
+  useDismiss(selected !== null, setOpen, popupRef, selectedRef, isCountry);
 
-  useEffect(() => {
-    if (!selected) return;
-    function onClick(e: MouseEvent) {
-      const target = e.target as Element | null;
-      if (popupRef.current?.contains(target)) return;
-      if (target?.closest?.("[data-country]")) return;
-      setSelected(null);
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") close(true);
-    }
-    document.addEventListener("click", onClick);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("click", onClick);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [selected]);
+  function close() {
+    setSelection(null);
+    selectedRef.current?.focus();
+  }
 
   const [vbX, vbY, vbWidth, vbHeight] = geometry.viewBox.split(" ").map(Number);
   function inFrame({ x, y }: Point, frame: HTMLElement): Point {
@@ -245,10 +237,10 @@ function HeatMap({
 
   function select(code: string) {
     if (selected === code) {
-      setSelected(null);
+      setSelection(null);
       return;
     }
-    setSelected(code);
+    setSelection({ code, counts });
     onSelect?.(code);
   }
 
@@ -311,7 +303,6 @@ function HeatMap({
       />
     );
   };
-  const hoverCode = hovered ?? focused;
 
   return (
     <figure class="geo-heat-map is-loaded">
@@ -372,7 +363,9 @@ function HeatMap({
                 aria-hidden="true"
               />
             ))}
-            {hoverCode && hoverCode !== selected && highlight(hoverCode, false)}
+            {[...new Set([hovered, focused])].map(
+              (code) => code && code !== selected && highlight(code, false),
+            )}
             {selected && highlight(selected, true)}
             {/* Wider than the dots themselves so small countries can be hit. */}
             {dots.map(({ code, x, y }) => (
@@ -401,8 +394,8 @@ function HeatMap({
             total={total}
             countNoun={countNoun}
             href={viewHref(selected)}
-            onView={() => onView(selected)}
-            onClose={() => close(true)}
+            onView={(e) => onView(selected, e)}
+            onClose={close}
           />
         )}
       </div>
@@ -427,7 +420,7 @@ function CountryPopup({
   total: number;
   countNoun: string;
   href: string;
-  onView: () => void;
+  onView: (event: MouseEvent) => void;
   onClose: () => void;
 }) {
   const titleId = useId();
@@ -447,14 +440,6 @@ function CountryPopup({
       e.preventDefault();
       first?.focus();
     }
-  }
-
-  // Plain clicks navigate with history state; modified ones open the link natively.
-  function handleView(e: MouseEvent) {
-    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-    e.preventDefault();
-    e.stopPropagation();
-    onView();
   }
 
   return (
@@ -491,7 +476,7 @@ function CountryPopup({
         ref={viewRef}
         class="geo-heat-map__popup-view"
         href={href}
-        onClick={handleView}
+        onClick={onView}
       >
         View {countNoun} <span aria-hidden="true">→</span>
       </a>
@@ -524,4 +509,8 @@ function HeatMapLegend({
       ))}
     </figcaption>
   );
+}
+
+function isCountry(target: Node): boolean {
+  return target instanceof Element && target.closest("[data-country]") !== null;
 }
