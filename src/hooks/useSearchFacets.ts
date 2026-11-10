@@ -44,7 +44,9 @@ export function useSearchFacets(
   ]);
   const [counts, setCounts] = useState<FacetCounts | null>(null);
   const [totals, setTotals] = useState<FacetTotals | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Loading until the request for this key settles, including the render the
+  // key changes in, so stale counts are never reported as current.
+  const [settledKey, setSettledKey] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -53,7 +55,6 @@ export function useSearchFacets(
 
     // Keep prior counts visible while refetching (dim-while-updating).
     setError(null);
-    setLoading(true);
     // Backend wants the Turtle vocab; the env URL is the JSON-LD one.
     const vocabularyUrl = toTurtleUrl(community.vocabularyUrl);
 
@@ -82,7 +83,7 @@ export function useSearchFacets(
         setCounts(null);
         setTotals(null);
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .finally(() => { if (!cancelled) setSettledKey(key); });
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,5 +93,5 @@ export function useSearchFacets(
     return { counts: null, totals: null, loading: false, error: null };
   }
 
-  return { counts, totals, loading, error };
+  return { counts, totals, loading: settledKey !== key, error };
 }
