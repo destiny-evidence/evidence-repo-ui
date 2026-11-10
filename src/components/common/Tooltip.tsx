@@ -5,6 +5,8 @@ import "./Tooltip.css";
 interface TooltipProps {
   /** When undefined or empty, the trigger renders without tooltip behavior. */
   text: string | undefined;
+  /** Forces the bubble open, for triggers whose focus lives on an ancestor. */
+  open?: boolean;
   children: ComponentChildren;
 }
 
@@ -13,9 +15,13 @@ interface TooltipProps {
  * The trigger inside is responsible for its own cursor, tabIndex, and focus
  * outline; this component only provides the bubble.
  */
-export function Tooltip({ text, children }: TooltipProps) {
+export function Tooltip({ text, open = false, children }: TooltipProps) {
   if (!text) return <>{children}</>;
-  return <TooltipTrigger text={text}>{children}</TooltipTrigger>;
+  return (
+    <TooltipTrigger text={text} open={open}>
+      {children}
+    </TooltipTrigger>
+  );
 }
 
 const GAP = 8; // px between the trigger and the bubble
@@ -23,14 +29,17 @@ const MARGIN = 8; // px the bubble keeps from the viewport edges
 
 function TooltipTrigger({
   text,
+  open,
   children,
 }: {
   text: string;
+  open: boolean;
   children: ComponentChildren;
 }) {
   const triggerRef = useRef<HTMLSpanElement>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(false);
+  const [active, setActive] = useState(false);
+  const shown = active || open;
 
   // showPopover() lifts the bubble into the top layer, where it escapes every
   // ancestor's overflow and stacking context (drawer/map scroll boxes) without
@@ -71,10 +80,10 @@ function TooltipTrigger({
       ref={triggerRef}
       class="tooltip"
       data-tooltip={text}
-      onMouseEnter={() => setShown(true)}
-      onMouseLeave={() => setShown(false)}
-      onFocusCapture={() => setShown(true)}
-      onBlurCapture={() => setShown(false)}
+      onMouseEnter={() => setActive(true)}
+      onMouseLeave={() => setActive(false)}
+      onFocusCapture={() => setActive(true)}
+      onBlurCapture={() => setActive(false)}
     >
       {children}
       {shown && (

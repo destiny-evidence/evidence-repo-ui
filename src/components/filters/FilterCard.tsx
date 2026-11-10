@@ -20,6 +20,7 @@ export function FilterCard({
   children,
 }: FilterCardProps) {
   const [expanded, setExpanded] = useState(expandOnMount);
+  const [focused, setFocused] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const showSummary = !!summary;
@@ -40,14 +41,16 @@ export function FilterCard({
 
   return (
     <div class="filter-card" ref={cardRef}>
-      <Tooltip text={titleTooltip}>
-        <button
-          class="filter-card__header"
-          type="button"
-          onClick={toggle}
-          aria-expanded={expanded}
-          aria-controls={panelId}
-        >
+      <button
+        class="filter-card__header"
+        type="button"
+        onClick={toggle}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        aria-expanded={expanded}
+        aria-controls={panelId}
+      >
+        <Tooltip text={titleTooltip} open={focused}>
           <span
             class={
               titleTooltip
@@ -57,14 +60,14 @@ export function FilterCard({
           >
             {title}
           </span>
-          {showSummary && (
-            <span class="filter-card__summary">{summary}</span>
-          )}
-          <span class="filter-card__arrow" aria-hidden="true">
-            {expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
-          </span>
-        </button>
-      </Tooltip>
+        </Tooltip>
+        {showSummary && (
+          <span class="filter-card__summary">{summary}</span>
+        )}
+        <span class="filter-card__arrow" aria-hidden="true">
+          {expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+        </span>
+      </button>
       <div id={panelId} class="filter-card__panel" hidden={!expanded}>
         {children}
       </div>
