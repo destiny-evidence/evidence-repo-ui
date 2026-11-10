@@ -1,4 +1,5 @@
 import { TagGroup } from "../common/TagGroup";
+import { Tooltip } from "../common/Tooltip";
 import type { HierarchicalTag } from "../common/TagGroup";
 import type { TaxonomyGroup, TaxoNode } from "@/services/taxonomyCodesUtils";
 import "./TaxonomyCodesCard.css";
@@ -27,7 +28,18 @@ function SchemeBlock({ group }: { group: TaxonomyGroup }) {
   return (
     <section class="taxonomy-codes-card__group">
       <h3 class="taxonomy-codes-card__scheme lg-section-label">
-        {group.schemeLabel}
+        <Tooltip text={group.schemeDescription}>
+          <span
+            class={
+              group.schemeDescription
+                ? "taxonomy-codes-card__scheme-label--has-tooltip"
+                : undefined
+            }
+            tabIndex={group.schemeDescription ? 0 : undefined}
+          >
+            {group.schemeLabel}
+          </span>
+        </Tooltip>
       </h3>
       <TagGroup tags={flatten(group.nodes)} />
     </section>

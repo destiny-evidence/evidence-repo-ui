@@ -34,6 +34,7 @@
   color: var(--tooltip-color);
   padding: var(--tooltip-padding);
   border-radius: var(--radius-lg);
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 400;
   line-height: var(--tooltip-line-height);
@@ -42,6 +43,9 @@
   /* pre-line honours explicit "\n" in `text` while still wrapping long lines. */
   white-space: pre-line;
   text-align: left;
+  /* Triggers can sit inside label-styled headings; don't inherit their type. */
+  text-transform: none;
+  letter-spacing: normal;
   box-shadow: var(--shadow-md);
 }
 

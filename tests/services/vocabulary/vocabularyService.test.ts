@@ -4,6 +4,7 @@ import {
   fetchVocabulary,
   getCachedVocabulary,
   publishedVocabularyId,
+  schemeDisplayDescription,
   _resetVocabularyCache,
 } from "@/services/vocabulary/vocabularyService";
 
@@ -48,6 +49,7 @@ const SAMPLE_VOCABULARY = {
       "@id": "esea:DocumentTypeScheme",
       "@type": "skos:ConceptScheme",
       "dct:title": "Document Type",
+      "dct:description": "Types of publications.",
       "skos:hasTopConcept": [
         {
           "@id": "https://vocab.esea.education/DocumentTypeScheme/C00008",
@@ -166,6 +168,7 @@ describe("buildVocabularyData", () => {
     expect(docType).toEqual({
       uri: "https://vocab.esea.education/DocumentTypeScheme",
       label: "Document Type",
+      description: "Types of publications.",
       topConcepts: [
         {
           uri: "https://vocab.esea.education/DocumentTypeScheme/C00008",
@@ -179,6 +182,7 @@ describe("buildVocabularyData", () => {
       (s) => s.uri === "https://vocab.esea.education/EducationThemeScheme",
     );
     expect(theme?.label).toBe("Education Theme Scheme");
+    expect(theme && "description" in theme).toBe(false);
     expect(theme?.topConcepts[0]?.uri).toBe(
       "https://vocab.esea.education/EducationThemeScheme/C00022",
     );
@@ -449,5 +453,33 @@ describe("getCachedVocabulary", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(a).toBe(b);
+  });
+});
+
+describe("schemeDisplayDescription", () => {
+  it("leaves short and missing descriptions unchanged", () => {
+    expect(schemeDisplayDescription(undefined)).toBeUndefined();
+    expect(schemeDisplayDescription("Types of publications.")).toBe(
+      "Types of publications.",
+    );
+    const exact = "a".repeat(200);
+    expect(schemeDisplayDescription(exact)).toBe(exact);
+  });
+
+  it("cuts long descriptions at a word boundary with an ellipsis", () => {
+    const long = `${"word ".repeat(39)}wording, and more after the limit.`;
+    const result = schemeDisplayDescription(long)!;
+    expect(result.endsWith("word…")).toBe(true);
+    expect(result.length).toBeLessThanOrEqual(201);
+  });
+
+  it("drops trailing punctuation before the ellipsis", () => {
+    const long = `${"x".repeat(190)} end. Overflowing text past the limit.`;
+    expect(schemeDisplayDescription(long)).toBe(`${"x".repeat(190)} end…`);
+  });
+
+  it("hard-cuts a description with no spaces", () => {
+    const result = schemeDisplayDescription("W".repeat(300))!;
+    expect(result).toBe(`${"W".repeat(200)}…`);
   });
 });
