@@ -4,7 +4,7 @@ import { useCommunity } from "@/community/CommunityContext";
 import { toTurtleUrl } from "@/services/vocabulary/vocabularyService";
 import { toSearchFilters, type SearchParams } from "@/services/searchParams";
 import { axisToken } from "@/services/crossFacets";
-import type { EvidenceMapAxis, FacetTotals } from "@/types/models";
+import type { MapAxis, FacetTotals } from "@/types/models";
 
 export interface FacetCounts {
   concepts: ReadonlyMap<string, number>;
@@ -26,7 +26,7 @@ export function useSearchFacets(
   params: SearchParams,
   facets: readonly FacetType[],
   { mapAxes, totals: withTotals = false }: {
-    mapAxes?: readonly EvidenceMapAxis[];
+    mapAxes?: readonly MapAxis[];
     totals?: boolean;
   } = {},
 ): {

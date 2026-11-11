@@ -18,7 +18,7 @@ import { AXIS_COUNTRIES } from "@/services/crossFacets";
 import { countSearchMatches } from "@/services/searchCount";
 import { navigate } from "@/services/navigation";
 import type { FacetType } from "@/services/apiClient";
-import type { Community, EvidenceMapAxis, FacetTotals } from "@/types/models";
+import type { Community, MapAxis, FacetTotals } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { track } from "@/analytics/matomo";
 import { activeFilters, withoutDefaults } from "@/analytics/searchEvents";
@@ -38,7 +38,7 @@ import "./GeographicHeatMapPage.css";
 
 const TITLE_ID = "geographic-heat-map-title";
 const FACETS: readonly FacetType[] = ["countries"];
-const COUNTRY_AXIS: readonly EvidenceMapAxis[] = [
+const COUNTRY_AXIS: readonly MapAxis[] = [
   { kind: "literal", token: AXIS_COUNTRIES },
 ];
 const SETTING_NOTE = "Counts come from where each investigation took place.";

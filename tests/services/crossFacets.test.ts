@@ -4,14 +4,14 @@ import {
   AXIS_INCOME_GROUPS,
   axisPairToParams,
 } from "@/services/crossFacets";
-import type { EvidenceMapAxis } from "@/types/models";
+import type { MapAxis } from "@/types/models";
 
 const VOCAB = "https://vocab.example/v1/vocabulary.ttl";
 const SCHEME = "https://vocab.example/scheme/Themes";
 
-const countries: EvidenceMapAxis = { kind: "literal", token: AXIS_COUNTRIES };
-const incomeGroups: EvidenceMapAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
-const scheme: EvidenceMapAxis = { kind: "scheme", schemeUri: SCHEME };
+const countries: MapAxis = { kind: "literal", token: AXIS_COUNTRIES };
+const incomeGroups: MapAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
+const scheme: MapAxis = { kind: "scheme", schemeUri: SCHEME };
 
 describe("axisPairToParams", () => {
   // row→axes[0], column→axes[1]; a literal resolves to its token, a scheme to its

@@ -16,7 +16,7 @@ import { track } from "@/analytics/matomo";
 import type { MapCategory } from "@/analytics/events";
 import { offeredLiteralAxes } from "@/services/evidenceMap";
 import { axisToken } from "@/services/crossFacets";
-import type { EvidenceMapAxes, EvidenceMapAxis } from "@/types/models";
+import type { EvidenceMapAxes, MapAxis } from "@/types/models";
 import { MapAxisFields } from "./MapAxisFields";
 import "./MapConfigPanel.css";
 
@@ -190,7 +190,7 @@ interface MapFilterPanelProps
   loading: boolean;
   label: string;
   category: MapCategory;
-  mapAxes?: readonly EvidenceMapAxis[];
+  mapAxes?: readonly MapAxis[];
   onApply: (filters: AppliedFilters) => void;
 }
 
