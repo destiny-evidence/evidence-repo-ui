@@ -273,11 +273,11 @@ describe("GeographicHeatMapPage", () => {
     expect(events("No Coverage").map((e) => e[3])).toEqual([name]);
   });
 
-  test("folds the panel into a Filters rail", () => {
+  test("folds the panel into a Show filters rail", () => {
     renderAt("?q=heat&country=KE");
     fireEvent.click(screen.getByRole("button", { name: "Hide panel" }));
     expect(
-      screen.getByRole("button", { name: "Filters, 1 filter applied" }),
+      screen.getByRole("button", { name: "Show filters, 1 filter applied" }),
     ).toBeInTheDocument();
     expect(events("Panel Toggled").map((e) => e[3])).toEqual(["hidden"]);
   });

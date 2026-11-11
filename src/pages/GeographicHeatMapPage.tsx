@@ -214,7 +214,7 @@ function GeographicHeatMapView({ community }: { community: Community }) {
       />
       {!panelOpen && (
         <MapConfigRail
-          label="Filters"
+          label="Show filters"
           filterCount={filterCount}
           onOpen={() => togglePanel(true)}
           buttonRef={railRef}
