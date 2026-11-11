@@ -263,10 +263,13 @@ function HeatMap({
     }
   }
 
+  // Clicks and closing the popup focus countries too, but only keyboard focus
+  // needs showing; otherwise it lingers once the mouse moves on.
   function handleFocus(e: FocusEvent) {
     const code = countryOf(e.target);
-    setFocused(code);
     if (code) setActive(code);
+    const visible = (e.target as Element).matches(":focus-visible");
+    setFocused(visible ? code : null);
   }
 
   // Handlers live on the frame rather than each country, so hover and focus

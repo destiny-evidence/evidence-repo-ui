@@ -1,5 +1,5 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/preact";
+import { describe, test, expect, vi, beforeEach, onTestFinished } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/preact";
 import type { WorldGeometry } from "@/components/visualise/geo/worldGeometry";
 
 const { mockLoad } = vi.hoisted(() => ({ mockLoad: vi.fn<() => WorldGeometry>() }));
@@ -223,9 +223,25 @@ describe("GeographicHeatMap", () => {
     test("keyboard focus stays outlined while the mouse rests on another country", async () => {
       const { container } = await renderMap(COUNTS);
       fireEvent.mouseOver(await screen.findByRole("button", { name: /^France/ }));
-      fireEvent.focus(country(/^Kenya/));
+      act(() => country(/^Kenya/).focus());
       const outlined = [...container.querySelectorAll(".geo-heat-map__highlight")];
       expect(outlined.map((el) => el.getAttribute("d"))).toEqual(["M1,1Z", "M2,2Z"]);
+    });
+
+    test("closing the popup with the mouse doesn't leave the country outlined", async () => {
+      // Browsers don't mark focus that follows a mouse click as focus-visible.
+      const matches = Element.prototype.matches;
+      const spy = vi
+        .spyOn(Element.prototype, "matches")
+        .mockImplementation(function (this: Element, selector) {
+          return selector === ":focus-visible" ? false : matches.call(this, selector);
+        });
+      onTestFinished(() => spy.mockRestore());
+      await openKenya();
+      fireEvent.click(screen.getByRole("button", { name: "Close" }));
+      expect(country(/^Kenya/)).toHaveFocus();
+      expect(document.querySelector(".geo-heat-map__highlight")).toBeNull();
+      expect(document.querySelector(".geo-heat-map__tip")).toBeNull();
     });
 
     test("shows the country's name on hover", async () => {
