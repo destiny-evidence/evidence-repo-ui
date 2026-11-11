@@ -229,8 +229,11 @@ function HeatMap({
     return () => controls.destroy();
   }, [attachZoom, viewBox]);
 
+  // Set after render, since a zoom can swap the selected dot for its shape.
   const selectedRef = useRef<SVGElement | null>(null);
-  selectedRef.current = selected ? countryElement(selected) : null;
+  useLayoutEffect(() => {
+    selectedRef.current = selected ? countryElement(selected) : null;
+  });
   const setOpen = useCallback((open: boolean) => {
     if (!open) setSelection(null);
   }, []);
@@ -300,7 +303,8 @@ function HeatMap({
       return;
     }
     const anchor = clicked ?? targets.get(countryCode)!.anchor;
-    if (!clicked) zoomRef.current?.reveal(anchor);
+    // Instantly, so the popup is visible when it takes focus.
+    if (!clicked) zoomRef.current?.reveal(anchor, false);
     setSelection({ countryCode, counts, anchor });
     onSelect?.(countryCode);
   }
