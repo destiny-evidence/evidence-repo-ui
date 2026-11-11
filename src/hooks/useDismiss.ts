@@ -13,8 +13,12 @@ export function useDismiss(
 ): void {
   useEffect(() => {
     if (!open) return;
+    // Checks the click's path rather than containment: the path is fixed when
+    // the click happens, so a control that re-rendered itself away before the
+    // click reached the document (e.g. a Clear button) still counts as inside.
     function onDocClick(e: MouseEvent) {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+      const container = containerRef.current;
+      if (!container || !e.composedPath().includes(container)) setOpen(false);
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
