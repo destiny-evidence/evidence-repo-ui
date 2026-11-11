@@ -1516,28 +1516,15 @@ describe("SearchPage", () => {
       ]);
     });
 
-    test("offers the heat map alone when the community has no evidence map", async () => {
+    test("offers the evidence map alone when the community can't search by country", async () => {
       const esea = findCommunity("esea")!;
       communityOverride.current = {
         ...esea,
-        features: { ...esea.features, evidenceMap: false },
+        features: { ...esea.features, countrySearchable: false },
       };
       const panel = await openVisualise();
       expect(within(panel).queryByRole("radiogroup")).toBeNull();
-      expect(visualise(panel).pathname).toBe("/esea/visualise/geographic");
-    });
-
-    test("is absent when the community has neither map", async () => {
-      const esea = findCommunity("esea")!;
-      communityOverride.current = {
-        ...esea,
-        features: { ...esea.features, evidenceMap: false, countrySearchable: false },
-      };
-      mockBoth({ results: makeResult(120, ["r1"]) });
-      renderSearchPage();
-      await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
-
-      expect(screen.queryByRole("button", { name: /^visualise$/i })).toBeNull();
+      expect(visualise(panel).pathname).toBe("/esea/visualise");
     });
   });
 });

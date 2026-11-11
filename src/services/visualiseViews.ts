@@ -28,12 +28,10 @@ export const VISUALISE_VIEWS: Record<VisualiseKind, VisualiseViewInfo> = {
   },
 };
 
-// The community's views, in the order they're offered.
+// The community's views, in the order they're offered. Every community has the
+// evidence map.
 export function enabledViews(
-  features: Pick<CommunityFeatures, "evidenceMap" | "countrySearchable">,
+  features: Pick<CommunityFeatures, "countrySearchable">,
 ): VisualiseKind[] {
-  const kinds: VisualiseKind[] = [];
-  if (features.evidenceMap) kinds.push("evidence-map");
-  if (heatMapEnabled(features)) kinds.push("heat-map");
-  return kinds;
+  return heatMapEnabled(features) ? ["evidence-map", "heat-map"] : ["evidence-map"];
 }

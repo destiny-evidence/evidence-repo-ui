@@ -1,6 +1,4 @@
 export interface CommunityFeatures {
-  // Gates the evidence map view.
-  evidenceMap: boolean;
   // Gates the "Generate AI summary" entry point and its drawer.
   aiSummaries: boolean;
   // Offer a Sign in / Create account choice on entry instead of forcing login.
@@ -108,7 +106,7 @@ export interface Community {
   searchDefaults?: SearchDefaults;
   features: CommunityFeatures;
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
-  // even where features.evidenceMap is on (e.g. before a vocabulary is published).
+  // (e.g. before a vocabulary is published).
   defaultEvidenceMapAxes?: EvidenceMapAxes;
   evidenceMapRenderLimits: EvidenceMapRenderLimits;
   copy: CommunityCopy;

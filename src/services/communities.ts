@@ -37,7 +37,6 @@ function vocabulary(
 }
 
 export const DEFAULT_FEATURES: CommunityFeatures = {
-  evidenceMap: true,
   aiSummaries: false,
   selfSignup: false,
   findingsAndEstimates: true,

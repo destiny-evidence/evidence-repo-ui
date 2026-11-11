@@ -4,8 +4,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { AuthProvider } from "@/auth/AuthContext";
 import { makeCommunity } from "../../fixtures";
 
-// Inject the community so tab gating is tested against the flag itself, not
-// against whichever real community currently has evidenceMap enabled.
+// Inject the community so view gating is tested against its features, not
+// against whichever real community currently has them.
 const { mockUseCommunity } = vi.hoisted(() => ({ mockUseCommunity: vi.fn() }));
 vi.mock("@/community/CommunityContext", () => ({
   useCommunity: mockUseCommunity,
@@ -21,20 +21,8 @@ function renderShell() {
   );
 }
 
-describe("AppShell Visualise tab", () => {
-  beforeEach(() => mockUseCommunity.mockReset());
-
-  test("hides the Visualise tab when the community has neither map", () => {
-    mockUseCommunity.mockReturnValue(
-      makeCommunity({ features: { evidenceMap: false, countrySearchable: false } }),
-    );
-    renderShell();
-    expect(screen.queryByRole("button", { name: "Visualise" })).toBeNull();
-  });
-});
-
 describe("AppShell Visualise dropdown", () => {
-  const bothViews = () => makeCommunity({ features: { evidenceMap: true } });
+  const bothViews = () => makeCommunity();
   const visualiseButton = () => screen.getByRole("button", { name: "Visualise" });
   const dropdown = () =>
     document.getElementById(visualiseButton().getAttribute("aria-controls")!)!;
@@ -48,16 +36,15 @@ describe("AppShell Visualise dropdown", () => {
     delete window._paq;
   });
 
-  test.each([
-    ["the evidence map", { evidenceMap: true, countrySearchable: false }, "/test/visualise"],
-    ["the heat map", { evidenceMap: false }, "/test/visualise/geographic"],
-  ])("is still a dropdown with only %s", (_name, features, href) => {
-    mockUseCommunity.mockReturnValue(makeCommunity({ features }));
+  test("is still a dropdown with only the evidence map, without country search", () => {
+    mockUseCommunity.mockReturnValue(
+      makeCommunity({ features: { countrySearchable: false } }),
+    );
     renderShell();
     fireEvent.click(visualiseButton());
     expect(
       within(dropdown()).getAllByRole("link").map((a) => a.getAttribute("href")),
-    ).toEqual([href]);
+    ).toEqual(["/test/visualise"]);
   });
 
   test("lists both views when both are enabled and reports the one chosen", () => {
@@ -116,7 +103,7 @@ describe("AppShell nav analytics", () => {
 
   test("clicking the Search tab reports it", () => {
     mockUseCommunity.mockReturnValue(
-      makeCommunity({ features: { evidenceMap: true, countrySearchable: false } }),
+      makeCommunity({ features: { countrySearchable: false } }),
     );
     renderShell();
 

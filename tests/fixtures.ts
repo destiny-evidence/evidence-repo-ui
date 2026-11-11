@@ -65,7 +65,6 @@ export function makeCommunity(
     exportVariant: "esea",
     evidenceMapRenderLimits: DEFAULT_EVIDENCE_MAP_RENDER_LIMITS,
     features: {
-      evidenceMap: false,
       aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: true,

@@ -107,15 +107,13 @@ export function AppShell({ children }: AppShellProps) {
                     >
                       Search
                     </a>
-                    {views.length > 0 && (
-                      <VisualiseNavMenu
-                        views={views}
-                        communitySlug={community.slug}
-                        active={visualiseActive}
-                        pathname={pathname}
-                        onSelect={(kind) => trackTab(VISUALISE_VIEWS[kind].name)()}
-                      />
-                    )}
+                    <VisualiseNavMenu
+                      views={views}
+                      communitySlug={community.slug}
+                      active={visualiseActive}
+                      pathname={pathname}
+                      onSelect={(kind) => trackTab(VISUALISE_VIEWS[kind].name)()}
+                    />
                     {resources.length > 0 && (
                       <ResourcesMenu resources={resources} />
                     )}
