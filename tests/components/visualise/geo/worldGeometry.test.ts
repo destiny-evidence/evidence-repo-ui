@@ -43,6 +43,15 @@ describe("world geometry", () => {
     expect(largest).toBeLessThan(Math.PI);
   });
 
+  test("dots carry the size of their country's main landmass, or none without a shape", () => {
+    const size = (countryCode: string) =>
+      geometry.dots.find((d) => d.countryCode === countryCode)!.size;
+    // Luxembourg is about 0.8° across, a little under 2 units at this width.
+    expect(size("LU")).toBeGreaterThan(1.5);
+    expect(size("LU")).toBeLessThan(2.5);
+    expect(size("GI")).toBeNull();
+  });
+
   test("every shape and dot is drawn", () => {
     expect(geometry.countries.every((c) => c.d.length > 0)).toBe(true);
     expect(geometry.dots.every((d) => Number.isFinite(d.x) && Number.isFinite(d.y))).toBe(true);
