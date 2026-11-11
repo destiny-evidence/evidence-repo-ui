@@ -269,9 +269,9 @@
   outline-offset: 2px;
 }
 
-/* d3-zoom handles touch itself. */
+/* The browser scrolls the page for one finger; d3-zoom takes two. */
 .geo-heat-map__svg {
-  touch-action: none;
+  touch-action: pan-x pan-y;
 }
 
 .geo-heat-map__zoom {

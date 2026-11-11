@@ -27,7 +27,7 @@ export function useDismiss(
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
       setOpen(false);
-      triggerRef.current?.focus();
+      triggerRef.current?.focus({ preventScroll: true });
     }
     document.addEventListener("click", onDocClick);
     document.addEventListener("keydown", onKeyDown);

@@ -396,6 +396,28 @@ describe("GeographicHeatMap", () => {
       expect(screen.getByRole("button", { name: /^Gibraltar/ }).tagName).toBe("circle");
     });
 
+    test("closing returns focus to the selected country after its dot gives way", async () => {
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(960);
+      const { container } = await renderMap({ SG: 40 });
+      fireEvent.click(await screen.findByRole("button", { name: /^Singapore/ }));
+      for (let i = 0; i < 4; i++) fireEvent.click(control("Zoom in"));
+      // Zoomed past Singapore, so its popup is hidden but still there.
+      fireEvent.click(container.querySelector(".geo-heat-map__popup-close")!);
+      const singapore = screen.getByRole("button", { name: /^Singapore/ });
+      expect(singapore.tagName).toBe("path");
+      expect(singapore).toHaveFocus();
+    });
+
+    test("Enter on a country out of view pans there at once, ready for the popup", async () => {
+      const { container } = await renderMap({ FR: 50 });
+      const france = await screen.findByRole("button", { name: /^France/ });
+      fireEvent.click(control("Zoom in"));
+      fireEvent.click(control("Zoom in"));
+      vi.stubGlobal("matchMedia", matchMedia(false));
+      fireEvent.keyDown(france, { key: "Enter" });
+      expect(transform(container)).toBe("translate(0 0) scale(4)");
+    });
+
     test("arrow keys pan to a country that's out of view", async () => {
       const { container } = await renderMap({ FR: 50, GI: 1 });
       const france = await screen.findByRole("button", { name: /^France/ });
