@@ -272,8 +272,8 @@ function HeatMap({
     setFocused(visible ? code : null);
   }
 
-  // Handlers live on the frame rather than each country, so hover and focus
-  // changes leave this layer alone.
+  // Handlers live on the frame rather than each country, so hovering leaves
+  // this layer alone. Moving focus still redraws it to move the tab stop.
   const countryLayer = useMemo(() => {
     const countryLabel = (code: string) => {
       const count = counts.get(code) ?? 0;
