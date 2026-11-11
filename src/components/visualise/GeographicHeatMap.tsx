@@ -37,8 +37,7 @@ import "./GeographicHeatMap.css";
 const DOT_RADIUS_PX = 5;
 const DOT_TARGET_RADIUS_PX = 12;
 const POPUP_GAP = 12;
-const TIP_GAP = 8;
-const CURSOR_GAP = 14;
+const TIP_GAP = 14;
 const MAX_ZOOM = 32;
 const ZOOM_STEP = 2;
 const ARROW_STEPS: Record<string, number> = {
@@ -145,6 +144,7 @@ function HeatMap({
   const viewBox = useMemo(() => parseViewBox(geometry.viewBox), [geometry]);
   const [zoom, setZoom] = useState<ZoomState>(NO_ZOOM);
   const [frameWidth, setFrameWidth] = useState(0);
+  const keyboardHintId = useId();
   const zoomRef = useRef<MapZoom | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -155,6 +155,7 @@ function HeatMap({
   // Dots for countries with references whose shape is too small to see or hit.
   // Until the frame's measured, take it to be the viewBox's width.
   const pxPerUnit = (zoom.k * (frameWidth || viewBox.width)) / viewBox.width;
+  // Keyed by code so the layers below rebuild when the set of dots changes, not every zoom frame.
   const dotKey = geometry.dots
     .filter((d) => (counts.get(d.countryCode) ?? 0) > 0 && needsDot(d.size, pxPerUnit))
     .map((d) => d.countryCode)
@@ -205,8 +206,6 @@ function HeatMap({
   const frameRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
-  const [layout, setLayout] = useState(0);
-  const keyboardHintId = useId();
   const countryElement = (countryCode: string) =>
     frameRef.current?.querySelector<SVGElement>(`[data-country="${countryCode}"]`) ??
     null;
@@ -219,10 +218,7 @@ function HeatMap({
     if (!frame) return;
     setFrameWidth(frame.clientWidth);
     if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => {
-      setFrameWidth(frame.clientWidth);
-      setLayout((n) => n + 1);
-    });
+    const observer = new ResizeObserver(() => setFrameWidth(frame.clientWidth));
     observer.observe(frame);
     return () => observer.disconnect();
   }, []);
@@ -232,13 +228,6 @@ function HeatMap({
     zoomRef.current = controls;
     return () => controls.destroy();
   }, [attachZoom, viewBox]);
-
-  // A dot swapping with its shape mid-zoom hands focus to its replacement.
-  useEffect(() => {
-    if (focused && document.activeElement === document.body) {
-      focusCountry(countryElement(focused));
-    }
-  }, [dotCountryCodes]);
 
   const selectedRef = useRef<SVGElement | null>(null);
   selectedRef.current = selected ? countryElement(selected) : null;
@@ -280,13 +269,11 @@ function HeatMap({
     popup.style.setProperty("--pointer-top", `${placement.pointerTop}px`);
     if (placement.side) popup.dataset.side = placement.side;
     else delete popup.dataset.side;
-  }, [selected, selection, layout, zoom]);
+  }, [selected, selection, frameWidth, zoom]);
 
-  // The tip sits below and right of the mouse, flipping at the frame's edges,
-  // or above the anchor of a focused country.
-  // Escape hides it until the mouse or focus moves to another country.
-  const [tipDismissed, setTipDismissed] = useState(false);
-  const tipCountryCode = selected || tipDismissed ? null : (hovered ?? focused);
+  // The tip sits below and right of the mouse, or of a focused country's
+  // anchor, flipping at the frame's edges.
+  const tipCountryCode = selected ? null : (hovered ?? focused);
   const pointerRef = useRef<Point | null>(null);
   function placeTip() {
     const tip = tipRef.current;
@@ -298,33 +285,12 @@ function HeatMap({
     if (!at) return;
     const { x, y } = at;
     const { offsetWidth: width, offsetHeight: height } = tip;
-    const { clientWidth, clientHeight } = frame;
-    let left: number;
-    let top: number;
-    if (hovered) {
-      left = x + CURSOR_GAP + width > clientWidth ? x - CURSOR_GAP - width : x + CURSOR_GAP;
-      top = y + CURSOR_GAP + height > clientHeight ? y - CURSOR_GAP - height : y + CURSOR_GAP;
-    } else {
-      left = Math.max(0, Math.min(x - width / 2, clientWidth - width));
-      const above = y - TIP_GAP - height;
-      top = above >= 0 ? above : y + TIP_GAP;
-    }
-    tip.style.left = `${left}px`;
-    tip.style.top = `${top}px`;
+    const right = x + TIP_GAP + width <= frame.clientWidth;
+    const below = y + TIP_GAP + height <= frame.clientHeight;
+    tip.style.left = `${right ? x + TIP_GAP : x - TIP_GAP - width}px`;
+    tip.style.top = `${below ? y + TIP_GAP : y - TIP_GAP - height}px`;
   }
-  useLayoutEffect(placeTip, [tipCountryCode, hovered, targets, layout, zoom]);
-
-  useEffect(() => {
-    if (!tipCountryCode) return;
-    const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && setTipDismissed(true);
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [tipCountryCode]);
-
-  function hover(countryCode: string | null) {
-    if (countryCode !== hovered) setTipDismissed(false);
-    setHovered(countryCode);
-  }
+  useLayoutEffect(placeTip, [tipCountryCode, hovered, targets, frameWidth, zoom]);
 
   // A click opens the popup where it lands; the keyboard opens it at the
   // country's anchor, panning there if it's out of view.
@@ -371,9 +337,7 @@ function HeatMap({
     const countryCode = countryOf(e.target);
     if (countryCode) setActive(countryCode);
     const visible = (e.target as Element).matches(":focus-visible");
-    const shown = visible ? countryCode : null;
-    if (shown !== focused) setTipDismissed(false);
-    setFocused(shown);
+    setFocused(visible ? countryCode : null);
   }
 
   const countryLabel = (countryCode: string) => {
@@ -497,18 +461,15 @@ function HeatMap({
           if (countryCode) select(countryCode, e.detail > 0 ? clickedPoint(e) : undefined);
         }}
         onKeyDown={handleKeyDown}
-        onMouseOver={(e) => hover(countryOf(e.target))}
+        onMouseOver={(e) => setHovered(countryOf(e.target))}
         onMouseMove={(e) => {
           const { left, top } = frameRef.current!.getBoundingClientRect();
           pointerRef.current = { x: e.clientX - left, y: e.clientY - top };
           placeTip();
         }}
-        onMouseLeave={() => hover(null)}
+        onMouseLeave={() => setHovered(null)}
         onFocusCapture={handleFocus}
-        onBlurCapture={(e) => {
-          // A focused dot swapped for its shape is refocused instead of blurred.
-          if ((e.target as Element).isConnected) setFocused(null);
-        }}
+        onBlurCapture={() => setFocused(null)}
       >
         <svg
           ref={svgRef}

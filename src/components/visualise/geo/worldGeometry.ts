@@ -63,7 +63,9 @@ export function buildWorldGeometry(topology: WorldTopology): WorldGeometry {
     countryCode: f.id == null ? null : String(f.id),
     landmass: largestLandmass(f, path),
   }));
-  const landmasses = new Map(shapes.map((s) => [s.countryCode, s.landmass]));
+  const landmasses = new Map(
+    shapes.flatMap((s) => (s.countryCode ? [[s.countryCode, s.landmass] as const] : [])),
+  );
 
   const dots: CountryDot[] = [];
   const points = feature(topology, topology.objects.dots) as FeatureCollection<Point>;
