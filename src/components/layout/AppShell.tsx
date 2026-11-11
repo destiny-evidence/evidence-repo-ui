@@ -12,7 +12,7 @@ import { VisualiseNavMenu } from "./VisualiseNavMenu";
 import { SiteFrame } from "./SiteFrame";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 import { FEEDBACK_FORM_URL } from "@/config";
-import { VISUALISE_VIEWS, enabledViews } from "@/services/visualiseViews";
+import { VISUALISE_VIEWS, enabledViews } from "@/components/visualise/visualiseViews";
 import "./AppShell.css";
 
 function usePathname(): string {

@@ -47,7 +47,7 @@ import {
   type VisualiseOption,
 } from "@/components/search/VisualiseMenu";
 import { buildHeatMapUrl } from "@/services/geoHeatMap";
-import { VISUALISE_VIEWS, enabledViews } from "@/services/visualiseViews";
+import { VISUALISE_VIEWS, enabledViews } from "@/components/visualise/visualiseViews";
 import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
 import { BackLink } from "@/components/common/BackLink";

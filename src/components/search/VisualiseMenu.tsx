@@ -3,8 +3,10 @@ import { useDismiss } from "@/hooks/useDismiss";
 import { ChevronDownIcon } from "@/components/common/icons";
 import { Tooltip } from "@/components/common/Tooltip";
 import { MapAxisFields } from "@/components/visualise/MapAxisFields";
-import { VisualiseThumbnail } from "@/components/visualise/VisualiseThumbnail";
-import { VISUALISE_VIEWS, type VisualiseKind } from "@/services/visualiseViews";
+import {
+  VISUALISE_VIEWS,
+  type VisualiseKind,
+} from "@/components/visualise/visualiseViews";
 import { formatTotal } from "@/utils/searchTotal";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import type {
@@ -114,22 +116,23 @@ export function VisualiseMenu({
                 role="radiogroup"
                 aria-labelledby={viewLabelId}
               >
-                {options.map(({ kind: k }) => (
-                  <label key={k} class="visualise-menu__view">
-                    <input
-                      class="visually-hidden"
-                      type="radio"
-                      name={viewRadioName}
-                      value={k}
-                      checked={current.kind === k}
-                      onChange={() => setKind(k)}
-                    />
-                    <VisualiseThumbnail kind={k} />
-                    <span class="visualise-menu__view-name">
-                      {VISUALISE_VIEWS[k].name}
-                    </span>
-                  </label>
-                ))}
+                {options.map(({ kind: k }) => {
+                  const view = VISUALISE_VIEWS[k];
+                  return (
+                    <label key={k} class="visualise-menu__view">
+                      <input
+                        class="visually-hidden"
+                        type="radio"
+                        name={viewRadioName}
+                        value={k}
+                        checked={current.kind === k}
+                        onChange={() => setKind(k)}
+                      />
+                      <view.Thumbnail />
+                      <span class="visualise-menu__view-name">{view.name}</span>
+                    </label>
+                  );
+                })}
               </div>
             </>
           )}
