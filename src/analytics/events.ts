@@ -56,7 +56,7 @@ export type AnalyticsEvent =
   // name: country, as filters report it — its popup opened
   | { category: "GeographicHeatMap"; action: "Country Selected"; name: string }
   // name: country, as filters report it — through to its search results
-  | { category: "GeographicHeatMap"; action: "Country Clicked"; name: string }
+  | { category: "GeographicHeatMap"; action: "Country Clickthrough"; name: string }
   // name: select | deselect
   | { category: "Selection"; action: "Toggled"; name: string }
   // value: selected count after selecting all

@@ -273,7 +273,7 @@ describe("GeographicHeatMapPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Select KE" }));
     fireEvent.click(screen.getByRole("link", { name: "View KE" }));
     expect(events("Country Selected").map((e) => e[3])).toEqual(["Kenya"]);
-    expect(events("Country Clicked").map((e) => e[3])).toEqual(["Kenya"]);
+    expect(events("Country Clickthrough").map((e) => e[3])).toEqual(["Kenya"]);
   });
 
   test("leaves a modified click to the browser but still reports it", () => {
@@ -282,7 +282,7 @@ describe("GeographicHeatMapPage", () => {
     view.addEventListener("click", (e) => e.preventDefault());
     fireEvent.click(view, { metaKey: true });
     expect(mockNavigate).not.toHaveBeenCalled();
-    expect(events("Country Clicked").map((e) => e[3])).toEqual(["Kenya"]);
+    expect(events("Country Clickthrough").map((e) => e[3])).toEqual(["Kenya"]);
   });
 
   test("applying the panel's filters puts them in the heat map URL", () => {

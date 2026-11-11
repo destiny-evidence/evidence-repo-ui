@@ -130,7 +130,7 @@ function GeographicHeatMapView({ community }: { community: Community }) {
   function handleCountryView(code: string, event: MouseEvent) {
     track({
       category: "GeographicHeatMap",
-      action: "Country Clicked",
+      action: "Country Clickthrough",
       name: countryName(code),
     });
     if (!isPlainClick(event)) return;
