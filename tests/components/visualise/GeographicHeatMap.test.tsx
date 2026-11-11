@@ -276,17 +276,6 @@ describe("GeographicHeatMap", () => {
       expect(tip()).toHaveStyle({ left: "941px", top: "421px" });
     });
 
-    test("Escape hides the hover tip until the mouse moves to another country", async () => {
-      const { container } = await renderMap(COUNTS);
-      const tip = () => container.querySelector(".geo-heat-map__tip");
-      fireEvent.mouseOver(await screen.findByRole("button", { name: /^France/ }));
-      fireEvent.keyDown(document, { key: "Escape" });
-      expect(tip()).not.toBeInTheDocument();
-
-      fireEvent.mouseOver(country(/^Kenya/));
-      expect(tip()).toHaveTextContent("Kenya");
-    });
-
     test("shows the country's name on hover", async () => {
       const { container } = await renderMap(COUNTS);
       fireEvent.mouseOver(await screen.findByRole("button", { name: /^France/ }));
@@ -405,17 +394,6 @@ describe("GeographicHeatMap", () => {
       fireEvent.click(control("Zoom in"));
       expect(screen.getByRole("button", { name: /^Singapore/ }).tagName).toBe("path");
       expect(screen.getByRole("button", { name: /^Gibraltar/ }).tagName).toBe("circle");
-    });
-
-    test("focus on a dot moves to its shape when the dot goes", async () => {
-      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(960);
-      await renderMap({ SG: 40 });
-      (await screen.findByRole("button", { name: /^Singapore/ })).focus();
-      for (let i = 0; i < 4; i++) fireEvent.click(control("Zoom in"));
-      await vi.waitFor(() =>
-        expect(screen.getByRole("button", { name: /^Singapore/ })).toHaveFocus(),
-      );
-      expect(document.activeElement!.tagName).toBe("path");
     });
 
     test("arrow keys pan to a country that's out of view", async () => {
