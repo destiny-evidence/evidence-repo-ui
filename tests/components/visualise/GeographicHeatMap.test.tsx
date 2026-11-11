@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach, onTestFinished } from "vitest";
+import { describe, test, expect, vi, beforeEach, afterEach, onTestFinished } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/preact";
 import type { WorldGeometry } from "@/components/visualise/geo/worldGeometry";
 
@@ -18,8 +18,8 @@ const GEOMETRY: WorldGeometry = {
   ],
   borders: "M5,5Z",
   dots: [
-    { countryCode: "SG", x: 10, y: 10 },
-    { countryCode: "GI", x: 20, y: 20 },
+    { countryCode: "SG", x: 10, y: 10, size: 2 },
+    { countryCode: "GI", x: 20, y: 20, size: null },
   ],
 };
 
@@ -111,14 +111,14 @@ describe("GeographicHeatMap", () => {
 
   test("shapes without a countryCode are hidden from assistive technology", async () => {
     const { container } = await renderMap({});
-    await screen.findByRole("group");
+    await screen.findByRole("group", { name: "References by country" });
     expect(container.querySelector('path[d="M4,4Z"]')).toHaveAttribute("aria-hidden", "true");
     expect(screen.getAllByRole("img")).toHaveLength(3);
   });
 
   test("the legend lists zero and each band's range", async () => {
     const { container } = await renderMap({ FR: 1234 });
-    await screen.findByRole("group");
+    await screen.findByRole("group", { name: "References by country" });
     const legend = container.querySelector("figcaption")!;
     expect(legend).toHaveTextContent("references");
     expect([...legend.querySelectorAll(".geo-heat-map__legend-item")].map((e) => e.textContent)).toEqual([
@@ -133,6 +133,10 @@ describe("GeographicHeatMap", () => {
 
   describe("selecting a country", () => {
     const COUNTS = { FR: 50, KE: 25, GI: 1 };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
     const country = (name: RegExp) => screen.getByRole("button", { name });
 
     async function openKenya() {
@@ -244,6 +248,45 @@ describe("GeographicHeatMap", () => {
       expect(document.querySelector(".geo-heat-map__tip")).toBeNull();
     });
 
+    test("a click opens the popup where it lands", async () => {
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(960);
+      vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(440);
+      vi.spyOn(SVGElement.prototype, "getBoundingClientRect").mockReturnValue(
+        DOMRect.fromRect({ width: 960, height: 440 }),
+      );
+      await renderMap(COUNTS);
+      fireEvent.click(await screen.findByRole("button", { name: /^Kenya/ }), {
+        clientX: 300,
+        clientY: 100,
+        detail: 1,
+      });
+      expect(screen.getByRole("dialog", { name: "Kenya" })).toHaveStyle({ left: "312px" });
+    });
+
+    test("the hover tip sits below and right of the mouse, flipping at the edges", async () => {
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(960);
+      vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(440);
+      const { container } = await renderMap(COUNTS);
+      const france = await screen.findByRole("button", { name: /^France/ });
+      fireEvent.mouseOver(france);
+      const tip = () => container.querySelector(".geo-heat-map__tip");
+      fireEvent.mouseMove(france, { clientX: 200, clientY: 100 });
+      expect(tip()).toHaveStyle({ left: "214px", top: "114px" });
+      fireEvent.mouseMove(france, { clientX: 955, clientY: 435 });
+      expect(tip()).toHaveStyle({ left: "941px", top: "421px" });
+    });
+
+    test("Escape hides the hover tip until the mouse moves to another country", async () => {
+      const { container } = await renderMap(COUNTS);
+      const tip = () => container.querySelector(".geo-heat-map__tip");
+      fireEvent.mouseOver(await screen.findByRole("button", { name: /^France/ }));
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(tip()).not.toBeInTheDocument();
+
+      fireEvent.mouseOver(country(/^Kenya/));
+      expect(tip()).toHaveTextContent("Kenya");
+    });
+
     test("shows the country's name on hover", async () => {
       const { container } = await renderMap(COUNTS);
       fireEvent.mouseOver(await screen.findByRole("button", { name: /^France/ }));
@@ -280,20 +323,111 @@ describe("GeographicHeatMap", () => {
 
     test("the map tells screen readers how to move around it", async () => {
       await renderMap({ KE: 25 });
-      expect(await screen.findByRole("group")).toHaveAccessibleDescription(
+      expect(await screen.findByRole("group", { name: "References by country" })).toHaveAccessibleDescription(
         "Use the arrow keys to move between countries and Enter to select one.",
       );
     });
 
     test("no keyboard hint when no country can be selected", async () => {
       await renderMap({});
-      expect(await screen.findByRole("group")).not.toHaveAttribute("aria-describedby");
+      expect(
+        await screen.findByRole("group", { name: "References by country" }),
+      ).not.toHaveAttribute("aria-describedby");
     });
 
     test.each(["Enter", " "])("%j opens the popup", async (key) => {
       await renderMap({ KE: 25 });
       fireEvent.keyDown(await screen.findByRole("button", { name: /^Kenya/ }), { key });
       expect(screen.getByRole("dialog", { name: "Kenya" })).toBeInTheDocument();
+    });
+  });
+
+  describe("zoom", () => {
+    // Reduced motion, so the controls zoom without animating.
+    const matchMedia = (matches: boolean) => (media: string) => ({ matches, media });
+    beforeEach(() => {
+      vi.stubGlobal("matchMedia", matchMedia(true));
+    });
+
+    afterEach(() => {
+      vi.stubGlobal("matchMedia", matchMedia(false));
+      vi.restoreAllMocks();
+    });
+
+    const control = (name: string) => screen.getByRole("button", { name });
+    const transform = (container: Element) =>
+      container.querySelector(".geo-heat-map__svg > g")!.getAttribute("transform");
+
+    test("the controls zoom in and out within their limits, and reset", async () => {
+      const { container } = await renderMap({ FR: 5 });
+      await screen.findByRole("group", { name: "Zoom" });
+      expect(control("Zoom out")).toHaveAttribute("aria-disabled", "true");
+      expect(control("Reset zoom")).toHaveAttribute("aria-disabled", "true");
+
+      fireEvent.click(control("Zoom in"));
+      expect(transform(container)).toBe("translate(-480 -220) scale(2)");
+      expect(control("Zoom out")).toHaveAttribute("aria-disabled", "false");
+
+      for (let i = 0; i < 4; i++) fireEvent.click(control("Zoom in"));
+      expect(transform(container)).toMatch(/scale\(32\)$/);
+      expect(control("Zoom in")).toHaveAttribute("aria-disabled", "true");
+
+      fireEvent.click(control("Reset zoom"));
+      expect(transform(container)).toBe("translate(0 0) scale(1)");
+    });
+
+    test("using the controls leaves an open popup open", async () => {
+      await renderMap({ KE: 25 });
+      fireEvent.click(await screen.findByRole("button", { name: /^Kenya/ }));
+      fireEvent.click(control("Zoom in"));
+      expect(screen.getByRole("dialog", { name: "Kenya" })).toBeInTheDocument();
+    });
+
+    test("dots are the same size on screen at any width or zoom", async () => {
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(480);
+      const { container } = await renderMap({ GI: 1 });
+      await screen.findByRole("button", { name: /^Gibraltar/ });
+      const dot = () => container.querySelector(".geo-heat-map__dot");
+      // 5px at half the viewBox's width is 10 units.
+      expect(dot()).toHaveAttribute("r", "10");
+      fireEvent.click(control("Zoom in"));
+      expect(dot()).toHaveAttribute("r", "5");
+    });
+
+    test("a small country's shape takes over from its dot once it's big enough", async () => {
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(960);
+      await renderMap({ SG: 40, GI: 1 });
+      expect((await screen.findByRole("button", { name: /^Singapore/ })).tagName).toBe("circle");
+
+      // Singapore's 2 units are 16px across at 8× and 32px at 16×.
+      for (let i = 0; i < 3; i++) fireEvent.click(control("Zoom in"));
+      expect(screen.getByRole("button", { name: /^Singapore/ }).tagName).toBe("circle");
+      fireEvent.click(control("Zoom in"));
+      expect(screen.getByRole("button", { name: /^Singapore/ }).tagName).toBe("path");
+      expect(screen.getByRole("button", { name: /^Gibraltar/ }).tagName).toBe("circle");
+    });
+
+    test("focus on a dot moves to its shape when the dot goes", async () => {
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(960);
+      await renderMap({ SG: 40 });
+      (await screen.findByRole("button", { name: /^Singapore/ })).focus();
+      for (let i = 0; i < 4; i++) fireEvent.click(control("Zoom in"));
+      await vi.waitFor(() =>
+        expect(screen.getByRole("button", { name: /^Singapore/ })).toHaveFocus(),
+      );
+      expect(document.activeElement!.tagName).toBe("path");
+    });
+
+    test("arrow keys pan to a country that's out of view", async () => {
+      const { container } = await renderMap({ FR: 50, GI: 1 });
+      const france = await screen.findByRole("button", { name: /^France/ });
+      fireEvent.click(control("Zoom in"));
+      fireEvent.click(control("Zoom in"));
+      expect(transform(container)).toBe("translate(-1440 -660) scale(4)");
+
+      france.focus();
+      fireEvent.keyDown(france, { key: "ArrowRight" });
+      expect(transform(container)).toBe("translate(0 0) scale(4)");
     });
   });
 });

@@ -16,6 +16,8 @@ export interface CountryDot {
   countryCode: string;
   x: number;
   y: number;
+  // Width of the country's main landmass in viewBox units, or null when it has no shape.
+  size: number | null;
 }
 
 export interface WorldGeometry {
@@ -56,21 +58,34 @@ export function buildWorldGeometry(topology: WorldTopology): WorldGeometry {
     ]),
   )({ type: "Sphere" });
 
+  const shapes = countries.features.map((f) => ({
+    geo: f,
+    countryCode: f.id == null ? null : String(f.id),
+    landmass: largestLandmass(f, path),
+  }));
+  const landmasses = new Map(shapes.map((s) => [s.countryCode, s.landmass]));
+
   const dots: CountryDot[] = [];
   const points = feature(topology, topology.objects.dots) as FeatureCollection<Point>;
   for (const f of points.features) {
     const xy = projection(f.geometry.coordinates as [number, number]);
-    if (xy) dots.push({ countryCode: String(f.id), x: xy[0], y: xy[1] });
+    if (!xy) continue;
+    const landmass = landmasses.get(String(f.id));
+    let size: number | null = null;
+    if (landmass) {
+      const [[x0, y0], [x1, y1]] = path.bounds(landmass);
+      size = Math.max(x1 - x0, y1 - y0);
+    }
+    dots.push({ countryCode: String(f.id), x: xy[0], y: xy[1], size });
   }
 
   return {
     viewBox: `0 ${y} ${MAP_WIDTH} ${height}`,
     outline: outline ?? "",
-    countries: countries.features.map((f: Feature) => ({
-      countryCode: f.id == null ? null : String(f.id),
-      d: path(f) ?? "",
-      anchor: anchorOf(f, path),
-    })),
+    countries: shapes.map(({ geo, countryCode, landmass }) => {
+      const [x, y] = path.centroid(landmass);
+      return { countryCode, d: path(geo) ?? "", anchor: { x, y } };
+    }),
     borders: path(mesh(topology, topology.objects.countries, (a, b) => a !== b)) ?? "",
     dots,
   };
@@ -80,7 +95,7 @@ export function loadWorldGeometry(): WorldGeometry {
   return buildWorldGeometry(world as unknown as WorldTopology);
 }
 
-function anchorOf(f: Feature, path: ReturnType<typeof geoPath>): { x: number; y: number } {
+function largestLandmass(f: Feature, path: ReturnType<typeof geoPath>): Feature | Polygon {
   const g = f.geometry;
   let target: Feature | Polygon = f;
   if (g.type === "MultiPolygon") {
@@ -94,6 +109,5 @@ function anchorOf(f: Feature, path: ReturnType<typeof geoPath>): { x: number; y:
       }
     }
   }
-  const [x, y] = path.centroid(target);
-  return { x, y };
+  return target;
 }
