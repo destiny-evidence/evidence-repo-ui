@@ -498,6 +498,8 @@ function CountryPopup({
         class="geo-heat-map__popup-view"
         href={href}
         onClick={onView}
+        // A middle click opens a new tab without a click event.
+        onAuxClick={(e) => e.button === 1 && onView(e)}
       >
         View {countNoun} <span aria-hidden="true">→</span>
       </a>

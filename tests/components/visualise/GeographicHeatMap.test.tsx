@@ -194,6 +194,15 @@ describe("GeographicHeatMap", () => {
       expect(onView).toHaveBeenCalledWith("KE", expect.objectContaining({ metaKey: true }));
     });
 
+    test("a middle click on View is handed over too, but not a right click", async () => {
+      await openKenya();
+      const view = screen.getByRole("link", { name: /view references/i });
+      fireEvent(view, new MouseEvent("auxclick", { bubbles: true, button: 2 }));
+      expect(onView).not.toHaveBeenCalled();
+      fireEvent(view, new MouseEvent("auxclick", { bubbles: true, button: 1 }));
+      expect(onView).toHaveBeenCalledWith("KE", expect.objectContaining({ button: 1 }));
+    });
+
     test("countries without references can't be selected", async () => {
       await renderMap({ FR: 5 });
       const kenya = await screen.findByRole("img", { name: "Kenya: no references" });
