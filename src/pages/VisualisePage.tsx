@@ -3,6 +3,7 @@ import { useCommunity } from "@/community/CommunityContext";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useCrossFacets } from "@/hooks/useCrossFacets";
 import { useVocabulary } from "@/hooks/useVocabulary";
+import { useFilterableSchemes } from "@/hooks/useFilterableSchemes";
 import {
   parseSearchParams,
   appliedFilterCount,
@@ -144,15 +145,8 @@ function EvidenceMapView({
 
   const vocab = useVocabulary(community.vocabularyUrl);
 
-  // Schemes offered as axis options and filter cards — the same set the search
-  // drawer filters on (excluded schemes make poor facets and poor axes alike).
-  const filterableSchemes = useMemo(
-    () =>
-      (vocab.schemes ?? []).filter(
-        (s) => !community.filterExcludedSchemes.includes(s.uri),
-      ),
-    [vocab.schemes, community.filterExcludedSchemes],
-  );
+  // Offered as axis options as well as filter cards.
+  const filterableSchemes = useFilterableSchemes(community, vocab.schemes);
 
   // Branch paths for every concept the vocabulary knows — not just the
   // filterable subset, since an axis can be pointed at any scheme by URL.

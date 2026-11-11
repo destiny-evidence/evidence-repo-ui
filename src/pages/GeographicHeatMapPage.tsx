@@ -3,6 +3,7 @@ import { useCommunity } from "@/community/CommunityContext";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { useSearchFacets } from "@/hooks/useSearchFacets";
 import { useVocabulary } from "@/hooks/useVocabulary";
+import { useFilterableSchemes } from "@/hooks/useFilterableSchemes";
 import {
   appliedFilterCount,
   buildSearchUrl,
@@ -57,13 +58,7 @@ function GeographicHeatMapView({ community }: { community: Community }) {
   const search = useUrlParams();
   const params = useMemo(() => parseSearchParams(search), [search]);
   const vocab = useVocabulary(community.vocabularyUrl);
-  const filterableSchemes = useMemo(
-    () =>
-      (vocab.schemes ?? []).filter(
-        (s) => !community.filterExcludedSchemes.includes(s.uri),
-      ),
-    [vocab.schemes, community.filterExcludedSchemes],
-  );
+  const filterableSchemes = useFilterableSchemes(community, vocab.schemes);
   const { counts, totals, loading, error } = useSearchFacets(params, FACETS, {
     mapAxes: COUNTRY_AXIS,
     totals: true,
