@@ -10,7 +10,7 @@ import {
   sortKey,
   type SortOption,
 } from "@/services/searchParams";
-import { navigate } from "@/services/navigation";
+import { isPlainClick, navigate } from "@/services/navigation";
 import { track, trackSiteSearch } from "@/analytics/matomo";
 import {
   activeFilters,
@@ -19,8 +19,8 @@ import {
   withoutDefaults,
 } from "@/analytics/searchEvents";
 import {
-  backToVisualiseUrl,
   buildVisualiseUrl,
+  communityBackToVisualiseUrl,
   mapExpansionFromState,
   mapExpansionState,
   offeredLiteralAxes,
@@ -172,25 +172,18 @@ function SearchPageInner({ community }: { community: Community }) {
   const params = parseSearchParams(search);
   const canonicalQs = toQueryString(params);
 
-  // Set when a map cell deep-linked here (see VisualisePage). Confined to this
-  // community's visualise route so a stale state entry can't render a bad link.
+  // Set when a map cell or heat map country deep-linked here.
   const historyState = useHistoryState();
-  const backUrl = backToVisualiseUrl(historyState);
-  // Match the route exactly, then the query string — not a `startsWith` prefix,
-  // which would also accept sibling routes like `/{slug}/visualise-elsewhere`.
-  const visualisePath = `/${community.slug}/visualise`;
-  const visualiseBackUrl =
-    backUrl === visualisePath || backUrl?.startsWith(`${visualisePath}?`)
-      ? backUrl
-      : null;
+  const visualiseBackUrl = communityBackToVisualiseUrl(
+    historyState,
+    community.slug,
+  );
   // The branches that were open on the map we came from, to hand back to it.
   const backExpansion = mapExpansionFromState(historyState);
 
   // Primary clicks must carry history.state through router anchor handling.
   function handleBackClick(event: MouseEvent) {
-    if (!visualiseBackUrl || !backExpansion) return;
-    if (event.button !== 0) return;
-    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    if (!visualiseBackUrl || !backExpansion || !isPlainClick(event)) return;
     event.preventDefault();
     event.stopPropagation();
     navigate(visualiseBackUrl, { state: mapExpansionState(backExpansion) });

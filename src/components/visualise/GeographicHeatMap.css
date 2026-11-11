@@ -8,6 +8,7 @@
 /* Matches the generated viewBox so the frame doesn't jump once shapes load.
    worldGeometry.test.ts fails if the two drift apart. */
 .geo-heat-map__frame {
+  position: relative;
   aspect-ratio: 960 / 447;
 }
 
@@ -112,4 +113,165 @@
 
 .geo-heat-map__swatch[data-shade="0"] {
   border: 1px solid var(--color-border);
+}
+
+.geo-heat-map .is-selectable {
+  cursor: pointer;
+}
+
+/* The highlight layer shows focus instead, above the neighbouring shapes. */
+.geo-heat-map .is-selectable:focus {
+  outline: none;
+}
+
+.geo-heat-map__dot-target {
+  fill: transparent;
+}
+
+.geo-heat-map__highlight {
+  fill: none;
+  stroke: var(--color-text-primary);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.geo-heat-map__highlight.is-selected {
+  stroke-width: 2.5;
+}
+
+.geo-heat-map__tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-color);
+  font-size: var(--font-size-small);
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+}
+
+.geo-heat-map__popup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 220px;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.geo-heat-map__popup-pointer {
+  display: none;
+  position: absolute;
+  top: clamp(14px, var(--pointer-top), calc(100% - 14px));
+  width: 12px;
+  height: 12px;
+  background: var(--color-bg-surface);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.geo-heat-map__popup[data-side="right"] .geo-heat-map__popup-pointer {
+  display: block;
+  left: -7px;
+  border-left: 1px solid var(--color-border-strong);
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.geo-heat-map__popup[data-side="left"] .geo-heat-map__popup-pointer {
+  display: block;
+  right: -7px;
+  border-top: 1px solid var(--color-border-strong);
+  border-right: 1px solid var(--color-border-strong);
+}
+
+.geo-heat-map__popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.geo-heat-map__popup-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono-sm);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.geo-heat-map__popup-close {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  /* Sits in the corner without pushing the title row taller. */
+  margin: -4px -6px -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-tertiary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.geo-heat-map__popup-close:hover {
+  color: var(--color-text-primary);
+}
+
+.geo-heat-map__popup-stats {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.geo-heat-map__popup-count {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.geo-heat-map__popup-detail {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.geo-heat-map__popup-view {
+  display: block;
+  margin-top: 2px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+}
+
+.geo-heat-map__popup-view:hover {
+  background: var(--color-primary-hover);
+  color: #fff;
+}
+
+.geo-heat-map__popup-close:focus-visible,
+.geo-heat-map__popup-view:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }

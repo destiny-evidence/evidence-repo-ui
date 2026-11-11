@@ -30,8 +30,8 @@ async function fetchLayer(file) {
 
 // Natural Earth marks shapes without an ISO code as "-99".
 function isoCode(feature) {
-  const code = feature.properties.ISO_A2_EH;
-  return /^[A-Z]{2}$/.test(code) ? code : null;
+  const countryCode = feature.properties.ISO_A2_EH;
+  return /^[A-Z]{2}$/.test(countryCode) ? countryCode : null;
 }
 
 function polygons(geometry) {
@@ -62,14 +62,14 @@ function ringBounds(ring) {
 // One feature per code: Natural Earth splits some countries (e.g. AU) into
 // several features. Shapes without a code stay separate.
 function countryFeatures(source) {
-  const byCode = new Map();
+  const byCountryCode = new Map();
   const unkeyed = [];
   for (const f of source.features) {
-    const code = isoCode(f);
-    if (code === DROPPED) continue;
+    const countryCode = isoCode(f);
+    if (countryCode === DROPPED) continue;
     const polys = polygons(f.geometry);
-    if (!code) unkeyed.push(polys);
-    else byCode.set(code, [...(byCode.get(code) ?? []), ...polys]);
+    if (!countryCode) unkeyed.push(polys);
+    else byCountryCode.set(countryCode, [...(byCountryCode.get(countryCode) ?? []), ...polys]);
   }
   const feature = (id, polys) => ({
     type: "Feature",
@@ -78,30 +78,30 @@ function countryFeatures(source) {
     geometry: { type: "MultiPolygon", coordinates: polys },
   });
   return {
-    byCode,
+    byCountryCode,
     features: [
-      ...[...byCode].sort(([a], [b]) => a.localeCompare(b)).map(([code, polys]) => feature(code, polys)),
+      ...[...byCountryCode].sort(([a], [b]) => a.localeCompare(b)).map(([countryCode, polys]) => feature(countryCode, polys)),
       ...unkeyed.map((polys) => feature(null, polys)),
     ],
   };
 }
 
-function dotFeatures(byCode, tinySource) {
+function dotFeatures(byCountryCode, tinySource) {
   const points = new Map();
   for (const f of tinySource.features) {
-    const code = isoCode(f);
-    if (code && !points.has(code)) points.set(code, f.geometry.coordinates);
+    const countryCode = isoCode(f);
+    if (countryCode && !points.has(countryCode)) points.set(countryCode, f.geometry.coordinates);
   }
-  const codes = new Set([...points.keys(), ...byCode.keys()]);
+  const countryCodes = new Set([...points.keys(), ...byCountryCode.keys()]);
   const dots = [];
-  for (const code of [...codes].sort()) {
-    if (code === DROPPED) continue;
-    const polys = byCode.get(code);
+  for (const countryCode of [...countryCodes].sort()) {
+    if (countryCode === DROPPED) continue;
+    const polys = byCountryCode.get(countryCode);
     const largest = polys && largestRing(polys);
     if (largest && largest.extent >= TINY_MAX_EXTENT_DEG) continue;
     const coordinates =
-      points.get(code) ?? geoCentroid({ type: "Polygon", coordinates: [largest.ring] });
-    dots.push({ type: "Feature", id: code, properties: {}, geometry: { type: "Point", coordinates } });
+      points.get(countryCode) ?? geoCentroid({ type: "Polygon", coordinates: [largest.ring] });
+    dots.push({ type: "Feature", id: countryCode, properties: {}, geometry: { type: "Point", coordinates } });
   }
   return dots;
 }
@@ -111,8 +111,8 @@ function stripWeights(topo) {
   return topo;
 }
 
-const { byCode, features } = countryFeatures(await fetchLayer("ne_50m_admin_0_countries.geojson"));
-const dots = dotFeatures(byCode, await fetchLayer("ne_50m_admin_0_tiny_countries.geojson"));
+const { byCountryCode, features } = countryFeatures(await fetchLayer("ne_50m_admin_0_countries.geojson"));
+const dots = dotFeatures(byCountryCode, await fetchLayer("ne_50m_admin_0_tiny_countries.geojson"));
 
 let topo = presimplify(
   topology({

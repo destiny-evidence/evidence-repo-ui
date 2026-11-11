@@ -70,3 +70,57 @@ export function bandLabel(band: HeatBand): string {
     ? band.min.toLocaleString()
     : `${band.min.toLocaleString()}–${band.max.toLocaleString()}`;
 }
+
+// A country's share of the references on the map, rounded to a whole percent
+// that never rounds to 0% or 100% unless it is.
+export function formatShare(count: number, total: number): string | null {
+  if (total <= 0) return null;
+  const percent = (count / total) * 100;
+  if (percent > 0 && percent < 1) return "<1%";
+  if (percent > 99 && percent < 100) return ">99%";
+  return `${Math.round(percent)}%`;
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface Size {
+  width: number;
+  height: number;
+}
+
+export interface PopupPlacement {
+  left: number;
+  top: number;
+  // Which side of the anchor the popup sits on, or null when neither fits.
+  side: "left" | "right" | null;
+  // The anchor's height within the popup, for its pointer.
+  pointerTop: number;
+}
+
+// Beside the anchor, on the right unless only the left fits, and kept inside the frame.
+export function placePopup(
+  anchor: Point,
+  popup: Size,
+  frame: Size,
+  gap: number,
+): PopupPlacement {
+  let side: PopupPlacement["side"] = "right";
+  let left = anchor.x + gap;
+  if (left + popup.width > frame.width) {
+    side = "left";
+    left = anchor.x - gap - popup.width;
+  }
+  if (left < 0) {
+    side = null;
+    left = clamp(anchor.x - popup.width / 2, 0, frame.width - popup.width);
+  }
+  const top = clamp(anchor.y - popup.height / 2, 0, frame.height - popup.height);
+  return { left, top, side, pointerTop: anchor.y - top };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(value, Math.max(min, max)));
+}

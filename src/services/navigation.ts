@@ -66,3 +66,12 @@ export function navigate(
   // moves history nor touches the entry's state.
   window.dispatchEvent(new Event("popstate"));
 }
+
+// A primary click with no modifier keys, which the app can route itself.
+// Anything else (a new tab, a download) is left to the browser.
+export function isPlainClick(event: MouseEvent): boolean {
+  return (
+    event.button === 0 &&
+    !(event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+  );
+}

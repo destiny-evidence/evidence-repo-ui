@@ -12,6 +12,7 @@ import {
   axisSearchParams,
   backToVisualiseState,
   backToVisualiseUrl,
+  communityBackToVisualiseUrl,
   buildVisualiseUrl,
   mapExpansionState,
   mapExpansionFromState,
@@ -934,6 +935,17 @@ describe("back-to-visualise history state", () => {
     expect(backToVisualiseUrl({})).toBeNull();
     expect(backToVisualiseUrl({ backToVisualise: 42 })).toBeNull();
     expect(backToVisualiseUrl("just a string")).toBeNull();
+  });
+
+  test("keeps only this community's evidence map and heat map", () => {
+    const back = (url: string) =>
+      communityBackToVisualiseUrl(backToVisualiseState(url), "edu");
+    expect(back("/edu/visualise?row=a&column=b")).toBe("/edu/visualise?row=a&column=b");
+    expect(back("/edu/visualise/geographic")).toBe("/edu/visualise/geographic");
+    expect(back("/edu/visualise/geographic?q=x")).toBe("/edu/visualise/geographic?q=x");
+    expect(back("/other/visualise/geographic?q=x")).toBeNull();
+    expect(back("/edu/visualise-elsewhere")).toBeNull();
+    expect(back("/edu/visualise/geographical")).toBeNull();
   });
 });
 

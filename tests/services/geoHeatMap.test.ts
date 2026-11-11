@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { bandLabel, heatBands, heatShade } from "@/services/geoHeatMap";
+import { bandLabel, formatShare, heatBands, heatShade, placePopup } from "@/services/geoHeatMap";
 
 const ranges = (max: number) => heatBands(max).map((b) => [b.min, b.max, b.shade]);
 
@@ -53,5 +53,51 @@ describe("bandLabel", () => {
   test("ranges and single values", () => {
     expect(bandLabel({ min: 200, max: 1234, shade: 5 })).toBe("200–1,234");
     expect(bandLabel({ min: 1, max: 1, shade: 1 })).toBe("1");
+  });
+});
+
+describe("formatShare", () => {
+  test("rounds to a whole percent, never to 0% or 100% unless it is", () => {
+    expect(formatShare(25, 200)).toBe("13%");
+    expect(formatShare(1, 1000)).toBe("<1%");
+    expect(formatShare(199, 200)).toBe(">99%");
+    expect(formatShare(200, 200)).toBe("100%");
+  });
+
+  test("no share without a total", () => {
+    expect(formatShare(5, 0)).toBeNull();
+  });
+});
+
+describe("placePopup", () => {
+  const popup = { width: 240, height: 140 };
+  const frame = { width: 900, height: 420 };
+
+  test("sits to the right of the anchor, centred on it", () => {
+    expect(placePopup({ x: 300, y: 200 }, popup, frame, 12)).toEqual({
+      left: 312,
+      top: 130,
+      side: "right",
+      pointerTop: 70,
+    });
+  });
+
+  test("flips left when the right would overflow", () => {
+    expect(placePopup({ x: 800, y: 200 }, popup, frame, 12)).toMatchObject({
+      left: 548,
+      side: "left",
+    });
+  });
+
+  test("stays inside the frame vertically, keeping the pointer on the anchor", () => {
+    expect(placePopup({ x: 300, y: 20 }, popup, frame, 12)).toMatchObject({ top: 0, pointerTop: 20 });
+    expect(placePopup({ x: 300, y: 410 }, popup, frame, 12)).toMatchObject({ top: 280, pointerTop: 130 });
+  });
+
+  test("centres over the anchor without a side when neither side fits", () => {
+    expect(placePopup({ x: 200, y: 200 }, popup, { width: 400, height: 420 }, 12)).toMatchObject({
+      left: 80,
+      side: null,
+    });
   });
 });

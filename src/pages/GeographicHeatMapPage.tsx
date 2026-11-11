@@ -16,13 +16,15 @@ import {
   heatMapQueryString,
 } from "@/services/geoHeatMap";
 import { AXIS_COUNTRIES } from "@/services/crossFacets";
+import { backToVisualiseState } from "@/services/evidenceMap";
 import { countSearchMatches } from "@/services/searchCount";
-import { navigate } from "@/services/navigation";
+import { isPlainClick, navigate } from "@/services/navigation";
 import type { FacetType } from "@/services/apiClient";
 import type { Community, MapAxis, FacetTotals } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import { track } from "@/analytics/matomo";
 import { activeFilters, withoutDefaults } from "@/analytics/searchEvents";
+import { countryName } from "@/utils/country";
 import { formatTotal } from "@/utils/searchTotal";
 import { EMPTY_APPLIED_FILTERS } from "@/components/filters/useFilterDraft";
 import { Tooltip } from "@/components/common/Tooltip";
@@ -115,6 +117,30 @@ function GeographicHeatMapView({ community }: { community: Community }) {
     apply({ ...params, ...EMPTY_APPLIED_FILTERS });
   }
 
+  // Search with the country filter narrowed to just this country.
+  function countrySearchUrl(countryCode: string): string {
+    return buildSearchUrl(community.slug, {
+      ...params,
+      countryCodes: [countryCode],
+      page: 1,
+    });
+  }
+
+  // Plain clicks navigate here so search gets history state to come back with.
+  function handleCountryView(countryCode: string, event: MouseEvent) {
+    track({
+      category: "GeographicHeatMap",
+      action: "Country Clickthrough",
+      name: countryName(countryCode),
+    });
+    if (!isPlainClick(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    navigate(countrySearchUrl(countryCode), {
+      state: backToVisualiseState(buildHeatMapUrl(community.slug, params)),
+    });
+  }
+
   const filterCount = appliedFilterCount(params);
 
   return (
@@ -142,6 +168,9 @@ function GeographicHeatMapView({ community }: { community: Community }) {
             />
           </div>
           <p class="evidence-map-view__hint">
+            {countryCount > 0 && (
+              <span>Click a country to view matching {noun}</span>
+            )}
             <a
               class="evidence-map-view__view-all"
               href={buildSearchUrl(community.slug, { ...params, page: 1 })}
@@ -184,6 +213,16 @@ function GeographicHeatMapView({ community }: { community: Community }) {
                 counts={countryCounts}
                 label={`World map of ${noun} by country`}
                 countNoun={noun}
+                total={totals?.mapped?.count ?? 0}
+                viewHref={countrySearchUrl}
+                onSelect={(countryCode) =>
+                  track({
+                    category: "GeographicHeatMap",
+                    action: "Country Selected",
+                    name: countryName(countryCode),
+                  })
+                }
+                onView={handleCountryView}
               />
             </section>
           </>
@@ -313,5 +352,5 @@ function onlySelected(
   selected: readonly string[],
 ): ReadonlyMap<string, number> | undefined {
   if (!counts || selected.length === 0) return counts;
-  return new Map([...counts].filter(([code]) => selected.includes(code)));
+  return new Map([...counts].filter(([countryCode]) => selected.includes(countryCode)));
 }
