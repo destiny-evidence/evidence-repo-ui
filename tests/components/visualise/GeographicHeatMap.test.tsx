@@ -278,6 +278,18 @@ describe("GeographicHeatMap", () => {
       expect(france).toHaveAttribute("tabindex", "-1");
     });
 
+    test("the map tells screen readers how to move around it", async () => {
+      await renderMap({ KE: 25 });
+      expect(await screen.findByRole("group")).toHaveAccessibleDescription(
+        "Use the arrow keys to move between countries and Enter to select one.",
+      );
+    });
+
+    test("no keyboard hint when no country can be selected", async () => {
+      await renderMap({});
+      expect(await screen.findByRole("group")).not.toHaveAttribute("aria-describedby");
+    });
+
     test.each(["Enter", " "])("%j opens the popup", async (key) => {
       await renderMap({ KE: 25 });
       fireEvent.keyDown(await screen.findByRole("button", { name: /^Kenya/ }), { key });

@@ -183,6 +183,7 @@ function HeatMap({
   const popupRef = useRef<HTMLDivElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState(0);
+  const keyboardHintId = useId();
   const countryElement = (countryCode: string) =>
     frameRef.current?.querySelector<SVGElement>(
       `[data-country="${countryCode}"]`,
@@ -424,6 +425,7 @@ function HeatMap({
           viewBox={geometry.viewBox}
           role="group"
           aria-label={label}
+          aria-describedby={order.length > 0 ? keyboardHintId : undefined}
         >
           <g>
             {countryLayer}
@@ -436,6 +438,9 @@ function HeatMap({
             {selected && highlight(selected, true)}
           </g>
         </svg>
+        <p id={keyboardHintId} hidden>
+          Use the arrow keys to move between countries and Enter to select one.
+        </p>
         {tipCountryCode && targets.has(tipCountryCode) && (
           <div ref={tipRef} class="geo-heat-map__tip" aria-hidden="true">
             {countryName(tipCountryCode)}
