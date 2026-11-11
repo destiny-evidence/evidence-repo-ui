@@ -118,25 +118,25 @@ function GeographicHeatMapView({ community }: { community: Community }) {
   }
 
   // Search with the country filter narrowed to just this country.
-  function countrySearchUrl(code: string): string {
+  function countrySearchUrl(countryCode: string): string {
     return buildSearchUrl(community.slug, {
       ...params,
-      countryCodes: [code],
+      countryCodes: [countryCode],
       page: 1,
     });
   }
 
   // Plain clicks navigate here so search gets history state to come back with.
-  function handleCountryView(code: string, event: MouseEvent) {
+  function handleCountryView(countryCode: string, event: MouseEvent) {
     track({
       category: "GeographicHeatMap",
       action: "Country Clickthrough",
-      name: countryName(code),
+      name: countryName(countryCode),
     });
     if (!isPlainClick(event)) return;
     event.preventDefault();
     event.stopPropagation();
-    navigate(countrySearchUrl(code), {
+    navigate(countrySearchUrl(countryCode), {
       state: backToVisualiseState(buildHeatMapUrl(community.slug, params)),
     });
   }
@@ -215,11 +215,11 @@ function GeographicHeatMapView({ community }: { community: Community }) {
                 countNoun={noun}
                 total={totals?.mapped?.count ?? 0}
                 viewHref={countrySearchUrl}
-                onSelect={(code) =>
+                onSelect={(countryCode) =>
                   track({
                     category: "GeographicHeatMap",
                     action: "Country Selected",
-                    name: countryName(code),
+                    name: countryName(countryCode),
                   })
                 }
                 onView={handleCountryView}
@@ -352,5 +352,5 @@ function onlySelected(
   selected: readonly string[],
 ): ReadonlyMap<string, number> | undefined {
   if (!counts || selected.length === 0) return counts;
-  return new Map([...counts].filter(([code]) => selected.includes(code)));
+  return new Map([...counts].filter(([countryCode]) => selected.includes(countryCode)));
 }

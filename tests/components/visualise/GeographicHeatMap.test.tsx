@@ -11,15 +11,15 @@ const GEOMETRY: WorldGeometry = {
   viewBox: "0 0 960 440",
   outline: "M0,0Z",
   countries: [
-    { code: "FR", d: "M1,1Z", anchor: { x: 1, y: 1 } },
-    { code: "KE", d: "M2,2Z", anchor: { x: 2, y: 2 } },
-    { code: "SG", d: "M3,3Z", anchor: { x: 3, y: 3 } },
-    { code: null, d: "M4,4Z", anchor: { x: 4, y: 4 } },
+    { countryCode: "FR", d: "M1,1Z", anchor: { x: 1, y: 1 } },
+    { countryCode: "KE", d: "M2,2Z", anchor: { x: 2, y: 2 } },
+    { countryCode: "SG", d: "M3,3Z", anchor: { x: 3, y: 3 } },
+    { countryCode: null, d: "M4,4Z", anchor: { x: 4, y: 4 } },
   ],
   borders: "M5,5Z",
   dots: [
-    { code: "SG", x: 10, y: 10 },
-    { code: "GI", x: 20, y: 20 },
+    { countryCode: "SG", x: 10, y: 10 },
+    { countryCode: "GI", x: 20, y: 20 },
   ],
 };
 
@@ -29,7 +29,7 @@ const baseProps = {
   label: "References by country",
   countNoun: "references",
   total: 200,
-  viewHref: (code: string) => `/esea?country=${code}`,
+  viewHref: (countryCode: string) => `/esea?country=${countryCode}`,
   onSelect,
   onView,
 };
@@ -109,7 +109,7 @@ describe("GeographicHeatMap", () => {
     expect(container.querySelectorAll("circle")).toHaveLength(0);
   });
 
-  test("shapes without a code are hidden from assistive technology", async () => {
+  test("shapes without a countryCode are hidden from assistive technology", async () => {
     const { container } = await renderMap({});
     await screen.findByRole("group");
     expect(container.querySelector('path[d="M4,4Z"]')).toHaveAttribute("aria-hidden", "true");

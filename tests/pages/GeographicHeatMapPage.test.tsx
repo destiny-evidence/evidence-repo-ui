@@ -35,11 +35,11 @@ vi.mock("@/components/visualise/GeographicHeatMap", () => ({
   GeographicHeatMap: ({ counts, label, total, viewHref, onSelect, onView }: GeographicHeatMapProps) => (
     <div data-testid="map" aria-label={label} data-total={total}>
       {counts ? JSON.stringify([...counts]) : "no counts"}
-      {[...(counts ?? [])].map(([code]) => (
-        <span key={code}>
-          <button onClick={() => onSelect?.(code)}>Select {code}</button>
-          <a href={viewHref(code)} onClick={(e) => onView(code, e)}>
-            View {code}
+      {[...(counts ?? [])].map(([countryCode]) => (
+        <span key={countryCode}>
+          <button onClick={() => onSelect?.(countryCode)}>Select {countryCode}</button>
+          <a href={viewHref(countryCode)} onClick={(e) => onView(countryCode, e)}>
+            View {countryCode}
           </a>
         </span>
       ))}

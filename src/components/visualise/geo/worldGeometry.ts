@@ -6,14 +6,14 @@ import world from "@/data/world-geo.json";
 
 export interface CountryShape {
   // ISO alpha-2, or null for shapes Natural Earth gives no ISO code.
-  code: string | null;
+  countryCode: string | null;
   d: string;
   // Where a popup points: the centre of the country's largest landmass.
   anchor: { x: number; y: number };
 }
 
 export interface CountryDot {
-  code: string;
+  countryCode: string;
   x: number;
   y: number;
 }
@@ -60,14 +60,14 @@ export function buildWorldGeometry(topology: WorldTopology): WorldGeometry {
   const points = feature(topology, topology.objects.dots) as FeatureCollection<Point>;
   for (const f of points.features) {
     const xy = projection(f.geometry.coordinates as [number, number]);
-    if (xy) dots.push({ code: String(f.id), x: xy[0], y: xy[1] });
+    if (xy) dots.push({ countryCode: String(f.id), x: xy[0], y: xy[1] });
   }
 
   return {
     viewBox: `0 ${y} ${MAP_WIDTH} ${height}`,
     outline: outline ?? "",
     countries: countries.features.map((f: Feature) => ({
-      code: f.id == null ? null : String(f.id),
+      countryCode: f.id == null ? null : String(f.id),
       d: path(f) ?? "",
       anchor: anchorOf(f, path),
     })),

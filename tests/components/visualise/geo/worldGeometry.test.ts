@@ -11,28 +11,28 @@ import { loadWorldGeometry, MAP_WIDTH } from "@/components/visualise/geo/worldGe
 // Guards the committed output of scripts/generate-world-geo.mjs.
 describe("world geometry", () => {
   const geometry = loadWorldGeometry();
-  const codes = geometry.countries.map((c) => c.code);
-  const keyed = codes.filter((c): c is string => c !== null);
-  const dotCodes = geometry.dots.map((d) => d.code);
+  const countryCodes = geometry.countries.map((c) => c.countryCode);
+  const keyed = countryCodes.filter((c): c is string => c !== null);
+  const dotCountryCodes = geometry.dots.map((d) => d.countryCode);
 
-  test("one shape per ISO alpha-2 code", () => {
+  test("one shape per ISO alpha-2 countryCode", () => {
     expect(keyed.every((c) => /^[A-Z]{2}$/.test(c))).toBe(true);
     expect(new Set(keyed).size).toBe(keyed.length);
   });
 
-  test("countries Natural Earth only codes in ISO_A2_EH resolve", () => {
+  test("countries Natural Earth only countryCodes in ISO_A2_EH resolve", () => {
     expect(keyed).toEqual(expect.arrayContaining(["FR", "NO", "XK"]));
   });
 
   test("Antarctica is dropped and uncoded shapes are kept", () => {
     expect(keyed).not.toContain("AQ");
-    expect(codes.filter((c) => c === null).length).toBeGreaterThan(0);
+    expect(countryCodes.filter((c) => c === null).length).toBeGreaterThan(0);
   });
 
   test("small countries get dots and large ones don't", () => {
-    expect(dotCodes).toEqual(expect.arrayContaining(["SG", "HK", "MT", "GI"]));
-    expect(dotCodes).not.toContain("GB");
-    expect(dotCodes).not.toContain("AU");
+    expect(dotCountryCodes).toEqual(expect.arrayContaining(["SG", "HK", "MT", "GI"]));
+    expect(dotCountryCodes).not.toContain("GB");
+    expect(dotCountryCodes).not.toContain("AU");
   });
 
   test("no shape is wound inside out", () => {
@@ -51,8 +51,8 @@ describe("world geometry", () => {
 
   test("anchors sit on a country's main landmass, not between its parts", () => {
     const projection = geoEqualEarth().fitWidth(MAP_WIDTH, { type: "Sphere" });
-    const near = (code: string, lonLat: [number, number]) => {
-      const { anchor } = geometry.countries.find((c) => c.code === code)!;
+    const near = (countryCode: string, lonLat: [number, number]) => {
+      const { anchor } = geometry.countries.find((c) => c.countryCode === countryCode)!;
       const [x, y] = projection(lonLat)!;
       expect(Math.hypot(anchor.x - x, anchor.y - y)).toBeLessThan(15);
     };
