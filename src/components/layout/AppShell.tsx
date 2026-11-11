@@ -130,16 +130,7 @@ export function AppShell({ children }: AppShellProps) {
                     >
                       Search
                     </a>
-                    {views.length === 1 && (
-                      <a
-                        class={`app-nav__link${visualiseActive ? " active" : ""}`}
-                        href={views[0].href}
-                        onClick={trackTab("Visualise")}
-                      >
-                        Visualise
-                      </a>
-                    )}
-                    {views.length > 1 && (
+                    {views.length > 0 && (
                       <VisualiseNavMenu
                         views={views}
                         active={visualiseActive}

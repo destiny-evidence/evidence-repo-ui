@@ -57,7 +57,7 @@ describe("AppShell header", () => {
     history.replaceState(null, "", "/hpv/visualise");
     renderShell();
     expect(
-      screen.getByRole("link", { name: "Visualise" }).classList.contains("active"),
+      screen.getByRole("button", { name: "Visualise" }).classList.contains("active"),
     ).toBe(true);
     expect(
       screen.getByRole("link", { name: "Search" }).classList.contains("active"),

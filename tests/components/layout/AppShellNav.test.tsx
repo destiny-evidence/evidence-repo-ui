@@ -24,20 +24,12 @@ function renderShell() {
 describe("AppShell Visualise tab", () => {
   beforeEach(() => mockUseCommunity.mockReset());
 
-  test("shows the Visualise tab when the evidence-map flag is on", () => {
-    mockUseCommunity.mockReturnValue(
-      makeCommunity({ features: { evidenceMap: true } }),
-    );
-    renderShell();
-    expect(screen.getByRole("link", { name: /visualise/i })).toBeInTheDocument();
-  });
-
-  test("hides the Visualise tab when the evidence-map flag is off", () => {
+  test("hides the Visualise tab when the community has neither map", () => {
     mockUseCommunity.mockReturnValue(
       makeCommunity({ features: { evidenceMap: false } }),
     );
     renderShell();
-    expect(screen.queryByRole("link", { name: /visualise/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Visualise" })).toBeNull();
   });
 });
 
@@ -57,35 +49,21 @@ describe("AppShell Visualise dropdown", () => {
     delete window._paq;
   });
 
-  test("the tab links straight to the heat map when it is the only view", () => {
-    mockUseCommunity.mockReturnValue(
-      makeCommunity({ features: { evidenceMap: false, geographicHeatMap: true } }),
-    );
+  test.each([
+    ["the evidence map", { evidenceMap: true, geographicHeatMap: true, countrySearchable: false }, "/test/visualise"],
+    ["the heat map", { evidenceMap: false, geographicHeatMap: true }, "/test/visualise/geographic"],
+  ])("is still a dropdown with only %s", (_name, features, href) => {
+    mockUseCommunity.mockReturnValue(makeCommunity({ features }));
     renderShell();
-    expect(screen.getByRole("link", { name: "Visualise" })).toHaveAttribute(
-      "href",
-      "/test/visualise/geographic",
-    );
-  });
-
-  test("leaves the heat map out when the community can't search by country", () => {
-    mockUseCommunity.mockReturnValue(
-      makeCommunity({
-        features: { evidenceMap: true, geographicHeatMap: true, countrySearchable: false },
-      }),
-    );
-    renderShell();
-    expect(screen.getByRole("link", { name: "Visualise" })).toHaveAttribute(
-      "href",
-      "/test/visualise",
-    );
+    fireEvent.click(visualiseButton());
+    expect(
+      within(dropdown()).getAllByRole("link").map((a) => a.getAttribute("href")),
+    ).toEqual([href]);
   });
 
   test("lists both views when both are enabled and reports the one chosen", () => {
     mockUseCommunity.mockReturnValue(bothViews());
     renderShell();
-    expect(screen.queryByRole("link", { name: "Visualise" })).toBeNull();
-
     fireEvent.click(visualiseButton());
     expect(visualiseButton()).toHaveAttribute("aria-expanded", "true");
     const links = within(dropdown()).getAllByRole("link");
@@ -137,19 +115,16 @@ describe("AppShell nav analytics", () => {
     delete window._paq;
   });
 
-  test.each([
-    [/^search$/i, "Search"],
-    [/^visualise$/i, "Visualise"],
-  ])("clicking the %s tab reports it", (pattern, name) => {
+  test("clicking the Search tab reports it", () => {
     mockUseCommunity.mockReturnValue(
       makeCommunity({ features: { evidenceMap: true } }),
     );
     renderShell();
 
-    fireEvent.click(screen.getByRole("link", { name: pattern }));
+    fireEvent.click(screen.getByRole("link", { name: /^search$/i }));
 
     expect(window._paq).toEqual([
-      ["trackEvent", "Navigation", "Tab Clicked", name, undefined],
+      ["trackEvent", "Navigation", "Tab Clicked", "Search", undefined],
     ]);
   });
 });

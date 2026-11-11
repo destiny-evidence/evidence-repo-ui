@@ -55,10 +55,10 @@ test("the privacy policy routes inside the app shell", () => {
   expect(screen.getByText("Evidence Repository")).toBeInTheDocument();
 });
 
-test("shows the Visualise tab and routes to the visualise page when enabled", () => {
+test("shows the Visualise tab and routes to the visualise page", () => {
   history.pushState({}, "", "/hpv");
   const { unmount } = render(<App />);
-  expect(screen.getByRole("link", { name: /visualise/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Visualise" })).toBeInTheDocument();
   // VisualisePage canonicalizes the URL (HPV default axes) via a replace-navigate
   // on mount; unmount first so a stale App doesn't pick it up and double-render.
   unmount();

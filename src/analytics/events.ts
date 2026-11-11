@@ -83,7 +83,7 @@ export type AnalyticsEvent =
   // name: resource title
   | { category: "Resources"; action: "Link Clicked"; name: string }
   | { category: "Feedback"; action: "Nav Clicked" }
-  // name: Search | Visualise | Evidence map | Geographic heat map
+  // name: Search | Evidence map | Geographic heat map
   | { category: "Navigation"; action: "Tab Clicked"; name: string }
   // value: references the summary was asked for
   | { category: "AISummary"; action: "Generate Requested"; value: number }
