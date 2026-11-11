@@ -2,7 +2,7 @@ import { useMemo, useState } from "preact/hooks";
 import { useSearchFacets, type FacetCounts } from "@/hooks/useSearchFacets";
 import type { FacetType } from "@/services/apiClient";
 import type { SearchParams } from "@/services/searchParams";
-import type { EvidenceMapAxes } from "@/types/models";
+import type { MapAxis } from "@/types/models";
 import type { ConceptScheme } from "@/services/vocabulary/vocabularyService";
 import {
   emptyConceptSchemeState,
@@ -35,6 +35,14 @@ export interface AppliedFilters {
   startYear: number | undefined;
   endYear: number | undefined;
 }
+
+export const EMPTY_APPLIED_FILTERS: AppliedFilters = {
+  conceptFilters: [],
+  countryCodes: [],
+  wbIncomeGroupIds: [],
+  startYear: undefined,
+  endYear: undefined,
+};
 
 type ConceptDraft = Map<string, ConceptSchemeFilterState>;
 
@@ -130,10 +138,10 @@ export function useFilterDraft({
   appliedEndYear,
   params,
   facets,
-  axes,
+  mapAxes,
 }: FilterDraftInputs & {
   facets: readonly FacetType[];
-  axes?: EvidenceMapAxes;
+  mapAxes?: readonly MapAxis[];
 }): FilterDraft {
   const [conceptDraft, setConceptDraft] = useState<ConceptDraft>(() =>
     parseConceptFilters(appliedConceptFilters, schemes ?? []),
@@ -191,7 +199,7 @@ export function useFilterDraft({
     counts: facetCounts,
     loading: facetCountsLoading,
     error: facetError,
-  } = useSearchFacets(facetParams, facets, axes);
+  } = useSearchFacets(facetParams, facets, { mapAxes });
 
   function onSchemeChange(
     scheme: ConceptScheme,

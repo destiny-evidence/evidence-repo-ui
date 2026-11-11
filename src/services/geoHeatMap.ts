@@ -1,3 +1,26 @@
+import { toQueryString, type SearchParams } from "@/services/searchParams";
+import type { CommunityFeatures } from "@/types/models";
+
+// The map has nothing to show without country facets.
+export function heatMapEnabled(
+  features: Pick<CommunityFeatures, "geographicHeatMap" | "countrySearchable">,
+): boolean {
+  return features.geographicHeatMap && features.countrySearchable;
+}
+
+export function heatMapPath(communitySlug: string): string {
+  return `/${communitySlug}/visualise/geographic`;
+}
+
+export function heatMapQueryString(params: SearchParams): string {
+  return toQueryString({ ...params, page: 1, sort: undefined });
+}
+
+export function buildHeatMapUrl(communitySlug: string, params: SearchParams): string {
+  const qs = heatMapQueryString(params);
+  return qs ? `${heatMapPath(communitySlug)}?${qs}` : heatMapPath(communitySlug);
+}
+
 export const HEAT_SHADES = 5;
 
 export interface HeatBand {

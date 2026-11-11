@@ -128,12 +128,13 @@ export async function searchReferenceFacets(
   query: string | undefined,
   filters: Pick<SearchFilters, SharedFilterFields>,
   facets: readonly FacetType[],
-  options: Partial<CrossFacetQueryAxes> = {},
+  options: { axes?: readonly string[]; vocabularyUrl?: string; totals?: boolean } = {},
 ): Promise<ReferenceFacetResult> {
   const params = buildSharedSearchParams(query, filters);
   for (const f of facets) params.append("facet", f);
   for (const axis of options.axes ?? []) params.append("axes", axis);
   if (options.vocabularyUrl) params.set("vocabulary", options.vocabularyUrl);
+  if (options.totals) params.set("totals", "true");
   return api.get<ReferenceFacetResult>(
     `/v1/references/search/facets/?${params.toString()}`,
   );

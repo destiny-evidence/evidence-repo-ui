@@ -16,11 +16,17 @@ function makeTotals(
   };
 }
 
-function renderNote(totals: CrossFacetTotals, countNoun = "investigations") {
+function renderNote(
+  totals: CrossFacetTotals,
+  countNoun = "investigations",
+  storageKey = "test-coverage-note",
+) {
   return render(
     <MapCoverageNote
       totals={totals}
       countNoun={countNoun}
+      detail="Only those coded against both axes can be placed - the rest are in your search results."
+      storageKey={storageKey}
       returnFocusTo={HEADING_ID}
     />,
   );
@@ -73,6 +79,16 @@ describe("MapCoverageNote", () => {
     const { container } = renderNote(makeTotals(199, 120152));
 
     expect(container).toBeEmptyDOMElement();
+  });
+
+  test("a dismissal is remembered per storage key", () => {
+    renderNote(makeTotals(199, 120152), "investigations", "map-a");
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    cleanup();
+
+    renderNote(makeTotals(199, 120152), "investigations", "map-b");
+
+    expect(screen.getByText(explanation)).toBeInTheDocument();
   });
 
   test("hands focus to the named element when dismissed", () => {

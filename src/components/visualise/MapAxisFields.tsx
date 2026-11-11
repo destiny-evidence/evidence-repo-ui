@@ -11,7 +11,7 @@ import {
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 import type {
-  EvidenceMapAxis,
+  MapAxis,
   EvidenceMapAxes,
   LiteralAxisToken,
 } from "@/types/models";
@@ -26,7 +26,7 @@ interface AxisOption {
 // list yet (so each <select> always has its current value), sorted by label.
 function buildAxisOptions(
   schemes: ConceptScheme[],
-  chosen: EvidenceMapAxis[],
+  chosen: MapAxis[],
   literalAxes: readonly LiteralAxisToken[],
 ): AxisOption[] {
   const byValue = new Map<string, string>();

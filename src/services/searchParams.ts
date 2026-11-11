@@ -147,6 +147,16 @@ export function toQueryString(params: SearchParams): string {
   return out.toString();
 }
 
+// A year range counts as one filter, however many ends it sets.
+export function appliedFilterCount(params: SearchParams): number {
+  return (
+    params.conceptFilters.flat().length +
+    params.countryCodes.length +
+    params.wbIncomeGroupIds.length +
+    (params.startYear !== undefined || params.endYear !== undefined ? 1 : 0)
+  );
+}
+
 export function buildSearchUrl(
   communitySlug: string,
   params: SearchParams,

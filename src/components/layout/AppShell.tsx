@@ -8,9 +8,12 @@ import { FeedbackLink } from "@/components/feedback/FeedbackLink";
 import { MenuIcon, NewTabLinkIcon } from "@/components/common/icons";
 import { NewTabLink } from "@/components/common/NewTabLink";
 import { ResourcesMenu } from "./ResourcesMenu";
+import { VisualiseNavMenu, type VisualiseView } from "./VisualiseNavMenu";
 import { SiteFrame } from "./SiteFrame";
 import { URL_CHANGE_EVENT } from "@/services/navigation";
 import { FEEDBACK_FORM_URL } from "@/config";
+import { heatMapEnabled, heatMapPath } from "@/services/geoHeatMap";
+import type { Community } from "@/types/models";
 import "./AppShell.css";
 
 function usePathname(): string {
@@ -27,6 +30,28 @@ function usePathname(): string {
   return pathname;
 }
 
+function visualiseViews(community: Community): VisualiseView[] {
+  const views: VisualiseView[] = [];
+  if (community.features.evidenceMap) {
+    views.push({
+      kind: "evidence-map",
+      name: "Evidence map",
+      description:
+        "Compare two dimensions to see where studies cluster and where they are missing.",
+      href: `/${community.slug}/visualise`,
+    });
+  }
+  if (heatMapEnabled(community.features)) {
+    views.push({
+      kind: "heat-map",
+      name: "Geographic heat map",
+      description: "See where research took place.",
+      href: heatMapPath(community.slug),
+    });
+  }
+  return views;
+}
+
 interface AppShellProps {
   children: ComponentChildren;
 }
@@ -40,7 +65,10 @@ export function AppShell({ children }: AppShellProps) {
     (pathname === `/${community.slug}` ||
       pathname.startsWith(`/${community.slug}/references/`));
   const visualiseActive =
-    community != null && pathname === `/${community.slug}/visualise`;
+    community != null &&
+    (pathname === `/${community.slug}/visualise` ||
+      pathname.startsWith(`/${community.slug}/visualise/`));
+  const views = community ? visualiseViews(community) : [];
   // Within a community the brand goes to its root; off one (an unknown slug)
   // it goes to the home page, which lists the communities.
   const brandHref = community ? `/${community.slug}` : "/";
@@ -102,14 +130,13 @@ export function AppShell({ children }: AppShellProps) {
                     >
                       Search
                     </a>
-                    {community.features.evidenceMap && (
-                      <a
-                        class={`app-nav__link${visualiseActive ? " active" : ""}`}
-                        href={`/${community.slug}/visualise`}
-                        onClick={trackTab("Visualise")}
-                      >
-                        Visualise
-                      </a>
+                    {views.length > 0 && (
+                      <VisualiseNavMenu
+                        views={views}
+                        active={visualiseActive}
+                        pathname={pathname}
+                        onSelect={(view) => trackTab(view.name)()}
+                      />
                     )}
                     {resources.length > 0 && (
                       <ResourcesMenu resources={resources} />

@@ -2,7 +2,7 @@ import type {
   CommunityFeatures,
   CrossFacetCell,
   EvidenceMapAxes,
-  EvidenceMapAxis,
+  MapAxis,
   LiteralAxisToken,
   EvidenceMapRenderLimits,
 } from "@/types/models";
@@ -62,7 +62,7 @@ export function offeredLiteralAxes(
   return features.countrySearchable ? [AXIS_COUNTRIES, AXIS_INCOME_GROUPS] : [];
 }
 
-export function parseAxis(token: string): EvidenceMapAxis {
+export function parseAxis(token: string): MapAxis {
   return isLiteralToken(token)
     ? { kind: "literal", token }
     : { kind: "scheme", schemeUri: token };
@@ -156,7 +156,7 @@ export interface ResolvedAxis {
  * Resolve an axis to its title, categories, and per-value label function.
  */
 export function resolveMapAxis(
-  axis: EvidenceMapAxis,
+  axis: MapAxis,
   schemes: readonly ConceptScheme[] | null,
   labels: ReadonlyMap<string, string> | null,
 ): ResolvedAxis {
@@ -524,7 +524,7 @@ export function cellSearchParams(
  */
 export function axisSearchParams(
   base: SearchParams,
-  axis: EvidenceMapAxis,
+  axis: MapAxis,
   category: AxisCategory,
 ): SearchParams {
   return { ...applyAxisFilter(base, axis, category), page: 1 };
@@ -535,7 +535,7 @@ export function axisSearchParams(
 // query); a literal axis adds its value to that axis's filter list.
 function applyAxisFilter(
   base: SearchParams,
-  axis: EvidenceMapAxis,
+  axis: MapAxis,
   category: AxisCategory,
 ): SearchParams {
   if (axis.kind === "literal") {

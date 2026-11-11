@@ -3,8 +3,8 @@ import { searchReferenceFacets, type FacetType } from "@/services/apiClient";
 import { useCommunity } from "@/community/CommunityContext";
 import { toTurtleUrl } from "@/services/vocabulary/vocabularyService";
 import { toSearchFilters, type SearchParams } from "@/services/searchParams";
-import { axisPairToParams } from "@/services/crossFacets";
-import type { EvidenceMapAxes } from "@/types/models";
+import { axisToken } from "@/services/crossFacets";
+import type { MapAxis, FacetTotals } from "@/types/models";
 
 export interface FacetCounts {
   concepts: ReadonlyMap<string, number>;
@@ -20,28 +20,38 @@ function countMap<T extends { count: number }>(
   return new Map((buckets ?? []).map((b) => [key(b), b.count]));
 }
 
+// `mapAxes` scopes the counts to references with a value on every axis;
+// `totals` also asks for the search total, and the mapped total with `mapAxes`.
 export function useSearchFacets(
   params: SearchParams,
   facets: readonly FacetType[],
-  axes?: EvidenceMapAxes,
+  { mapAxes, totals: withTotals = false }: {
+    mapAxes?: readonly MapAxis[];
+    totals?: boolean;
+  } = {},
 ): {
   counts: FacetCounts | null;
+  totals: FacetTotals | null;
   loading: boolean;
   error: Error | null;
 } {
   const community = useCommunity();
   const filters = toSearchFilters(params, community?.defaultAnnotations);
   // Omits `page` and `sort` — facet counts are invariant under both.
+  const axisTokens = mapAxes?.map(axisToken);
   const key = JSON.stringify([
     community?.slug,
     params.q,
     filters,
     facets,
-    axes?.row,
-    axes?.column,
+    axisTokens,
+    withTotals,
   ]);
   const [counts, setCounts] = useState<FacetCounts | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [totals, setTotals] = useState<FacetTotals | null>(null);
+  // Loading until the request for this key settles, including the render the
+  // key changes in, so stale counts are never reported as current.
+  const [settledKey, setSettledKey] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -50,7 +60,6 @@ export function useSearchFacets(
 
     // Keep prior counts visible while refetching (dim-while-updating).
     setError(null);
-    setLoading(true);
     // Backend wants the Turtle vocab; the env URL is the JSON-LD one.
     const vocabularyUrl = toTurtleUrl(community.vocabularyUrl);
 
@@ -58,10 +67,11 @@ export function useSearchFacets(
       params.q || undefined,
       filters,
       facets,
-      axes ? axisPairToParams(axes, vocabularyUrl) : { vocabularyUrl },
+      { axes: axisTokens, vocabularyUrl, totals: withTotals },
     )
       .then((r) => {
         if (cancelled) return;
+        setTotals(r.totals ?? null);
         setCounts({
           concepts: countMap(r.concepts, (b) => b.concept),
           countries: countMap(r.countries, (b) => b.country),
@@ -76,14 +86,17 @@ export function useSearchFacets(
         if (cancelled) return;
         setError(e);
         setCounts(null);
+        setTotals(null);
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .finally(() => { if (!cancelled) setSettledKey(key); });
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  if (!community) return { counts: null, loading: false, error: null };
+  if (!community) {
+    return { counts: null, totals: null, loading: false, error: null };
+  }
 
-  return { counts, loading, error };
+  return { counts, totals, loading: settledKey !== key, error };
 }

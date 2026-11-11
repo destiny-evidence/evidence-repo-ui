@@ -42,6 +42,7 @@ function setCounts({
 } = {}) {
   mockUseSearchFacets.mockReturnValue({
     counts: { concepts, countries, wbRegions: new Map(), wbIncomeGroups },
+    totals: null,
     loading,
     error: null,
   });
@@ -52,6 +53,7 @@ beforeEach(() => {
   // Default: no counts. Tests that need counts override via setCounts().
   mockUseSearchFacets.mockReturnValue({
     counts: null,
+    totals: null,
     loading: false,
     error: null,
   });

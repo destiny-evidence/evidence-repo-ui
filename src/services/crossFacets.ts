@@ -1,6 +1,6 @@
 import type {
   EvidenceMapAxes,
-  EvidenceMapAxis,
+  MapAxis,
   LiteralAxisToken,
 } from "@/types/models";
 
@@ -15,7 +15,7 @@ export interface CrossFacetQueryAxes {
 
 // The token sent to the cross-facet endpoint, also written to / read from the
 // map URL and used as an axis <select> value.
-export function axisToken(axis: EvidenceMapAxis): string {
+export function axisToken(axis: MapAxis): string {
   return axis.kind === "literal" ? axis.token : axis.schemeUri;
 }
 

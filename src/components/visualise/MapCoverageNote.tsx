@@ -5,21 +5,19 @@ import "./MapCoverageNote.css";
 
 // Per browser tab, not per browser: this explains a recurring surprise rather
 // than recording an acknowledgement, so it should return on a later visit.
-const DISMISSED_KEY = "evidence-map-coverage-note-dismissed";
-
 // Blocked storage (private windows, blocked site data) must not suppress the
 // note, so an unreadable dismissal counts as no dismissal.
-function readDismissed(): boolean {
+function readDismissed(key: string): boolean {
   try {
-    return sessionStorage.getItem(DISMISSED_KEY) === "true";
+    return sessionStorage.getItem(key) === "true";
   } catch {
     return false;
   }
 }
 
-function writeDismissed(): void {
+function writeDismissed(key: string): void {
   try {
-    sessionStorage.setItem(DISMISSED_KEY, "true");
+    sessionStorage.setItem(key, "true");
   } catch {
     // Dismissal then lasts only for this page view.
   }
@@ -28,6 +26,10 @@ function writeDismissed(): void {
 interface MapCoverageNoteProps {
   totals: CrossFacetTotals;
   countNoun: string;
+  // Why the rest can't be placed, after the "Some … aren't on the map." lead.
+  detail: string;
+  // Where the dismissal is remembered, so each map's note is closed separately.
+  storageKey: string;
   /** Element id focus lands on after closing, so the tab order is not lost. */
   returnFocusTo: string;
 }
@@ -39,9 +41,11 @@ interface MapCoverageNoteProps {
 export function MapCoverageNote({
   totals,
   countNoun,
+  detail,
+  storageKey,
   returnFocusTo,
 }: MapCoverageNoteProps) {
-  const [dismissed, setDismissed] = useState(readDismissed);
+  const [dismissed, setDismissed] = useState(() => readDismissed(storageKey));
 
   // Equal totals mean everything matching is plotted, so nothing needs
   // explaining; a floor rather than an exact match total may still hide a gap.
@@ -51,7 +55,7 @@ export function MapCoverageNote({
 
   function handleDismiss() {
     setDismissed(true);
-    writeDismissed();
+    writeDismissed(storageKey);
     document.getElementById(returnFocusTo)?.focus();
   }
 
@@ -62,8 +66,7 @@ export function MapCoverageNote({
         <strong class="map-coverage-note__lead">
           Some {countNoun} aren’t on the map.
         </strong>{" "}
-        Only those coded against both axes can be placed - the rest are in your
-        search results.
+        {detail}
       </span>
       <button
         type="button"
