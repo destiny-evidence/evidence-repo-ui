@@ -51,22 +51,13 @@ export function isRouteUrl(url: string, path: string): boolean {
   return url === path || url.startsWith(`${path}?`);
 }
 
-/**
- * Follows a link click to `url` with `state` on the new history entry. Modified
- * and non-primary clicks are left to the browser (new tab, new window, …).
- */
+/** Follows a plain link click to `url` with `state` on the new history entry. */
 export function navigateWithState(
   event: MouseEvent,
   url: string,
   state: unknown,
 ): void {
-  const plainClick =
-    event.button === 0 &&
-    !event.ctrlKey &&
-    !event.metaKey &&
-    !event.shiftKey &&
-    !event.altKey;
-  if (!plainClick) return;
+  if (!isPlainClick(event)) return;
   event.preventDefault();
   // preact-router routes any anchor from a window listener without checking
   // defaultPrevented, which would replace this entry's state with null.
@@ -96,4 +87,13 @@ export function navigate(
   // popstate makes the Router re-route to the URL we just wrote; it neither
   // moves history nor touches the entry's state.
   window.dispatchEvent(new Event("popstate"));
+}
+
+// A primary click with no modifier keys, which the app can route itself.
+// Anything else (a new tab, a download) is left to the browser.
+export function isPlainClick(event: MouseEvent): boolean {
+  return (
+    event.button === 0 &&
+    !(event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+  );
 }

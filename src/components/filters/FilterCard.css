@@ -36,6 +36,11 @@
   text-transform: uppercase;
 }
 
+.filter-card__title--has-tooltip {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
 .filter-card__summary {
   font-size: var(--font-size-small);
   color: var(--color-text-secondary);

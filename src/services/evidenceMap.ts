@@ -2,7 +2,7 @@ import type {
   CommunityFeatures,
   CrossFacetCell,
   EvidenceMapAxes,
-  EvidenceMapAxis,
+  MapAxis,
   LiteralAxisToken,
   EvidenceMapRenderLimits,
 } from "@/types/models";
@@ -13,6 +13,8 @@ import {
   type Concept,
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
+import { heatMapPath } from "@/services/geoHeatMap";
+import { isRouteUrl } from "@/services/navigation";
 import { countryName } from "@/utils/country";
 import { WB_INCOME_GROUPS, wbIncomeGroupName } from "@/utils/wbIncomeGroup";
 import {
@@ -62,7 +64,7 @@ export function offeredLiteralAxes(
   return features.countrySearchable ? [AXIS_COUNTRIES, AXIS_INCOME_GROUPS] : [];
 }
 
-export function parseAxis(token: string): EvidenceMapAxis {
+export function parseAxis(token: string): MapAxis {
   return isLiteralToken(token)
     ? { kind: "literal", token }
     : { kind: "scheme", schemeUri: token };
@@ -156,7 +158,7 @@ export interface ResolvedAxis {
  * Resolve an axis to its title, categories, and per-value label function.
  */
 export function resolveMapAxis(
-  axis: EvidenceMapAxis,
+  axis: MapAxis,
   schemes: readonly ConceptScheme[] | null,
   labels: ReadonlyMap<string, string> | null,
 ): ResolvedAxis {
@@ -524,7 +526,7 @@ export function cellSearchParams(
  */
 export function axisSearchParams(
   base: SearchParams,
-  axis: EvidenceMapAxis,
+  axis: MapAxis,
   category: AxisCategory,
 ): SearchParams {
   return { ...applyAxisFilter(base, axis, category), page: 1 };
@@ -535,7 +537,7 @@ export function axisSearchParams(
 // query); a literal axis adds its value to that axis's filter list.
 function applyAxisFilter(
   base: SearchParams,
-  axis: EvidenceMapAxis,
+  axis: MapAxis,
   category: AxisCategory,
 ): SearchParams {
   if (axis.kind === "literal") {
@@ -636,4 +638,16 @@ export function backToVisualiseUrl(state: unknown): string | null {
     if (typeof url === "string") return url;
   }
   return null;
+}
+
+// The return URL, only if it is one of this community's visualisations, so a
+// stale state entry can't render a bad link.
+export function communityBackToVisualiseUrl(
+  state: unknown,
+  communitySlug: string,
+): string | null {
+  const url = backToVisualiseUrl(state);
+  if (!url) return null;
+  const paths = [`/${communitySlug}/visualise`, heatMapPath(communitySlug)];
+  return paths.some((path) => isRouteUrl(url, path)) ? url : null;
 }

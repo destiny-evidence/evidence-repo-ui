@@ -100,4 +100,33 @@ describe("FilterCard", () => {
     );
     expect(container.querySelector(".filter-card__summary")).toBeNull();
   });
+
+  test("wraps the title in a tooltip when titleTooltip is given", () => {
+    render(
+      <FilterCard title="Document type" titleTooltip="Types of publications.">
+        <div>child</div>
+      </FilterCard>,
+    );
+    const tooltip = screen.getByText("Document type").closest("[data-tooltip]");
+    expect(tooltip?.getAttribute("data-tooltip")).toBe("Types of publications.");
+  });
+
+  test("shows the title tooltip when the header gets keyboard focus", () => {
+    render(
+      <FilterCard title="Document type" titleTooltip="Types of publications.">
+        <div>child</div>
+      </FilterCard>,
+    );
+    fireEvent.focus(screen.getByRole("button", { name: /Document type/ }));
+    expect(screen.getByText("Types of publications.")).toBeInTheDocument();
+  });
+
+  test("renders no tooltip when titleTooltip is omitted", () => {
+    const { container } = render(
+      <FilterCard title="Document type">
+        <div>child</div>
+      </FilterCard>,
+    );
+    expect(container.querySelector(".tooltip")).toBeNull();
+  });
 });

@@ -1369,6 +1369,12 @@ describe("SearchPage", () => {
       expect(screen.getByRole("link", linkQuery)).toHaveAttribute("href", mapUrl);
     });
 
+    test("renders from history.state set by a heat map country", async () => {
+      const mapUrl = "/esea/visualise/geographic?q=heat";
+      await renderWithState({ backToVisualise: mapUrl });
+      expect(screen.getByRole("link", linkQuery)).toHaveAttribute("href", mapUrl);
+    });
+
     test("absent without the state (e.g. a shared search URL)", async () => {
       await renderWithState(null);
       expect(screen.queryByRole("link", linkQuery)).not.toBeInTheDocument();

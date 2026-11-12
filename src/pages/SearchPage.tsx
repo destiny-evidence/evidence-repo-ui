@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { useCommunity } from "@/community/CommunityContext";
 import { useAuth } from "@/auth/AuthContext";
 import type { Community, EvidenceMapAxes } from "@/types/models";
@@ -10,7 +10,7 @@ import {
   sortKey,
   type SortOption,
 } from "@/services/searchParams";
-import { isRouteUrl, navigate } from "@/services/navigation";
+import { navigate } from "@/services/navigation";
 import { track, trackSiteSearch } from "@/analytics/matomo";
 import {
   activeFilters,
@@ -19,8 +19,8 @@ import {
   withoutDefaults,
 } from "@/analytics/searchEvents";
 import {
-  backToVisualiseUrl,
   buildVisualiseUrl,
+  communityBackToVisualiseUrl,
   mapExpansionFromState,
   mapExpansionState,
   offeredLiteralAxes,
@@ -36,6 +36,7 @@ import {
   type ExportFormat,
 } from "@/services/export/exportFormats";
 import { useVocabulary } from "@/hooks/useVocabulary";
+import { useFilterableSchemes } from "@/hooks/useFilterableSchemes";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SortDropdown } from "@/components/search/SortDropdown";
 import { ExportMenu, type ExportScope } from "@/components/search/ExportMenu";
@@ -171,14 +172,12 @@ function SearchPageInner({ community }: { community: Community }) {
   const params = parseSearchParams(search);
   const canonicalQs = toQueryString(params);
 
-  // Set when a map cell deep-linked here (see VisualisePage). Confined to this
-  // community's visualise route so a stale state entry can't render a bad link.
+  // Set when a map cell or heat map country deep-linked here.
   const historyState = useHistoryState();
-  const backUrl = backToVisualiseUrl(historyState);
-  const visualiseBackUrl =
-    backUrl && isRouteUrl(backUrl, `/${community.slug}/visualise`)
-      ? backUrl
-      : null;
+  const visualiseBackUrl = communityBackToVisualiseUrl(
+    historyState,
+    community.slug,
+  );
   // The branches that were open on the map we came from, to hand back to it.
   const backExpansion = mapExpansionFromState(historyState);
 
@@ -250,16 +249,7 @@ function SearchPageInner({ community }: { community: Community }) {
   const vocab = useVocabulary(community.vocabularyUrl);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Excluded schemes are still kept in the vocabulary cache so labels and
-  // definitions resolve on result rows and the record detail page; they're
-  // only hidden from the filter UI (drawer + applied-filter count).
-  const filterableSchemes = useMemo(
-    () =>
-      (vocab.schemes ?? []).filter(
-        (s) => !community.filterExcludedSchemes.includes(s.uri),
-      ),
-    [vocab.schemes, community.filterExcludedSchemes],
-  );
+  const filterableSchemes = useFilterableSchemes(community, vocab.schemes);
 
   // Filters on the search, once per distinct search — keyed and deduped like
   // "Search Performed" above, so they count for the search they actually ran on,

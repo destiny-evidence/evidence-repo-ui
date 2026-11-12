@@ -12,6 +12,7 @@ import {
   axisSearchParams,
   backToVisualiseState,
   backToVisualiseUrl,
+  communityBackToVisualiseUrl,
   buildVisualiseUrl,
   mapExpansionState,
   mapExpansionFromState,
@@ -30,7 +31,7 @@ import {
 } from "@/services/crossFacets";
 import type {
   CrossFacetCell,
-  EvidenceMapAxis,
+  MapAxis,
   EvidenceMapAxes,
 } from "@/types/models";
 import type { SearchParams } from "@/services/searchParams";
@@ -687,11 +688,11 @@ describe("legendTicks", () => {
 });
 
 describe("axisToken / parseAxis", () => {
-  const SCHEME: EvidenceMapAxis = {
+  const SCHEME: MapAxis = {
     kind: "scheme",
     schemeUri: "https://vocab.esea.education/EducationLevelScheme",
   };
-  const COUNTRIES: EvidenceMapAxis = { kind: "literal", token: AXIS_COUNTRIES };
+  const COUNTRIES: MapAxis = { kind: "literal", token: AXIS_COUNTRIES };
 
   test("a scheme axis tokenises to its URI", () => {
     expect(axisToken(SCHEME)).toBe(SCHEME.schemeUri);
@@ -710,7 +711,7 @@ describe("axisToken / parseAxis", () => {
   });
 
   test("round-trips an income groups axis", () => {
-    const incomeGroups: EvidenceMapAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
+    const incomeGroups: MapAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
     expect(axisToken(incomeGroups)).toBe(AXIS_INCOME_GROUPS);
     expect(parseAxis(AXIS_INCOME_GROUPS)).toEqual(incomeGroups);
   });
@@ -865,7 +866,7 @@ describe("axisSearchParams", () => {
   });
 
   test("an income groups axis appends a new, de-duplicated income group", () => {
-    const axis: EvidenceMapAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
+    const axis: MapAxis = { kind: "literal", token: AXIS_INCOME_GROUPS };
     const withLic = { ...base, wbIncomeGroupIds: ["LIC"] };
     expect(
       axisSearchParams(withLic, axis, { key: "LMC", label: "Lower middle income" })
@@ -934,6 +935,17 @@ describe("back-to-visualise history state", () => {
     expect(backToVisualiseUrl({})).toBeNull();
     expect(backToVisualiseUrl({ backToVisualise: 42 })).toBeNull();
     expect(backToVisualiseUrl("just a string")).toBeNull();
+  });
+
+  test("keeps only this community's evidence map and heat map", () => {
+    const back = (url: string) =>
+      communityBackToVisualiseUrl(backToVisualiseState(url), "edu");
+    expect(back("/edu/visualise?row=a&column=b")).toBe("/edu/visualise?row=a&column=b");
+    expect(back("/edu/visualise/geographic")).toBe("/edu/visualise/geographic");
+    expect(back("/edu/visualise/geographic?q=x")).toBe("/edu/visualise/geographic?q=x");
+    expect(back("/other/visualise/geographic?q=x")).toBeNull();
+    expect(back("/edu/visualise-elsewhere")).toBeNull();
+    expect(back("/edu/visualise/geographical")).toBeNull();
   });
 });
 

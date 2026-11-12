@@ -6,6 +6,7 @@ import { SelectionProvider } from "./components/search/SelectionProvider";
 import { AppShell } from "./components/layout/AppShell";
 import { SearchPage } from "./pages/SearchPage";
 import { VisualisePage } from "./pages/VisualisePage";
+import { GeographicHeatMapPage } from "./pages/GeographicHeatMapPage";
 import { RecordDetailPage } from "./pages/RecordDetailPage";
 import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -30,6 +31,7 @@ export function App() {
               <Router onChange={emitUrlChange}>
                 <RecordDetailPage path="/:community/references/:id" />
                 <VisualisePage path="/:community/visualise" />
+                <GeographicHeatMapPage path="/:community/visualise/geographic" />
                 {/* Also served pre-auth by main.tsx; this route is what keeps
                     the shell in place for a signed-in user clicking the footer. */}
                 <PrivacyPage path={PRIVACY_PATH} />

@@ -1,17 +1,26 @@
 import type { ComponentChildren } from "preact";
 import { useId, useRef, useState } from "preact/hooks";
 import { ChevronDownIcon, ChevronRightIcon } from "@/components/common/icons";
+import { Tooltip } from "@/components/common/Tooltip";
 import "./FilterCard.css";
 
 interface FilterCardProps {
   title: string;
+  titleTooltip?: string;
   summary?: string;
   expandOnMount?: boolean;
   children: ComponentChildren;
 }
 
-export function FilterCard({ title, summary, expandOnMount = false, children }: FilterCardProps) {
+export function FilterCard({
+  title,
+  titleTooltip,
+  summary,
+  expandOnMount = false,
+  children,
+}: FilterCardProps) {
   const [expanded, setExpanded] = useState(expandOnMount);
+  const [focused, setFocused] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const showSummary = !!summary;
@@ -36,10 +45,22 @@ export function FilterCard({ title, summary, expandOnMount = false, children }: 
         class="filter-card__header"
         type="button"
         onClick={toggle}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         aria-expanded={expanded}
         aria-controls={panelId}
       >
-        <span class="filter-card__title">{title}</span>
+        <Tooltip text={titleTooltip} open={focused}>
+          <span
+            class={
+              titleTooltip
+                ? "filter-card__title filter-card__title--has-tooltip"
+                : "filter-card__title"
+            }
+          >
+            {title}
+          </span>
+        </Tooltip>
         {showSummary && (
           <span class="filter-card__summary">{summary}</span>
         )}

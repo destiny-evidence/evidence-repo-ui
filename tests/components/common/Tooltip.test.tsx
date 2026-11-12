@@ -63,4 +63,20 @@ describe("Tooltip", () => {
     fireEvent.blur(button);
     expect(screen.queryByText("focus text")).not.toBeInTheDocument();
   });
+
+  test("shows the bubble while open is set, without hover or focus", () => {
+    const { rerender } = render(
+      <Tooltip text="forced" open>
+        <span>x</span>
+      </Tooltip>,
+    );
+    expect(screen.getByText("forced")).toBeInTheDocument();
+
+    rerender(
+      <Tooltip text="forced" open={false}>
+        <span>x</span>
+      </Tooltip>,
+    );
+    expect(screen.queryByText("forced")).not.toBeInTheDocument();
+  });
 });

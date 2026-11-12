@@ -292,6 +292,17 @@ describe("searchReferenceFacets", () => {
     expect(params.has("axes")).toBe(false);
   });
 
+  test("asks for totals only when told to", async () => {
+    mockedGet.mockResolvedValue(emptyResult);
+    await searchReferenceFacets("x", {}, ["countries"]);
+    await searchReferenceFacets("x", {}, ["countries"], { totals: true });
+    const [without, withTotals] = mockedGet.mock.calls.map(
+      ([url]) => new URLSearchParams(url.split("?")[1]),
+    );
+    expect(without.has("totals")).toBe(false);
+    expect(withTotals.get("totals")).toBe("true");
+  });
+
   test("appends the axes pair in order", async () => {
     mockedGet.mockResolvedValue(emptyResult);
     await searchReferenceFacets("x", {}, ["concepts"], {

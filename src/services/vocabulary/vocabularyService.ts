@@ -12,6 +12,7 @@ interface JsonLdGraphEntry {
   "skos:inScheme"?: JsonLdRef | JsonLdRef[];
   "skos:hasTopConcept"?: JsonLdRef | JsonLdRef[];
   "dct:title"?: string;
+  "dct:description"?: string;
   "rdfs:label"?: string;
   [key: string]: unknown;
 }
@@ -30,6 +31,7 @@ export interface Concept {
 export interface ConceptScheme {
   uri: string;
   label: string;
+  description?: string;
   topConcepts: Concept[];
 }
 
@@ -41,6 +43,24 @@ export interface ConceptScheme {
  */
 export function schemeDisplayLabel(label: string): string {
   return label.replace(/\s+Scheme$/i, "");
+}
+
+const SCHEME_DESCRIPTION_MAX_LENGTH = 200;
+
+/**
+ * Display form of a scheme description: long ones are cut at a word boundary
+ * with an ellipsis so the tooltip doesn't cover the list it sits on.
+ */
+export function schemeDisplayDescription(
+  description: string | undefined,
+): string | undefined {
+  if (!description || description.length <= SCHEME_DESCRIPTION_MAX_LENGTH) {
+    return description;
+  }
+  const head = description.slice(0, SCHEME_DESCRIPTION_MAX_LENGTH + 1);
+  const lastSpace = head.lastIndexOf(" ");
+  const cut = lastSpace > 0 ? head.slice(0, lastSpace) : head.slice(0, -1);
+  return `${cut.replace(/[\s.,;:—–-]+$/, "")}…`;
 }
 
 /**
@@ -151,6 +171,7 @@ function extractAllRefIds(
 interface RawScheme {
   uri: string;
   label: string;
+  description?: string;
   topConceptUris: string[];
 }
 
@@ -207,6 +228,7 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
       rawSchemes.push({
         uri: id,
         label,
+        description: entry["dct:description"],
         topConceptUris: extractAllRefIds(entry["skos:hasTopConcept"]).map(
           expand,
         ),
@@ -243,6 +265,7 @@ export function buildVocabularyData(doc: VocabularyJsonLd): VocabularyData {
   const schemes: ConceptScheme[] = rawSchemes.map((raw) => ({
     uri: raw.uri,
     label: raw.label,
+    ...(raw.description ? { description: raw.description } : {}),
     topConcepts: raw.topConceptUris
       .map((uri) => buildConcept(uri, new Set()))
       .filter((c): c is Concept => c !== null)
