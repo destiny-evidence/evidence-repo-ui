@@ -190,16 +190,16 @@ const COMMUNITIES: Community[] = [
     ],
     externalResources: [
       {
-        title: "Report v4 October 2026",
+        title: "Report v5 November 2026",
         description:
           "The methods used and results for this repository version.",
-        href: "https://aliveevidence.org/wp-content/uploads/2026/10/hpv-repo-report-v4.0-2026-10.pdf",
+        href: "https://aliveevidence.org/wp-content/uploads/2026/11/HPV-repo-report-v5.0.pdf",
       },
       {
-        title: "Protocol v4 October 2026",
+        title: "Protocol v5 November 2026",
         description:
           "The scope, eligibility criteria and planned methods for maintaining the repository.",
-        href: "https://aliveevidence.org/wp-content/uploads/2026/10/hpv-repo-protocol-v4.0-2026-10.pdf",
+        href: "https://aliveevidence.org/wp-content/uploads/2026/11/HPV-repo-protocol-v5.0.pdf",
       },
       {
         title: "HPV Taxonomy v2.3",
