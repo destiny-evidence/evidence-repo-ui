@@ -59,7 +59,6 @@ const SCHEMES: ConceptScheme[] = [
 ];
 
 const enabled = makeCommunity({
-  features: { geographicHeatMap: true },
   copy: { countNoun: "investigations" },
 });
 
@@ -110,19 +109,13 @@ afterEach(() => {
 });
 
 describe("GeographicHeatMapPage", () => {
-  test("404s when the flag is off", () => {
-    mockUseCommunity.mockReturnValue(makeCommunity());
-    renderAt("");
-    expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
-    expect(mockUseSearchFacets).not.toHaveBeenCalled();
-  });
-
   test("404s when the community can't search by country", () => {
     mockUseCommunity.mockReturnValue(
-      makeCommunity({ features: { geographicHeatMap: true, countrySearchable: false } }),
+      makeCommunity({ features: { countrySearchable: false } }),
     );
     renderAt("");
     expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+    expect(mockUseSearchFacets).not.toHaveBeenCalled();
   });
 
   test("counts countries for the search in the URL, scoped to references with one", () => {

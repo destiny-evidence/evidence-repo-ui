@@ -37,7 +37,6 @@ function vocabulary(
 }
 
 export const DEFAULT_FEATURES: CommunityFeatures = {
-  evidenceMap: true,
   aiSummaries: false,
   selfSignup: false,
   findingsAndEstimates: true,
@@ -47,7 +46,6 @@ export const DEFAULT_FEATURES: CommunityFeatures = {
   // export) is enabled — see selectionEnabled.
   referenceSelection: true,
   ancestorClosedCodings: false,
-  geographicHeatMap: false,
 };
 
 // Mirrors destiny-repository's current cross-facet bucket ceiling (the API's

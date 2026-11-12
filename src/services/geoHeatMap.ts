@@ -3,9 +3,9 @@ import type { CommunityFeatures } from "@/types/models";
 
 // The map has nothing to show without country facets.
 export function heatMapEnabled(
-  features: Pick<CommunityFeatures, "geographicHeatMap" | "countrySearchable">,
+  features: Pick<CommunityFeatures, "countrySearchable">,
 ): boolean {
-  return features.geographicHeatMap && features.countrySearchable;
+  return features.countrySearchable;
 }
 
 export function heatMapPath(communitySlug: string): string {

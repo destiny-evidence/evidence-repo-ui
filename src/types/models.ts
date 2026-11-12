@@ -1,6 +1,4 @@
 export interface CommunityFeatures {
-  // No UI yet; reserved so the evidence map can ship behind a flag (#103).
-  evidenceMap: boolean;
   // Gates the "Generate AI summary" entry point and its drawer.
   aiSummaries: boolean;
   // Offer a Sign in / Create account choice on entry instead of forcing login.
@@ -19,8 +17,6 @@ export interface CommunityFeatures {
   // so a parent concept stands for its whole subtree. Enables nested
   // evidence-map axes and collapsible concept filters.
   ancestorClosedCodings: boolean;
-  // Unlinked /visualise/geographic route while the geographic heat map is built.
-  geographicHeatMap: boolean;
 }
 
 // Cross-facet axis tokens sent in place of a concept-scheme URI, each described
@@ -110,7 +106,7 @@ export interface Community {
   searchDefaults?: SearchDefaults;
   features: CommunityFeatures;
   // Default evidence-map axes; absent ⇒ the map shows a "not configured" notice
-  // even where features.evidenceMap is on (e.g. before a vocabulary is published).
+  // (e.g. before a vocabulary is published).
   defaultEvidenceMapAxes?: EvidenceMapAxes;
   evidenceMapRenderLimits: EvidenceMapRenderLimits;
   copy: CommunityCopy;
