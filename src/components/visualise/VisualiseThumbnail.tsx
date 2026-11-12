@@ -1,10 +1,7 @@
 import "./VisualiseThumbnail.css";
 
-// [diameter px, shade] for each dot, row by row.
-const DOTS: [number, number][] = [
-  [14, 5], [6, 3], [10, 4], [4, 2], [11, 4],
-  [5, 2], [13, 5], [3, 1], [8, 3], [6, 2],
-];
+// Diameter in px of each dot, row by row.
+const DOTS = [14, 6, 10, 4, 11, 5, 13, 3, 8, 6];
 
 // Natural Earth 1:110m countries (v5.1.2, public domain) merged into one
 // landmass, Equal Earth projection.
@@ -16,11 +13,11 @@ export function EvidenceMapThumbnail() {
   return (
     <span class="visualise-thumbnail" aria-hidden="true">
       <span class="visualise-thumbnail__dots">
-        {DOTS.map(([size, shade], i) => (
+        {DOTS.map((size, i) => (
           <span
             key={i}
             class="visualise-thumbnail__dot"
-            data-shade={shade}
+            data-shade="4"
             style={{ width: `${size}px`, height: `${size}px` }}
           />
         ))}
