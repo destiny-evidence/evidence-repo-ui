@@ -10,7 +10,7 @@ import {
   sortKey,
   type SortOption,
 } from "@/services/searchParams";
-import { isPlainClick, navigate } from "@/services/navigation";
+import { navigate } from "@/services/navigation";
 import { track, trackSiteSearch } from "@/analytics/matomo";
 import {
   activeFilters,
@@ -180,14 +180,6 @@ function SearchPageInner({ community }: { community: Community }) {
   );
   // The branches that were open on the map we came from, to hand back to it.
   const backExpansion = mapExpansionFromState(historyState);
-
-  // Primary clicks must carry history.state through router anchor handling.
-  function handleBackClick(event: MouseEvent) {
-    if (!visualiseBackUrl || !backExpansion || !isPlainClick(event)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    navigate(visualiseBackUrl, { state: mapExpansionState(backExpansion) });
-  }
 
   // Canonicalize once: if URL query string doesn't match the canonical form,
   // silently rewrite via replaceState. Keyed on canonicalQs so it runs per divergence.
@@ -618,7 +610,7 @@ function SearchPageInner({ community }: { community: Community }) {
         <BackLink
           class="search-page__back"
           href={visualiseBackUrl}
-          onClick={handleBackClick}
+          state={backExpansion && mapExpansionState(backExpansion)}
         >
           Back to Visualise
         </BackLink>

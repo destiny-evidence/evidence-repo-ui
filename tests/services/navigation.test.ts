@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
 import {
+  isRouteUrl,
   navigate,
   pathSlug,
   recordDetailPath,
@@ -13,6 +14,19 @@ describe("recordDetailPath", () => {
       "/esea/references/019a4c8f",
     );
   });
+});
+
+describe("isRouteUrl", () => {
+  test.each(["/esea/visualise", "/esea/visualise?row=a"])("accepts %s", (url) => {
+    expect(isRouteUrl(url, "/esea/visualise")).toBe(true);
+  });
+
+  test.each(["/esea/visualise-elsewhere", "/other/visualise", "/esea"])(
+    "rejects %s",
+    (url) => {
+      expect(isRouteUrl(url, "/esea/visualise")).toBe(false);
+    },
+  );
 });
 
 describe("pathSlug", () => {

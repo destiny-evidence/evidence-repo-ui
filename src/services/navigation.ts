@@ -43,6 +43,28 @@ export function stampHistoryState(state: unknown): void {
   history.replaceState(state, "", window.location.href);
 }
 
+/**
+ * Whether `url` is the `path` route, with or without a query string. Not a
+ * plain prefix match, which would also accept siblings like `${path}-elsewhere`.
+ */
+export function isRouteUrl(url: string, path: string): boolean {
+  return url === path || url.startsWith(`${path}?`);
+}
+
+/** Follows a plain link click to `url` with `state` on the new history entry. */
+export function navigateWithState(
+  event: MouseEvent,
+  url: string,
+  state: unknown,
+): void {
+  if (!isPlainClick(event)) return;
+  event.preventDefault();
+  // preact-router routes any anchor from a window listener without checking
+  // defaultPrevented, which would replace this entry's state with null.
+  event.stopPropagation();
+  navigate(url, { state });
+}
+
 export function navigate(
   url: string,
   options: { mode?: "push" | "replace"; state?: unknown } = {},

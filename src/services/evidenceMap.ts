@@ -14,6 +14,7 @@ import {
   type ConceptScheme,
 } from "@/services/vocabulary/vocabularyService";
 import { heatMapPath } from "@/services/geoHeatMap";
+import { isRouteUrl } from "@/services/navigation";
 import { countryName } from "@/utils/country";
 import { WB_INCOME_GROUPS, wbIncomeGroupName } from "@/utils/wbIncomeGroup";
 import {
@@ -640,8 +641,7 @@ export function backToVisualiseUrl(state: unknown): string | null {
 }
 
 // The return URL, only if it is one of this community's visualisations, so a
-// stale state entry can't render a bad link. Routes are matched exactly rather
-// than by prefix, which would also accept a sibling like `/{slug}/visualise-x`.
+// stale state entry can't render a bad link.
 export function communityBackToVisualiseUrl(
   state: unknown,
   communitySlug: string,
@@ -649,7 +649,5 @@ export function communityBackToVisualiseUrl(
   const url = backToVisualiseUrl(state);
   if (!url) return null;
   const paths = [`/${communitySlug}/visualise`, heatMapPath(communitySlug)];
-  return paths.some((path) => url === path || url.startsWith(`${path}?`))
-    ? url
-    : null;
+  return paths.some((path) => isRouteUrl(url, path)) ? url : null;
 }
