@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/preact";
 import { FilterCard } from "@/components/filters/FilterCard";
 
@@ -117,8 +117,22 @@ describe("FilterCard", () => {
         <div>child</div>
       </FilterCard>,
     );
-    fireEvent.focus(screen.getByRole("button", { name: /Document type/ }));
+    const header = screen.getByRole("button", { name: /Document type/ });
+    vi.spyOn(header, "matches").mockReturnValue(true);
+    fireEvent.focus(header);
     expect(screen.getByText("Types of publications.")).toBeInTheDocument();
+  });
+
+  test("keeps the title tooltip closed when the header is focused by a click", () => {
+    render(
+      <FilterCard title="Document type" titleTooltip="Types of publications.">
+        <div>child</div>
+      </FilterCard>,
+    );
+    const header = screen.getByRole("button", { name: /Document type/ });
+    vi.spyOn(header, "matches").mockReturnValue(false);
+    fireEvent.focus(header);
+    expect(screen.queryByText("Types of publications.")).toBeNull();
   });
 
   test("renders no tooltip when titleTooltip is omitted", () => {
