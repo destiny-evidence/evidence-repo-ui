@@ -45,7 +45,8 @@ export function FilterCard({
         class="filter-card__header"
         type="button"
         onClick={toggle}
-        onFocus={() => setFocused(true)}
+        // Keyboard focus only; a click would pin the tooltip open after the pointer leaves.
+        onFocus={(e) => setFocused(e.currentTarget.matches(":focus-visible"))}
         onBlur={() => setFocused(false)}
         aria-expanded={expanded}
         aria-controls={panelId}
