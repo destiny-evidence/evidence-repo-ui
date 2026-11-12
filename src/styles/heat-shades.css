@@ -1,0 +1,7 @@
+/* The heat map's shades, 0 (no references) to 5, for anything drawn in them. */
+[data-shade="0"] { fill: var(--color-heat-0); background: var(--color-heat-0); }
+[data-shade="1"] { fill: var(--color-heat-1); background: var(--color-heat-1); }
+[data-shade="2"] { fill: var(--color-heat-2); background: var(--color-heat-2); }
+[data-shade="3"] { fill: var(--color-heat-3); background: var(--color-heat-3); }
+[data-shade="4"] { fill: var(--color-heat-4); background: var(--color-heat-4); }
+[data-shade="5"] { fill: var(--color-heat-5); background: var(--color-heat-5); }

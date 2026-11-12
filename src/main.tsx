@@ -11,6 +11,7 @@ import { isReservedPath, pathSlug } from "./services/navigation";
 import "./styles/reset.css";
 import "./styles/fonts.css";
 import "./styles/variables.css";
+import "./styles/heat-shades.css";
 import "./styles/checkbox.css";
 import "./styles/auth-gate.css";
 

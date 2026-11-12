@@ -26,10 +26,3 @@
   width: 100%;
   height: 100%;
 }
-
-.visualise-thumbnail [data-shade="0"] { fill: var(--color-heat-0); background: var(--color-heat-0); }
-.visualise-thumbnail [data-shade="1"] { fill: var(--color-heat-1); background: var(--color-heat-1); }
-.visualise-thumbnail [data-shade="2"] { fill: var(--color-heat-2); background: var(--color-heat-2); }
-.visualise-thumbnail [data-shade="3"] { fill: var(--color-heat-3); background: var(--color-heat-3); }
-.visualise-thumbnail [data-shade="4"] { fill: var(--color-heat-4); background: var(--color-heat-4); }
-.visualise-thumbnail [data-shade="5"] { fill: var(--color-heat-5); background: var(--color-heat-5); }
