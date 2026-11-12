@@ -1,3 +1,5 @@
+import type { ComponentChildren } from "preact";
+
 /** Triangle with exclamation mark — used for warnings and retracted state. */
 export function WarningIcon({ size = 16 }: { size?: number }) {
   return (
@@ -170,5 +172,50 @@ export function NewTabLinkIcon({
         stroke-linejoin="round"
       />
     </svg>
+  );
+}
+
+function StrokeIcon({ size, children }: { size: number; children: ComponentChildren }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.75"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      width={size}
+      height={size}
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
+/** Plus — used to zoom in. */
+export function PlusIcon({ size = 16 }: { size?: number }) {
+  return (
+    <StrokeIcon size={size}>
+      <path d="M10 4v12M4 10h12" />
+    </StrokeIcon>
+  );
+}
+
+/** Minus — used to zoom out. */
+export function MinusIcon({ size = 16 }: { size?: number }) {
+  return (
+    <StrokeIcon size={size}>
+      <path d="M4 10h12" />
+    </StrokeIcon>
+  );
+}
+
+/** Four corners of a frame — used to reset a zoomed view to fit. */
+export function ResetIcon({ size = 16 }: { size?: number }) {
+  return (
+    <StrokeIcon size={size}>
+      <path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" />
+    </StrokeIcon>
   );
 }

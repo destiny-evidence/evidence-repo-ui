@@ -1,5 +1,16 @@
 import { describe, test, expect } from "vitest";
-import { bandLabel, formatShare, heatBands, heatShade, placePopup } from "@/services/geoHeatMap";
+import {
+  bandLabel,
+  formatShare,
+  fromFrame,
+  heatBands,
+  heatShade,
+  inFrame,
+  needsDot,
+  NO_ZOOM,
+  placePopup,
+  toFrame,
+} from "@/services/geoHeatMap";
 
 const ranges = (max: number) => heatBands(max).map((b) => [b.min, b.max, b.shade]);
 
@@ -99,5 +110,43 @@ describe("placePopup", () => {
       left: 80,
       side: null,
     });
+  });
+});
+
+describe("toFrame", () => {
+  const viewBox = { x: 0, y: 10, width: 960, height: 440 };
+  const frame = { width: 480, height: 220 };
+
+  test("scales the viewBox to the frame", () => {
+    expect(toFrame({ x: 480, y: 230 }, viewBox, NO_ZOOM, frame)).toEqual({ x: 240, y: 110 });
+  });
+
+  test("applies the zoom before scaling", () => {
+    expect(toFrame({ x: 100, y: 50 }, viewBox, { k: 2, x: -100, y: -20 }, frame)).toEqual({
+      x: 50,
+      y: 35,
+    });
+  });
+
+  test("fromFrame finds the map point under a pixel", () => {
+    const zoom = { k: 2, x: -100, y: -20 };
+    expect(fromFrame({ x: 50, y: 35 }, viewBox, zoom, frame)).toEqual({ x: 100, y: 50 });
+  });
+
+  test("points panned past an edge fall outside the frame", () => {
+    const point = toFrame({ x: 10, y: 230 }, viewBox, { k: 4, x: -1440, y: -660 }, frame);
+    expect(inFrame(point, frame)).toBe(false);
+    expect(inFrame({ x: 480, y: 0 }, frame)).toBe(true);
+  });
+});
+
+describe("needsDot", () => {
+  test("a country without a shape always has one", () => {
+    expect(needsDot(null, 100)).toBe(true);
+  });
+
+  test("a shape gives way once it's 20px across on screen", () => {
+    expect(needsDot(4, 4.9)).toBe(true);
+    expect(needsDot(4, 5)).toBe(false);
   });
 });
