@@ -124,3 +124,46 @@ export function placePopup(
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(value, Math.max(min, max)));
 }
+
+export interface ViewBox extends Point, Size {}
+
+export function parseViewBox(viewBox: string): ViewBox {
+  const [x, y, width, height] = viewBox.split(" ").map(Number);
+  return { x, y, width, height };
+}
+
+// A zoom transform: scale k, then translate by x and y in viewBox units.
+export interface ZoomState {
+  k: number;
+  x: number;
+  y: number;
+}
+
+export const NO_ZOOM: ZoomState = { k: 1, x: 0, y: 0 };
+
+export function toFrame(point: Point, viewBox: ViewBox, zoom: ZoomState, frame: Size): Point {
+  return {
+    x: ((point.x * zoom.k + zoom.x - viewBox.x) / viewBox.width) * frame.width,
+    y: ((point.y * zoom.k + zoom.y - viewBox.y) / viewBox.height) * frame.height,
+  };
+}
+
+// The map point under a pixel in the frame: toFrame's inverse.
+export function fromFrame(point: Point, viewBox: ViewBox, zoom: ZoomState, frame: Size): Point {
+  return {
+    x: ((point.x / frame.width) * viewBox.width + viewBox.x - zoom.x) / zoom.k,
+    y: ((point.y / frame.height) * viewBox.height + viewBox.y - zoom.y) / zoom.k,
+  };
+}
+
+export function inFrame({ x, y }: Point, frame: Size): boolean {
+  return x >= 0 && x <= frame.width && y >= 0 && y <= frame.height;
+}
+
+// Smallest a country's main landmass can be on screen before it needs a dot.
+export const MIN_SHAPE_PX = 20;
+
+// size is the landmass's width in viewBox units, or null for a country with no shape.
+export function needsDot(size: number | null, pxPerUnit: number): boolean {
+  return size === null || size * pxPerUnit < MIN_SHAPE_PX;
+}

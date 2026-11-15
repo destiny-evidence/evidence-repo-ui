@@ -1,4 +1,4 @@
-import type { RefObject } from "preact";
+import type { ComponentChild, RefObject } from "preact";
 import {
   useCallback,
   useEffect,
@@ -9,25 +9,37 @@ import {
   useState,
 } from "preact/hooks";
 import type { WorldGeometry } from "./geo/worldGeometry";
+import type { attachZoom as AttachZoom, MapZoom } from "./geo/mapZoom";
 import {
   bandLabel,
   formatShare,
+  fromFrame,
   heatBands,
   heatShade,
+  inFrame,
+  needsDot,
+  NO_ZOOM,
+  parseViewBox,
   placePopup,
+  toFrame,
   type HeatBand,
   type Point,
+  type ZoomState,
 } from "@/services/geoHeatMap";
 import { countryName } from "@/utils/country";
 import { Spinner } from "@/components/common/Spinner";
+import { MinusIcon, PlusIcon, ResetIcon } from "@/components/common/icons";
 import { useDismiss } from "@/hooks/useDismiss";
 import "@/components/common/Tooltip.css";
 import "./GeographicHeatMap.css";
 
-const DOT_RADIUS = 2.5;
-const DOT_TARGET_RADIUS = 6;
+// In screen pixels, at every frame width and zoom.
+const DOT_RADIUS_PX = 5;
+const DOT_TARGET_RADIUS_PX = 12;
 const POPUP_GAP = 12;
-const TIP_GAP = 8;
+const TIP_GAP = 14;
+const MAX_ZOOM = 32;
+const ZOOM_STEP = 2;
 const ARROW_STEPS: Record<string, number> = {
   ArrowRight: 1,
   ArrowDown: 1,
@@ -35,11 +47,17 @@ const ARROW_STEPS: Record<string, number> = {
   ArrowUp: -1,
 };
 
-// Loaded on first use so d3-geo and the shapes stay out of the main bundle.
-let loaded: WorldGeometry | null = null;
-function loadGeometry(): Promise<WorldGeometry> {
-  return import("./geo/worldGeometry").then(
-    (m) => (loaded = m.loadWorldGeometry()),
+interface MapAssets {
+  geometry: WorldGeometry;
+  attachZoom: typeof AttachZoom;
+}
+
+// Loaded on first use so d3 and the shapes stay out of the main bundle.
+let loaded: MapAssets | null = null;
+function loadAssets(): Promise<MapAssets> {
+  return Promise.all([import("./geo/worldGeometry"), import("./geo/mapZoom")]).then(
+    ([geo, zoom]) =>
+      (loaded = { geometry: geo.loadWorldGeometry(), attachZoom: zoom.attachZoom }),
   );
 }
 
@@ -60,14 +78,14 @@ export function GeographicHeatMap({
   counts,
   ...props
 }: GeographicHeatMapProps) {
-  const [geometry, setGeometry] = useState(loaded);
+  const [assets, setAssets] = useState(loaded);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (geometry) return;
+    if (assets) return;
     let cancelled = false;
-    loadGeometry().then(
-      (g) => !cancelled && setGeometry(g),
+    loadAssets().then(
+      (a) => !cancelled && setAssets(a),
       () => !cancelled && setFailed(true),
     );
     return () => {
@@ -88,7 +106,7 @@ export function GeographicHeatMap({
   }
 
   // Waits for both shapes and counts so the map doesn't draw empty and then fill.
-  if (!geometry || !counts) {
+  if (!assets || !counts) {
     return (
       <figure class="geo-heat-map">
         <div class="geo-heat-map__frame">
@@ -101,7 +119,7 @@ export function GeographicHeatMap({
     );
   }
 
-  return <HeatMap geometry={geometry} counts={counts} {...props} />;
+  return <HeatMap {...assets} counts={counts} {...props} />;
 }
 
 interface Target {
@@ -111,6 +129,7 @@ interface Target {
 
 function HeatMap({
   geometry,
+  attachZoom,
   counts,
   label,
   countNoun,
@@ -118,41 +137,45 @@ function HeatMap({
   viewHref,
   onSelect,
   onView,
-}: GeographicHeatMapProps & {
-  geometry: WorldGeometry;
-  counts: ReadonlyMap<string, number>;
-}) {
+}: GeographicHeatMapProps &
+  MapAssets & {
+    counts: ReadonlyMap<string, number>;
+  }) {
+  const viewBox = useMemo(() => parseViewBox(geometry.viewBox), [geometry]);
+  const [zoom, setZoom] = useState<ZoomState>(NO_ZOOM);
+  const [frameWidth, setFrameWidth] = useState(0);
+  const keyboardHintId = useId();
+  const zoomRef = useRef<MapZoom | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
   const bands = useMemo(
     () => heatBands(Math.max(0, ...counts.values())),
     [counts],
   );
-  // Exclude dots for countries with no references
+  // Dots for countries with references whose shape is too small to see or hit.
+  // Until the frame's measured, take it to be the viewBox's width.
+  const pxPerUnit = (zoom.k * (frameWidth || viewBox.width)) / viewBox.width;
+  // Keyed by code so the layers below rebuild when the set of dots changes, not every zoom frame.
+  const dotKey = geometry.dots
+    .filter((d) => (counts.get(d.countryCode) ?? 0) > 0 && needsDot(d.size, pxPerUnit))
+    .map((d) => d.countryCode)
+    .join(" ");
+  const dotCountryCodes = useMemo(() => new Set(dotKey.split(" ").filter(Boolean)), [dotKey]);
   const dots = useMemo(
-    () => geometry.dots.filter((d) => (counts.get(d.countryCode) ?? 0) > 0),
-    [geometry, counts],
-  );
-  const dotCountryCodes = useMemo(
-    () => new Set(dots.map((d) => d.countryCode)),
-    [dots],
+    () => geometry.dots.filter((d) => dotCountryCodes.has(d.countryCode)),
+    [geometry, dotCountryCodes],
   );
 
   // Countries with references, which are the ones that can be selected.
   const targets = useMemo(() => {
     const byCountryCode = new Map<string, Target>();
     for (const { countryCode, d, anchor } of geometry.countries) {
-      if (
-        countryCode &&
-        !dotCountryCodes.has(countryCode) &&
-        (counts.get(countryCode) ?? 0) > 0
-      ) {
+      if (countryCode && !dotCountryCodes.has(countryCode) && (counts.get(countryCode) ?? 0) > 0) {
         byCountryCode.set(countryCode, { anchor, shape: { d } });
       }
     }
     for (const { countryCode, x, y } of dots) {
-      byCountryCode.set(countryCode, {
-        anchor: { x, y },
-        shape: { cx: x, cy: y },
-      });
+      byCountryCode.set(countryCode, { anchor: { x, y }, shape: { cx: x, cy: y } });
     }
     return byCountryCode;
   }, [geometry, counts, dots, dotCountryCodes]);
@@ -169,6 +192,7 @@ function HeatMap({
   const [selection, setSelection] = useState<{
     countryCode: string;
     counts: ReadonlyMap<string, number>;
+    anchor: Point;
   } | null>(null);
   const selected =
     selection?.counts === counts && targets.has(selection.countryCode)
@@ -182,50 +206,65 @@ function HeatMap({
   const frameRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
-  const [layout, setLayout] = useState(0);
-  const keyboardHintId = useId();
   const countryElement = (countryCode: string) =>
-    frameRef.current?.querySelector<SVGElement>(
-      `[data-country="${countryCode}"]`,
-    ) ?? null;
+    frameRef.current?.querySelector<SVGElement>(`[data-country="${countryCode}"]`) ??
+    null;
+  // Zoomed in, a shape can run past the viewport, and focusing it would scroll the page.
+  const focusCountry = (element: SVGElement | null) =>
+    element?.focus({ preventScroll: true });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const frame = frameRef.current;
-    if (!frame || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => setLayout((n) => n + 1));
+    if (!frame) return;
+    setFrameWidth(frame.clientWidth);
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => setFrameWidth(frame.clientWidth));
     observer.observe(frame);
     return () => observer.disconnect();
   }, []);
 
+  useLayoutEffect(() => {
+    const controls = attachZoom(svgRef.current!, viewBox, MAX_ZOOM, setZoom);
+    zoomRef.current = controls;
+    return () => controls.destroy();
+  }, [attachZoom, viewBox]);
+
+  // Set after render, since a zoom can swap the selected dot for its shape.
   const selectedRef = useRef<SVGElement | null>(null);
-  selectedRef.current = selected ? countryElement(selected) : null;
+  useLayoutEffect(() => {
+    selectedRef.current = selected ? countryElement(selected) : null;
+  });
   const setOpen = useCallback((open: boolean) => {
     if (!open) setSelection(null);
   }, []);
-  useDismiss(selected !== null, setOpen, popupRef, selectedRef, isCountry);
+  useDismiss(selected !== null, setOpen, popupRef, selectedRef, isMapControl);
 
   function close() {
     setSelection(null);
-    selectedRef.current?.focus();
+    focusCountry(selectedRef.current);
   }
 
-  const [vbX, vbY, vbWidth, vbHeight] = geometry.viewBox.split(" ").map(Number);
-  function inFrame({ x, y }: Point, frame: HTMLElement): Point {
-    return {
-      x: ((x - vbX) / vbWidth) * frame.clientWidth,
-      y: ((y - vbY) / vbHeight) * frame.clientHeight,
-    };
+  function frameSize(frame: HTMLElement) {
+    return { width: frame.clientWidth, height: frame.clientHeight };
+  }
+
+  // Where an anchor sits in the frame, or null once it's zoomed or panned out of view.
+  function anchorInFrame(anchor: Point, frame: HTMLElement): Point | null {
+    const point = toFrame(anchor, viewBox, zoom, frameSize(frame));
+    return inFrame(point, frameSize(frame)) ? point : null;
   }
 
   useLayoutEffect(() => {
     const popup = popupRef.current;
     const frame = frameRef.current;
-    const target = selected && targets.get(selected);
-    if (!popup || !frame || !target) return;
+    if (!popup || !frame || !selected || !selection) return;
+    const anchor = anchorInFrame(selection.anchor, frame);
+    popup.style.visibility = anchor ? "" : "hidden";
+    if (!anchor) return;
     const placement = placePopup(
-      inFrame(target.anchor, frame),
+      anchor,
       { width: popup.offsetWidth, height: popup.offsetHeight },
-      { width: frame.clientWidth, height: frame.clientHeight },
+      frameSize(frame),
       POPUP_GAP,
     );
     popup.style.left = `${placement.left}px`;
@@ -233,29 +272,49 @@ function HeatMap({
     popup.style.setProperty("--pointer-top", `${placement.pointerTop}px`);
     if (placement.side) popup.dataset.side = placement.side;
     else delete popup.dataset.side;
-  }, [selected, targets, layout]);
+  }, [selected, selection, frameWidth, zoom]);
 
+  // The tip sits below and right of the mouse, or of a focused country's
+  // anchor, flipping at the frame's edges.
   const tipCountryCode = selected ? null : (hovered ?? focused);
-  useLayoutEffect(() => {
+  const pointerRef = useRef<Point | null>(null);
+  function placeTip() {
     const tip = tipRef.current;
     const frame = frameRef.current;
     const target = tipCountryCode && targets.get(tipCountryCode);
     if (!tip || !frame || !target) return;
-    const { x, y } = inFrame(target.anchor, frame);
+    const at = hovered ? pointerRef.current : anchorInFrame(target.anchor, frame);
+    tip.style.visibility = at ? "" : "hidden";
+    if (!at) return;
+    const { x, y } = at;
     const { offsetWidth: width, offsetHeight: height } = tip;
-    const left = Math.max(0, Math.min(x - width / 2, frame.clientWidth - width));
-    const above = y - TIP_GAP - height;
-    tip.style.left = `${left}px`;
-    tip.style.top = `${above >= 0 ? above : y + TIP_GAP}px`;
-  }, [tipCountryCode, targets, layout]);
+    const right = x + TIP_GAP + width <= frame.clientWidth;
+    const below = y + TIP_GAP + height <= frame.clientHeight;
+    tip.style.left = `${right ? x + TIP_GAP : x - TIP_GAP - width}px`;
+    tip.style.top = `${below ? y + TIP_GAP : y - TIP_GAP - height}px`;
+  }
+  useLayoutEffect(placeTip, [tipCountryCode, hovered, targets, frameWidth, zoom]);
 
-  function select(countryCode: string) {
+  // A click opens the popup where it lands; the keyboard opens it at the
+  // country's anchor, panning there if it's out of view.
+  function select(countryCode: string, clicked?: Point) {
     if (selected === countryCode) {
       setSelection(null);
       return;
     }
-    setSelection({ countryCode, counts });
+    const anchor = clicked ?? targets.get(countryCode)!.anchor;
+    // Instantly, so the popup is visible when it takes focus.
+    if (!clicked) zoomRef.current?.reveal(anchor, false);
+    setSelection({ countryCode, counts, anchor });
     onSelect?.(countryCode);
+  }
+
+  function clickedPoint(e: MouseEvent): Point {
+    const { left, top, width, height } = svgRef.current!.getBoundingClientRect();
+    return fromFrame({ x: e.clientX - left, y: e.clientY - top }, viewBox, zoom, {
+      width,
+      height,
+    });
   }
 
   function handleKeyDown(e: KeyboardEvent) {
@@ -267,7 +326,8 @@ function HeatMap({
       const next = order[order.indexOf(countryCode) + step];
       if (next) {
         setActive(next);
-        countryElement(next)?.focus();
+        focusCountry(countryElement(next));
+        zoomRef.current?.reveal(targets.get(next)!.anchor);
       }
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -284,25 +344,25 @@ function HeatMap({
     setFocused(visible ? countryCode : null);
   }
 
-  // Handlers live on the frame rather than each country, so hovering leaves
-  // this layer alone. Moving focus still redraws it to move the tab stop.
-  const countryLayer = useMemo(() => {
-    const countryLabel = (countryCode: string) => {
-      const count = counts.get(countryCode) ?? 0;
-      return `${countryName(countryCode)}: ${count > 0 ? count.toLocaleString() : "no"} ${countNoun}`;
-    };
-    const shade = (countryCode: string) =>
-      heatShade(counts.get(countryCode) ?? 0, bands);
-    const selectable = (countryCode: string) => ({
-      "data-country": countryCode,
-      role: "button" as const,
-      tabindex: countryCode === tabStop ? 0 : -1,
-      "aria-label": countryLabel(countryCode),
-      "aria-haspopup": "dialog" as const,
-      "aria-expanded": selected === countryCode,
-    });
+  const countryLabel = (countryCode: string) => {
+    const count = counts.get(countryCode) ?? 0;
+    return `${countryName(countryCode)}: ${count > 0 ? count.toLocaleString() : "no"} ${countNoun}`;
+  };
+  const shade = (countryCode: string) => heatShade(counts.get(countryCode) ?? 0, bands);
+  const selectable = (countryCode: string) => ({
+    "data-country": countryCode,
+    role: "button" as const,
+    tabindex: countryCode === tabStop ? 0 : -1,
+    "aria-label": countryLabel(countryCode),
+    "aria-haspopup": "dialog" as const,
+    "aria-expanded": selected === countryCode,
+  });
 
-    return (
+  // Handlers live on the frame rather than each country, so hovering and
+  // zooming leave this layer alone. Moving focus still redraws it to move the
+  // tab stop.
+  const countryLayer = useMemo(
+    () => (
       <g>
         <path
           class="geo-heat-map__outline"
@@ -310,9 +370,7 @@ function HeatMap({
           aria-hidden="true"
         />
         {geometry.countries.map(({ countryCode, d }, i) =>
-          countryCode &&
-          targets.has(countryCode) &&
-          !dotCountryCodes.has(countryCode) ? (
+          countryCode && targets.has(countryCode) && !dotCountryCodes.has(countryCode) ? (
             <path
               key={countryCode}
               class="geo-heat-map__country is-selectable"
@@ -344,60 +402,51 @@ function HeatMap({
           d={geometry.borders}
           aria-hidden="true"
         />
-        {dots.map(({ countryCode, x, y }) => (
-          <circle
-            key={countryCode}
-            class="geo-heat-map__dot"
-            cx={x}
-            cy={y}
-            r={DOT_RADIUS}
-            data-shade={shade(countryCode)}
-            aria-hidden="true"
-          />
-        ))}
-        {/* Wider than the dots themselves so small countries can be hit. */}
-        {dots.map(({ countryCode, x, y }) => (
-          <circle
-            key={countryCode}
-            class="geo-heat-map__dot-target is-selectable"
-            cx={x}
-            cy={y}
-            r={DOT_TARGET_RADIUS}
-            {...selectable(countryCode)}
-          />
-        ))}
       </g>
-    );
-  }, [
-    geometry,
-    counts,
-    countNoun,
-    bands,
-    targets,
-    dots,
-    dotCountryCodes,
-    tabStop,
-    selected,
-  ]);
+    ),
+    [geometry, counts, countNoun, bands, targets, dotCountryCodes, tabStop, selected],
+  );
+
+  const dotLayer = (
+    <g>
+      {dots.map(({ countryCode, x, y }) => (
+        <circle
+          key={countryCode}
+          class="geo-heat-map__dot"
+          cx={x}
+          cy={y}
+          r={DOT_RADIUS_PX / pxPerUnit}
+          data-shade={shade(countryCode)}
+          aria-hidden="true"
+        />
+      ))}
+      {/* Wider than the dots themselves so small countries can be hit. */}
+      {dots.map(({ countryCode, x, y }) => (
+        <circle
+          key={countryCode}
+          class="geo-heat-map__dot-target is-selectable"
+          cx={x}
+          cy={y}
+          r={DOT_TARGET_RADIUS_PX / pxPerUnit}
+          {...selectable(countryCode)}
+        />
+      ))}
+    </g>
+  );
 
   const highlight = (countryCode: string, isSelected: boolean) => {
     const target = targets.get(countryCode);
     if (!target) return null;
     const cls = `geo-heat-map__highlight${isSelected ? " is-selected" : ""}`;
     return "d" in target.shape ? (
-      <path
-        key={countryCode}
-        class={cls}
-        d={target.shape.d}
-        aria-hidden="true"
-      />
+      <path key={countryCode} class={cls} d={target.shape.d} aria-hidden="true" />
     ) : (
       <circle
         key={countryCode}
         class={cls}
         cx={target.shape.cx}
         cy={target.shape.cy}
-        r={DOT_RADIUS}
+        r={DOT_RADIUS_PX / pxPerUnit}
         aria-hidden="true"
       />
     );
@@ -412,23 +461,31 @@ function HeatMap({
         ref={frameRef}
         onClick={(e) => {
           const countryCode = countryOf(e.target);
-          if (countryCode) select(countryCode);
+          // Clicks from assistive tech (detail 0) have no real position.
+          if (countryCode) select(countryCode, e.detail > 0 ? clickedPoint(e) : undefined);
         }}
         onKeyDown={handleKeyDown}
         onMouseOver={(e) => setHovered(countryOf(e.target))}
+        onMouseMove={(e) => {
+          const { left, top } = frameRef.current!.getBoundingClientRect();
+          pointerRef.current = { x: e.clientX - left, y: e.clientY - top };
+          placeTip();
+        }}
         onMouseLeave={() => setHovered(null)}
         onFocusCapture={handleFocus}
         onBlurCapture={() => setFocused(null)}
       >
         <svg
+          ref={svgRef}
           class="geo-heat-map__svg"
           viewBox={geometry.viewBox}
           role="group"
           aria-label={label}
           aria-describedby={order.length > 0 ? keyboardHintId : undefined}
         >
-          <g>
+          <g transform={`translate(${zoom.x} ${zoom.y}) scale(${zoom.k})`}>
             {countryLayer}
+            {dotLayer}
             {[...new Set([hovered, focused])].map(
               (countryCode) =>
                 countryCode &&
@@ -441,6 +498,7 @@ function HeatMap({
         <p id={keyboardHintId} hidden>
           Use the arrow keys to move between countries and Enter to select one.
         </p>
+        <ZoomControls zoom={zoom} controls={zoomRef} />
         {tipCountryCode && targets.has(tipCountryCode) && (
           <div ref={tipRef} class="geo-heat-map__tip" aria-hidden="true">
             {countryName(tipCountryCode)}
@@ -547,6 +605,40 @@ function CountryPopup({
   );
 }
 
+function ZoomControls({
+  zoom,
+  controls,
+}: {
+  zoom: ZoomState;
+  controls: RefObject<MapZoom | null>;
+}) {
+  // aria-disabled rather than disabled, so focus stays put at the limits.
+  const button = (
+    label: string,
+    icon: ComponentChild,
+    off: boolean,
+    act: (zoom: MapZoom) => void,
+  ) => (
+    <button
+      type="button"
+      class="geo-heat-map__zoom-button"
+      aria-label={label}
+      aria-disabled={off}
+      onClick={() => !off && controls.current && act(controls.current)}
+    >
+      {icon}
+    </button>
+  );
+  const zoomed = zoom.k !== 1 || zoom.x !== 0 || zoom.y !== 0;
+  return (
+    <div class="geo-heat-map__zoom" role="group" aria-label="Zoom">
+      {button("Zoom in", <PlusIcon />, zoom.k >= MAX_ZOOM, (z) => z.scaleBy(ZOOM_STEP))}
+      {button("Zoom out", <MinusIcon />, zoom.k <= 1, (z) => z.scaleBy(1 / ZOOM_STEP))}
+      {button("Reset zoom", <ResetIcon />, !zoomed, (z) => z.reset())}
+    </div>
+  );
+}
+
 function HeatMapLegend({
   bands,
   countNoun,
@@ -579,6 +671,10 @@ function countryOf(target: EventTarget | null): string | null {
   return target.closest("[data-country]")?.getAttribute("data-country") ?? null;
 }
 
-function isCountry(target: Node): boolean {
-  return countryOf(target) !== null;
+// Clicks that leave an open popup alone.
+function isMapControl(target: Node): boolean {
+  return (
+    target instanceof Element &&
+    target.closest("[data-country], .geo-heat-map__zoom") !== null
+  );
 }
