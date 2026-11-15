@@ -185,9 +185,8 @@ describe("community registry", () => {
     ]);
   });
 
-  it("defaults features to evidence maps, findings/estimates, the country facet and reference selection", () => {
+  it("defaults features to findings/estimates, the country facet and reference selection", () => {
     expect(mod.DEFAULT_FEATURES).toEqual({
-      evidenceMap: true,
       aiSummaries: false,
       selfSignup: false,
       findingsAndEstimates: true,
@@ -195,7 +194,6 @@ describe("community registry", () => {
       countrySearchable: true,
       referenceSelection: true,
       ancestorClosedCodings: false,
-      geographicHeatMap: false,
     });
   });
 

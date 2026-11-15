@@ -82,7 +82,6 @@ function mappedCommunity(
   overrides: Parameters<typeof makeCommunity>[0] = {},
 ) {
   return makeCommunity({
-    features: { evidenceMap: true },
     defaultEvidenceMapAxes: AXES,
     ...overrides,
   });
@@ -224,7 +223,7 @@ function nestedVocabulary() {
 function nestedAxesCommunity() {
   mockUseCommunity.mockReturnValue(
     mappedCommunity({
-      features: { evidenceMap: true, ancestorClosedCodings: true },
+      features: { ancestorClosedCodings: true },
     }),
   );
   nestedVocabulary();
@@ -270,22 +269,14 @@ beforeEach(() => {
 });
 
 describe("VisualisePage gating", () => {
-  test("renders not found when the evidence-map flag is off", () => {
-    mockUseCommunity.mockReturnValue(makeCommunity({ features: { evidenceMap: false } }));
-    render(<VisualisePage />);
-    expect(screen.getByText("Page not found")).toBeInTheDocument();
-  });
-
   test("renders not found when there is no community", () => {
     mockUseCommunity.mockReturnValue(null);
     render(<VisualisePage />);
     expect(screen.getByText("Page not found")).toBeInTheDocument();
   });
 
-  test("shows a notice when the flag is on but no axes are configured", () => {
-    mockUseCommunity.mockReturnValue(
-      makeCommunity({ features: { evidenceMap: true } }),
-    );
+  test("shows a notice when no axes are configured", () => {
+    mockUseCommunity.mockReturnValue(makeCommunity());
     render(<VisualisePage />);
     expect(screen.getByRole("heading", { name: /evidence map/i })).toBeInTheDocument();
     expect(screen.getByText(/isn’t configured/i)).toBeInTheDocument();
@@ -1226,7 +1217,7 @@ describe("VisualisePage nested-axis state", () => {
   test("guards an oversized expansion and Collapse all recovers locally", () => {
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, ancestorClosedCodings: true },
+        features: { ancestorClosedCodings: true },
         evidenceMapRenderLimits: { maxCells: 4 },
       }),
     );
@@ -1265,7 +1256,7 @@ describe("VisualisePage nested-axis state", () => {
   test("the coverage note gives way to the oversized-map error", () => {
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, ancestorClosedCodings: true },
+        features: { ancestorClosedCodings: true },
         evidenceMapRenderLimits: { maxCells: 4 },
       }),
     );
@@ -1290,7 +1281,7 @@ describe("VisualisePage nested-axis state", () => {
   test("filter results cannot change the active oversized layout guard", () => {
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, ancestorClosedCodings: true },
+        features: { ancestorClosedCodings: true },
         evidenceMapRenderLimits: { maxCells: 3 },
       }),
     );
@@ -1327,7 +1318,7 @@ describe("VisualisePage nested-axis state", () => {
     );
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, ancestorClosedCodings: true },
+        features: { ancestorClosedCodings: true },
         evidenceMapRenderLimits: { maxCells: 1 },
       }),
     );
@@ -1393,7 +1384,7 @@ describe("VisualisePage nested-axis state", () => {
     });
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, ancestorClosedCodings: true },
+        features: { ancestorClosedCodings: true },
         evidenceMapRenderLimits: { maxCells: 3 },
       }),
     );
@@ -1416,7 +1407,7 @@ describe("VisualisePage nested-axis state", () => {
   test("opens only the applied axis scheme cards, including during an axis request", () => {
     mockUseCommunity.mockReturnValue(
       mappedCommunity({
-        features: { evidenceMap: true, ancestorClosedCodings: true },
+        features: { ancestorClosedCodings: true },
       }),
     );
     mockUseCrossFacets.mockReturnValue(nestedResultState());

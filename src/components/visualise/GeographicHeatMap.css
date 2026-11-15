@@ -78,13 +78,6 @@
   vector-effect: non-scaling-stroke;
 }
 
-.geo-heat-map [data-shade="0"] { fill: var(--color-heat-0); background: var(--color-heat-0); }
-.geo-heat-map [data-shade="1"] { fill: var(--color-heat-1); background: var(--color-heat-1); }
-.geo-heat-map [data-shade="2"] { fill: var(--color-heat-2); background: var(--color-heat-2); }
-.geo-heat-map [data-shade="3"] { fill: var(--color-heat-3); background: var(--color-heat-3); }
-.geo-heat-map [data-shade="4"] { fill: var(--color-heat-4); background: var(--color-heat-4); }
-.geo-heat-map [data-shade="5"] { fill: var(--color-heat-5); background: var(--color-heat-5); }
-
 .geo-heat-map__legend {
   display: flex;
   flex-wrap: wrap;

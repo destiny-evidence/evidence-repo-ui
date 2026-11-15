@@ -109,9 +109,7 @@ function axisPairTitle(row: ResolvedAxis, column: ResolvedAxis): string {
 
 export function VisualisePage(_props: VisualisePageProps) {
   const community = useCommunity();
-  // Gate the route as well as the tab: a community without the flag should 404
-  // here rather than see a feature it doesn't have.
-  if (!community || !community.features.evidenceMap) return <NotFoundPage />;
+  if (!community) return <NotFoundPage />;
   return <VisualisePageInner community={community} />;
 }
 
