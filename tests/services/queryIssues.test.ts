@@ -46,6 +46,7 @@ describe("findQueryIssue", () => {
     ["\"reading recovery”", MIXED_QUOTES],
     ["“reading recovery\"", MIXED_QUOTES],
     ["\"reading recovery", QUOTE_UNCLOSED],
+    ["“reading recovery” \"x", QUOTE_UNCLOSED],
     ["phonics AND", endsWith("AND")],
     ["NOT", endsWith("NOT")],
     ["AND phonics", startsWith("AND")],

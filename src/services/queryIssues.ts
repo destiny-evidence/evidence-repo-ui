@@ -130,7 +130,14 @@ export function findQueryIssue(q: string): QueryIssue | null {
   const bracket = bracketIssue(masked);
   if (bracket) return bracket;
 
-  if (masked.includes('"')) return /[“”]/.test(masked) ? MIXED_QUOTES : QUOTE_UNCLOSED;
+  // Masking leaves only the unclosed straight quote. A curly mark mixes with it
+  // only by opening the phrase before it or closing it after.
+  const quote = masked.indexOf('"');
+  if (quote !== -1) {
+    const before = masked.slice(0, quote);
+    const curlyOpens = before.lastIndexOf("“") > before.lastIndexOf("”");
+    return curlyOpens || masked.includes("”", quote) ? MIXED_QUOTES : QUOTE_UNCLOSED;
+  }
 
   const tokens = masked.match(TOKEN) ?? [];
   const last = tokens.at(-1);
