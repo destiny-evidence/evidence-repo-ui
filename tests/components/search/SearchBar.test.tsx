@@ -14,6 +14,7 @@ function renderBar(overrides: Partial<Parameters<typeof SearchBar>[0]> = {}) {
     draftQ: "",
     onDraftQChange: vi.fn(),
     onSubmit: vi.fn(),
+    issue: null,
     ...overrides,
   };
   render(<SearchBar {...props} />);
@@ -80,5 +81,33 @@ describe("SearchBar", () => {
     expect(link.getAttribute("href")).toContain("docs.google.com");
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+  });
+
+  describe("query issue note", () => {
+    const issue = { title: "Title text", body: "Body text" };
+
+    test("an issue shows the note and marks the field invalid, described by hint and note", () => {
+      renderBar({ issue });
+      const field = screen.getByRole("searchbox");
+      expect(field).toBeInvalid();
+      const [hintId, noteId] = field.getAttribute("aria-describedby")!.split(" ");
+      expect(document.getElementById(hintId)).toHaveTextContent(/Boolean operators/);
+      const note = document.getElementById(noteId)!;
+      expect(note).toHaveTextContent("Title text");
+      expect(note).toHaveTextContent("Body text");
+      // The note changes on every keystroke; announcing it would chatter.
+      expect(note.closest("[aria-live], [role=alert], [role=status]")).toBeNull();
+    });
+
+    test("an issue never stops a search", () => {
+      const props = renderBar({ issue });
+      fireEvent.click(screen.getByRole("button", { name: /search/i }));
+      expect(props.onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    test("without an issue the field is valid", () => {
+      renderBar();
+      expect(screen.getByRole("searchbox")).not.toBeInvalid();
+    });
   });
 });

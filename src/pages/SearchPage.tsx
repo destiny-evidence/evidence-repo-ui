@@ -652,6 +652,7 @@ function SearchPageInner({ community }: { community: Community }) {
           onSubmit={handleSubmit}
           placeholder={community.copy.searchPlaceholder}
           disabled={results.loading && results.results !== null}
+          issue={null}
         />
       </section>
 

@@ -64,16 +64,19 @@
   /* ── Colors: semantic ── */
   --color-danger: #dc3545;
   --color-danger-hover: #bb2d3b;
+  --color-danger-light: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-danger-text: #991b1b;
   --color-success: #198754;
   --color-warning: #ffc107;
   --color-warning-light: #fef3c7;
   --color-warning-text: #7a5a00;
   --color-estimate-neg: #6b2020;
 
-  /* ── Colors: retracted state ── (unchanged — landed in PR #18) */
-  --color-retracted-bg: #fef2f2;
-  --color-retracted-border: #fecaca;
-  --color-retracted-text: #991b1b;
+  /* ── Colors: retracted state ── */
+  --color-retracted-bg: var(--color-danger-light);
+  --color-retracted-border: var(--color-danger-border);
+  --color-retracted-text: var(--color-danger-text);
 
   /* ── Colors: geographic heat map, empty then lightest to darkest ── */
   --color-heat-0: color-mix(in oklab, var(--color-accent) 7%, white);

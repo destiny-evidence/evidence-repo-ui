@@ -28,6 +28,14 @@
   color: var(--color-text-tertiary);
 }
 
+.search-bar:has(input[aria-invalid="true"]) {
+  border-color: var(--color-danger);
+}
+
+.search-bar:has(input[aria-invalid="true"]) .search-icon {
+  color: var(--color-danger);
+}
+
 .search-bar input {
   flex: 1;
   min-width: 0;
@@ -87,3 +95,33 @@
   visibility: visible;
 }
 
+/* Always shown, unlike the hint above it. */
+.search-bar-issue {
+  display: flex;
+  gap: 10px;
+  margin-top: var(--spacing-sm);
+  padding: 12px 14px;
+  background: var(--color-danger-light);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-md);
+  text-align: left;
+  color: var(--color-danger);
+}
+
+.search-bar-issue svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.search-bar-issue__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-danger-text);
+}
+
+.search-bar-issue__body {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
