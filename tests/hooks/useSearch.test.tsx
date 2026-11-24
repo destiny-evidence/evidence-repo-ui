@@ -110,6 +110,25 @@ describe("useSearch", () => {
     await waitFor(() => expect(result.current.results?.total.count).toBe(20));
   });
 
+  // The page judges the query note from loading; the render before the fetch
+  // effect must not read as the previous search having settled.
+  test("reports loading from the first render with new params", async () => {
+    mockSearch.mockResolvedValueOnce(makeResult(10)).mockReturnValue(new Promise(() => {}));
+    const renders: { q: string; loading: boolean }[] = [];
+    const { result, rerender } = renderHook(
+      ({ p }) => {
+        const r = useSearch(p);
+        renders.push({ q: p.q, loading: r.loading });
+        return r;
+      },
+      { wrapper: withCommunityPath("/esea"), initialProps: { p: baseParams } },
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    rerender({ p: makeSearchParams({ q: "reading" }) });
+    expect(renders.find((r) => r.q === "reading")?.loading).toBe(true);
+  });
+
   // Guards the "Search Performed" analytics: resultsParams must never run ahead
   // of results, or a new search would be tracked with the previous count.
   test("resultsParams stays paired with the results currently shown", async () => {

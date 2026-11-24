@@ -11,6 +11,8 @@ import {
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
+import { findQueryIssue, UNREADABLE_QUERY } from "@/services/queryIssues";
+import { ApiError } from "@/api/client";
 import { track, trackSiteSearch } from "@/analytics/matomo";
 import {
   activeFilters,
@@ -201,6 +203,13 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const corpus = useCorpusTotal();
   const results = useSearch(params);
+  const rejected = results.error instanceof ApiError && results.error.status === 400;
+  // Once the backend accepts the sent query, its verdict wins over the checks;
+  // a rejection no check explains gets the generic note.
+  const settled = draft.draftQ.trim() === params.q && !results.loading;
+  const queryIssue = settled && results.error === null
+    ? null
+    : findQueryIssue(draft.draftQ) ?? (settled && rejected ? UNREADABLE_QUERY : null);
   const exportJob = useSearchExport();
   const ai = useAiSummaryContext();
 
@@ -652,14 +661,14 @@ function SearchPageInner({ community }: { community: Community }) {
           onSubmit={handleSubmit}
           placeholder={community.copy.searchPlaceholder}
           disabled={results.loading && results.results !== null}
-          issue={null}
+          issue={queryIssue}
         />
       </section>
 
       {(showSummary || results.results) && (
         <div class="search-results__pagerow">
           <span class="search-results__count" aria-live="polite">
-            {showSummary
+            {showSummary && !rejected
               ? results.error
                 ? (
                   <>
@@ -781,6 +790,13 @@ function SearchPageInner({ community }: { community: Community }) {
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} class="search-results__skeleton-row" />
               ))}
+            </div>
+          )}
+
+          {rejected && (
+            <div class="search-results__rejected" role="alert">
+              <p class="search-results__rejected-title">The query couldn’t be run</p>
+              <p class="search-results__rejected-body">Fix the issue above, then search again.</p>
             </div>
           )}
 

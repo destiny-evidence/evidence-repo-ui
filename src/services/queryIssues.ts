@@ -3,6 +3,12 @@ export interface QueryIssue {
   body: string;
 }
 
+/** For a query the search backend rejected that no check explains. */
+export const UNREADABLE_QUERY: QueryIssue = {
+  title: "This query couldn’t be read",
+  body: "Check the operators, brackets and quotation marks, then search again.",
+};
+
 const BRACKET_NEVER_CLOSED: QueryIssue = {
   title: "A bracket is never closed",
   body: "Every ( needs a matching ). Brackets group terms so the operators apply in the order you intend.",

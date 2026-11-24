@@ -11,6 +11,7 @@ import { AuthProvider } from "@/auth/AuthContext";
 import { AiSummaryProvider } from "@/components/ai-summary/AiSummaryProvider";
 import { SelectionProvider } from "@/components/search/SelectionProvider";
 import type { SearchResult } from "@/types/models";
+import { ApiError } from "@/api/client";
 import {
   OUTCOME_SCHEME_FIXTURE,
   URI_LEARNING,
@@ -625,6 +626,83 @@ describe("SearchPage", () => {
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(pushSpy).not.toHaveBeenCalled();
     pushSpy.mockRestore();
+  });
+
+  describe("query issues", () => {
+    const rejection = () => new ApiError(400, "Bad Query String");
+
+    test("a rejected query shows its note and the couldn't-be-run panel", async () => {
+      history.replaceState(null, "", "/esea?q=phonics%20AND");
+      mockBoth({ results: rejection() });
+      renderSearchPage();
+
+      const panel = await screen.findByRole("alert");
+      expect(panel).toHaveTextContent("The query couldn’t be run");
+      expect(panel).toHaveTextContent("Fix the issue above, then search again.");
+      expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
+      expect(screen.getByRole("searchbox")).toBeInvalid();
+      expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
+    });
+
+    test("a rejection no check explains shows the generic note", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: rejection() });
+      renderSearchPage();
+
+      expect(await screen.findByText("This query couldn’t be read")).toBeInTheDocument();
+    });
+
+    test("a server error offers Try again and keeps the live note, with no panel", async () => {
+      history.replaceState(null, "", "/esea?q=phonics%20AND");
+      mockBoth({ results: new ApiError(500, "boom") });
+      renderSearchPage();
+
+      expect(await screen.findByRole("button", { name: /try again/i })).toBeInTheDocument();
+      expect(screen.queryByText("The query couldn’t be run")).not.toBeInTheDocument();
+      expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
+    });
+
+    test("the live note stays while the search runs", () => {
+      history.replaceState(null, "", "/esea?q=phonics%20AND");
+      mockSearch.mockReturnValue(new Promise(() => {}));
+      renderSearchPage();
+
+      expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
+    });
+
+    test("an accepted query shows no note, even one a check flags", async () => {
+      history.replaceState(null, "", "/esea?q=phonics%20AND");
+      mockBoth({ results: makeResult(1, ["r1"]) });
+      renderSearchPage();
+
+      await screen.findByText("Title r1");
+      expect(screen.queryByText("The query ends with AND")).not.toBeInTheDocument();
+    });
+
+    test("after a rejection the note follows the draft until the next search clears it", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockSearch.mockImplementation((q) =>
+        q === "phonics" ? Promise.reject(rejection()) : Promise.resolve(makeResult(1, ["r1"])),
+      );
+      renderSearchPage();
+      await screen.findByRole("alert");
+      const field = screen.getByRole("searchbox");
+
+      fireEvent.input(field, { target: { value: "(phonics" } });
+      expect(screen.getByText("A bracket is never closed")).toBeInTheDocument();
+      expect(screen.getByRole("alert")).toHaveTextContent("The query couldn’t be run");
+
+      // Trimmed on submit, so this is still the rejected query.
+      fireEvent.input(field, { target: { value: "phonics " } });
+      expect(screen.getByText("This query couldn’t be read")).toBeInTheDocument();
+
+      fireEvent.input(field, { target: { value: "reading" } });
+      expect(field).not.toBeInvalid();
+      fireEvent.click(screen.getByRole("button", { name: /search/i }));
+      await screen.findByText("Title r1");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(field).not.toBeInvalid();
+    });
   });
 
   test("renders summary line when only facets are set (no q, no years)", async () => {
