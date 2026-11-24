@@ -649,7 +649,7 @@ describe("SearchPage", () => {
       mockBoth({ results: rejection() });
       renderSearchPage();
 
-      expect(await screen.findByText("This query couldn’t be read")).toBeInTheDocument();
+      expect(await screen.findByText("Part of this query can’t be searched")).toBeInTheDocument();
     });
 
     test("a server error offers Try again and keeps the live note, with no panel", async () => {
@@ -694,7 +694,7 @@ describe("SearchPage", () => {
 
       // Trimmed on submit, so this is still the rejected query.
       fireEvent.input(field, { target: { value: "phonics " } });
-      expect(screen.getByText("This query couldn’t be read")).toBeInTheDocument();
+      expect(screen.getByText("Part of this query can’t be searched")).toBeInTheDocument();
 
       fireEvent.input(field, { target: { value: "reading" } });
       expect(field).not.toBeInvalid();

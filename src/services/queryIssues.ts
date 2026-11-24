@@ -5,7 +5,7 @@ export interface QueryIssue {
 
 /** For a query the search backend rejected that no check explains. */
 export const UNREADABLE_QUERY: QueryIssue = {
-  title: "This query couldn’t be read",
+  title: "Part of this query can’t be searched",
   body: "Check the operators, brackets and quotation marks, then search again.",
 };
 
