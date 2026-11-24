@@ -19,6 +19,34 @@ const QUOTE_UNCLOSED: QueryIssue = {
   title: "A quotation mark is unclosed",
   body: "Exact phrases need quotes at both ends.",
 };
+const endsWithOperator = (op: string): QueryIssue => ({
+  title: `The query ends with ${op}`,
+  body: `Every operator needs a term after it. Add a term after ${op}, or drop it.`,
+});
+const startsWithOperator = (op: string): QueryIssue => ({
+  title: `The query starts with ${op}`,
+  body: `${op} needs a term on both sides. NOT is the only operator that can open a query.`,
+});
+const adjacentOperators = (a: string, b: string): QueryIssue => ({
+  title: "Two operators sit next to each other",
+  body: `“${a} ${b}” has no term between them. Keep one, or put a term in the middle.`,
+});
+const COLON: QueryIssue = {
+  title: "A colon can’t be searched here",
+  body: "Remove the colon or put the whole title in quotes.",
+};
+const slashInTerm = (term: string): QueryIssue => ({
+  title: `${term} can’t be searched with a slash in it`,
+  body: "Put the term in quotes so it is read as one phrase.",
+});
+
+// The parser treats lowercase and/or/not as ordinary words.
+const joinsTerms = (token: string | undefined): token is string =>
+  token === "AND" || token === "OR";
+const isOperator = (token: string | undefined): token is string =>
+  joinsTerms(token) || token === "NOT";
+
+const TERM_BOUNDARY = /[\s()]/;
 
 // Literal text becomes filler letters: it still reads as one term, but none
 // of its characters count as syntax.
@@ -68,5 +96,31 @@ export function findQueryIssue(q: string): QueryIssue | null {
   if (strayClose) return BRACKET_NOTHING_TO_CLOSE;
 
   if (masked.includes('"')) return /[“”]/.test(masked) ? MIXED_QUOTES : QUOTE_UNCLOSED;
+
+  const tokens = masked.match(/[()]|[^\s()]+/g) ?? [];
+  const last = tokens.at(-1);
+  if (isOperator(last)) return endsWithOperator(last);
+  const first = tokens[0];
+  if (joinsTerms(first)) return startsWithOperator(first);
+  for (let t = 1; t < tokens.length; t++) {
+    const a = tokens[t - 1];
+    const b = tokens[t];
+    if (isOperator(a) && joinsTerms(b)) return adjacentOperators(a, b);
+  }
+
+  for (let k = masked.indexOf(":"); k !== -1; k = masked.indexOf(":", k + 1)) {
+    const wordBefore = masked.slice(0, k).trimEnd().split(TERM_BOUNDARY).pop();
+    if (!wordBefore || isOperator(wordBefore) || !masked.slice(k + 1).trim()) return COLON;
+  }
+
+  // Masking leaves only an unclosed slash, at its index in q.
+  const slash = masked.indexOf("/");
+  if (slash !== -1) {
+    const before = masked.slice(0, slash).split(TERM_BOUNDARY).pop() ?? "";
+    const after = masked.slice(slash + 1).split(TERM_BOUNDARY)[0];
+    if (/[\p{L}\p{N}]$/u.test(before) || /^[\p{L}\p{N}]/u.test(after)) {
+      return slashInTerm(q.slice(slash - before.length, slash + 1 + after.length));
+    }
+  }
   return null;
 }

@@ -17,6 +17,26 @@ const QUOTE_UNCLOSED = {
   title: "A quotation mark is unclosed",
   body: "Exact phrases need quotes at both ends.",
 };
+const endsWith = (op: string) => ({
+  title: `The query ends with ${op}`,
+  body: `Every operator needs a term after it. Add a term after ${op}, or drop it.`,
+});
+const startsWith = (op: string) => ({
+  title: `The query starts with ${op}`,
+  body: `${op} needs a term on both sides. NOT is the only operator that can open a query.`,
+});
+const adjacent = (a: string, b: string) => ({
+  title: "Two operators sit next to each other",
+  body: `“${a} ${b}” has no term between them. Keep one, or put a term in the middle.`,
+});
+const COLON = {
+  title: "A colon can’t be searched here",
+  body: "Remove the colon or put the whole title in quotes.",
+};
+const slashIn = (term: string) => ({
+  title: `${term} can’t be searched with a slash in it`,
+  body: "Put the term in quotes so it is read as one phrase.",
+});
 
 describe("findQueryIssue", () => {
   test.each([
@@ -26,6 +46,23 @@ describe("findQueryIssue", () => {
     ["\"reading recovery”", MIXED_QUOTES],
     ["“reading recovery\"", MIXED_QUOTES],
     ["\"reading recovery", QUOTE_UNCLOSED],
+    ["phonics AND", endsWith("AND")],
+    ["NOT", endsWith("NOT")],
+    ["AND phonics", startsWith("AND")],
+    ["OR phonics", startsWith("OR")],
+    ["phonics AND OR reading", adjacent("AND", "OR")],
+    ["phonics NOT AND reading", adjacent("NOT", "AND")],
+    ["phonics (AND OR reading)", adjacent("AND", "OR")],
+    ["Survey (EGRA): Final", COLON],
+    ["title: ", COLON],
+    ["phonics AND :reading", COLON],
+    ["title:phonics (EGRA): Final", COLON],
+    ["HIV/AIDS", slashIn("HIV/AIDS")],
+    ["(HIV/AIDS)", slashIn("HIV/AIDS")],
+    ["𝟙/", slashIn("𝟙/")],
+    ["/𝟙", slashIn("/𝟙")],
+    ["\"a b\"/c", slashIn("\"a b\"/c")],
+    ["\"phonics AND", QUOTE_UNCLOSED],
   ])("%j gives its note", (q, expected) => {
     expect(findQueryIssue(q)).toEqual(expected);
   });
@@ -40,14 +77,24 @@ describe("findQueryIssue", () => {
   test.each([
     "",
     "\"a (b\"",
-    "\"a ) b\"",
     "\"say \\\"hi\\\" now\"",
     "\\(phonics",
-    "phonics\\)",
     "“curly only”",
+    "phonics AND NOT reading",
+    "phonics and",
+    "\"exact phrase\" OR phonics",
+    "word : subtitle",
+    "HIV/AIDS AND TB/HIV",
   ])("%j gives no note", (q) => {
     expect(findQueryIssue(q)).toBeNull();
   });
+
+  test.each(["NOT NOT phonics", "phonics / reading"])(
+    "rejected %j is left to the generic message",
+    (q) => {
+      expect(findQueryIssue(q)).toBeNull();
+    },
+  );
 
   test("unclosed quote's tail is still checked", () => {
     expect(findQueryIssue("(phonics \"reading)")).toEqual(QUOTE_UNCLOSED);
