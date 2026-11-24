@@ -58,13 +58,42 @@ const TOKEN = new RegExp(`[()]|[^${SPACE}()]+`, "g");
 const TERM_BOUNDARY = new RegExp(`[${SPACE}()]`);
 const TRAILING_SPACE = new RegExp(`[${SPACE}]+$`);
 const SPACE_ONLY = new RegExp(`^[${SPACE}]*$`);
+const ENDS_IN_WORD = /[\p{L}\p{N}]$/u;
 
 // Literal text becomes filler letters: it still reads as one term, but none
 // of its characters count as syntax.
 const FILLER = "x";
 
-function mask(q: string): string {
+function bracketIssue(masked: string): QueryIssue | null {
+  let depth = 0;
+  let strayClose = false;
+  for (const c of masked) {
+    if (c === "(") depth++;
+    else if (c === ")") {
+      if (depth === 0) strayClose = true;
+      else depth--;
+    }
+  }
+  if (depth > 0) return BRACKET_NEVER_CLOSED;
+  return strayClose ? BRACKET_NOTHING_TO_CLOSE : null;
+}
+
+// Lucene rejects a regex whose brackets or straight quotes don't pair.
+function breaksRegex(body: string): boolean {
+  const { masked } = mask(body);
+  return bracketIssue(masked) !== null || masked.includes('"');
+}
+
+// The run of q around a slash, bounded where text has a space or bracket.
+function termAround(text: string, q: string, slash: number): string {
+  const before = text.slice(0, slash).split(TERM_BOUNDARY).pop() ?? "";
+  const after = text.slice(slash + 1).split(TERM_BOUNDARY)[0];
+  return q.slice(slash - before.length, slash + 1 + after.length);
+}
+
+function mask(q: string): { masked: string; brokenRegexSlash: number } {
   let masked = "";
+  let brokenRegexSlash = -1;
   let i = 0;
   while (i < q.length) {
     const c = q[i];
@@ -79,6 +108,8 @@ function mask(q: string): string {
       while (close < q.length && q[close] !== c) close += q[close] === "\\" ? 2 : 1;
       // An unclosed delimiter masks nothing, so the text after it is still checked.
       if (close < q.length) {
+        // Opened mid-word, the user meant a term like HIV/AIDS, not a regex.
+        if (c === "/" && ENDS_IN_WORD.test(q.slice(0, i)) && breaksRegex(q.slice(i + 1, close))) brokenRegexSlash = i;
         masked += FILLER.repeat(close - i + 1);
         i = close + 1;
         continue;
@@ -87,24 +118,17 @@ function mask(q: string): string {
     masked += c;
     i += 1;
   }
-  return masked;
+  return { masked, brokenRegexSlash };
 }
 
 /** The first problem in q that the search parser rejects, in check order, or null. */
 export function findQueryIssue(q: string): QueryIssue | null {
-  const masked = mask(q);
+  const { masked, brokenRegexSlash } = mask(q);
+  // Ahead of the bracket and quote checks: the regex hid the user's pairs from them.
+  if (brokenRegexSlash !== -1) return slashInTerm(termAround(q, q, brokenRegexSlash));
 
-  let depth = 0;
-  let strayClose = false;
-  for (const c of masked) {
-    if (c === "(") depth++;
-    else if (c === ")") {
-      if (depth === 0) strayClose = true;
-      else depth--;
-    }
-  }
-  if (depth > 0) return BRACKET_NEVER_CLOSED;
-  if (strayClose) return BRACKET_NOTHING_TO_CLOSE;
+  const bracket = bracketIssue(masked);
+  if (bracket) return bracket;
 
   if (masked.includes('"')) return /[“”]/.test(masked) ? MIXED_QUOTES : QUOTE_UNCLOSED;
 
@@ -126,13 +150,9 @@ export function findQueryIssue(q: string): QueryIssue | null {
 
   // Masking leaves only an unclosed slash, at its index in q.
   const slash = masked.indexOf("/");
-  if (slash !== -1) {
-    const before = masked.slice(0, slash).split(TERM_BOUNDARY).pop() ?? "";
-    const after = masked.slice(slash + 1).split(TERM_BOUNDARY)[0];
-    // Read q, not the mask: an escaped character beside the slash is not a letter.
-    if (/[\p{L}\p{N}]$/u.test(q.slice(0, slash)) || /^[\p{L}\p{N}]/u.test(q.slice(slash + 1))) {
-      return slashInTerm(q.slice(slash - before.length, slash + 1 + after.length));
-    }
+  // Read q, not the mask: an escaped character beside the slash is not a letter.
+  if (slash !== -1 && (ENDS_IN_WORD.test(q.slice(0, slash)) || /^[\p{L}\p{N}]/u.test(q.slice(slash + 1)))) {
+    return slashInTerm(termAround(masked, q, slash));
   }
   return null;
 }

@@ -62,6 +62,9 @@ describe("findQueryIssue", () => {
     ["𝟙/", slashIn("𝟙/")],
     ["/𝟙", slashIn("/𝟙")],
     ["\"a b\"/c", slashIn("\"a b\"/c")],
+    ["HIV/AIDS AND (TB/HIV OR malaria)", slashIn("HIV/AIDS")],
+    ["HIV/AIDS AND (TB/HIV OR malaria", slashIn("HIV/AIDS")],
+    ["HIV/AIDS OR \"HIV/AIDS\"", slashIn("HIV/AIDS")],
     ["\"phonics AND", QUOTE_UNCLOSED],
   ])("%j gives its note", (q, expected) => {
     expect(findQueryIssue(q)).toEqual(expected);
@@ -85,6 +88,7 @@ describe("findQueryIssue", () => {
     "\"exact phrase\" OR phonics",
     "word : subtitle",
     "HIV/AIDS AND TB/HIV",
+    "HIV/AIDS \"x\" TB/HIV",
     "phonics\u00a0AND",
   ])("%j gives no note", (q) => {
     expect(findQueryIssue(q)).toBeNull();
