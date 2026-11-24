@@ -52,7 +52,6 @@ import { ResultRow } from "@/components/search/ResultRow";
 import { Pagination } from "@/components/common/Pagination";
 import { BackLink } from "@/components/common/BackLink";
 import { FilterDrawer, type AppliedFilters } from "@/components/filters/FilterDrawer";
-import { orderFilterItems } from "@/components/filters/filterOrder";
 import { AiSummaryButton } from "@/components/ai-summary/AiSummaryButton";
 import { useAiSummaryContext } from "@/components/ai-summary/AiSummaryProvider";
 import { aiSummariesEnabled } from "@/components/ai-summary/aiSummariesEnabled";
@@ -88,16 +87,13 @@ const MAX_SUMMARY_REFERENCES = 50;
 // Maps the useVocabulary() result to the SearchBar `refine` prop.
 function buildRefineConfig(
   vocab: ReturnType<typeof useVocabulary>,
-  hasFilterCards: boolean,
   count: number,
   open: () => void,
-):
-  | { count: number; disabled: boolean; disabledReason?: string; onClick: () => void }
-  | undefined {
+): { count: number; disabled: boolean; disabledReason?: string; onClick: () => void } {
   if (vocab.loading) {
     return { count: 0, disabled: true, disabledReason: "Loading filters…", onClick: () => {} };
   }
-  return hasFilterCards ? { count, disabled: false, onClick: open } : undefined;
+  return { count, disabled: false, onClick: open };
 }
 
 // `evidence-repository-<stem>-<slug>-YYYYMMDD.<ext>`. UTC so the same
@@ -308,19 +304,7 @@ function SearchPageInner({ community }: { community: Community }) {
     setDrawerOpen(true);
   }
 
-  // The same ordering the drawer renders from, so the trigger and the drawer's
-  // contents can't disagree about whether there is anything to refine by.
-  const hasFilterCards =
-    orderFilterItems(filterableSchemes, {
-      pinned: community.pinnedFilters,
-      showCountryDerivedFilters: community.features.countrySearchable,
-    }).length > 0;
-  const refine = buildRefineConfig(
-    vocab,
-    hasFilterCards,
-    activeFilterCount,
-    handleOpenDrawer,
-  );
+  const refine = buildRefineConfig(vocab, activeFilterCount, handleOpenDrawer);
 
   function handleApplyFilters(next: AppliedFilters) {
     const committed = draft.commitDraft();
@@ -376,7 +360,7 @@ function SearchPageInner({ community }: { community: Community }) {
     results.results !== null ||
     results.error !== null ||
     hasActiveSearch(params) ||
-    refine?.disabled === false;
+    !refine.disabled;
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary = hasActiveSearch(params) || results.error !== null;
@@ -737,36 +721,32 @@ function SearchPageInner({ community }: { community: Community }) {
                 />
               )}
             </span>
-            {(refine || results.results) && (
-              <span class="search-results__meta-right">
-                {visualiseOptions.length > 0 && results.results && (
-                  <VisualiseMenu
-                    key={community.slug}
-                    total={results.results.total}
-                    loading={results.loading}
-                    scoped={hasActiveSearch(params)}
-                    countNoun={community.copy.countNoun}
-                    options={visualiseOptions}
-                    onVisualise={handleVisualise}
-                  />
-                )}
-                {refine && (
-                  <RefineButton
-                    count={refine.count}
-                    disabled={refine.disabled}
-                    disabledReason={refine.disabledReason}
-                    onClick={refine.onClick}
-                  />
-                )}
-                {results.results && (
-                  <SortDropdown
-                    value={params.sort}
-                    onChange={handleSortChange}
-                    disabled={results.loading}
-                  />
-                )}
-              </span>
-            )}
+            <span class="search-results__meta-right">
+              {visualiseOptions.length > 0 && results.results && (
+                <VisualiseMenu
+                  key={community.slug}
+                  total={results.results.total}
+                  loading={results.loading}
+                  scoped={hasActiveSearch(params)}
+                  countNoun={community.copy.countNoun}
+                  options={visualiseOptions}
+                  onVisualise={handleVisualise}
+                />
+              )}
+              <RefineButton
+                count={refine.count}
+                disabled={refine.disabled}
+                disabledReason={refine.disabledReason}
+                onClick={refine.onClick}
+              />
+              {results.results && (
+                <SortDropdown
+                  value={params.sort}
+                  onChange={handleSortChange}
+                  disabled={results.loading}
+                />
+              )}
+            </span>
           </div>
         )}
 

@@ -46,9 +46,9 @@ export function facetTypesFor({
 
 /**
  * Resolve the filter cards to render: the pinned cards in order, then every
- * scheme not already pinned, alphabetized by display label, then any enabled
- * country or income group card left unpinned. A scheme pinned by URI is shown
- * once and skipped by the trailing sweep.
+ * scheme not already pinned, alphabetized by display label, then the year card
+ * and any enabled country or income group card left unpinned. A scheme pinned
+ * by URI is shown once and skipped by the trailing sweep.
  */
 export function orderFilterItems(
   schemes: readonly ConceptScheme[],
@@ -61,6 +61,12 @@ export function orderFilterItems(
   const placed = new Set<string>();
   const items: FilterItem[] = [];
 
+  const pushYear = () => {
+    if (!placed.has("year")) {
+      placed.add("year");
+      items.push({ kind: "year" });
+    }
+  };
   const pushCountry = () => {
     if (showCountryDerivedFilters && !placed.has("country")) {
       placed.add("country");
@@ -84,12 +90,8 @@ export function orderFilterItems(
   // Built-in slots dedup on their kind so a config that repeats "year"/"country"
   // can't emit two cards (and a duplicate React key).
   for (const slot of pinned) {
-    if (slot === "year") {
-      if (!placed.has("year")) {
-        placed.add("year");
-        items.push({ kind: "year" });
-      }
-    } else if (slot === "country") pushCountry();
+    if (slot === "year") pushYear();
+    else if (slot === "country") pushCountry();
     else if (slot === "wbIncomeGroup") pushWbIncomeGroup();
     else pushScheme(slot);
   }
@@ -104,6 +106,7 @@ export function orderFilterItems(
     );
   for (const scheme of rest) pushScheme(scheme.uri);
   // The flags alone decide whether these cards show; pinning only orders them.
+  pushYear();
   pushCountry();
   pushWbIncomeGroup();
 

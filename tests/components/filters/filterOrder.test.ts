@@ -69,7 +69,7 @@ describe("orderFilterItems", () => {
       pinned: ["u:zebra"],
       showCountryDerivedFilters: false,
     });
-    expect(kinds(items)).toEqual(["u:zebra", "u:apple"]);
+    expect(kinds(items)).toEqual(["u:zebra", "u:apple", "year"]);
   });
 
   test("ignores pinned URIs for schemes not present", () => {
@@ -87,7 +87,18 @@ describe("orderFilterItems", () => {
       pinned: [],
       showCountryDerivedFilters: false,
     });
-    expect(kinds(items)).toEqual(["u:p2", "u:p10"]);
+    expect(kinds(items)).toEqual(["u:p2", "u:p10", "year"]);
+  });
+
+  test("appends the year card when it isn't pinned", () => {
+    const items = orderFilterItems([zebra, apple], { pinned: ["u:zebra"] });
+    expect(kinds(items)).toEqual([
+      "u:zebra",
+      "u:apple",
+      "year",
+      "country",
+      "wbIncomeGroup",
+    ]);
   });
 
   test("appends enabled country and income group cards that aren't pinned", () => {

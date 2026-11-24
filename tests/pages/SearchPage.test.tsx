@@ -899,7 +899,7 @@ describe("SearchPage", () => {
       expect(screen.queryByRole("button", { name: /Country/ })).toBeNull();
     });
 
-    test("Refine is hidden when the community has no filter cards to show", async () => {
+    test("the drawer keeps Publication year when the community pins nothing", async () => {
       const esea = findCommunity("esea")!;
       communityOverride.current = {
         ...esea,
@@ -911,7 +911,10 @@ describe("SearchPage", () => {
       renderSearchPage();
       await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
 
-      expect(screen.queryByRole("button", { name: /Refine/ })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Refine" }));
+      expect(
+        screen.getByRole("button", { name: /Publication year/ }),
+      ).toBeInTheDocument();
     });
 
     test("a failed vocabulary still offers Refine with the year and country cards", async () => {
