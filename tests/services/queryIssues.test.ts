@@ -85,11 +85,12 @@ describe("findQueryIssue", () => {
     "\"exact phrase\" OR phonics",
     "word : subtitle",
     "HIV/AIDS AND TB/HIV",
+    "phonics\u00a0AND",
   ])("%j gives no note", (q) => {
     expect(findQueryIssue(q)).toBeNull();
   });
 
-  test.each(["NOT NOT phonics", "phonics / reading"])(
+  test.each(["NOT NOT phonics", "phonics / reading", "\\(/\\)"])(
     "rejected %j is left to the generic message",
     (q) => {
       expect(findQueryIssue(q)).toBeNull();

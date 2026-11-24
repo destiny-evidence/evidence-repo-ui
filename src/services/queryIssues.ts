@@ -52,7 +52,12 @@ const joinsTerms = (token: string | undefined): token is string =>
 const isOperator = (token: string | undefined): token is string =>
   joinsTerms(token) || token === "NOT";
 
-const TERM_BOUNDARY = /[\s()]/;
+// The parser skips only these; a no-break space joins its neighbours into one term.
+const SPACE = " \\t\\n\\r\\u3000";
+const TOKEN = new RegExp(`[()]|[^${SPACE}()]+`, "g");
+const TERM_BOUNDARY = new RegExp(`[${SPACE}()]`);
+const TRAILING_SPACE = new RegExp(`[${SPACE}]+$`);
+const SPACE_ONLY = new RegExp(`^[${SPACE}]*$`);
 
 // Literal text becomes filler letters: it still reads as one term, but none
 // of its characters count as syntax.
@@ -103,7 +108,7 @@ export function findQueryIssue(q: string): QueryIssue | null {
 
   if (masked.includes('"')) return /[“”]/.test(masked) ? MIXED_QUOTES : QUOTE_UNCLOSED;
 
-  const tokens = masked.match(/[()]|[^\s()]+/g) ?? [];
+  const tokens = masked.match(TOKEN) ?? [];
   const last = tokens.at(-1);
   if (isOperator(last)) return endsWithOperator(last);
   const first = tokens[0];
@@ -115,8 +120,8 @@ export function findQueryIssue(q: string): QueryIssue | null {
   }
 
   for (let k = masked.indexOf(":"); k !== -1; k = masked.indexOf(":", k + 1)) {
-    const wordBefore = masked.slice(0, k).trimEnd().split(TERM_BOUNDARY).pop();
-    if (!wordBefore || isOperator(wordBefore) || !masked.slice(k + 1).trim()) return COLON;
+    const wordBefore = masked.slice(0, k).replace(TRAILING_SPACE, "").split(TERM_BOUNDARY).pop();
+    if (!wordBefore || isOperator(wordBefore) || SPACE_ONLY.test(masked.slice(k + 1))) return COLON;
   }
 
   // Masking leaves only an unclosed slash, at its index in q.
@@ -124,7 +129,8 @@ export function findQueryIssue(q: string): QueryIssue | null {
   if (slash !== -1) {
     const before = masked.slice(0, slash).split(TERM_BOUNDARY).pop() ?? "";
     const after = masked.slice(slash + 1).split(TERM_BOUNDARY)[0];
-    if (/[\p{L}\p{N}]$/u.test(before) || /^[\p{L}\p{N}]/u.test(after)) {
+    // Read q, not the mask: an escaped character beside the slash is not a letter.
+    if (/[\p{L}\p{N}]$/u.test(q.slice(0, slash)) || /^[\p{L}\p{N}]/u.test(q.slice(slash + 1))) {
       return slashInTerm(q.slice(slash - before.length, slash + 1 + after.length));
     }
   }
