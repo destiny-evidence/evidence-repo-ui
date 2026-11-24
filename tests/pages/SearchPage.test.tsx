@@ -679,7 +679,7 @@ describe("SearchPage", () => {
       expect(screen.queryByText("The query ends with AND")).not.toBeInTheDocument();
     });
 
-    test("after a rejection the note follows the draft until the next search clears it", async () => {
+    test("after a rejection the note and the panel's advice follow the draft until the next search", async () => {
       history.replaceState(null, "", "/esea?q=phonics");
       mockSearch.mockImplementation((q) =>
         q === "phonics" ? Promise.reject(rejection()) : Promise.resolve(makeResult(1, ["r1"])),
@@ -690,7 +690,7 @@ describe("SearchPage", () => {
 
       fireEvent.input(field, { target: { value: "(phonics" } });
       expect(screen.getByText("A bracket is never closed")).toBeInTheDocument();
-      expect(screen.getByRole("alert")).toHaveTextContent("The query couldn’t be run");
+      expect(screen.getByRole("alert")).toHaveTextContent("Fix the issue above, then search again.");
 
       // Trimmed on submit, so this is still the rejected query.
       fireEvent.input(field, { target: { value: "phonics " } });
@@ -698,6 +698,7 @@ describe("SearchPage", () => {
 
       fireEvent.input(field, { target: { value: "reading" } });
       expect(field).not.toBeInvalid();
+      expect(screen.getByRole("alert")).toHaveTextContent("Search again to run your edited query.");
       fireEvent.click(screen.getByRole("button", { name: /search/i }));
       await screen.findByText("Title r1");
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();

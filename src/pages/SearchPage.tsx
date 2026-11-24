@@ -796,7 +796,9 @@ function SearchPageInner({ community }: { community: Community }) {
           {rejected && (
             <div class="search-results__rejected" role="alert">
               <p class="search-results__rejected-title">The query couldn’t be run</p>
-              <p class="search-results__rejected-body">Fix the issue above, then search again.</p>
+              <p class="search-results__rejected-body">
+                {queryIssue ? "Fix the issue above, then search again." : "Search again to run your edited query."}
+              </p>
             </div>
           )}
 
