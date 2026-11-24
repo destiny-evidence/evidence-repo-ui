@@ -129,6 +129,20 @@ describe("useSearch", () => {
     expect(renders.find((r) => r.q === "reading")?.loading).toBe(true);
   });
 
+  test("returning to a settled search keeps loading while it refetches", async () => {
+    mockSearch.mockResolvedValueOnce(makeResult(10)).mockReturnValue(new Promise(() => {}));
+    const { result, rerender } = renderHook(({ p }) => useSearch(p), {
+      wrapper: withCommunityPath("/esea"),
+      initialProps: { p: baseParams },
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    rerender({ p: makeSearchParams({ q: "reading" }) });
+    rerender({ p: baseParams });
+    expect(mockSearch).toHaveBeenCalledTimes(3);
+    expect(result.current.loading).toBe(true);
+  });
+
   // Guards the "Search Performed" analytics: resultsParams must never run ahead
   // of results, or a new search would be tracked with the previous count.
   test("resultsParams stays paired with the results currently shown", async () => {

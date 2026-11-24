@@ -31,8 +31,8 @@ export function useSearch(params: SearchParams): {
   const [resultsParams, setResultsParams] = useState<SearchParams | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [retryTick, setRetryTick] = useState(0);
-  // Derived, not set by the effect: the render before the effect starts a new
-  // fetch must already read as loading, not as the previous search settled.
+  // Derived so the render before the effect already reads as loading. The effect
+  // clears the token, or returning to a settled search would match it mid-fetch.
   const fetchToken = `${retryTick}:${key}`;
   const [settledToken, setSettledToken] = useState<string | null>(null);
   const loading = settledToken !== fetchToken;
@@ -48,6 +48,7 @@ export function useSearch(params: SearchParams): {
     // Do NOT clear results here: keeping prior rows on screen enables the
     // "dim-while-updating" UX from the spec. On settled error we clear below.
     setError(null);
+    setSettledToken(null);
 
     const filters: SearchFilters = { page: params.page, ...sharedFilters };
     const sort = effectiveSortBackend(params);
