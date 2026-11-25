@@ -11,6 +11,8 @@ import {
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
+import { findQueryIssue, spokenIssue, UNREADABLE_QUERY } from "@/services/queryIssues";
+import { ApiError } from "@/api/client";
 import { track, trackSiteSearch } from "@/analytics/matomo";
 import {
   activeFilters,
@@ -201,6 +203,20 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const corpus = useCorpusTotal();
   const results = useSearch(params);
+  // The error outlives one render of the next query's params; loading marks that render.
+  const settledError = results.loading ? null : results.error;
+  const rejected = settledError instanceof ApiError && settledError.status === 400;
+  const rejectedIssue = rejected ? findQueryIssue(params.q) ?? UNREADABLE_QUERY : null;
+  const draftIsSent = draft.draftQ.trim() === params.q;
+  const settled = draftIsSent && !results.loading;
+  // The backend's verdict on the sent query wins; otherwise the sent query is always checked, and
+  // a draft only after a blur. While a note shows, checks follow the edits until a fix silences them.
+  const [checking, setChecking] = useState(false);
+  const queryIssue =
+    settled && rejectedIssue ? rejectedIssue
+    : settled && results.error === null ? null
+    : checking || draftIsSent ? findQueryIssue(draft.draftQ)
+    : null;
   const exportJob = useSearchExport();
   const ai = useAiSummaryContext();
 
@@ -380,6 +396,11 @@ function SearchPageInner({ community }: { community: Community }) {
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary = hasActiveSearch(params) || results.error !== null;
+
+  function handleDraftChange(value: string) {
+    setChecking(queryIssue !== null);
+    draft.setDraftQ(value);
+  }
 
   function handleSubmit() {
     const committed = draft.commitDraft();
@@ -648,18 +669,22 @@ function SearchPageInner({ community }: { community: Community }) {
         </p>
         <SearchBar
           draftQ={draft.draftQ}
-          onDraftQChange={draft.setDraftQ}
+          onDraftQChange={handleDraftChange}
+          onBlur={() => setChecking(true)}
           onSubmit={handleSubmit}
           placeholder={community.copy.searchPlaceholder}
           disabled={results.loading && results.results !== null}
+          issue={queryIssue}
+          // The rejection alert already speaks the sent query's note.
+          announceIssue={queryIssue !== rejectedIssue}
         />
       </section>
 
       {(showSummary || results.results) && (
         <div class="search-results__pagerow">
           <span class="search-results__count" aria-live="polite">
-            {showSummary
-              ? results.error
+            {showSummary && !rejected
+              ? settledError
                 ? (
                   <>
                     <span>Couldn't load results.</span>
@@ -780,6 +805,19 @@ function SearchPageInner({ community }: { community: Community }) {
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} class="search-results__skeleton-row" />
               ))}
+            </div>
+          )}
+
+          {rejectedIssue && (
+            <div class="search-results__rejected">
+              {/* Names the sent query's problem, so edits never change it and re-fire the alert. */}
+              <div role="alert">
+                <p class="search-results__rejected-title">The query couldn’t be run</p>
+                <p class="visually-hidden">{spokenIssue(rejectedIssue)}</p>
+              </div>
+              <p class="search-results__rejected-body">
+                {queryIssue ? "Fix the issue above, then search again." : "Search again to run your edited query."}
+              </p>
             </div>
           )}
 

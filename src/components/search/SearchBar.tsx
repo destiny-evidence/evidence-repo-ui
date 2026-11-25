@@ -1,5 +1,6 @@
-import { useId } from "preact/hooks";
-import { MagnifierIcon } from "@/components/common/icons";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { MagnifierIcon, WarningIcon } from "@/components/common/icons";
+import { spokenIssue, type QueryIssue } from "@/services/queryIssues";
 import { SearchHint } from "./SearchHint";
 import "./SearchBar.css";
 
@@ -9,6 +10,9 @@ interface SearchBarProps {
   onSubmit: () => void;
   placeholder?: string;
   disabled?: boolean;
+  issue: QueryIssue | null;
+  announceIssue: boolean;
+  onBlur: () => void;
 }
 
 export function SearchBar({
@@ -17,8 +21,32 @@ export function SearchBar({
   onSubmit,
   placeholder = "Search titles and abstracts",
   disabled = false,
+  issue,
+  announceIssue,
+  onBlur,
 }: SearchBarProps) {
   const hintId = useId();
+  const issueId = useId();
+  const [focused, setFocused] = useState(false);
+  const pressing = useRef(false);
+
+  useEffect(() => {
+    const press = () => (pressing.current = true);
+    const release = () => (pressing.current = false);
+    document.addEventListener("pointerdown", press, true);
+    document.addEventListener("pointerup", release, true);
+    return () => {
+      document.removeEventListener("pointerdown", press, true);
+      document.removeEventListener("pointerup", release, true);
+    };
+  }, []);
+
+  function handleBlur() {
+    setFocused(false);
+    if (!pressing.current) return onBlur();
+    // A note shown mid-press moves the content below, and the release misses its target.
+    document.addEventListener("pointerup", () => setTimeout(onBlur), { once: true });
+  }
 
   function handleSubmit(e?: Event) {
     e?.preventDefault();
@@ -35,17 +63,35 @@ export function SearchBar({
           <input
             type="search"
             aria-label="Search query"
-            aria-describedby={hintId}
+            aria-describedby={issue ? `${hintId} ${issueId}` : hintId}
+            aria-invalid={issue !== null}
             placeholder={placeholder}
             value={draftQ}
             onInput={(e) => onDraftQChange((e.target as HTMLInputElement).value)}
-            disabled={disabled}
+            onFocus={() => setFocused(true)}
+            onBlur={handleBlur}
+            // Not disabled: a disabled field loses focus, dropping a screen reader's place.
+            readOnly={disabled}
           />
           <button type="submit" class="search-btn" disabled={disabled}>
             Search
           </button>
         </div>
         <SearchHint id={hintId} class="search-bar-hint" />
+        {issue && (
+          <div id={issueId} class="search-bar-issue">
+            <WarningIcon />
+            <div>
+              <p class="search-bar-issue__title">{issue.title}</p>
+              <p class="search-bar-issue__body">{issue.body}</p>
+            </div>
+          </div>
+        )}
+        {/* Always mounted, so filling it is announced; empty while the field has focus,
+            so the note is read when the user leaves the box, never as they type. */}
+        <div class="visually-hidden" role="status">
+          {issue && announceIssue && !focused && spokenIssue(issue)}
+        </div>
       </div>
     </form>
   );

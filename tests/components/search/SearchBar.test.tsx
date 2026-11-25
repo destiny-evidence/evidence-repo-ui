@@ -14,10 +14,13 @@ function renderBar(overrides: Partial<Parameters<typeof SearchBar>[0]> = {}) {
     draftQ: "",
     onDraftQChange: vi.fn(),
     onSubmit: vi.fn(),
+    issue: null,
+    announceIssue: true,
+    onBlur: vi.fn(),
     ...overrides,
   };
-  render(<SearchBar {...props} />);
-  return props;
+  const { rerender } = render(<SearchBar {...props} />);
+  return { ...props, rerender };
 }
 
 describe("SearchBar", () => {
@@ -45,9 +48,11 @@ describe("SearchBar", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  test("disabled prop disables the input and submit", () => {
+  test("while disabled the box stays enabled but read-only, and Search is disabled", () => {
     renderBar({ disabled: true });
-    expect(screen.getByRole("searchbox")).toBeDisabled();
+    const field = screen.getByRole("searchbox");
+    expect(field).not.toBeDisabled();
+    expect(field).toHaveAttribute("readonly");
     expect(screen.getByRole("button", { name: /search/i })).toBeDisabled();
   });
 
@@ -80,5 +85,64 @@ describe("SearchBar", () => {
     expect(link.getAttribute("href")).toContain("docs.google.com");
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+  });
+
+  describe("query issue note", () => {
+    const issue = { title: "Title text", body: "Body text" };
+
+    test("an issue shows the note and marks the field invalid, described by hint and note", () => {
+      renderBar({ issue });
+      const field = screen.getByRole("searchbox");
+      expect(field).toBeInvalid();
+      const [hintId, noteId] = field.getAttribute("aria-describedby")!.split(" ");
+      expect(document.getElementById(hintId)).toHaveTextContent(/Boolean operators/);
+      const note = document.getElementById(noteId)!;
+      expect(note).toHaveTextContent("Title text");
+      expect(note).toHaveTextContent("Body text");
+      // It changes with each edit, so only the separate status region may announce it.
+      expect(note.closest("[aria-live], [role=alert], [role=status]")).toBeNull();
+    });
+
+    test("the note is announced once focus leaves the field, never while typing", () => {
+      const { rerender, ...props } = renderBar();
+      const field = screen.getByRole("searchbox");
+      const region = screen.getByRole("status");
+      fireEvent.focus(field);
+      rerender(<SearchBar {...props} issue={issue} />);
+      expect(region).toBeEmptyDOMElement();
+      fireEvent.blur(field);
+      expect(region).toHaveTextContent("Title text. Body text");
+    });
+
+    test("leaving the box with a pointer press reports the blur once the press ends", () => {
+      const props = renderBar();
+      vi.useFakeTimers();
+      // This jsdom has no PointerEvent, and fireEvent.pointerDown dispatches nothing without it.
+      fireEvent(document.body, new Event("pointerdown", { bubbles: true }));
+      fireEvent.blur(screen.getByRole("searchbox"));
+      expect(props.onBlur).not.toHaveBeenCalled();
+      fireEvent(document.body, new Event("pointerup", { bubbles: true }));
+      vi.runAllTimers();
+      expect(props.onBlur).toHaveBeenCalledTimes(1);
+      fireEvent.blur(screen.getByRole("searchbox"));
+      expect(props.onBlur).toHaveBeenCalledTimes(2);
+      vi.useRealTimers();
+    });
+
+    test("a note without a body is read as its title alone", () => {
+      renderBar({ issue: { title: "Title text" } });
+      expect(screen.getByRole("status").textContent).toBe("Title text");
+    });
+
+    test("an issue never stops a search", () => {
+      const props = renderBar({ issue });
+      fireEvent.click(screen.getByRole("button", { name: /search/i }));
+      expect(props.onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    test("without an issue the field is valid", () => {
+      renderBar();
+      expect(screen.getByRole("searchbox")).not.toBeInvalid();
+    });
   });
 });

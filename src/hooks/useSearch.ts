@@ -29,9 +29,13 @@ export function useSearch(params: SearchParams): {
   ]);
   const [results, setResults] = useState<SearchResult | null>(null);
   const [resultsParams, setResultsParams] = useState<SearchParams | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [retryTick, setRetryTick] = useState(0);
+  // Derived so the render before the effect already reads as loading. The effect
+  // clears the token, or returning to a settled search would match it mid-fetch.
+  const fetchToken = `${retryTick}:${key}`;
+  const [settledToken, setSettledToken] = useState<string | null>(null);
+  const loading = settledToken !== fetchToken;
 
   const retry = useCallback(() => {
     setRetryTick((t) => t + 1);
@@ -44,7 +48,7 @@ export function useSearch(params: SearchParams): {
     // Do NOT clear results here: keeping prior rows on screen enables the
     // "dim-while-updating" UX from the spec. On settled error we clear below.
     setError(null);
-    setLoading(true);
+    setSettledToken(null);
 
     const filters: SearchFilters = { page: params.page, ...sharedFilters };
     const sort = effectiveSortBackend(params);
@@ -61,7 +65,7 @@ export function useSearch(params: SearchParams): {
         setError(e);
         setResults(null);
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .finally(() => { if (!cancelled) setSettledToken(fetchToken); });
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps

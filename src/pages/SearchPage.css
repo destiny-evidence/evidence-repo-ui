@@ -153,6 +153,27 @@
   font-size: var(--font-size-small);
 }
 
+.search-results__rejected {
+  padding: var(--spacing-xl);
+  text-align: center;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.search-results__rejected-title {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  color: var(--color-text-primary);
+}
+
+.search-results__rejected-body {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
 .search-results__skeleton {
   display: flex;
   flex-direction: column;

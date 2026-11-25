@@ -11,6 +11,7 @@ import { AuthProvider } from "@/auth/AuthContext";
 import { AiSummaryProvider } from "@/components/ai-summary/AiSummaryProvider";
 import { SelectionProvider } from "@/components/search/SelectionProvider";
 import type { SearchResult } from "@/types/models";
+import { ApiError } from "@/api/client";
 import {
   OUTCOME_SCHEME_FIXTURE,
   URI_LEARNING,
@@ -625,6 +626,166 @@ describe("SearchPage", () => {
     await waitFor(() => expect(screen.getByText("Title r1")).toBeInTheDocument());
     expect(pushSpy).not.toHaveBeenCalled();
     pushSpy.mockRestore();
+  });
+
+  describe("query issues", () => {
+    const rejection = () => new ApiError(400, "Bad Query String");
+
+    test("a rejected query shows its note and the couldn't-be-run panel", async () => {
+      history.replaceState(null, "", "/esea");
+      mockSearch.mockImplementation((q) =>
+        q === "phonics AND" ? Promise.reject(rejection()) : Promise.resolve(makeResult(1, ["r1"])),
+      );
+      renderSearchPage();
+      // Submitted with Enter and no blur, so only the rejection can show the note.
+      const field = screen.getByRole("searchbox");
+      fireEvent.input(field, { target: { value: "phonics AND" } });
+      fireEvent.submit(field.closest("form")!);
+
+      const panel = await screen.findByRole("alert");
+      expect(panel).toHaveTextContent("The query couldn’t be run");
+      expect(panel).toHaveTextContent("The query can’t end with AND. Add a term after it or remove it.");
+      expect(screen.getByText("Fix the issue above, then search again.")).toBeInTheDocument();
+      expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
+      expect(screen.getByRole("searchbox")).toBeInvalid();
+      expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
+    });
+
+    test("a rejection no check explains shows the generic note", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: rejection() });
+      renderSearchPage();
+
+      expect(await screen.findByText("Part of this query can’t be searched")).toBeInTheDocument();
+    });
+
+    test("a rejection is announced once, by the alert, and a later note by the search bar", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: rejection() });
+      renderSearchPage();
+      expect(await screen.findByRole("alert")).toHaveTextContent("Part of this query can’t be searched.");
+      const barStatus = within(screen.getByRole("search")).getByRole("status");
+      expect(barStatus).toBeEmptyDOMElement();
+
+      const field = screen.getByRole("searchbox");
+      fireEvent.input(field, { target: { value: "(phonics" } });
+      fireEvent.blur(field);
+      expect(barStatus).toHaveTextContent("A bracket isn’t closed. Add a ) for each (.");
+    });
+
+    test("a server error offers Try again and keeps the note, with no panel", async () => {
+      history.replaceState(null, "", "/esea?q=phonics%20AND");
+      mockBoth({ results: new ApiError(500, "boom") });
+      renderSearchPage();
+
+      expect(await screen.findByRole("button", { name: /try again/i })).toBeInTheDocument();
+      expect(screen.queryByText("The query couldn’t be run")).not.toBeInTheDocument();
+      expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
+    });
+
+    test("a note waits for the search box to lose focus, then follows edits until the query is fixed", () => {
+      history.replaceState(null, "", "/esea");
+      mockBoth({});
+      renderSearchPage();
+      const field = screen.getByRole("searchbox");
+
+      fireEvent.input(field, { target: { value: "phonics AND" } });
+      expect(screen.queryByText("The query can’t end with AND")).not.toBeInTheDocument();
+      fireEvent.blur(field);
+      expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
+
+      fireEvent.input(field, { target: { value: "(phonics AND" } });
+      expect(screen.getByText("A bracket isn’t closed")).toBeInTheDocument();
+      fireEvent.input(field, { target: { value: "phonics AND reading" } });
+      expect(field).not.toBeInvalid();
+      fireEvent.input(field, { target: { value: "phonics AND reading AND" } });
+      expect(field).not.toBeInvalid();
+      fireEvent.blur(field);
+      expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
+    });
+
+    test("a flagged query sent with Enter shows its note while the search runs", async () => {
+      history.replaceState(null, "", "/esea");
+      mockSearch.mockImplementation((q) =>
+        q === "phonics AND" ? new Promise(() => {}) : Promise.resolve(makeResult(1, ["r1"])),
+      );
+      renderSearchPage();
+      const field = screen.getByRole("searchbox");
+      fireEvent.input(field, { target: { value: "phonics AND" } });
+      fireEvent.submit(field.closest("form")!);
+
+      expect(await screen.findByText("The query can’t end with AND")).toBeInTheDocument();
+    });
+
+    test("a query opened from a link shows its note while the search runs", () => {
+      history.replaceState(null, "", "/esea?q=phonics%20AND");
+      mockSearch.mockReturnValue(new Promise(() => {}));
+      renderSearchPage();
+
+      expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
+    });
+
+    test("an accepted query shows no note, even one a check flags", async () => {
+      history.replaceState(null, "", "/esea?q=phonics%20AND");
+      mockBoth({ results: makeResult(1, ["r1"]) });
+      renderSearchPage();
+
+      await screen.findByText("Title r1");
+      expect(screen.queryByText("The query can’t end with AND")).not.toBeInTheDocument();
+    });
+
+    test("after a rejection the note and the panel's advice follow the draft, and the alert stays on the sent query", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockSearch.mockImplementation((q) =>
+        q === "phonics" ? Promise.reject(rejection()) : Promise.resolve(makeResult(1, ["r1"])),
+      );
+      renderSearchPage();
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent("Part of this query can’t be searched.");
+      const announced = alert.textContent;
+      const field = screen.getByRole("searchbox");
+
+      fireEvent.input(field, { target: { value: "(phonics" } });
+      expect(screen.getByText("A bracket isn’t closed")).toBeInTheDocument();
+      expect(screen.getByText("Fix the issue above, then search again.")).toBeInTheDocument();
+      expect(alert.textContent).toBe(announced);
+
+      // Trimmed on submit, so this is still the rejected query.
+      fireEvent.input(field, { target: { value: "phonics " } });
+      expect(screen.getByText("Part of this query can’t be searched")).toBeInTheDocument();
+
+      fireEvent.input(field, { target: { value: "reading" } });
+      expect(field).not.toBeInvalid();
+      expect(screen.getByText("Search again to run your edited query.")).toBeInTheDocument();
+      expect(alert.textContent).toBe(announced);
+      fireEvent.click(screen.getByRole("button", { name: /search/i }));
+      await screen.findByText("Title r1");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(field).not.toBeInvalid();
+    });
+
+    test("a new search after a rejection neither renames the alert nor flashes a load failure", async () => {
+      history.replaceState(null, "", "/esea?q=phonics%20AND");
+      mockSearch.mockImplementation((q) =>
+        q === "phonics AND" ? Promise.reject(rejection()) : Promise.resolve(makeResult(1, ["r1"])),
+      );
+      renderSearchPage();
+      const alert = await screen.findByRole("alert");
+      const announced = alert.textContent;
+      const added: string[] = [];
+      const observer = new MutationObserver((records) =>
+        records.forEach((r) => r.addedNodes.forEach((n) => added.push(n.textContent ?? ""))),
+      );
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      fireEvent.input(screen.getByRole("searchbox"), { target: { value: "reading" } });
+      fireEvent.click(screen.getByRole("button", { name: /search/i }));
+      await screen.findByText("Title r1");
+      observer.disconnect();
+      // A removed node keeps its last text.
+      expect(alert.textContent).toBe(announced);
+      expect(added.join(" ")).not.toMatch(/Couldn't load results/);
+    });
   });
 
   test("renders summary line when only facets are set (no q, no years)", async () => {
