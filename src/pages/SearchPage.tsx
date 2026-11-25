@@ -674,6 +674,8 @@ function SearchPageInner({ community }: { community: Community }) {
           placeholder={community.copy.searchPlaceholder}
           disabled={results.loading && results.results !== null}
           issue={queryIssue}
+          // The rejection alert already speaks the sent query's note.
+          announceIssue={queryIssue !== rejectedIssue}
         />
       </section>
 

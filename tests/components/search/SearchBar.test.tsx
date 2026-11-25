@@ -15,6 +15,7 @@ function renderBar(overrides: Partial<Parameters<typeof SearchBar>[0]> = {}) {
     onDraftQChange: vi.fn(),
     onSubmit: vi.fn(),
     issue: null,
+    announceIssue: true,
     onBlur: vi.fn(),
     ...overrides,
   };

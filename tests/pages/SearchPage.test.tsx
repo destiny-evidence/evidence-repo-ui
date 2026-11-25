@@ -659,6 +659,20 @@ describe("SearchPage", () => {
       expect(await screen.findByText("Part of this query can’t be searched")).toBeInTheDocument();
     });
 
+    test("a rejection is announced once, by the alert, and a later note by the search bar", async () => {
+      history.replaceState(null, "", "/esea?q=phonics");
+      mockBoth({ results: rejection() });
+      renderSearchPage();
+      expect(await screen.findByRole("alert")).toHaveTextContent("Part of this query can’t be searched.");
+      const barStatus = within(screen.getByRole("search")).getByRole("status");
+      expect(barStatus).toBeEmptyDOMElement();
+
+      const field = screen.getByRole("searchbox");
+      fireEvent.input(field, { target: { value: "(phonics" } });
+      fireEvent.blur(field);
+      expect(barStatus).toHaveTextContent("A bracket isn’t closed. Add a ) for each (.");
+    });
+
     test("a server error offers Try again and keeps the note, with no panel", async () => {
       history.replaceState(null, "", "/esea?q=phonics%20AND");
       mockBoth({ results: new ApiError(500, "boom") });

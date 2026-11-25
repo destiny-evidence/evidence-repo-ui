@@ -11,6 +11,7 @@ interface SearchBarProps {
   placeholder?: string;
   disabled?: boolean;
   issue: QueryIssue | null;
+  announceIssue: boolean;
   onBlur: () => void;
 }
 
@@ -21,6 +22,7 @@ export function SearchBar({
   placeholder = "Search titles and abstracts",
   disabled = false,
   issue,
+  announceIssue,
   onBlur,
 }: SearchBarProps) {
   const hintId = useId();
@@ -88,7 +90,7 @@ export function SearchBar({
         {/* Always mounted, so filling it is announced; empty while the field has focus,
             so the note is read when the user leaves the box, never as they type. */}
         <div class="visually-hidden" role="status">
-          {issue && !focused && spokenIssue(issue)}
+          {issue && announceIssue && !focused && spokenIssue(issue)}
         </div>
       </div>
     </form>
