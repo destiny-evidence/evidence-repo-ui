@@ -52,7 +52,8 @@ export function SearchBar({
               setFocused(false);
               onBlur();
             }}
-            disabled={disabled}
+            // Not disabled: a disabled field loses focus, dropping a screen reader's place.
+            readOnly={disabled}
           />
           <button type="submit" class="search-btn" disabled={disabled}>
             Search

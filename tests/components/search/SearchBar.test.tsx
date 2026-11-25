@@ -47,9 +47,11 @@ describe("SearchBar", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  test("disabled prop disables the input and submit", () => {
+  test("while disabled the box stays enabled but read-only, and Search is disabled", () => {
     renderBar({ disabled: true });
-    expect(screen.getByRole("searchbox")).toBeDisabled();
+    const field = screen.getByRole("searchbox");
+    expect(field).not.toBeDisabled();
+    expect(field).toHaveAttribute("readonly");
     expect(screen.getByRole("button", { name: /search/i })).toBeDisabled();
   });
 
