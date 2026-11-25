@@ -204,12 +204,15 @@ function SearchPageInner({ community }: { community: Community }) {
   const corpus = useCorpusTotal();
   const results = useSearch(params);
   const rejected = results.error instanceof ApiError && results.error.status === 400;
-  // Once the backend accepts the sent query, its verdict wins over the checks;
-  // a rejection no check explains gets the generic note.
   const settled = draft.draftQ.trim() === params.q && !results.loading;
-  const queryIssue = settled && results.error === null
-    ? null
-    : findQueryIssue(draft.draftQ) ?? (settled && rejected ? UNREADABLE_QUERY : null);
+  // The backend's verdict on the sent query wins. Otherwise checks speak after a blur, not
+  // mid-typing; while a note shows they follow the edits, and a fix silences them.
+  const [checking, setChecking] = useState(true);
+  const queryIssue =
+    settled && rejected ? findQueryIssue(draft.draftQ) ?? UNREADABLE_QUERY
+    : settled && results.error === null ? null
+    : checking ? findQueryIssue(draft.draftQ)
+    : null;
   const exportJob = useSearchExport();
   const ai = useAiSummaryContext();
 
@@ -389,6 +392,11 @@ function SearchPageInner({ community }: { community: Community }) {
 
   // Browse mode skips the summary text to avoid duplicating the hero's corpus count.
   const showSummary = hasActiveSearch(params) || results.error !== null;
+
+  function handleDraftChange(value: string) {
+    setChecking(queryIssue !== null);
+    draft.setDraftQ(value);
+  }
 
   function handleSubmit() {
     const committed = draft.commitDraft();
@@ -657,7 +665,8 @@ function SearchPageInner({ community }: { community: Community }) {
         </p>
         <SearchBar
           draftQ={draft.draftQ}
-          onDraftQChange={draft.setDraftQ}
+          onDraftQChange={handleDraftChange}
+          onBlur={() => setChecking(true)}
           onSubmit={handleSubmit}
           placeholder={community.copy.searchPlaceholder}
           disabled={results.loading && results.results !== null}

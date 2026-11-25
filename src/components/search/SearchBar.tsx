@@ -11,6 +11,7 @@ interface SearchBarProps {
   placeholder?: string;
   disabled?: boolean;
   issue: QueryIssue | null;
+  onBlur: () => void;
 }
 
 export function SearchBar({
@@ -20,6 +21,7 @@ export function SearchBar({
   placeholder = "Search titles and abstracts",
   disabled = false,
   issue,
+  onBlur,
 }: SearchBarProps) {
   const hintId = useId();
   const issueId = useId();
@@ -44,6 +46,7 @@ export function SearchBar({
             placeholder={placeholder}
             value={draftQ}
             onInput={(e) => onDraftQChange((e.target as HTMLInputElement).value)}
+            onBlur={onBlur}
             disabled={disabled}
           />
           <button type="submit" class="search-btn" disabled={disabled}>

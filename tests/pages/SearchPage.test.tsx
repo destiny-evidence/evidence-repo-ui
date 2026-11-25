@@ -632,9 +632,15 @@ describe("SearchPage", () => {
     const rejection = () => new ApiError(400, "Bad Query String");
 
     test("a rejected query shows its note and the couldn't-be-run panel", async () => {
-      history.replaceState(null, "", "/esea?q=phonics%20AND");
-      mockBoth({ results: rejection() });
+      history.replaceState(null, "", "/esea");
+      mockSearch.mockImplementation((q) =>
+        q === "phonics AND" ? Promise.reject(rejection()) : Promise.resolve(makeResult(1, ["r1"])),
+      );
       renderSearchPage();
+      // Submitted with Enter, so the box never loses focus.
+      const field = screen.getByRole("searchbox");
+      fireEvent.input(field, { target: { value: "phonics AND" } });
+      fireEvent.submit(field.closest("form")!);
 
       const panel = await screen.findByRole("alert");
       expect(panel).toHaveTextContent("The query couldn’t be run");
@@ -652,7 +658,7 @@ describe("SearchPage", () => {
       expect(await screen.findByText("Part of this query can’t be searched")).toBeInTheDocument();
     });
 
-    test("a server error offers Try again and keeps the live note, with no panel", async () => {
+    test("a server error offers Try again and keeps the note, with no panel", async () => {
       history.replaceState(null, "", "/esea?q=phonics%20AND");
       mockBoth({ results: new ApiError(500, "boom") });
       renderSearchPage();
@@ -662,7 +668,28 @@ describe("SearchPage", () => {
       expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
     });
 
-    test("the live note stays while the search runs", () => {
+    test("a note waits for the search box to lose focus, then follows edits until the query is fixed", () => {
+      history.replaceState(null, "", "/esea");
+      mockBoth({});
+      renderSearchPage();
+      const field = screen.getByRole("searchbox");
+
+      fireEvent.input(field, { target: { value: "phonics AND" } });
+      expect(screen.queryByText("The query ends with AND")).not.toBeInTheDocument();
+      fireEvent.blur(field);
+      expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
+
+      fireEvent.input(field, { target: { value: "(phonics AND" } });
+      expect(screen.getByText("A bracket is never closed")).toBeInTheDocument();
+      fireEvent.input(field, { target: { value: "phonics AND reading" } });
+      expect(field).not.toBeInvalid();
+      fireEvent.input(field, { target: { value: "phonics AND reading AND" } });
+      expect(field).not.toBeInvalid();
+      fireEvent.blur(field);
+      expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
+    });
+
+    test("a query opened from a link shows its note while the search runs", () => {
       history.replaceState(null, "", "/esea?q=phonics%20AND");
       mockSearch.mockReturnValue(new Promise(() => {}));
       renderSearchPage();
