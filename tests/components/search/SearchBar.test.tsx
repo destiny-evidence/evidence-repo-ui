@@ -98,6 +98,8 @@ describe("SearchBar", () => {
       const note = document.getElementById(noteId)!;
       expect(note).toHaveTextContent("Title text");
       expect(note).toHaveTextContent("Body text");
+      // It changes with each edit, so only the separate status region may announce it.
+      expect(note.closest("[aria-live], [role=alert], [role=status]")).toBeNull();
     });
 
     test("the note is announced once focus leaves the field, never while typing", () => {

@@ -637,7 +637,7 @@ describe("SearchPage", () => {
         q === "phonics AND" ? Promise.reject(rejection()) : Promise.resolve(makeResult(1, ["r1"])),
       );
       renderSearchPage();
-      // Submitted with Enter, so the box never loses focus.
+      // Submitted with Enter and no blur, so only the rejection can show the note.
       const field = screen.getByRole("searchbox");
       fireEvent.input(field, { target: { value: "phonics AND" } });
       fireEvent.submit(field.closest("form")!);
