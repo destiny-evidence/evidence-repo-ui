@@ -704,6 +704,19 @@ describe("SearchPage", () => {
       expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
     });
 
+    test("a flagged query sent with Enter shows its note while the search runs", async () => {
+      history.replaceState(null, "", "/esea");
+      mockSearch.mockImplementation((q) =>
+        q === "phonics AND" ? new Promise(() => {}) : Promise.resolve(makeResult(1, ["r1"])),
+      );
+      renderSearchPage();
+      const field = screen.getByRole("searchbox");
+      fireEvent.input(field, { target: { value: "phonics AND" } });
+      fireEvent.submit(field.closest("form")!);
+
+      expect(await screen.findByText("The query can’t end with AND")).toBeInTheDocument();
+    });
+
     test("a query opened from a link shows its note while the search runs", () => {
       history.replaceState(null, "", "/esea?q=phonics%20AND");
       mockSearch.mockReturnValue(new Promise(() => {}));

@@ -207,14 +207,15 @@ function SearchPageInner({ community }: { community: Community }) {
   const settledError = results.loading ? null : results.error;
   const rejected = settledError instanceof ApiError && settledError.status === 400;
   const rejectedIssue = rejected ? findQueryIssue(params.q) ?? UNREADABLE_QUERY : null;
-  const settled = draft.draftQ.trim() === params.q && !results.loading;
-  // The backend's verdict on the sent query wins. Otherwise checks speak after a blur, not
-  // mid-typing; while a note shows they follow the edits, and a fix silences them.
-  const [checking, setChecking] = useState(true);
+  const draftIsSent = draft.draftQ.trim() === params.q;
+  const settled = draftIsSent && !results.loading;
+  // The backend's verdict on the sent query wins; otherwise the sent query is always checked, and
+  // a draft only after a blur. While a note shows, checks follow the edits until a fix silences them.
+  const [checking, setChecking] = useState(false);
   const queryIssue =
     settled && rejectedIssue ? rejectedIssue
     : settled && results.error === null ? null
-    : checking ? findQueryIssue(draft.draftQ)
+    : checking || draftIsSent ? findQueryIssue(draft.draftQ)
     : null;
   const exportJob = useSearchExport();
   const ai = useAiSummaryContext();
