@@ -91,11 +91,12 @@
    click lands. Hovering the wrapper — never itself hidden — avoids the
    circularity of hanging the rule off the hint's own :hover. */
 .search-bar-wrapper:focus-within .search-bar-hint,
-.search-bar-wrapper:hover .search-bar-hint {
+.search-bar-wrapper:hover .search-bar-hint,
+/* With a note below it, a hint that flips on hover is distracting. */
+.search-bar-wrapper:has(> .search-bar-issue) .search-bar-hint {
   visibility: visible;
 }
 
-/* Always shown, unlike the hint above it. */
 .search-bar-issue {
   display: flex;
   gap: 10px;
