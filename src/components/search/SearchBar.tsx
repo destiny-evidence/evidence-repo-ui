@@ -1,4 +1,4 @@
-import { useId, useState } from "preact/hooks";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
 import { MagnifierIcon, WarningIcon } from "@/components/common/icons";
 import { spokenIssue, type QueryIssue } from "@/services/queryIssues";
 import { SearchHint } from "./SearchHint";
@@ -26,6 +26,25 @@ export function SearchBar({
   const hintId = useId();
   const issueId = useId();
   const [focused, setFocused] = useState(false);
+  const pressing = useRef(false);
+
+  useEffect(() => {
+    const press = () => (pressing.current = true);
+    const release = () => (pressing.current = false);
+    document.addEventListener("pointerdown", press, true);
+    document.addEventListener("pointerup", release, true);
+    return () => {
+      document.removeEventListener("pointerdown", press, true);
+      document.removeEventListener("pointerup", release, true);
+    };
+  }, []);
+
+  function handleBlur() {
+    setFocused(false);
+    if (!pressing.current) return onBlur();
+    // A note shown mid-press moves the content below, and the release misses its target.
+    document.addEventListener("pointerup", () => setTimeout(onBlur), { once: true });
+  }
 
   function handleSubmit(e?: Event) {
     e?.preventDefault();
@@ -48,10 +67,7 @@ export function SearchBar({
             value={draftQ}
             onInput={(e) => onDraftQChange((e.target as HTMLInputElement).value)}
             onFocus={() => setFocused(true)}
-            onBlur={() => {
-              setFocused(false);
-              onBlur();
-            }}
+            onBlur={handleBlur}
             // Not disabled: a disabled field loses focus, dropping a screen reader's place.
             readOnly={disabled}
           />

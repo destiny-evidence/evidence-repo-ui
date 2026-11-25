@@ -113,6 +113,21 @@ describe("SearchBar", () => {
       expect(region).toHaveTextContent("Title text. Body text");
     });
 
+    test("leaving the box with a pointer press reports the blur once the press ends", () => {
+      const props = renderBar();
+      vi.useFakeTimers();
+      // This jsdom has no PointerEvent, and fireEvent.pointerDown dispatches nothing without it.
+      fireEvent(document.body, new Event("pointerdown", { bubbles: true }));
+      fireEvent.blur(screen.getByRole("searchbox"));
+      expect(props.onBlur).not.toHaveBeenCalled();
+      fireEvent(document.body, new Event("pointerup", { bubbles: true }));
+      vi.runAllTimers();
+      expect(props.onBlur).toHaveBeenCalledTimes(1);
+      fireEvent.blur(screen.getByRole("searchbox"));
+      expect(props.onBlur).toHaveBeenCalledTimes(2);
+      vi.useRealTimers();
+    });
+
     test("a note without a body is read as its title alone", () => {
       renderBar({ issue: { title: "Title text" } });
       expect(screen.getByRole("status").textContent).toBe("Title text");
