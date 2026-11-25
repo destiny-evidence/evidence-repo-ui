@@ -18,8 +18,8 @@ function renderBar(overrides: Partial<Parameters<typeof SearchBar>[0]> = {}) {
     onBlur: vi.fn(),
     ...overrides,
   };
-  render(<SearchBar {...props} />);
-  return props;
+  const { rerender } = render(<SearchBar {...props} />);
+  return { ...props, rerender };
 }
 
 describe("SearchBar", () => {
@@ -96,8 +96,17 @@ describe("SearchBar", () => {
       const note = document.getElementById(noteId)!;
       expect(note).toHaveTextContent("Title text");
       expect(note).toHaveTextContent("Body text");
-      // The note changes on every keystroke; announcing it would chatter.
-      expect(note.closest("[aria-live], [role=alert], [role=status]")).toBeNull();
+    });
+
+    test("the note is announced once focus leaves the field, never while typing", () => {
+      const { rerender, ...props } = renderBar();
+      const field = screen.getByRole("searchbox");
+      const region = screen.getByRole("status");
+      fireEvent.focus(field);
+      rerender(<SearchBar {...props} issue={issue} />);
+      expect(region).toBeEmptyDOMElement();
+      fireEvent.blur(field);
+      expect(region).toHaveTextContent("Title text. Body text");
     });
 
     test("an issue never stops a search", () => {

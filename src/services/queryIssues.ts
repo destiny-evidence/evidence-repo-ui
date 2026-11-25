@@ -3,6 +3,11 @@ export interface QueryIssue {
   body: string;
 }
 
+/** The note as one announcement; the stop gives screen readers a pause after the title. */
+export function spokenIssue(issue: QueryIssue): string {
+  return `${issue.title}. ${issue.body}`;
+}
+
 /** For a query the search backend rejected that no check explains. */
 export const UNREADABLE_QUERY: QueryIssue = {
   title: "Part of this query can’t be searched",

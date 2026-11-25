@@ -644,7 +644,8 @@ describe("SearchPage", () => {
 
       const panel = await screen.findByRole("alert");
       expect(panel).toHaveTextContent("The query couldn’t be run");
-      expect(panel).toHaveTextContent("Fix the issue above, then search again.");
+      expect(panel).toHaveTextContent("The query ends with AND. Every operator needs a term after it.");
+      expect(screen.getByText("Fix the issue above, then search again.")).toBeInTheDocument();
       expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
       expect(screen.getByRole("searchbox")).toBeInvalid();
       expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
@@ -706,18 +707,21 @@ describe("SearchPage", () => {
       expect(screen.queryByText("The query ends with AND")).not.toBeInTheDocument();
     });
 
-    test("after a rejection the note and the panel's advice follow the draft until the next search", async () => {
+    test("after a rejection the note and the panel's advice follow the draft, and the alert stays on the sent query", async () => {
       history.replaceState(null, "", "/esea?q=phonics");
       mockSearch.mockImplementation((q) =>
         q === "phonics" ? Promise.reject(rejection()) : Promise.resolve(makeResult(1, ["r1"])),
       );
       renderSearchPage();
-      await screen.findByRole("alert");
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent("Part of this query can’t be searched.");
+      const announced = alert.textContent;
       const field = screen.getByRole("searchbox");
 
       fireEvent.input(field, { target: { value: "(phonics" } });
       expect(screen.getByText("A bracket is never closed")).toBeInTheDocument();
-      expect(screen.getByRole("alert")).toHaveTextContent("Fix the issue above, then search again.");
+      expect(screen.getByText("Fix the issue above, then search again.")).toBeInTheDocument();
+      expect(alert.textContent).toBe(announced);
 
       // Trimmed on submit, so this is still the rejected query.
       fireEvent.input(field, { target: { value: "phonics " } });
@@ -725,11 +729,28 @@ describe("SearchPage", () => {
 
       fireEvent.input(field, { target: { value: "reading" } });
       expect(field).not.toBeInvalid();
-      expect(screen.getByRole("alert")).toHaveTextContent("Search again to run your edited query.");
+      expect(screen.getByText("Search again to run your edited query.")).toBeInTheDocument();
+      expect(alert.textContent).toBe(announced);
       fireEvent.click(screen.getByRole("button", { name: /search/i }));
       await screen.findByText("Title r1");
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();
       expect(field).not.toBeInvalid();
+    });
+
+    test("a new search after a rejection removes the alert without naming the new query", async () => {
+      history.replaceState(null, "", "/esea?q=phonics%20AND");
+      mockSearch.mockImplementation((q) =>
+        q === "phonics AND" ? Promise.reject(rejection()) : Promise.resolve(makeResult(1, ["r1"])),
+      );
+      renderSearchPage();
+      const alert = await screen.findByRole("alert");
+      const announced = alert.textContent;
+
+      fireEvent.input(screen.getByRole("searchbox"), { target: { value: "reading" } });
+      fireEvent.click(screen.getByRole("button", { name: /search/i }));
+      await screen.findByText("Title r1");
+      // A removed node keeps its last text.
+      expect(alert.textContent).toBe(announced);
     });
   });
 

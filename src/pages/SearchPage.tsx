@@ -11,7 +11,7 @@ import {
   type SortOption,
 } from "@/services/searchParams";
 import { navigate } from "@/services/navigation";
-import { findQueryIssue, UNREADABLE_QUERY } from "@/services/queryIssues";
+import { findQueryIssue, spokenIssue, UNREADABLE_QUERY } from "@/services/queryIssues";
 import { ApiError } from "@/api/client";
 import { track, trackSiteSearch } from "@/analytics/matomo";
 import {
@@ -203,13 +203,16 @@ function SearchPageInner({ community }: { community: Community }) {
 
   const corpus = useCorpusTotal();
   const results = useSearch(params);
-  const rejected = results.error instanceof ApiError && results.error.status === 400;
+  // The error outlives one render of the next query's params; loading marks that render.
+  const rejected =
+    !results.loading && results.error instanceof ApiError && results.error.status === 400;
+  const rejectedIssue = rejected ? findQueryIssue(params.q) ?? UNREADABLE_QUERY : null;
   const settled = draft.draftQ.trim() === params.q && !results.loading;
   // The backend's verdict on the sent query wins. Otherwise checks speak after a blur, not
   // mid-typing; while a note shows they follow the edits, and a fix silences them.
   const [checking, setChecking] = useState(true);
   const queryIssue =
-    settled && rejected ? findQueryIssue(draft.draftQ) ?? UNREADABLE_QUERY
+    settled && rejectedIssue ? rejectedIssue
     : settled && results.error === null ? null
     : checking ? findQueryIssue(draft.draftQ)
     : null;
@@ -802,9 +805,13 @@ function SearchPageInner({ community }: { community: Community }) {
             </div>
           )}
 
-          {rejected && (
-            <div class="search-results__rejected" role="alert">
-              <p class="search-results__rejected-title">The query couldn’t be run</p>
+          {rejectedIssue && (
+            <div class="search-results__rejected">
+              {/* Names the sent query's problem, so edits never change it and re-fire the alert. */}
+              <div role="alert">
+                <p class="search-results__rejected-title">The query couldn’t be run</p>
+                <p class="visually-hidden">{spokenIssue(rejectedIssue)}</p>
+              </div>
               <p class="search-results__rejected-body">
                 {queryIssue ? "Fix the issue above, then search again." : "Search again to run your edited query."}
               </p>

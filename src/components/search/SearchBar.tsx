@@ -1,6 +1,6 @@
-import { useId } from "preact/hooks";
+import { useId, useState } from "preact/hooks";
 import { MagnifierIcon, WarningIcon } from "@/components/common/icons";
-import type { QueryIssue } from "@/services/queryIssues";
+import { spokenIssue, type QueryIssue } from "@/services/queryIssues";
 import { SearchHint } from "./SearchHint";
 import "./SearchBar.css";
 
@@ -25,6 +25,7 @@ export function SearchBar({
 }: SearchBarProps) {
   const hintId = useId();
   const issueId = useId();
+  const [focused, setFocused] = useState(false);
 
   function handleSubmit(e?: Event) {
     e?.preventDefault();
@@ -46,7 +47,11 @@ export function SearchBar({
             placeholder={placeholder}
             value={draftQ}
             onInput={(e) => onDraftQChange((e.target as HTMLInputElement).value)}
-            onBlur={onBlur}
+            onFocus={() => setFocused(true)}
+            onBlur={() => {
+              setFocused(false);
+              onBlur();
+            }}
             disabled={disabled}
           />
           <button type="submit" class="search-btn" disabled={disabled}>
@@ -63,6 +68,11 @@ export function SearchBar({
             </div>
           </div>
         )}
+        {/* Always mounted, so filling it is announced; empty while the field has focus,
+            so the note is read when the user leaves the box, never as they type. */}
+        <div class="visually-hidden" role="status">
+          {issue && !focused && spokenIssue(issue)}
+        </div>
       </div>
     </form>
   );
