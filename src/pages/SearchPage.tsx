@@ -204,8 +204,8 @@ function SearchPageInner({ community }: { community: Community }) {
   const corpus = useCorpusTotal();
   const results = useSearch(params);
   // The error outlives one render of the next query's params; loading marks that render.
-  const rejected =
-    !results.loading && results.error instanceof ApiError && results.error.status === 400;
+  const settledError = results.loading ? null : results.error;
+  const rejected = settledError instanceof ApiError && settledError.status === 400;
   const rejectedIssue = rejected ? findQueryIssue(params.q) ?? UNREADABLE_QUERY : null;
   const settled = draft.draftQ.trim() === params.q && !results.loading;
   // The backend's verdict on the sent query wins. Otherwise checks speak after a blur, not
@@ -681,7 +681,7 @@ function SearchPageInner({ community }: { community: Community }) {
         <div class="search-results__pagerow">
           <span class="search-results__count" aria-live="polite">
             {showSummary && !rejected
-              ? results.error
+              ? settledError
                 ? (
                   <>
                     <span>Couldn't load results.</span>

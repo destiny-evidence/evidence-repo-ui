@@ -737,7 +737,7 @@ describe("SearchPage", () => {
       expect(field).not.toBeInvalid();
     });
 
-    test("a new search after a rejection removes the alert without naming the new query", async () => {
+    test("a new search after a rejection neither renames the alert nor flashes a load failure", async () => {
       history.replaceState(null, "", "/esea?q=phonics%20AND");
       mockSearch.mockImplementation((q) =>
         q === "phonics AND" ? Promise.reject(rejection()) : Promise.resolve(makeResult(1, ["r1"])),
@@ -745,12 +745,19 @@ describe("SearchPage", () => {
       renderSearchPage();
       const alert = await screen.findByRole("alert");
       const announced = alert.textContent;
+      const added: string[] = [];
+      const observer = new MutationObserver((records) =>
+        records.forEach((r) => r.addedNodes.forEach((n) => added.push(n.textContent ?? ""))),
+      );
+      observer.observe(document.body, { childList: true, subtree: true });
 
       fireEvent.input(screen.getByRole("searchbox"), { target: { value: "reading" } });
       fireEvent.click(screen.getByRole("button", { name: /search/i }));
       await screen.findByText("Title r1");
+      observer.disconnect();
       // A removed node keeps its last text.
       expect(alert.textContent).toBe(announced);
+      expect(added.join(" ")).not.toMatch(/Couldn't load results/);
     });
   });
 
