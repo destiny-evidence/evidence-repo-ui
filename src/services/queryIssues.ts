@@ -1,54 +1,53 @@
 export interface QueryIssue {
   title: string;
-  body: string;
+  body?: string;
 }
 
 /** The note as one announcement; the stop gives screen readers a pause after the title. */
 export function spokenIssue(issue: QueryIssue): string {
-  return `${issue.title}. ${issue.body}`;
+  return issue.body ? `${issue.title}. ${issue.body}` : issue.title;
 }
 
 /** For a query the search backend rejected that no check explains. */
 export const UNREADABLE_QUERY: QueryIssue = {
   title: "Part of this query can’t be searched",
-  body: "Check the operators, brackets and quotation marks, then search again.",
+  body: "Check the operators, brackets and quotes.",
 };
 
 const BRACKET_NEVER_CLOSED: QueryIssue = {
-  title: "A bracket is never closed",
-  body: "Every ( needs a matching ). Brackets group terms so the operators apply in the order you intend.",
+  title: "A bracket isn’t closed",
+  body: "Add a ) for each (.",
 };
 const BRACKET_NOTHING_TO_CLOSE: QueryIssue = {
-  title: "A closing bracket has nothing to close",
-  body: "Remove the extra ) or add an opening ( earlier in the query.",
+  title: "There’s an extra )",
+  body: "Remove it or add a ( earlier.",
 };
 const MIXED_QUOTES: QueryIssue = {
-  title: "A phrase starts and ends with different quote marks",
-  body: "Use straight quotes (\") at both ends of the phrase. Some apps change them to curly quotes (“ ”) when you type.",
+  title: "Use straight quotes (\") at both ends",
+  body: "Some apps change them to curly quotes (“ ”).",
 };
 const QUOTE_UNCLOSED: QueryIssue = {
-  title: "A quotation mark is unclosed",
-  body: "Exact phrases need quotes at both ends.",
+  title: "A phrase is missing its closing quote",
 };
 const endsWithOperator = (op: string): QueryIssue => ({
-  title: `The query ends with ${op}`,
-  body: `Every operator needs a term after it. Add a term after ${op}, or drop it.`,
+  title: `The query can’t end with ${op}`,
+  body: "Add a term after it or remove it.",
 });
 const startsWithOperator = (op: string): QueryIssue => ({
-  title: `The query starts with ${op}`,
-  body: `${op} needs a term on both sides. NOT is the only operator that can open a query.`,
+  title: `The query can’t start with ${op}`,
+  body: "Only NOT can go first.",
 });
 const adjacentOperators = (a: string, b: string): QueryIssue => ({
-  title: "Two operators sit next to each other",
-  body: `“${a} ${b}” has no term between them. Keep one, or put a term in the middle.`,
+  title: `${a} ${b} needs a term between them`,
+  body: "Remove one or add a term.",
 });
 const COLON: QueryIssue = {
-  title: "A colon can’t be searched here",
-  body: "Remove the colon or put the whole title in quotes.",
+  title: "Colons can’t be searched",
+  body: "Remove it or put the phrase in quotes.",
 };
 const slashInTerm = (term: string): QueryIssue => ({
-  title: `${term} can’t be searched with a slash in it`,
-  body: "Put the term in quotes so it is read as one phrase.",
+  title: "Slashes can’t be searched",
+  body: `Put "${term}" in quotes to search it as one phrase.`,
 });
 
 // The parser treats lowercase and/or/not as ordinary words.

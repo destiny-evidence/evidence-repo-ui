@@ -644,9 +644,9 @@ describe("SearchPage", () => {
 
       const panel = await screen.findByRole("alert");
       expect(panel).toHaveTextContent("The query couldn’t be run");
-      expect(panel).toHaveTextContent("The query ends with AND. Every operator needs a term after it.");
+      expect(panel).toHaveTextContent("The query can’t end with AND. Add a term after it or remove it.");
       expect(screen.getByText("Fix the issue above, then search again.")).toBeInTheDocument();
-      expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
+      expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
       expect(screen.getByRole("searchbox")).toBeInvalid();
       expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
     });
@@ -666,7 +666,7 @@ describe("SearchPage", () => {
 
       expect(await screen.findByRole("button", { name: /try again/i })).toBeInTheDocument();
       expect(screen.queryByText("The query couldn’t be run")).not.toBeInTheDocument();
-      expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
+      expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
     });
 
     test("a note waits for the search box to lose focus, then follows edits until the query is fixed", () => {
@@ -676,18 +676,18 @@ describe("SearchPage", () => {
       const field = screen.getByRole("searchbox");
 
       fireEvent.input(field, { target: { value: "phonics AND" } });
-      expect(screen.queryByText("The query ends with AND")).not.toBeInTheDocument();
+      expect(screen.queryByText("The query can’t end with AND")).not.toBeInTheDocument();
       fireEvent.blur(field);
-      expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
+      expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
 
       fireEvent.input(field, { target: { value: "(phonics AND" } });
-      expect(screen.getByText("A bracket is never closed")).toBeInTheDocument();
+      expect(screen.getByText("A bracket isn’t closed")).toBeInTheDocument();
       fireEvent.input(field, { target: { value: "phonics AND reading" } });
       expect(field).not.toBeInvalid();
       fireEvent.input(field, { target: { value: "phonics AND reading AND" } });
       expect(field).not.toBeInvalid();
       fireEvent.blur(field);
-      expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
+      expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
     });
 
     test("a query opened from a link shows its note while the search runs", () => {
@@ -695,7 +695,7 @@ describe("SearchPage", () => {
       mockSearch.mockReturnValue(new Promise(() => {}));
       renderSearchPage();
 
-      expect(screen.getByText("The query ends with AND")).toBeInTheDocument();
+      expect(screen.getByText("The query can’t end with AND")).toBeInTheDocument();
     });
 
     test("an accepted query shows no note, even one a check flags", async () => {
@@ -704,7 +704,7 @@ describe("SearchPage", () => {
       renderSearchPage();
 
       await screen.findByText("Title r1");
-      expect(screen.queryByText("The query ends with AND")).not.toBeInTheDocument();
+      expect(screen.queryByText("The query can’t end with AND")).not.toBeInTheDocument();
     });
 
     test("after a rejection the note and the panel's advice follow the draft, and the alert stays on the sent query", async () => {
@@ -719,7 +719,7 @@ describe("SearchPage", () => {
       const field = screen.getByRole("searchbox");
 
       fireEvent.input(field, { target: { value: "(phonics" } });
-      expect(screen.getByText("A bracket is never closed")).toBeInTheDocument();
+      expect(screen.getByText("A bracket isn’t closed")).toBeInTheDocument();
       expect(screen.getByText("Fix the issue above, then search again.")).toBeInTheDocument();
       expect(alert.textContent).toBe(announced);
 

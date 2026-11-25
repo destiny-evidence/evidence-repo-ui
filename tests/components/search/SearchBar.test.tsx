@@ -111,6 +111,11 @@ describe("SearchBar", () => {
       expect(region).toHaveTextContent("Title text. Body text");
     });
 
+    test("a note without a body is read as its title alone", () => {
+      renderBar({ issue: { title: "Title text" } });
+      expect(screen.getByRole("status").textContent).toBe("Title text");
+    });
+
     test("an issue never stops a search", () => {
       const props = renderBar({ issue });
       fireEvent.click(screen.getByRole("button", { name: /search/i }));
